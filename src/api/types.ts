@@ -2764,6 +2764,8 @@ export interface ApuestaSimulada {
   elegido: Resultado1x2
   estado: 'cerrada' | 'pendiente'
   kelly: { seleccion: Resultado1x2; fraccion: number; valor: number }
+  /** en quién desconfiar (desde el 10/11/2026; null antes) */
+  alerta?: AlertaConfianza | null
   porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
 }
 
@@ -2794,6 +2796,34 @@ export interface TrasFallos {
   }
 }
 
+/** En quién desconfiar (10/11/2026): marca por apuesta, no cambia el elegido */
+export interface AlertaConfianza {
+  activa: boolean
+  motivos: { codigo: 'SOBRE-LA-CASA' | 'BURBUJA-DE-UN-PARTIDO'; detalle: string }[]
+}
+
+export interface GrupoAlerta {
+  n: number
+  aciertos: number
+  tasa: number | null
+  intervalo: [number, number] | null
+  /** media de 1/cuota del elegido, 0-1 */
+  pide: number | null
+  roiPlano: number | null
+  /** elegido o empate */
+  dobleOportunidad: { n: number; aciertos: number; tasa: number; pide: number } | null
+}
+
+export interface ResumenAlerta {
+  desde: string
+  sobreCasa: number
+  conAlerta: GrupoAlerta
+  sinAlerta: GrupoAlerta
+  porMotivo: Record<string, number>
+  descarte: { n: number; salio: number; tasa: number; casaLeDaba: number } | null
+  nota: string
+}
+
 export interface SimulacionApuesta {
   desde: string
   bancaInicial: number
@@ -2804,6 +2834,8 @@ export interface SimulacionApuesta {
   nota: string
   estrategias: EstrategiaSimulada[]
   trasFallos: TrasFallos
+  /** en quién desconfiar: con alerta contra sin alerta, y el descarte */
+  alertaConfianza?: ResumenAlerta
   porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
   apuestas: ApuestaSimulada[]
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]

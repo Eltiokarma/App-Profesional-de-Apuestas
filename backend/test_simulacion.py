@@ -382,5 +382,43 @@ _saddb.query = _orig_q
 check("cuotas_mercado con el prefiltro SQL = sin él", _q(_lec.cuotas_mercado(fids)) == _q(_todas) and _todas,
       (_lec.cuotas_mercado(fids), _todas))
 
+# EN QUIÉN DESCONFIAR (10/11/2026): la alerta de confianza no toca el elegido ni las estrategias
+_a = sim.alerta_confianza({"local": 55, "empate": 25, "visita": 20}, {"local": 50.0, "empate": 27.0, "visita": 23.0}, None)
+check("alerta: 5 pts sobre la casa → SOBRE-LA-CASA", _a["activa"] and _a["motivos"][0]["codigo"] == "SOBRE-LA-CASA", _a)
+_a = sim.alerta_confianza({"local": 51, "empate": 27, "visita": 22}, {"local": 50.0, "empate": 27.0, "visita": 23.0}, None)
+check("alerta: 1 pt sobre la casa no alcanza", not _a["activa"], _a)
+_a = sim.alerta_confianza({"local": 50, "empate": 27, "visita": 23}, {"local": 50.0, "empate": 27.0, "visita": 23.0},
+                          {"signo": "+", "partidos": 1, "riesgo": "alto"})
+check("alerta: racha + de UN partido con riesgo alto → BURBUJA-DE-UN-PARTIDO",
+      [m["codigo"] for m in _a["motivos"]] == ["BURBUJA-DE-UN-PARTIDO"], _a)
+for _b in ({"signo": "+", "partidos": 3, "riesgo": "alto"}, {"signo": "-", "partidos": 1, "riesgo": "alto"},
+           {"signo": "+", "partidos": 1, "riesgo": "bajo"}):
+    check(f"alerta: {_b} no es burbuja de un partido",
+          not sim.alerta_confianza({"local": 50, "empate": 27, "visita": 23},
+                                   {"local": 50.0, "empate": 27.0, "visita": 23.0}, _b)["activa"])
+_fs = [
+    {"elegido": "local", "resultado": "local", "cuotas": {"local": 2.0, "empate": 3.4, "visita": 4.0},
+     "mercado": {"local": 48.0, "empate": 28.0, "visita": 24.0}, "probabilidades": {"local": 52.0, "empate": 27.0, "visita": 21.0},
+     "alerta": {"activa": True, "motivos": [{"codigo": "SOBRE-LA-CASA"}]}},
+    {"elegido": "local", "resultado": "empate", "cuotas": {"local": 1.8, "empate": 3.6, "visita": 4.5},
+     "mercado": {"local": 53.0, "empate": 26.0, "visita": 21.0}, "probabilidades": {"local": 53.0, "empate": 26.0, "visita": 21.0},
+     "alerta": {"activa": False, "motivos": []}},
+    {"elegido": "visita", "resultado": "local", "cuotas": {"local": 3.5, "empate": 3.4, "visita": 2.1},
+     "mercado": {"local": 27.0, "empate": 28.0, "visita": 45.0}, "probabilidades": {"local": 26.0, "empate": 28.0, "visita": 46.0},
+     "alerta": {"activa": False, "motivos": []}},
+    {"elegido": "local", "resultado": "local", "cuotas": {"local": 1.5, "empate": 4.0, "visita": 6.0},
+     "mercado": {"local": 63.0, "empate": 23.0, "visita": 14.0}, "probabilidades": {"local": 63.0, "empate": 23.0, "visita": 14.0},
+     "alerta": None},   # anterior al 10/11: no registra
+]
+_r = sim.resumen_alerta(_fs)
+check("resumen: con alerta 1 de 1, sin alerta 0 de 2, lo anterior al 10/11 no cuenta",
+      _r["conAlerta"]["n"] == 1 and _r["conAlerta"]["aciertos"] == 1 and _r["sinAlerta"]["n"] == 2
+      and _r["sinAlerta"]["aciertos"] == 0 and _r["porMotivo"] == {"SOBRE-LA-CASA": 1}, _r)
+check("resumen: la doble oportunidad elegido-o-empate (sin alerta: 1 de 2) y la plana (con alerta: +1 u en 1)",
+      _r["sinAlerta"]["dobleOportunidad"]["aciertos"] == 1 and _r["conAlerta"]["roiPlano"] == 1.0, _r)
+check("resumen: el descarte (lo menos probable) salió 1 de 3 — el local que le dimos 26 %",
+      _r["descarte"]["n"] == 3 and _r["descarte"]["salio"] == 1, _r["descarte"])
+check("simular trae alertaConfianza", "alertaConfianza" in sim.simular([]), list(sim.simular([]).keys()))
+
 print("\nTODO OK" if not fallas else f"\n{fallas} FALLA(S)")
 sys.exit(1 if fallas else 0)
