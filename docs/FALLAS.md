@@ -177,6 +177,7 @@ Tres lugares donde vive una guardia:
 - **Casos:** deuda 13: el nivel del rival escrito después del partido. El 1X2 subió de 47 % a 54 % y los puntos se calibraron con la fuga.
 - **Guardia:**
   - **El cierre de un partido jugado no se reescribe callado (1246):** un re-depósito que cambia `dtp.bloques[].cierre` sale en `cierreModificado` y en el `aviso` del recibo (Gimnasia–Belgrano: un rehacer apurado cambió goles y asistencias del cierre contra Río Cuarto).
+  - **La apertura del DTP se corrige solo antes del pitazo y solo por lo que su recibo marcó (1120, aprobada el 10/11/2026):** la apertura guarda en `reciboAlCongelar` las marcas de `faltan`/`rechazos` del depósito que la congeló; un re-depósito que corrige alguna la reemplaza con `aperturaCorregidaEn` y el motivo (`parte._sellar_o_corregir_apertura_dtp`). Sin marca corregida o ya jugado, manda la primera (test en `test_cowork`, «1120:»).
   - **Nivel previo:** `backtest_burbuja.nivel_rival_previo`, con su test anti-fuga.
   - **Vista al día del partido:** `antesDe=<fixture>` en `/constantes`, `/niveles` y `/burbujas`.
   - **Corte temporal** en todos los backtests; la guardia de 15-35 % de empates.
