@@ -14,7 +14,7 @@ import { GolesAcotadosPartido } from './GolesAcotados'
 import { useEffect, useMemo, useState } from 'react'
 import type { MatrizParte,
   BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
-  VentajaMercado, VeredictoParte, ZonaF,
+  VentajaMercado, VeredictoParte, ZonaF, DesconfianzaParte,
 } from '../api/types'
 import { COLOR_TRAMO, tramoConfianza } from '../lib/confianza'
 import { parsearMd, type MdBloque, type MdInline } from '../lib/md'
@@ -1452,6 +1452,7 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
               )}
             </div>
             {parte.vsMercado && <MarcaMercado v={parte.vsMercado} />}
+            {parte.desconfianza && <BloqueDesconfianza d={parte.desconfianza} nombres={{ a: parte.partido.equipoA, b: parte.partido.equipoB }} />}
             {([['Motor de regresión', p.motor], ['Matriz (estimación)', p.matriz], ['Mercado', p.mercado]] as const).map(([k, v]) => (
               <div key={k} style={{ display: 'flex', gap: 10, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
                 <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)', width: 128, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '.3px' }}>{k}</span>
@@ -1611,6 +1612,74 @@ const COLOR_MERCADO: Record<VentajaMercado['estado'], [string, string]> = {
   'sin ventaja': ['var(--t2)', 'var(--bg3)'],
   'sobre el mercado': ['var(--accent)', 'var(--accent-soft)'],
   'bajo el mercado': ['var(--mark)', 'var(--bg3)'],
+}
+
+// EN QUIÉN DESCONFIAR (10/11/2026, usuario): cada pieza con su peso —
+// A (ventaja por fuerza) en negrita · C (la racha del elegido) en el parte ·
+// D (el descarte, «el otro lado no gana») MUY resaltado cuando hay alerta ·
+// E (la tipología no separa) para el analista, en chico
+function BloqueDesconfianza({ d, nombres }: { d: DesconfianzaParte; nombres: Record<'a' | 'b', string> }) {
+  const activa = d.alerta.activa
+  const RES = { local: 'local', empate: 'empate', visita: 'visita' } as const
+  const pc = (x: number) => `${Math.round(100 * x)} %`
+  const do_ = d.dobleOportunidad
+  const b = d.burbujaElegido
+  const unPartido = !!b && b.signo === '+' && b.partidos === 1 && (b.riesgo === 'alto' || b.riesgo === 'muy alto')
+  return (
+    <div style={{ marginBottom: 11, padding: '10px 12px', borderRadius: 10, background: 'var(--bg3)', border: '1px solid var(--line)' }}>
+      <div style={{ font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', textTransform: 'uppercase', marginBottom: 7 }}>
+        En quién desconfiar
+      </div>
+
+      {/* D · el descarte: muy resaltado con alerta */}
+      {do_ && (
+        <div style={activa
+          ? { padding: '10px 12px', borderRadius: 10, border: '2px solid var(--down)', background: 'var(--down-soft)', marginBottom: 9 }
+          : { padding: '6px 0', marginBottom: 6 }}>
+          {activa && (
+            <div style={{ font: '800 10.5px var(--mono)', color: 'var(--down)', letterSpacing: '.6px', marginBottom: 3 }}>⚠ DESCONFIAR DEL ELEGIDO</div>
+          )}
+          <div style={{ font: activa ? '800 15px var(--sans)' : '600 12px var(--sans)', color: 'var(--t1)' }}>{do_.texto}</div>
+          <div style={{ font: '500 11px var(--mono)', color: 'var(--t2)', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>
+            nuestra {do_.nuestra.toFixed(0)} %{do_.casa != null ? ` · la casa ${do_.casa.toFixed(0)} %` : ''}
+          </div>
+          {activa && d.alerta.motivos.map((m) => (
+            <div key={m.codigo} style={{ font: '600 11px var(--sans)', color: 'var(--down)', marginTop: 4 }}>
+              {m.codigo === 'SOBRE-LA-CASA' ? 'Sobre la casa' : 'Burbuja de un partido'}: <span style={{ fontWeight: 500, color: 'var(--t1)' }}>{m.detalle}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* C · la racha del elegido */}
+      {b && (
+        <div style={{ font: '500 11.5px var(--sans)', color: unPartido ? 'var(--down)' : 'var(--t2)', marginBottom: 5 }}>
+          Racha del elegido: {b.signo ?? 'sin'} de {b.partidos ?? 0} partido{b.partidos === 1 ? '' : 's'}{b.riesgo ? `, riesgo ${b.riesgo}` : ''}
+          {unPartido ? ' — un solo partido no es una burbuja' : ''}
+        </div>
+      )}
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8 }}>
+        Descarte: {RES[d.descarte.resultado]} (nuestra {d.descarte.nuestra.toFixed(0)} %{d.descarte.casa != null ? `, la casa ${d.descarte.casa.toFixed(0)} %` : ''})
+      </div>
+
+      {/* A · la ventaja por fuerza: en negrita */}
+      {(['a', 'b'] as const).map((l) => {
+        const v = d.ventajaPorFuerza[l]
+        if (!v) return null
+        return (
+          <div key={l} style={{ font: '700 12px var(--sans)', color: 'var(--t1)', marginBottom: 3, lineHeight: 1.4 }}>
+            {nombres[l]} ({v.prob.toFixed(0)} % según la casa): si va ganando por 1 al descanso, no gana el {pc(v.noGanaCon1)}
+            <span style={{ fontWeight: 500, color: 'var(--t2)' }}> · con 2+ de ventaja, el {pc(v.noGanaCon2)}</span>
+          </div>
+        )
+      })}
+
+      {/* E · para el analista */}
+      <div style={{ font: '400 10px var(--sans)', color: 'var(--t3)', marginTop: 7, lineHeight: 1.45 }}>
+        Para el analista: {d.paraElAnalista}. {d.nota}.
+      </div>
+    </div>
+  )
 }
 
 function MarcaMercado({ v }: { v: VentajaMercado }) {

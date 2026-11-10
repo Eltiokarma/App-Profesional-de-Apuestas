@@ -4189,7 +4189,7 @@ components:
       type: object
       required: [codigo]
       properties:
-        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), K-EXTREMO-CONDICION y K-CERCA-EXTREMO-CONDICION (la K de la condición de hoy en su récord o en la franja alta, con la total sin él; tipo dato), ESPINA-VS-RIESGO (la espina declarada contra el riesgo calculado del reventón), DT-DISCREPANCIA (el DT del parte no es el de la base: la prensa manda, la base es alarma) y DT-SIN-DT (el parte o la base sin DT), TIPOLOGIA-VS-INDICES (la tipología modal del TDE contradice IE contra ISE), ELIMINATORIA-AL-REVES (29/10/2026: el parte da por eliminado al que pasó la llave, o al revés; la base lo calcula en backend/eliminatoria.py), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA (un titular habitual o goleador de la base que no está en la tabla F1: no pesa en el IP) DTP-REHACER (el once oficial contradice el sistema o el XI de referencia de la apertura del DTP), EFE-EMPATE-TECNICO (26/10/2026: brecha del EFE ≥ 5 puntos con T.54 / R-KT.2 en un lado o ESCALA-LIGAS: empate técnico de formación, no ordena el partido; trae `brecha` y `motivos`), ESPINA-SIGUE-EN-EXTREMO (la espina dice que la racha sigue con la burbuja total o de la condición en K-EXTREMO o K-CERCA-EXTREMO) T.54-SIN-DECLARAR (EFE v1.8: el DT de un lado lleva menos de 6 meses y el parte no declara T.54 ni T.54-B ahí; trae `meses` y cuenta para EFE-EMPATE-TECNICO) SANCION-SIN-DECLARAR (30/10/2026: un sancionado de la base —roja o amarillas en el último partido de la competición— que el parte no tiene en `fuera`; trae `sancionados`) ONCE-SIN-FILA-F1 (incidencia 743: titulares del once oficial sin fila en la tabla F1, que no pesan en el IP; trae `titulares`) y TDE-RELEVANCIA-SIN-DECLARAR (01/11/2026, incidencia 791: P1a y SOB1 en 0,5 o menos en los dos lados y ningún texto del TDE declara la relevancia baja; tipo dato, no se cobra a partes anteriores). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
+        codigo: { type: string, description: 'T.54, R-KT.2, GK-DOWNGRADE, F3… Las que agrega el backend al leer: K-EXTREMO (burbuja en su máximo), K-CERCA-EXTREMO (franja alta sin récord, tipo dato), K-EXTREMO-CONDICION y K-CERCA-EXTREMO-CONDICION (la K de la condición de hoy en su récord o en la franja alta, con la total sin él; tipo dato), ESPINA-VS-RIESGO (la espina declarada contra el riesgo calculado del reventón), DT-DISCREPANCIA (el DT del parte no es el de la base: la prensa manda, la base es alarma) y DT-SIN-DT (el parte o la base sin DT), TIPOLOGIA-VS-INDICES (la tipología modal del TDE contradice IE contra ISE), ELIMINATORIA-AL-REVES (29/10/2026: el parte da por eliminado al que pasó la llave, o al revés; la base lo calcula en backend/eliminatoria.py), HERENCIA-DTP (C1/SOB2 del TDE declarados distinto de lo que dice el DTP; manda el DTP), HUECO-DOBLE (EFE y TDE leídos del mismo vacío) ESCALA-LIGAS (los dos equipos vienen de ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA (un titular habitual o goleador de la base que no está en la tabla F1: no pesa en el IP) DTP-REHACER (el once oficial contradice el sistema o el XI de referencia de la apertura del DTP), EFE-EMPATE-TECNICO (26/10/2026: brecha del EFE ≥ 5 puntos con T.54 / R-KT.2 en un lado o ESCALA-LIGAS: empate técnico de formación, no ordena el partido; trae `brecha` y `motivos`), ESPINA-SIGUE-EN-EXTREMO (la espina dice que la racha sigue con la burbuja total o de la condición en K-EXTREMO o K-CERCA-EXTREMO) T.54-SIN-DECLARAR (EFE v1.8: el DT de un lado lleva menos de 6 meses y el parte no declara T.54 ni T.54-B ahí; trae `meses` y cuenta para EFE-EMPATE-TECNICO) SANCION-SIN-DECLARAR (30/10/2026: un sancionado de la base —roja o amarillas en el último partido de la competición— que el parte no tiene en `fuera`; trae `sancionados`) ONCE-SIN-FILA-F1 (incidencia 743: titulares del once oficial sin fila en la tabla F1, que no pesan en el IP; trae `titulares`) TDE-RELEVANCIA-SIN-DECLARAR (01/11/2026, incidencia 791: P1a y SOB1 en 0,5 o menos en los dos lados y ningún texto del TDE declara la relevancia baja; tipo dato, no se cobra a partes anteriores) y DESCONFIAR (10/11/2026: le damos al elegido 2+ pts sobre la casa —SOBRE-LA-CASA— o su racha + es de un solo partido con riesgo alto —BURBUJA-DE-UN-PARTIDO—; tipo dato, trae `motivos`; no mueve el 1X2, ver `desconfianza`). Las CAPTURADAS al depositar por el guardrail de coherencia (Jev, docs/JEV.md): COHERENCIA-BLOQUE, COHERENCIA-1X2, COHERENCIA-MATCHUP, COHERENCIA-REVENTON — solo salen en la tira con SAD_JEV_COHERENCIA=alertas; en sombra viven en `coherencia`' }
         equipo: { type: string, enum: [a, b, ambos, global] }
         tipo: { type: string, enum: [estructural, fecha, dato], description: '`dato` = la pone el backend sobre los datos, no el skill' }
         detalle: { type: string, description: '`texto` se acepta como alias' }
@@ -4409,6 +4409,64 @@ components:
             partidos calculados. Se arma AL LEER, no al depositar, para que una corrección
             de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
+        desconfianza:
+          type: object
+          nullable: true
+          description: >
+            EN QUIÉN DESCONFIAR (10/11/2026), calculado AL LEER: la alerta (SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO),
+            la burbuja del elegido, el descarte (lo menos probable, nuestra contra la casa), la doble oportunidad
+            «el otro lado no gana» (`resaltar` con alerta), la ventaja por fuerza de cada lado (cuánto NO gana con 1
+            o 2+ de ventaja al descanso según su prob. previa; 53.108 partidos, docs/revisiones/ESTUDIO_ECHADOS_2026-11.md)
+            y la nota para el analista. No mueve el 1X2. Null sin 1X2 declarado.
+          properties:
+            elegido: { type: string, enum: [local, empate, visita] }
+            alerta:
+              type: object
+              properties:
+                activa: { type: boolean }
+                motivos:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      codigo: { type: string, enum: [SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO] }
+                      detalle: { type: string }
+            burbujaElegido:
+              type: object
+              nullable: true
+              properties:
+                signo: { type: string, nullable: true }
+                partidos: { type: integer, nullable: true }
+                riesgo: { type: string, nullable: true }
+            descarte:
+              type: object
+              properties:
+                resultado: { type: string, enum: [local, empate, visita] }
+                nuestra: { type: number }
+                casa: { type: number, nullable: true }
+            dobleOportunidad:
+              type: object
+              nullable: true
+              properties:
+                texto: { type: string }
+                seleccion: { type: array, items: { type: string } }
+                nuestra: { type: number }
+                casa: { type: number, nullable: true }
+                resaltar: { type: boolean }
+            ventajaPorFuerza:
+              type: object
+              description: 'por lado (a = local, b = visita)'
+              additionalProperties:
+                type: object
+                nullable: true
+                properties:
+                  prob: { type: number }
+                  tramo: { type: string }
+                  noGanaCon1: { type: number, description: '0-1' }
+                  noGanaCon2: { type: number, description: '0-1' }
+            fuenteVentaja: { type: string }
+            paraElAnalista: { type: string }
+            nota: { type: string }
         vsMercado:
           type: object
           nullable: true

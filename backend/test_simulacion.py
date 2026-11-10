@@ -420,5 +420,34 @@ check("resumen: el descarte (lo menos probable) salió 1 de 3 — el local que l
       _r["descarte"]["n"] == 3 and _r["descarte"]["salio"] == 1, _r["descarte"])
 check("simular trae alertaConfianza", "alertaConfianza" in sim.simular([]), list(sim.simular([]).keys()))
 
+# EN QUIÉN DESCONFIAR, en el parte (backend/analisis/desconfianza.py)
+from backend.analisis import desconfianza as _dsc  # noqa: E402
+_nom = {"a": "Local FC", "b": "Visita FC"}
+_rev = {"a": {"actual": {"signo": "+", "partidos": 1}, "riesgo": {"nivel": "alto"}}, "b": {}}
+_d = _dsc.leer({"probabilidades": {"local": 52, "empate": 27, "visita": 21}},
+               {"local": 47.0, "empate": 28.0, "visita": 25.0}, _rev, _nom)
+check("parte: alerta con los dos motivos (5 pts sobre la casa y racha de un partido)",
+      [m["codigo"] for m in _d["alerta"]["motivos"]] == ["SOBRE-LA-CASA", "BURBUJA-DE-UN-PARTIDO"], _d["alerta"])
+check("parte: el descarte resaltado dice que el otro lado no gana",
+      _d["dobleOportunidad"]["texto"] == "Visita FC no gana: Local FC o empate" and _d["dobleOportunidad"]["resaltar"]
+      and _d["dobleOportunidad"]["nuestra"] == 79.0 and _d["dobleOportunidad"]["casa"] == 75.0, _d["dobleOportunidad"])
+check("parte: ventaja por fuerza del local (47 %) en el tramo 35-48 % y de la visita (25 %) en < 35 %",
+      _d["ventajaPorFuerza"]["a"]["tramo"] == "35-48 %" and _d["ventajaPorFuerza"]["a"]["noGanaCon1"] == 0.310
+      and _d["ventajaPorFuerza"]["b"]["tramo"] == "< 35 %", _d["ventajaPorFuerza"])
+_t = _dsc.alerta_tira(_d, _nom)
+check("parte: DESCONFIAR a la tira, tipo dato, del lado del elegido",
+      len(_t) == 1 and _t[0]["codigo"] == "DESCONFIAR" and _t[0]["tipo"] == "dato" and _t[0]["equipo"] == "a", _t)
+_d2 = _dsc.leer({"probabilidades": {"local": 47, "empate": 28, "visita": 25}},
+                {"local": 47.0, "empate": 28.0, "visita": 25.0}, {"a": {"actual": {"signo": "+", "partidos": 4},
+                                                                         "riesgo": {"nivel": "alto"}}}, _nom)
+check("parte: a la par de la casa y con racha larga, sin alerta ni tira", not _d2["alerta"]["activa"]
+      and not _dsc.alerta_tira(_d2, _nom) and not _d2["dobleOportunidad"]["resaltar"], _d2["alerta"])
+check("parte: sin 1X2 no hay bloque", _dsc.leer({}, None, None, _nom) is None)
+check("parte: sin cuotas, la casa queda en null pero el bloque sale",
+      _dsc.leer({"probabilidades": {"local": 50, "empate": 27, "visita": 23}}, None, None, _nom)["descarte"]["casa"] is None)
+from backend.analisis import parte as _pt  # noqa: E402
+check("DESCONFIAR es calculada (se descarta del depósito) y `desconfianza` es eco",
+      "DESCONFIAR" in _pt._ALERTAS_CALCULADAS and "desconfianza" in _pt._ECO_PARTE)
+
 print("\nTODO OK" if not fallas else f"\n{fallas} FALLA(S)")
 sys.exit(1 if fallas else 0)
