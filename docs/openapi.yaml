@@ -1051,7 +1051,7 @@ paths:
                         minutosAlPitazo: { type: integer }
                   pendientes:
                     type: array
-                    description: 'los de enVentana con DTP-REHACER, con esas alertas en `alertas`'
+                    description: 'los de enVentana con DTP-REHACER, DT-VS-BANCO o PARTE-OTRA-FECHA, con esas alertas en `alertas`. Desde el 10/11/2026 (incidencia 1190) también los que tienen una alerta declarada CONDICIONAL al once (EJE-DEBUTANTE «si repiten X–Y», EFE v1.9: el detalle dice «condicional», «si repiten» o «sin once») cuando el once oficial de su equipo ya está capturado: viaja como `{codigo: ALERTA-CONDICIONAL-AL-ONCE, tipo: dato, alerta: <código declarado>, equipo, detalle: «alerta condicional al once: <código> — …»}` y pide confirmarla o sacarla con el grid. Una alerta cuyo detalle ya dice confirmada / descartada / sobre el grid / once tardío no vuelve a pedirse'
                     items: { type: object }
                   nota: { type: string }
   /analisis/cowork/contrato:
