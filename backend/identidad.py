@@ -166,6 +166,32 @@ def mismo_jugador(uno: str, otro: str) -> bool:
             and any(corto[-1] == x or apellido_casi(corto[-1], x) for x in largo[1:] if len(x) > 1))
 
 
+def id_cruzado(nombre_hoja: str, pid: int, plantel: dict) -> int | None:
+    """LA HOJA TRAE EL ID DE UNO CON EL NOMBRE DE OTRO (10/11/2026, incidencia
+    1330, aprobada por el usuario): Pasto con 305596 —Paraszhidisz en la
+    plantilla— escrito «P. Preciado», que es el 527180; St. Truiden con 406784
+    —Zalán— escrito «I. Atrok». Si el nombre de la hoja NO es el del dueño del
+    id (`plantel[pid]`) y casa con UN solo otro jugador de la plantilla
+    (`plantel`: id → nombre), devuelve el id de ese otro: es a quien la hoja
+    nombra. Con el dueño desconocido, dos candidatos o ninguno: None (el id
+    manda, como siempre; 1307)."""
+    dueno = plantel.get(pid)
+    if not dueno or not nombre_hoja or len(tokens(nombre_hoja)) < 2:
+        return None
+    if mismo_jugador(nombre_hoja, dueno) or tokens(nombre_hoja) == tokens(dueno):
+        return None
+    otros = [q for q, n in plantel.items() if q != pid and n and mismo_jugador(nombre_hoja, n)]
+    return otros[0] if len(otros) == 1 else None
+
+
+def mismo_apellido(uno: str, otro: str) -> bool:
+    """El mismo último apellido (o casi: `apellido_casi`), sin mirar la pila.
+    Solo para MARCAR una posibilidad, nunca para fundir: «Jose Sagredo» /
+    «Jesús Sagredo» (1330)."""
+    a, b = tokens(uno), tokens(otro)
+    return len(a) >= 2 and len(b) >= 2 and len(a[-1]) > 1 and (a[-1] == b[-1] or apellido_casi(a[-1], b[-1]))
+
+
 def ids_equivalentes(antes: dict, ahora: dict) -> dict:
     """{id de `antes` → id de `ahora`} para el MISMO jugador con otro id entre
     dos hojas (incidencia 899: «Lautaro Herrera» en entraron y en salieron de

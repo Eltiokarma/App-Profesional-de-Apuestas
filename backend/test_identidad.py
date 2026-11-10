@@ -237,6 +237,19 @@ check("1225: la mención de un apellido que también es de otro de la hoja queda
       idn.mencion_compartida("E. Castillo", ["J. Castillo"], "Castillo")
       and not idn.mencion_compartida("E. Castillo", ["J. Castillo"], "E. Castillo")
       and not idn.mencion_compartida("V. Adamo", ["J. Castillo"], "Adamo"))
+# 1330 (10/11/2026, aprobada): la hoja trae el id de uno con el nombre de OTRO de la plantilla
+_pl1330 = {305596: "Krisztian Paraszhidisz", 527180: "P. Preciado", 64215: "S. Córdoba"}
+check("1330: «P. Preciado» con el id 305596 (Paraszhidisz) es el 527180",
+      idn.id_cruzado("P. Preciado", 305596, _pl1330) == 527180)
+check("1330: el nombre del dueño, otro nombre que nadie lleva, un dueño desconocido o una sola palabra: el id manda",
+      idn.id_cruzado("K. Paraszhidisz", 305596, _pl1330) is None
+      and idn.id_cruzado("Dayan Pérez", 305596, _pl1330) is None
+      and idn.id_cruzado("P. Preciado", 999, _pl1330) is None
+      and idn.id_cruzado("Preciado", 305596, _pl1330) is None)
+check("1330: dos candidatos por nombre no se afirman",
+      idn.id_cruzado("P. Preciado", 305596, {**_pl1330, 1: "Pablo Preciado"}) is None)
+check("1330: mismo apellido sin mirar la pila («Jose» / «Jesús Sagredo»); otro apellido, no",
+      idn.mismo_apellido("Jose Sagredo", "Jesús Sagredo") and not idn.mismo_apellido("Jose Sagredo", "Jose Sagasti"))
 
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
