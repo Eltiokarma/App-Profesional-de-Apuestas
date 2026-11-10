@@ -1844,6 +1844,24 @@ components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
   schemas:
+    GrupoAlerta:
+      type: object
+      properties:
+        n: { type: integer }
+        aciertos: { type: integer }
+        tasa: { type: number, nullable: true, description: '0-1' }
+        intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 %' }
+        pide: { type: number, nullable: true, description: 'media de 1/cuota del elegido, 0-1' }
+        roiPlano: { type: number, nullable: true, description: 'ganancia por unidad, 1 u al elegido' }
+        dobleOportunidad:
+          type: object
+          nullable: true
+          description: 'elegido o empate (sin los elegidos al empate)'
+          properties:
+            n: { type: integer }
+            aciertos: { type: integer }
+            tasa: { type: number }
+            pide: { type: number, description: 'la casa sin margen, 0-1' }
     SimulacionApuesta:
       type: object
       properties:
@@ -1940,6 +1958,29 @@ components:
                 cumple: { type: boolean }
                 estado: { type: string, enum: [en_observacion, sin_contacto, contacto] }
                 texto: { type: string }
+        alertaConfianza:
+          type: object
+          description: >
+            EN QUIÉN DESCONFIAR (10/11/2026, usuario: «podemos elegir en quién desconfiar»). Sobre las cerradas
+            desde `desde` que registran la alerta: con alerta contra sin alerta (acierto del elegido, lo que
+            pedía la cuota, la plana a 1 u y la doble oportunidad elegido-o-empate) y el DESCARTE (cuánto salió
+            lo que menos probable le dimos contra lo que le daba la casa). No cambia el elegido ni ninguna
+            estrategia: se mide hacia adelante (docs/revisiones/ESTUDIO_ECHADOS_2026-11.md).
+          properties:
+            desde: { type: string }
+            sobreCasa: { type: number, description: 'puntos sobre la casa que disparan SOBRE-LA-CASA' }
+            conAlerta: { $ref: '#/components/schemas/GrupoAlerta' }
+            sinAlerta: { $ref: '#/components/schemas/GrupoAlerta' }
+            porMotivo: { type: object, additionalProperties: { type: integer } }
+            descarte:
+              type: object
+              nullable: true
+              properties:
+                n: { type: integer }
+                salio: { type: integer }
+                tasa: { type: number }
+                casaLeDaba: { type: number, description: 'media de la probabilidad sin margen de la casa, 0-1' }
+            nota: { type: string }
         porVersion:
           type: array
           items:
@@ -1980,6 +2021,19 @@ components:
               resultado: { type: string, nullable: true, enum: [local, empate, visita, null] }
               elegido: { type: string }
               estado: { type: string, enum: [cerrada, pendiente] }
+              alerta:
+                type: object
+                nullable: true
+                description: 'en quién desconfiar (desde el 10/11/2026; null antes): SOBRE-LA-CASA (2+ pts sobre la casa) · BURBUJA-DE-UN-PARTIDO (racha + de un partido con riesgo alto o muy alto)'
+                properties:
+                  activa: { type: boolean }
+                  motivos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        codigo: { type: string, enum: [SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO] }
+                        detalle: { type: string }
               kelly:
                 type: object
                 properties:

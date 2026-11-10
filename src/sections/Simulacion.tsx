@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, Resultado1x2, SimulacionApuesta, TrasFallos } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, Resultado1x2, ResumenAlerta, SimulacionApuesta, TrasFallos } from '../api/types'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -109,6 +109,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
       {d.porVersion.length > 0 && <PorVersion d={d} visibles={visibles.map((v) => v.clave)} isMobile={isMobile} />}
 
       {d.trasFallos && d.trasFallos.base.n > 0 && <TablaTrasFallos t={d.trasFallos} isMobile={isMobile} />}
+
+      {d.alertaConfianza && <TablaAlerta r={d.alertaConfianza} isMobile={isMobile} />}
 
       <div style={{ ...rotulo, margin: '18px 0 8px' }}>Apuestas · la más nueva primero</div>
       {d.apuestas.length ? (
@@ -353,6 +355,60 @@ function TablaTrasFallos({ t, isMobile }: { t: TrasFallos; isMobile: boolean }) 
   )
 }
 
+// EN QUIÉN DESCONFIAR (10/11/2026, usuario): la alerta no cambia el elegido;
+// esto mide, hacia adelante, si con alerta acertamos menos que sin ella
+function TablaAlerta({ r, isMobile }: { r: ResumenAlerta; isMobile: boolean }) {
+  const tasa = (x: number | null | undefined) => (x == null ? '—' : `${num(100 * x, 1)} %`)
+  const celda: React.CSSProperties = { padding: '5px 6px', textAlign: 'right' }
+  const filas: [string, GrupoAlerta][] = [['con alerta', r.conAlerta], ['sin alerta', r.sinAlerta]]
+  const total = r.conAlerta.n + r.sinAlerta.n
+  return (
+    <div style={{ ...tarjeta, marginTop: 12 }}>
+      <div style={{ ...rotulo, marginBottom: 4 }}>En quién desconfiar · alerta de confianza</div>
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
+        Alerta si le damos al elegido {num(r.sobreCasa, 0)}+ puntos más que la casa, o si su racha es de un solo partido con
+        riesgo alto. No cambia el elegido: se registra desde el {fecha(r.desde).split(' ')[0]} y se mide hacia adelante.
+      </div>
+      {total === 0 ? (
+        <div style={{ font: '500 11.5px var(--sans)', color: 'var(--t3)' }}>Todavía no hay partidos cerrados con la alerta registrada.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+            <thead>
+              <tr style={{ color: 'var(--t3)' }}>
+                <th style={{ ...celda, textAlign: 'left', fontWeight: 600 }}></th>
+                <th style={{ ...celda, fontWeight: 600 }}>casos</th>
+                <th style={{ ...celda, fontWeight: 600 }}>acierta</th>
+                <th style={{ ...celda, fontWeight: 600 }}>pedía</th>
+                <th style={{ ...celda, fontWeight: 600 }}>1 u plano</th>
+                <th style={{ ...celda, fontWeight: 600 }}>elegido o empate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filas.map(([nombre, g]) => (
+                <tr key={nombre} style={{ borderTop: '1px solid var(--line)' }}>
+                  <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: 700 }}>{nombre}</td>
+                  <td style={celda}>{g.n}</td>
+                  <td style={{ ...celda, color: 'var(--t1)', fontWeight: 700 }}>{tasa(g.tasa)}</td>
+                  <td style={celda}>{tasa(g.pide)}</td>
+                  <td style={{ ...celda, color: colorDe(g.roiPlano) }}>{pct(g.roiPlano)}</td>
+                  <td style={celda}>{g.dobleOportunidad ? `${tasa(g.dobleOportunidad.tasa)} (pedía ${tasa(g.dobleOportunidad.pide)})` : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {r.descarte && (
+        <div style={{ marginTop: 8, font: '500 11px var(--sans)', color: 'var(--t2)', lineHeight: 1.45 }}>
+          <b style={{ color: 'var(--t1)' }}>El descarte</b> (lo que menos probable le dimos): salió {tasa(r.descarte.tasa)} de {r.descarte.n} partidos;
+          la casa le daba {tasa(r.descarte.casaLeDaba)}.
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PorVersion({ d, visibles, isMobile }: { d: SimulacionApuesta; visibles: EstrategiaClave[]; isMobile: boolean }) {
   return (
     <div style={{ ...tarjeta }}>
@@ -401,6 +457,12 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
         <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>{fecha(a.pitazo)}</span>
         <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)' }}>{a.partido.local} – {a.partido.visita}</span>
         {a.partido.liga && <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>{a.partido.liga}</span>}
+        {a.alerta?.activa && (
+          <span title={a.alerta.motivos.map((m) => m.detalle).join(' · ')}
+            style={{ padding: '1px 6px', borderRadius: 5, font: '700 9.5px var(--sans)', background: 'var(--down-soft)', color: 'var(--down)' }}>
+            ⚠ desconfiar
+          </span>
+        )}
         <span style={{
           marginLeft: 'auto', padding: '2px 8px', borderRadius: 6, font: '700 10px var(--sans)',
           background: !cerrada ? 'var(--bg3)' : acierto ? 'var(--up-soft)' : 'var(--down-soft)',

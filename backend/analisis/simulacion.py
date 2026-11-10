@@ -143,6 +143,87 @@ _SOLO_ALTA = ("plana60", "martingala60")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
 
+# LA OTRA MITAD DEL ANÁLISIS: EN QUIÉN DESCONFIAR (10/11/2026, usuario: «tal vez
+# no podemos elegir quién va a ganar, pero podemos elegir en quién desconfiar»).
+# Del estudio de los 107 fallos del 01-09/11 (docs/revisiones/ESTUDIO_ECHADOS_2026-11.md,
+# §7-§8) salieron dos señales previas que separan: nuestra probabilidad del
+# elegido 2+ puntos SOBRE la de la casa (nunca se adelantó en el 57 %, base
+# 26,5 %) y una «burbuja» de UN solo partido positivo con riesgo alto o muy
+# alto (39 %, contra 11 % de las de 3+ partidos). Con alerta, el elegido acertó
+# 50 % (n 28) y sin alerta 61 % (n 236): medido sobre la misma semana donde se
+# encontraron, por eso se REGISTRA desde ya y se mide hacia adelante. No cambia
+# el elegido ni ninguna estrategia: es una marca por apuesta y un resumen.
+ALERTA_DESDE = "2026-11-10 05:00:00"   # 00:00 de Lima del 10/11/2026
+ALERTA_SOBRE_CASA = 2.0                # puntos de probabilidad sobre la casa (sin margen)
+_RIESGOS_ALTOS = ("alto", "muy alto")
+
+
+def alerta_confianza(probs: dict, mercado: dict | None, burbuja: dict | None) -> dict:
+    """La alerta de confianza de una apuesta. `probs` y `mercado` en % (el
+    mercado sin margen); `burbuja` = {signo, partidos, riesgo} de la familia
+    total del ELEGIDO al día del partido, o None si no se pudo calcular."""
+    p = _normalizar(probs)
+    motivos = []
+    if not p:
+        return {"activa": False, "motivos": motivos}
+    e = _elegido(p)
+    if mercado and mercado.get(e) is not None:
+        d = 100 * p[e] - float(mercado[e])
+        if d > ALERTA_SOBRE_CASA:
+            motivos.append({"codigo": "SOBRE-LA-CASA",
+                            "detalle": f"le damos {100 * p[e]:.1f} % al elegido y la casa {float(mercado[e]):.1f} % (+{d:.1f} pts)"})
+    if e != "empate" and burbuja and burbuja.get("signo") == "+" and burbuja.get("partidos") == 1 \
+            and burbuja.get("riesgo") in _RIESGOS_ALTOS:
+        motivos.append({"codigo": "BURBUJA-DE-UN-PARTIDO",
+                        "detalle": f"la racha del elegido es de un solo partido con riesgo {burbuja['riesgo']}"})
+    return {"activa": bool(motivos), "motivos": motivos}
+
+
+def resumen_alerta(cerradas: list[dict]) -> dict:
+    """Con alerta contra sin alerta, sobre las cerradas que la registran: el
+    acierto del elegido, lo que pedía la cuota, la plana a 1 u y la doble
+    oportunidad elegido-o-empate. Y el DESCARTE: cuánto salió lo que menos
+    probable le dimos, contra lo que le daba la casa (bajar de 3 a 2)."""
+    con = [f for f in cerradas if f.get("alerta") is not None]
+
+    def grupo(fs):
+        n = len(fs)
+        if not n:
+            return {"n": 0, "aciertos": 0, "tasa": None, "pide": None, "roiPlano": None,
+                    "dobleOportunidad": None, "intervalo": None}
+        ac = sum(1 for f in fs if f["resultado"] == f["elegido"])
+        dc = [f for f in fs if f["elegido"] != "empate"]
+        dca = sum(1 for f in dc if f["resultado"] in (f["elegido"], "empate"))
+        gan = sum((f["cuotas"][f["elegido"]] - 1) if f["resultado"] == f["elegido"] else -1 for f in fs)
+        return {"n": n, "aciertos": ac, "tasa": round(ac / n, 4), "intervalo": _wilson(ac, n),
+                "pide": round(sum(1 / f["cuotas"][f["elegido"]] for f in fs) / n, 4),
+                "roiPlano": round(gan / n, 4),
+                "dobleOportunidad": ({"n": len(dc), "aciertos": dca, "tasa": round(dca / len(dc), 4),
+                                      "pide": round(sum((f["mercado"][f["elegido"]] + f["mercado"]["empate"]) / 100
+                                                        for f in dc) / len(dc), 4)} if dc else None)}
+
+    desc = []
+    for f in con:
+        d = min(CLAVES, key=lambda k: f["probabilidades"][k])
+        desc.append((f["resultado"] == d, f["mercado"][d] / 100))
+    motivos: dict[str, int] = {}
+    for f in con:
+        for m in f["alerta"]["motivos"]:
+            motivos[m["codigo"]] = motivos.get(m["codigo"], 0) + 1
+    return {
+        "desde": ALERTA_DESDE, "sobreCasa": ALERTA_SOBRE_CASA,
+        "conAlerta": grupo([f for f in con if f["alerta"]["activa"]]),
+        "sinAlerta": grupo([f for f in con if not f["alerta"]["activa"]]),
+        "porMotivo": motivos,
+        "descarte": ({"n": len(desc), "salio": sum(1 for s, _ in desc if s),
+                      "tasa": round(sum(1 for s, _ in desc if s) / len(desc), 4),
+                      "casaLeDaba": round(sum(p for _, p in desc) / len(desc), 4)} if desc else None),
+        "nota": ("la alerta no cambia el elegido ni ninguna estrategia: se registra por apuesta desde el 10/11/2026 "
+                 "y se mide hacia adelante (docs/revisiones/ESTUDIO_ECHADOS_2026-11.md). Con 100+ partidos con alerta "
+                 "se decide si frena la carga del método"),
+    }
+
+
 def _utc(t) -> datetime | None:
     try:
         d = datetime.fromisoformat(str(t).strip().replace("Z", "+00:00").replace(" ", "T"))
@@ -442,6 +523,8 @@ def simular(apuestas: list[dict]) -> dict:
         "aciertos": sum(1 for f in cerradas if f["resultado"] == f["elegido"]),
         "estrategias": estrategias,
         "porVersion": sorted(por_version.values(), key=lambda x: x["version"]),
+        # en quién desconfiar (10/11/2026): con alerta contra sin alerta, y el descarte
+        "alertaConfianza": resumen_alerta(cerradas),
         # lo más nuevo arriba en la pantalla
         "apuestas": list(reversed(filas)),
     }
@@ -498,6 +581,30 @@ def simulacion() -> dict:
     return out
 
 
+# la burbuja del elegido «al día del partido» no cambia una vez fijada: se
+# calcula UNA vez por proceso y por partido (la simulación se lee seguido)
+_BURBUJA_ELEGIDO: dict[tuple, dict | None] = {}
+
+
+def _burbuja_elegido(fx, elegido: str) -> dict | None:
+    """{signo, partidos, riesgo} de la familia total del elegido, con la misma
+    cuenta que el parte (`parte._reventon_calculado`). None con empate o sin dato."""
+    lado = {"local": "a", "visita": "b"}.get(elegido)
+    if not lado or not fx:
+        return None
+    clave = (fx["id"], lado)
+    if clave not in _BURBUJA_ELEGIDO:
+        try:
+            from backend.analisis.parte import _reventon_calculado
+            r = (_reventon_calculado(dict(fx)) or {}).get(lado) or {}
+            act = r.get("actual") or {}
+            _BURBUJA_ELEGIDO[clave] = {"signo": act.get("signo"), "partidos": act.get("partidos"),
+                                       "riesgo": (r.get("riesgo") or {}).get("nivel")} if act else None
+        except Exception:  # noqa: BLE001 — sin la burbuja la alerta mira solo la casa; no tumba la simulación
+            _BURBUJA_ELEGIDO[clave] = None
+    return _BURBUJA_ELEGIDO[clave]
+
+
 def _simulacion() -> dict:
     """Arma las apuestas desde los partes y la base y las simula."""
     from backend.analisis.parte import _conectar
@@ -510,7 +617,8 @@ def _simulacion() -> dict:
     if ids:
         for r in saddb.query(
                 "sad",
-                "SELECT f.id, f.date, f.status_short, ht.name AS home_name, at.name AS away_name, "
+                "SELECT f.id, f.date, f.status_short, f.home_team_id, f.away_team_id, f.league_id, "
+                "ht.name AS home_name, at.name AS away_name, "
                 "l.name AS liga FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id "
                 "JOIN teams at ON at.id=f.away_team_id LEFT JOIN leagues l ON l.id=f.league_id "
                 f"WHERE f.id IN ({','.join('?' * len(ids))})", tuple(ids)):
@@ -560,6 +668,10 @@ def _simulacion() -> dict:
             fuera("sin las tres cuotas del 1X2 capturadas")
             continue
         momento = f["deposito_previo_en"]
+        mercado_pct = {k: round(m["prob"][k], 1) for k in CLAVES}
+        alerta = None
+        if pitazo >= _utc(ALERTA_DESDE):
+            alerta = alerta_confianza(probs, mercado_pct, _burbuja_elegido(r, _elegido(_normalizar(probs))))
         apuestas.append({
             "fixtureId": fid, "pitazo": pitazo.strftime("%Y-%m-%d %H:%M:%S"), "partido": partido,
             "depositadoEn": momento,
@@ -567,8 +679,9 @@ def _simulacion() -> dict:
             "versionPrompt": f["version"] or parte.get("version") or "",
             "probabilidades": probs,
             "cuotas": {k: round(m["cuota"][k], 3) for k in CLAVES},
-            "mercado": {k: round(m["prob"][k], 1) for k in CLAVES},
+            "mercado": mercado_pct,
             "resultado": reales.get(fid),
+            "alerta": alerta,
         })
     out = simular(apuestas)
     out["excluidos"] = sorted(excluidos, key=lambda x: x["pitazo"], reverse=True)
