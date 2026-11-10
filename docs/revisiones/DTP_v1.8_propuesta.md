@@ -1625,3 +1625,89 @@ dice nada.
   pone quien leyó la crónica, o es «sin fuente».
 - No se ordena la lista de `viasGol` por probabilidad: no hay con qué
   calibrarla todavía (lo da el punto (d).2 cuando junte casos).
+
+### Refuerzo 10/11 de la génesis del gol
+
+- **«Sin crónica» sigue siendo lo normal, y sin buscarla.** 24 lecciones
+  nuevas de 22 partidos dicen «sin crónica de la jugada» (Cerro 1632056,
+  Nacional y Real Potosí 1645538, Inter 1550191, Lorient 1552813, AZ 1552224,
+  Atlético 1570443, PAOK 1593357, Tigres 1551033, León y Chivas 1551037,
+  Orense 1639833, Universitario 1549553, entre otros) y **ninguna cita una
+  página abierta**. La disciplina de no fabricar la jugada se cumplió en todas;
+  el protocolo (b) no existe todavía en el skill y no se aplicó. Varias son de
+  ligas de la tabla (b) con más de 48 horas (Serie A, Bundesliga, Liga MX):
+  es el caso del aviso (d).4.
+- **Lo que la ficha ya pre-etiqueta, (d).3:** autogoles que decidieron la
+  lectura del volumen (Santa Clara 1575542, Lazio 1550193 con el que entró,
+  Jaguares 1549859, Barcelona SC 1639804) y goles de suplentes entrados
+  (los del cambio 12 y la lista de «Lo que acierta»). Saldrían sin juicio.
+- **(c).4, el ejecutor del día:** los seis partidos del cambio 5.(c) son el
+  mismo hueco que Monterrey y Toluca en el estudio.
+
+**En contra 10/11:** ninguna.
+
+**Comprobación.** Se sostiene si los veredictos que faltan siguen trayendo
+el M4 sin jugada en ligas con fuente de la tabla (b) y más de 48 horas. Lo
+tumba si, buscando con la tabla, los cierres no encuentran crónica fuera de los
+15 partidos del estudio: el protocolo no rendiría y quedaría solo la
+categoría «sin fuente».
+
+## Comprobación con los veredictos del 08-09/11
+
+El dossier se cortó a las 02:13 UTC del 10/11 con unos 50 veredictos del
+08-09/11 todavía cerrándose. Cada cambio lleva su línea «Se sostiene si… / Lo
+tumba si…» dentro de su punto; en corto:
+
+| Cambio | Se sostiene si… | Lo tumba si… |
+|---|---|---|
+| 1 | los FAVORABLE fallados son los que concedieron tanto como generaron o remataron de afuera | hay FAVORABLE con mucho más generado que concedido, en el área, cobrados como fallo de mapa |
+| 2 | siguen las ramas con gol por un renglón de la lista no citado, o sin vía dadas NEUTRO | las ramas con la lista entera fallan igual que las recortadas |
+| 3 | la posesión de «igualado o arriba» vuelve a fallar con gol temprano del foco | falla igual sin gol temprano |
+| 4 | la pelota parada del que cede vuelve a quedarse sin córners | los que ceden convierten de pelota parada con pocos córners en varios partidos |
+| 5 | vuelve a patear un suplente o el 9 que entra por el ejecutor | los penales los patea siempre el primero de la base en cancha |
+| 6 | los rehacer vuelven a apartarse del grid ya capturado | los M1 copian el grid y los carriles fallan igual |
+| 7 | hay rojas de piezas del seguro o de la línea sin cargar en el M1 | las rojas son de piezas sin amarillas ni papel en el duelo |
+| 8 | llega un gol a pocos minutos de un cambio atrás con el foco ganando o igualado | los goles tras un rearme salen siempre de otra zona |
+| 9 | los pares nuevos necesitan la reserva para leerse | ninguno la necesita |
+| 10 | otro reasignado marca o asiste desde el puesto de hoy | los reasignados solo aparecen como vulnerabilidad |
+| 11 | la posesión se invierte con rivales de perfiles distintos por sede | las inversiones son de rivales con el mismo perfil en las dos sedes |
+| 12 | marca o asiste otro lateral o defensor entrado | ninguno, y las listas crecen sin acertar más |
+| 13 | un equipo con dos seguidos concediendo penal concede en el tercero | los que vienen de dos seguidos no conceden, en varios equipos |
+| 14 | otro FAVORABLE apoyado en un reconvertido rival no genera | esos FAVORABLE generan más que los demás |
+| Génesis | sigue el M4 sin jugada en ligas con fuente y más de 48 h | buscando con la tabla, no aparece crónica fuera del estudio |
+
+Lo que se mira es el texto de las lecciones nuevas, no una tasa: por el
+sesgo de atribución, un conteo de «se sostiene» no es un acierto del skill.
+
+## Núcleo e historial
+
+`docs/revisiones/NUCLEO_SKILLS_propuesta.md` (03/11) **no se aplica acá**.
+Para cuando se aplique, esto es lo que cada cambio deja en el núcleo (arriba
+del `SKILL.md`, lo que la corrida necesita para analizar) y lo que va al
+historial (`references/HISTORIAL.md`: casos, de dónde salió, conteos):
+
+| Cambio | NÚCLEO (va al módulo, en una o dos frases) | HISTORIAL |
+|---|---|---|
+| 1 | M5: el veredicto de la rama jugada se juzga por lo generado **contra** lo concedido, en el área primero; la referencia de volumen, de la misma sede y perfil, nunca de un partido ni de una racha; los penales al lado del xG. M2: el FAVORABLE apoyado en una zona escribe quién remata en el área | las tablas de casos (13 del 08/11 y los del 10/11), el caso NEC |
+| 2 | M2: la razón de cada rama cita los renglones de `viasGol`; el veredicto con condición lleva su contrario (`siNo`); ceder no es señal en ninguna dirección | los once casos de vía recortada, los ocho de condición, los cuatro de ceder |
+| 3 | M2 posesión: «igualado» y «arriba» aparte cuando el foco puede ponerse arriba temprano; DT nuevo y copa de otra categoría no son referencia | la tabla de ocho partidos |
+| 4 | M2 vías: la pelota parada del que cede va condicional; la media distancia en los dos lados con todos sus rematadores | la tabla de córners |
+| 5 | M2: ningún nombre en el XI y en el banco; el banco sin minuto fijo; la lista de penales con tercer nombre «si entra» y quién patea después de un errado (puede ser el mismo) | los 22 partidos de la lista, los seis de penales del 10/11 |
+| 6 | M1: el sistema es la formación de la ficha y el rol sale de la fila del grid; una coordenada citada existe. Modo `rehacer`: se reescribe todo lo que nombra piezas | los catorce del 08/11 y los cuatro del 10/11 |
+| 7 | M1/M2: la vía de expulsión de los dos lados, con todas las piezas de la línea del duelo y la vuelta de suspensión | Málaga, Frankfurt, River y los tres del 10/11 |
+| 8 | M3: quién queda atrás después de los cambios en todas las ramas; lateral y extremo de la misma banda = costo del carril | los quince del 10/11 |
+| 9 | M4/MECANISMO: qué es una corrección, la reserva del par, `sin mecánica` repetido a la rama donde se dio | los casos por reserva |
+| 10 | M1: el rol reasignado con sus dos caras | Leones del Norte, Peña Sport, Telstar |
+| 11 | M2 posesión: el perfil del rival en su condición de hoy, no el promedio ni la etiqueta del sistema | la tabla de siete partidos, la pregunta de Paderborn |
+| 12 | M2 banco: el lateral o carrilero fresco y, persiguiendo, el defensor que entra a cargar | los seis partidos |
+| 13 | M2 vías del rival: «penal en contra» como vía del equipo tras dos seguidos | La Guaira, Portuguesa, Universitario |
+| 14 | M2: un mismatch contra reconvertido, suplente o línea nueva sostiene un FAVORABLE solo con la vía que lo ataca nombrada | Getafe, Lille–Bodø, Napoli–Lazio |
+| Génesis | M4: la lista cerrada de categorías y las dos marcas; «sin fuente» es categoría; M2: las cinco vías obligatorias y «cada vía nombra zona o intérprete». El protocolo de fuentes por liga, en una referencia aparte que el cierre abre al buscar | el estudio (`DTP_autopsia_gol_estudio.md`) y sus mediciones |
+
+Dos cosas para quien aplique el núcleo:
+- La nota de versión de la v1.8 que se escriba en el encabezado va **entera al
+  historial**; arriba queda la línea «Versión vigente» de la propuesta del
+  núcleo.
+- La tabla de fuentes por liga de la génesis (b) es fechada y se rehace con
+  cada revisión: conviene que viva en `references/` y no en el núcleo, para que
+  la corrida de partes no la cargue (solo la usa el cierre).
