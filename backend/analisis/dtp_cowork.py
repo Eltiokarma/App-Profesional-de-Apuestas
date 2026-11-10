@@ -1555,6 +1555,35 @@ def sin_en_banco(texto: str) -> str:
     return _BANCO_LISTA.sub(" ", _EN_BANCO.sub(" ", texto or ""))
 
 
+# Las tres formas en que el M2 pone a alguien en el banco además de «X en el
+# banco» (_EN_BANCO): la lista tras los dos puntos, con iniciales y paréntesis
+# («banco: Moreira (5 goles) y R. Torales (3)»), el paréntesis («el banco
+# (Cherki, Ndiaye)») y «el banco de García».
+_BANCO_DOS_PUNTOS = re.compile(r"\b(?i:banco|banca|suplentes?|recambios?)\b[^:.;()]{0,40}:\s*"
+                               r"((?:(?<![\wÀ-ÿ])[A-ZÁÉÍÓÚÑÜ]\.|[^.;])+)")
+_BANCO_PARENTESIS = re.compile(r"\b(?i:banco|banca|suplentes?|recambios?)\b[^().;:]{0,30}\(([^)]*)\)")
+_BANCO_DE = re.compile(r"\b(?i:banco) de ((?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)")
+_CONDICIONAL = re.compile(r"\bsi\b", re.I)
+
+
+def nombrados_de_banco(texto: str) -> list[str]:
+    """Los trozos del texto que ponen a alguien EN EL BANCO, uno por nombre
+    («Gomis (4 g y 3 a)», «R. Torales (3) en todas las ramas»). Sin los
+    condicionales («Nkunku si no arranca», «Ocampos si arranca en el banco»:
+    el texto no afirma dónde está) ni el que sale («entra X por Y»). Quién es
+    cada trozo lo decide `identidad.menciona` (incidencia 1225: Leipzig–City
+    nombraba «banco ofensivo: Ndiaye, Anderson, O'Reilly», titulares los tres)."""
+    texto = sin_salientes(texto or "")
+    trozos = [m.group(1) for rx in (_BANCO_DOS_PUNTOS, _BANCO_PARENTESIS, _BANCO_DE) for m in rx.finditer(texto)]
+    trozos += [m.group(0) for m in _EN_BANCO.finditer(texto)]
+    out = []
+    for t in trozos:
+        for item in re.split(r",|\s+y\s+|\s+e\s+", t):
+            if item.strip() and not _CONDICIONAL.search(item):
+                out.append(item.strip())
+    return out
+
+
 def sin_ausentes(texto: str) -> str:
     """Lo que el texto dice que NO está no es en quien se apoya: «Chuky San
     José y Reis; sin Lynen, depende de que un lateral se quede» marcaba el
