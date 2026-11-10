@@ -20,7 +20,7 @@ os.environ.setdefault("SAD_SIN_HILOS", "1")
 
 fallos = 0
 SAN, VAS, PAL, CAR, LGU, ATL = 128, 133, 121, 2810, 2813, 1062
-BRA, VEN, COPA = 71, 281, 73
+BRA, VEN, COPA = 71, 299, 73   # 299 = Venezuela (281 es la Liga 1 de Perú, con regla desde la 1067)
 
 
 def check(nombre, cond, detalle=""):
@@ -479,6 +479,58 @@ check("UEFA: la fase liga y la eliminatoria hasta cuartos cuentan juntas; semis 
       == {""} and sanciones._fase("Semi-finals", 2) == sanciones._fase("Final", 2) == "semis")
 check("fuera de la UEFA, «1st»/«2nd» siguen separando torneos cortos",
       sanciones._fase("Apertura - 3") == "apertura" and sanciones._fase("2nd Phase - 1", 128) == "2nd")
+
+# 1067 (10/11/2026): la UEFA de punta a punta con la base. Las amarillas de la
+# previa NO cuentan (P. Previa: 1 en la previa + 3 en la fase liga = 3, no
+# suspende) y la 4.ª de la fase liga sí (P. Cuarta)
+_UE = 9001
+con.executemany("INSERT INTO fixtures VALUES (?,?,?,'',?,2026,?,?,?)", [
+    (700, "2026-08-05 19:00:00", "FT", 2, "3rd Qualifying Round", _UE, 9002),
+    (701, "2026-08-20 19:00:00", "FT", 2, "Play-offs", 9003, _UE),
+    (702, "2026-09-16 19:00:00", "FT", 2, "League Stage - 1", _UE, 9004),
+    (703, "2026-09-30 19:00:00", "FT", 2, "League Stage - 2", 9005, _UE),
+    (704, "2026-10-21 19:00:00", "FT", 2, "League Stage - 3", _UE, 9006),
+    (706, "2026-11-04 19:00:00", "FT", 2, "League Stage - 4", 9007, _UE),
+    (707, "2026-11-25 19:00:00", "NS", 2, "League Stage - 5", _UE, 9008)])
+con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                "VALUES (?, ?, 'Card', 'Yellow Card', ?, ?, ?)",
+                [(700, 30, _UE, "P. Previa", 501), (703, 30, _UE, "P. Previa", 501), (704, 30, _UE, "P. Previa", 501),
+                 (706, 30, _UE, "P. Previa", 501)]
+                + [(f, 50, _UE, "P. Cuarta", 502) for f in (702, 703, 704, 706)])
+con.commit()
+_ue = sanciones.de_fixture(707)["a"]
+_ues = {x["jugadorId"] for x in _ue["sancionados"]}
+_uea = {a["jugadorId"]: a["amarillas"] for a in _ue["amarillas"]}
+check("1067 UEFA: la 4.ª amarilla de la fase liga suspende", 502 in _ues and _uea.get(502) == 4, _ue)
+check("1067 UEFA: la amarilla de la previa no cuenta (3 de la fase liga no suspenden)",
+      501 not in _ues and _uea.get(501) == 3, _ue)
+
+# 1067: Liga 1 Perú, cada 5 POR ETAPA (art. 185.1 y 185.2). O. Núñez (1549539)
+# con la 5.ª del Clausura suspende; con 3 del Apertura + 2 del Clausura, no
+_PE = 9101
+con.executemany("INSERT INTO fixtures VALUES (?,?,?,'',?,2026,?,?,?)",
+                [(720 + i, f"2026-04-{10 + i:02d} 20:00:00", "FT", 281, f"Apertura - {i}", _PE, 9200 + i)
+                 for i in (1, 2, 3)]
+                + [(730 + i, f"2026-08-{10 + i:02d} 20:00:00", "FT", 281, f"Clausura - {i}", _PE, 9210 + i)
+                   for i in range(1, 6)]
+                + [(736, "2026-08-20 20:00:00", "NS", 281, "Clausura - 6", _PE, 9216)])
+con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador, jugador_id) "
+                "VALUES (?, ?, 'Card', 'Yellow Card', ?, ?, ?)",
+                [(730 + i, 40, _PE, "O. Núñez", 601) for i in range(1, 6)]
+                + [(720 + i, 60, _PE, "Por Etapa", 602) for i in (1, 2, 3)]
+                + [(734, 60, _PE, "Por Etapa", 602), (735, 60, _PE, "Por Etapa", 602)])
+con.commit()
+_pe = sanciones.de_fixture(736)["a"]
+_pes = {x["jugadorId"] for x in _pe["sancionados"]}
+check("1067 Perú: la 5.ª amarilla del Clausura suspende (cada 5, art. 185.1)", 601 in _pes and _pe["regla"], _pe)
+check("1067 Perú: las del Apertura no viajan al Clausura (art. 185.2): 3 + 2 no suspenden", 602 not in _pes, _pe)
+
+# 1067: Eredivisie, KNVB art. 29 lid 2 (julio 2026): la 5.ª, la 10.ª y desde la 11.ª cada una
+check("1067 Eredivisie: suspenden la 5.ª, 10.ª, 11.ª y 12.ª; no la 4.ª, 6.ª, 7.ª ni 9.ª",
+      [sanciones.suspende(88, n, 2026) for n in (5, 10, 11, 12)] == [True] * 4
+      and not any(sanciones.suspende(88, n, 2026) for n in (4, 6, 7, 9)))
+check("1067: Ligue 1, Bélgica, Grecia, Süper Lig, Colombia y Ecuador siguen sin regla (no confirmadas)",
+      not any(l in sanciones.UMBRALES for l in (61, 144, 197, 203, 239, 242)))
 
 # 1332 (08/11/2026, Santa Fe–Pasto): el 1X2 del mercado salta 25+ puntos en 24 h y la base no lo ve
 def _filas1332(*capturas):
