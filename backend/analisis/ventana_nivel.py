@@ -26,6 +26,8 @@ Solo lectura, una consulta por equipo.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 from backend import db as saddb
 
 VENTANA = 20                 # la del motor (MOTOR_SAD_EXTRACCION.md §2)
@@ -135,6 +137,7 @@ def texto(c: dict | None) -> str:
 
 VENTANA_CORTA = 10      # con menos partidos en la ventana, el nivel casi no tiene historia
 VENTANA_VIEJA_DIAS = 365   # con el último partido de hace más, el nivel es de otra época
+SEDE_RECIENTE_DIAS = 365   # la sede habitual del local sale de sus partidos de local de este último año (1360)
 
 
 def _sede_norm(nombre) -> str:
@@ -197,16 +200,31 @@ def cancha_neutral(home_id: int, sede: str | None, antes: str | None, fixture_id
     en la ventana es su casa (renombrada o la de esta temporada), no neutral."""
     if not sede and fixture_id is None:
         return False
-    params: list = [home_id]
-    cond = ""
-    if antes:
-        cond = " AND date < ?"
-        params.append(str(antes).replace("T", " ").rstrip("Z")[:19])
     try:
-        filas = saddb.query("sad", f"SELECT * FROM fixtures WHERE home_team_id=?"
-                                   f"{cond} ORDER BY date DESC LIMIT 40", tuple(params))
         hoy = (saddb.query_one("sad", "SELECT * FROM fixtures WHERE id=?", (fixture_id,))
                if fixture_id is not None else None)
+        if not antes and hoy is not None and "date" in hoy.keys():
+            antes = hoy["date"]
+        params: list = [home_id]
+        cond = ""
+        if antes:
+            corte = str(antes).replace("T", " ").rstrip("Z")[:19]
+            cond = " AND date < ? AND date >= ?"
+            # SIN HISTORIA DE SEDE RECIENTE NO SE AFIRMA NEUTRAL (10/11/2026,
+            # incidencia 1360, reaparición de la 1207 en copa): Amorebieta–
+            # Logroñés en Urritxe, Copa del Rey R128. Su última temporada de
+            # local en la base es la Segunda 2023-24, jugada en Lezama (Urritxe
+            # no cumplía); desde que bajó a una categoría que no ingestamos no
+            # tiene partidos de local con sede. La «sede habitual» de hace dos
+            # años no es la de hoy: solo cuentan los partidos de local del
+            # último año (`SEDE_RECIENTE_DIAS`) y con menos de 5 no se afirma.
+            try:
+                desde = (datetime.fromisoformat(corte[:10]) - timedelta(days=SEDE_RECIENTE_DIAS)).date().isoformat()
+            except ValueError:
+                desde = "0000"
+            params += [corte, desde]
+        filas = saddb.query("sad", f"SELECT * FROM fixtures WHERE home_team_id=?"
+                                   f"{cond} ORDER BY date DESC LIMIT 40", tuple(params))
     except Exception:  # noqa: BLE001 — base sin la sede: no se afirma cancha neutral
         return False
 

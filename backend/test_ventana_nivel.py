@@ -202,6 +202,35 @@ check("1165: misma_sede — recortado y ampliado sí; dos estadios distintos o s
       and not vn.misma_sede("Estadio Municipal", "Estadio Nacional")
       and not vn.misma_sede("PSC Arena", "Stadio Benito Stirpe"))
 
+# 1360 (10/11/2026, reaparición de la 1207 en copa): Amorebieta–Logroñés en
+# Urritxe, Copa del Rey R128. Su historia de local en la base es la Segunda
+# 2023-24 en Lezama; después bajó a una categoría no ingestada (solo un
+# amistoso en Urritxe en 2024 y uno sin sede en 2026). La sede «habitual» de
+# hace dos años no es la de hoy: sin 5 partidos de local del último año, no
+# se afirma neutral.
+_AMO = 9380
+_c = sqlite3.connect(os.path.join(_TMP, "sad.db"))
+for _i in range(18):
+    _c.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, venue_id, "
+               "venue_name) VALUES (?,?,?,?,?,?,?,?)",
+               (90700 + _i, f"2023-{9 + _i % 4:02d}-{1 + _i:02d} 18:00:00", "FT", 141, _AMO, 1, 700,
+                "Instalaciones de Lezama Campo 2"))
+_c.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, venue_id, venue_name) "
+           "VALUES (90720, '2024-08-09 18:00:00', 'FT', 667, ?, 1, 701, 'Campo Municipal de Urritxe')", (_AMO,))
+_c.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, venue_id, venue_name) "
+           "VALUES (90721, '2026-08-08 18:00:00', 'FT', 667, ?, 1, NULL, '')", (_AMO,))
+_c.execute("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, venue_id, venue_name) "
+           "VALUES (90722, '2026-11-10 19:00:00', 'NS', 143, ?, 1, 701, 'Campo Municipal de Urritxe')", (_AMO,))
+_c.commit()
+_c.close()
+check("1360: Amorebieta en Urritxe (copa) con la sede «habitual» de hace dos años en la base no es neutral",
+      not vn.cancha_neutral(_AMO, "Campo Municipal de Urritxe", "2026-11-10T19:00:00", fixture_id=90722))
+check("1360: …tampoco sin la fecha (la toma del fixture) ni solo por el nombre",
+      not vn.cancha_neutral(_AMO, "Campo Municipal de Urritxe", None, fixture_id=90722)
+      and not vn.cancha_neutral(_AMO, "Campo Municipal de Urritxe", "2026-11-10T19:00:00"))
+check("1360: la misma historia vista en 2024 (sede del último año) sí podía dar neutral en copa",
+      vn.cancha_neutral(_AMO, "Estadio Hipotético", "2024-06-01T18:00:00"))
+
 
 # 1251 (06/11/2026): Coventry, recién ascendido, con su Championship de abril-mayo
 # en la ventana del nivel; la liga de hoy es la del partido analizado (Premier)
