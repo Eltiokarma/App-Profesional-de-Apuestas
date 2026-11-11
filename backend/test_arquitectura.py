@@ -119,7 +119,11 @@ def existe(p: str) -> bool:
 
 
 inventadas = []
-for rel in (os.path.join(".claude", "skills", "corrida-sad", "SKILL.md"), os.path.join("docs", "COWORK.md"),
+# El skill de la corrida va partido en un archivo por modo (1377): se revisan TODOS.
+_corrida = os.path.join(".claude", "skills", "corrida-sad")
+_corrida_md = sorted(os.path.relpath(os.path.join(d, f), RAIZ)
+                     for d, _, fs in os.walk(os.path.join(RAIZ, _corrida)) for f in fs if f.endswith(".md"))
+for rel in (*_corrida_md, os.path.join("docs", "COWORK.md"),
             os.path.join("docs", "skills", "sad-analysis", "SKILL.md")):
     t = leer(rel)
     t = re.sub(r"\$(B|SAD_API_BASE)/", " /", t)
@@ -132,6 +136,26 @@ for rel in (os.path.join(".claude", "skills", "corrida-sad", "SKILL.md"), os.pat
         if not existe(m.group(1)):
             inventadas.append(f"{rel}: {m.group(1)}")
 check("skills y prompt: cada ruta que citan existe en backend/app.py", not inventadas, sorted(set(inventadas)))
+
+# ── 5-ter · LA CORRIDA ES AHORRADORA (incidencia 1377, usuario 11/11/2026) ──
+# Una corrida vacía cargaba el SKILL.md entero (5 modos + «No se reporta»,
+# ~60 KB). El índice queda chico, cada modo en su archivo y la lista aparte:
+# si alguien vuelve a pegar un modo en el índice, esto lo frena.
+_indice = leer(os.path.join(_corrida, "SKILL.md"))
+_modos = ("partes", "rehacer", "veredictos", "reventones", "mantenimiento")
+_faltan_modos = [m for m in _modos if not os.path.exists(os.path.join(RAIZ, _corrida, "modos", f"{m}.md"))
+                 or f"modos/{m}.md" not in _indice and "modos/<modo>.md" not in _indice]
+check("corrida-sad: un archivo por modo en modos/ y el índice los nombra", not _faltan_modos, _faltan_modos)
+check("corrida-sad: el índice SKILL.md es chico (≤ 9.000 caracteres) y no trae los modos ni «No se reporta»",
+      len(_indice) <= 9000 and "## Modo `" not in _indice and "desde la pasada" not in _indice, len(_indice))
+# Y CLAUDE.md se carga en CADA paso de CADA agente: el resumen operativo queda
+# ahí y la regla entera, con su historia, en docs/REGLAS.md (1377: 49 KB → 18 KB).
+_claude = leer("CLAUDE.md")
+check("CLAUDE.md es el resumen (≤ 24.000 caracteres) y remite a docs/REGLAS.md, que existe",
+      len(_claude) <= 24000 and "docs/REGLAS.md" in _claude and os.path.exists(os.path.join(RAIZ, "docs", "REGLAS.md")),
+      len(_claude))
+check("corrida-sad: partes y veredictos terminan en una línea con la lista vacía (como rehacer)",
+      all(x in _indice for x in ("veredictos/pendientes", "porHacer", "pendientes` vacío")))
 
 # ── 5-bis · LOS DÍAS DE DESCANSO SE CUENTAN EN UN SOLO LUGAR ──────────────
 # Incidencias 769 y 870: el calendario restaba días del calendario y el F2 del
