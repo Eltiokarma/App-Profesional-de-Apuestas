@@ -4707,6 +4707,21 @@ def main():
                      "WHERE fixture_id=990480 AND formacion='4-3-1-2'")
     check("llegó a 45 min, hubo disparo (15:37) y el parte no se re-depositó: `sinRehacer`",
           _mom(_al, _fx480, "2026-10-25 15:13:00")[0].get("momento") == "sinRehacer")
+    # 1374 (10/11/2026, Anaitasuna–Alavés): once a las 12:42 de Lima, pitazo 13:00; el
+    # disparo de las 12:52 deja 3 min hasta la hora tope: no es útil, es `tardio`
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (990490, '2026-11-10 18:00:00', 'FT', 'Match Finished', "
+                     "39, 2026, 990481, 990482)")
+        _gal(_con, 990490, _once("4-4-2", 900), "2026-11-10 17:42:00")
+    _m1374 = _mom(_al, {"id": 990490, "date": "2026-11-10 18:00:00"}, "2026-11-10 15:02:00")[0]
+    check("1374: el disparo de :52 a 3 min de la hora tope no es útil: `tardio`, no `sinRehacer`",
+          _m1374.get("momento") == "tardio" and "ningún disparo" in _m1374["detalle"], _m1374)
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-11-10 17:30:00', "
+                     "primera_en='2026-11-10 17:30:00' WHERE fixture_id=990490")
+    check("1374: con el once a las 12:30 el disparo de :42 deja 13 min de trabajo: `sinRehacer`",
+          _mom(_al, {"id": 990490, "date": "2026-11-10 18:00:00"}, "2026-11-10 15:02:00")[0].get("momento") == "sinRehacer")
     check("ya estaba en el último depósito y la apertura lo contradice: `conocido`",
           _mom(_al, _fx480, "2026-10-25 15:45:00")[0].get("momento") == "conocido")
     # 848: la API corrige la formación DESPUÉS del pitazo: no es «conocido»
