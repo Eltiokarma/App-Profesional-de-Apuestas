@@ -235,6 +235,21 @@ def main():
     check("y no el de la fila, que ya trae el resultado (en la demo difieren en la mayoría)",
           movidos * 2 > total, (movidos, total))
 
+    # 996: el contramano hecho con copa ante un rival fuera del padrón se separa
+    racha = [{"condicion": "Visitante", "ligaId": 90, "rivalId": 7, "fecha": "2026-10-01"},
+             {"condicion": "Visitante", "ligaId": 88, "rivalId": 8, "fecha": "2026-10-08"},
+             {"condicion": "Local", "ligaId": 88, "rivalId": 9, "fecha": "2026-10-15"}]
+    copa, fuera = (lambda l: l == 90), (lambda r, f: r == 7)
+    check("996: copa en la condición contraria ante un rival fuera del padrón → contramanoCopa",
+          bt.contramano_con_copa_ajena(racha, "Local", copa, fuera))
+    check("996: la copa jugada en la MISMA condición de hoy no fabrica contramano",
+          not bt.contramano_con_copa_ajena(racha, "Visitante", copa, fuera))
+    check("996: copa contra un rival CON liga en la base no cuenta",
+          not bt.contramano_con_copa_ajena(racha, "Local", copa, lambda r, f: False))
+    check("996: cada observación trae contramanoCopa (solo con contramano) y el resumen lo compara",
+          all(("contramanoCopa" in o) and (o["contramano"] or not o["contramanoCopa"]) for o in obs)
+          and set(r["contramano"]) >= {"conCopaAjena", "normal", "sinContramano", "difCopaMenosNormal"}, r.get("contramano"))
+
     print(f"\n{fallos} FALLAS" if fallos else "\nTODO OK")
     return 1 if fallos else 0
 
