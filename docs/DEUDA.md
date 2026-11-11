@@ -795,22 +795,21 @@ conversación se pierde en la siguiente.
    la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
    herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
    por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
-   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (10/11 03:17 de Lima: rotadas las cuatro
-   —partes 545 mil, veredictos 538 mil, mantenimiento 406 mil y rehacer 578 mil
-   (esta última creada el 09/11 a las 20:16 y llena en siete horas)— y la de
-   rotar; las reemplazadas quedan desactivadas):
-   - partes (v8): `session_01WwsfbWAuchy22T6RKW9mrR` · 04:47
-     `trig_019MgxJuUsTQUdcW171dXGfF`, 09:52 `trig_01Ln46Gpaod25PWrSirB4LgU`,
-     14:56 `trig_019uyZVDfyw3aTECasmg6KJJ`;
-   - veredictos (v9): `session_01WwsfbT4oRto5vLNWrExUVj` · 20:12
-     `trig_012abvn3yh93epStF4KeLSiJ`;
-   - mantenimiento (v10): `session_01WwsfbSwWt8EtudeFeVCFxv` · 12:23
-     `trig_01N5oTH5BkjmWzB6EYxHZutA`, 17:41 `trig_01QXq8N9tcKLkKNFgv8CKX5M`,
-     21:47 `trig_01Vhfn3vZAiTUk5ymtbewqZK`;
-   - rehacer (v12): `session_01WwsfbVieJrnoTR4LviRH3x` · :02
-     `trig_01JFqTRJcnhVcAZYEJZgqBo4`, :12 `trig_014kCpq2M4dZHf4TSEtUFJqa`,
-     :22 `trig_01Y5foB3Fe6cEctAj2Qqmtbm`, :42 `trig_01KvCbKCs11oYF4CsnqCowZG`,
-     :52 `trig_01QU4EEAcPSP1Sp9nRj8JJLf` (desde el 10/11, incidencia 1304).
+   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (11/11 03:17 de Lima: rotadas las cuatro
+   —partes 382 mil, veredictos 156 mil, mantenimiento 468 mil y rehacer 184 mil— y
+   la de rotar no, porque sigue chica; las reemplazadas del 10/11 quedan desactivadas):
+   - partes (v9): `session_01WwsfbUFi3XGb7JUtc3jgwX` · 04:47
+     `trig_01PMPgD5146AvuzieAotW8yr`, 09:52 `trig_01SBtwjRjvvGSgKuPRUcFDhV`,
+     14:56 `trig_01VzAECmk7JYNkenBxd6VWsZ`;
+   - veredictos (v10): `session_01WwsfbT91C9SS3VFsvTUcD8` · 20:12
+     `trig_01QdnsjbsdXxnAsHNcMoLwHx`;
+   - mantenimiento (v11): `session_01WwsfbViRAUuwqE85H1NVKb` · 12:23
+     `trig_01WBArqujWe8XaFutD5SsYj7`, 17:41 `trig_01U2djPz6KtraZgngNL78ZSH`,
+     21:47 `trig_01Ei3G3JC12XBLNMTrgbsnNP`;
+   - rehacer (v13): `session_01WwsfbSQaXdryaCPBHMTCQJ` · :02
+     `trig_0121YvPAWXBpx1d7YB85R4iC`, :12 `trig_01L3SuYWKYAtMnUASrajPHVS`,
+     :22 `trig_01UZ4mE1gYTD6advakVophaD`, :42 `trig_01BXHDiM16SQqGWc5TnW6NJo`,
+     :52 `trig_01WQj1yM7GMSesbxnDnX7w1H` (:52 desde el 10/11, incidencia 1304).
    Medido el 03/11 con las sesiones nuevas: partes 117 USD (8 partes en el tramo
    3), veredictos 50 USD (18 veredictos), mantenimiento 29 USD por pasada,
    rehacer 41 USD en el día (hubo rehaceres reales). Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
