@@ -4670,6 +4670,11 @@ REHACER_GRILLAS = (("2026-10-31 01:21:00", (2, 22, 42), 5),
 REHACER_DISPAROS_MIN, REHACER_PISO_ANTES = (7, 37), 15
 REHACER_HORAS_LIMA = (5, 23)
 REHACER_SOLO_HORAS = {12: (10, 23)}   # minutos que no corren todo el día
+# 1374 (10/11/2026, Anaitasuna–Alavés 1644336): el once llegó a las 12:42 de Lima,
+# el disparo de las 12:52 lo vio con 3 min hasta la hora tope (pitazo − 5) y el
+# momento salía `sinRehacer`. Un disparo es útil si deja trabajo por delante: los
+# mismos 10 minutos que el skill corrida-sad le da a un rehacer (modo rehacer, paso 3).
+REHACER_TRABAJO_MIN = 10
 
 
 def grilla_rehacer(t: datetime | None) -> tuple[tuple[int, ...], int]:
@@ -4857,12 +4862,13 @@ def _momento_de(filas, pitazo, dep) -> dict | None:
         momento, texto = "tardio", (f"la versión final del once llegó a las {hora}, {antes} min antes del pitazo, "
                                     f"después del último rehacer posible (pitazo − {piso} min): "
                                     "apertura caída por un once tardío, no un aviso ignorado")
-    elif not disparo_entre(t, limite):
+    elif not disparo_entre(t, limite - timedelta(minutes=REHACER_TRABAJO_MIN)):
         # incidencia 732: el once de las 19:17 con pitazo 19:45 llegó después del
         # disparo de las 19:07 y el de las 19:37 ya cae a 8 min; nadie podía rehacer
         momento, texto = "tardio", (f"la versión final del once llegó a las {hora}, {antes} min antes del pitazo, "
                                     "y ningún disparo de la rutina de rehacer cayó entre esa "
-                                    f"hora y el pitazo − {piso} min: once tardío para la grilla, "
+                                    f"hora y el pitazo − {piso + REHACER_TRABAJO_MIN} min (la hora tope menos "
+                                    f"{REHACER_TRABAJO_MIN} de trabajo): once tardío para la grilla, "
                                     "no un aviso ignorado")
     else:
         momento, texto = "sinRehacer", (f"el once final llegó a las {hora}, {antes} min antes del pitazo, y el "
