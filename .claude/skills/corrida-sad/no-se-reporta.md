@@ -96,7 +96,8 @@
   su `dato`); el titular de la temporada que no fue titular en los últimos 10
   onces y no está en la F1 (1253, 809: el probable de la prensa lo suma con su
   `jugadorId`); y una liga sin regla de amarillas en `sanciones.UMBRALES`
-  (1254: espera la decisión de la 1067; sumá el caso a esa). Y desde la
+  (1254, 1373: decidido con la #1067, PR #475 —una competición entra a
+  `UMBRALES` solo con su reglamento—; la prensa manda). Y desde la
   pasada del 06/11 (tarde): el rehacer que no rehízo el EFE, el B6 del arquero
   nuevo ni la tabla F1 (1257, 1265: el paso 4 del modo `rehacer` los deja como
   estaban; el veredicto lo lee); el once que la API publica a minutos del
@@ -168,4 +169,12 @@
   de un titular del once oficial ya no va a la #1068: desde el 10/11 la F1 lo
   suma como `delOnceOficial` (PR #487); en un parte depositado ANTES del once
   sigue sonando hasta el rehacer (por diseño), pero si suena en uno depositado
-  con el once ya capturado, es código otra vez.
+  con el once ya capturado, es código otra vez. Y desde la pasada del 11/11
+  (mediodía): la apertura del DTP sin XI que un segundo depósito «sin dato:
+  no hay once» no reemplaza (1365, 617/581: solo la pisa UNA vez una apertura
+  CON XI, decisión del usuario del 25/10, PR #236); el reventón del veredicto
+  que se cobra sobre la familia TOTAL aunque la de la condición haya cortado
+  (1375: manda la total, REVENTON §13; la de la condición viaja como dato);
+  y el partido de un homónimo de otro país en la base de un equipo de interés
+  (1371, 1378: `backend/partido_ajeno.py` ya lo saca de la historia, el nivel y
+  el calendario; el escaneo lo marca a propósito).
