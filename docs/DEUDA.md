@@ -822,6 +822,37 @@ conversación se pierde en la siguiente.
    aprobar todavía: separar el núcleo de cada skill de su historial (el TDE
    lleva 24 mil tokens de registro de cambios) y traer los insumos de un parte
    en un solo paso.
+   **Rutinas ahorradoras** (11/11/2026, incidencia 1377, usuario: «todos los
+   skills o rutinas que desplegamos deben ser ahorradores sin afectar el
+   resultado»): el skill `corrida-sad` quedó como índice con la salida en una
+   línea por modo (PR #496) y `CLAUDE.md` bajó de 49 a 18 KB (la regla entera,
+   en `docs/REGLAS.md`). Las tres de mantenimiento ya leen el índice y
+   `modos/mantenimiento.md` (editadas desde su sesión el 11/11). Las de partes,
+   veredictos y rehacer solo se editan desde SU conversación: con el texto
+   viejo igual salen baratas (cargan el índice de 6 KB, que manda la primera
+   llamada antes de seguir), pero el git pull y el skill se cargan antes de
+   esa llamada. Texto propuesto, para pegar en la conversación de cada una (y
+   la rotación lo copia a la generación siguiente):
+   - **partes** (tramo N, `horas` = 7 · 6 · 14): «Nueva corrida SAD de partes
+     (tramo N). PASO 0, antes de cualquier otra cosa y sin git ni leer
+     archivos: `curl -sS -H "Authorization: Bearer $SAD_TOKEN_COWORK"
+     "$SAD_API_BASE/analisis/cowork/agenda?desdeAhora=true&horas=H&limite=30"`
+     (nunca imprimas las credenciales; si falta alguna, terminá diciendo
+     cuál). Si `porHacer` viene vacío: UNA línea («Nada que hacer en partes a
+     las HH:MM de Lima»), avisala al celular y terminá, sin git ni skill. Lo
+     de corridas anteriores en esta conversación NO cuenta como dato. Solo con
+     trabajo: `git checkout main && git pull origin main`, leé
+     `.claude/skills/corrida-sad/SKILL.md` y `modos/partes.md` y seguí ese
+     modo entero (lo que trajo el paso 0 no se vuelve a pedir). No commitees
+     ni toques el código. Esta sesión es SOLO para las rutinas de partes.
+     Terminá con las tres líneas del skill.»
+   - **veredictos**: el mismo molde con
+     `veredictos/pendientes?limite=45`, «Sin veredictos pendientes a las HH:MM
+     de Lima» y `modos/veredictos.md` (no levantes cuarentenas, no abras
+     revisiones, no commitees).
+   - **rehacer**: el texto vigente, cambiando «invocá el skill `corrida-sad` …
+     y seguí la sección «Modo `rehacer`» desde el paso 2» por «leé
+     `.claude/skills/corrida-sad/modos/rehacer.md` y seguilo desde el paso 2».
 
 21. **Pendientes al cerrar la conversación del 03/11/2026** (se retoman en
    una conversación nueva: esta llegó a 545 mil tokens y cada paso la releía).
