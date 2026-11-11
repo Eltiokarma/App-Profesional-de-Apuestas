@@ -243,6 +243,7 @@ Tres lugares donde vive una guardia:
   - **API-Football:** el reparto del en vivo en el tiempo y el latido `presupuestoApi`.
   - **Consultas:** la guardia de peso del escaneo (`test_sanciones`: las consultas no crecen con los partidos y las sanciones se calculan una vez).
   - **Sesiones:** el recordatorio de tamaño de las sesiones fijas.
+  - **Contexto de cada corrida** (1377, 11/11/2026: una corrida de partes con la agenda vacía cargó ~50 mil tokens de skill y `CLAUDE.md`): la primera llamada de cada modo decide si hay trabajo, el skill `corrida-sad` es un índice con un archivo por modo y `CLAUDE.md` un resumen (la regla entera en `docs/REGLAS.md`). Lo cuida `test_arquitectura` (5-ter: tamaño del índice y de `CLAUDE.md`, un archivo por modo).
 - **Si vuelve:** una consulta dentro de un bucle sobre partidos es un N+1: va en una sola consulta.
 
 ### 13. La métrica contaminada
