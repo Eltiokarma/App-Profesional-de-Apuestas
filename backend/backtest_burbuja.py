@@ -51,6 +51,45 @@ FAMILIAS = ("total", "local", "visita")
 MIN_PREFIJO = 10          # filas previas mínimas para evaluar una burbuja
 
 
+# ── CONTRAMANO HECHO CON COPA CONTRA AMATEURS (11/11/2026, incidencia 996) ───
+# Cambuur llegó con la racha total hecha de visita con dos victorias de copa
+# ante Kloetinge y Koninklijke HFC (amateurs): +1 de contramano y riesgo muy
+# alto. Decisión del usuario (01/11, aprobada el 11/11): MEDIR antes de tocar
+# los puntos. `contramanoCopa` marca el contramano cuyos partidos de la otra
+# condición incluyen uno de copa contra un rival «fuera del padrón» (sin liga
+# en la base: `escala.base_de`); `resumir` compara su tasa de reventón con la
+# del contramano normal. Si no se distingue, el contramano se queda como está.
+_FUERA_CACHE: dict[tuple[int, str], bool] = {}
+
+
+def _rival_fuera_del_padron(rival_id: int, fecha: str) -> bool:
+    k = (rival_id, str(fecha)[:7])
+    if k not in _FUERA_CACHE:
+        try:
+            from backend.analisis import escala
+            base = escala.base_de(rival_id, str(fecha))
+            _FUERA_CACHE[k] = bool(base) and base.get("categoria") == "fuera del padrón"
+        except Exception:  # noqa: BLE001 — sin la base no se afirma que el rival sea de fuera
+            _FUERA_CACHE[k] = False
+    return _FUERA_CACHE[k]
+
+
+def _es_copa(liga_id) -> bool:
+    try:
+        from backend.analisis import escala
+        return escala.es_copa(liga_id)
+    except Exception:  # noqa: BLE001 — sin metadatos de la liga no se la llama copa
+        return False
+
+
+def contramano_con_copa_ajena(racha: list[dict], condicion: str, es_copa=_es_copa,
+                              fuera=_rival_fuera_del_padron) -> bool:
+    """¿Algún partido de la racha jugado en la condición CONTRARIA a la de hoy fue
+    de copa contra un rival fuera del padrón? (el que fabrica el contramano, 996)"""
+    return any(f["condicion"] != condicion and es_copa(f.get("ligaId")) and fuera(f.get("rivalId"), f.get("fecha"))
+               for f in racha)
+
+
 def padron() -> dict[int, str]:
     """Las ligas importantes con su nombre: el padrón de las cuotas en vivo,
     la ÚNICA lista (dos listas de «ligas importantes» se separan solas)."""
@@ -169,8 +208,10 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
             nv_eq = _nivel_a_fecha(niveles, fila["fecha"])
             g_fav = (None if nv_eq is None else
                      (nv_eq - nv_rival) if act["signo"] == "+" else (nv_rival - nv_eq))
+            contramano = bool(racha) and contra * 3 >= 2 * len(racha)
             obs.append({
-                "contramano": bool(racha) and contra * 3 >= 2 * len(racha),
+                "contramano": contramano,
+                "contramanoCopa": contramano and contramano_con_copa_ajena(racha, fila["condicion"]),
                 "gFavor": None if g_fav is None else round(g_fav, 3),
                 "equipoId": team_id, "fixtureId": fila["fixtureId"], "fecha": fila["fecha"], "ligaId": fila["ligaId"],
                 "rivalId": fila["rivalId"],
@@ -341,11 +382,24 @@ def resumir(obs: list[dict], horizonte: int, nombres: dict[int, str] | None = No
                        "≥6": _tasa([o for o in con_base if o["n"] >= 6])},
         "porLiga": _por_liga(con_base, nombres or {}),
         "franjaAlta": _franja_alta(con_base),
+        # 996: ¿el contramano fabricado con copa ante rivales fuera del padrón
+        # revienta distinto del contramano normal? Si no, los puntos no se tocan.
+        "contramano": _contramano(con_base),
         "movimiento": _movimiento(con_base),
         # la misma guía para las K de la condición (local · visita): la espina
         # puede leerse con la burbuja de la condición en que juega hoy
         "movimientoCondicion": {f: _movimiento(con_base, f) for f in ("local", "visita")},
     }
+
+
+def _contramano(con_base: list[dict]) -> dict:
+    copa = [o for o in con_base if o.get("contramanoCopa")]
+    normal = [o for o in con_base if o.get("contramano") and not o.get("contramanoCopa")]
+    sin = [o for o in con_base if not o.get("contramano")]
+    tc, tn = _tasa(copa), _tasa(normal)
+    return {"conCopaAjena": tc, "normal": tn, "sinContramano": _tasa(sin),
+            "difCopaMenosNormal": (round(tc["tasa"] - tn["tasa"], 3)
+                                   if copa and normal and tc["tasa"] is not None and tn["tasa"] is not None else None)}
 
 
 MOVIMIENTOS = ("sigue", "cero", "cambio")
@@ -629,6 +683,13 @@ def imprimir(r: dict):
     for s, v in r["senales"].items():
         print(f"  {s:15s} on {_pct(v['encendida'])} (n={v['encendida']['n']}) · off {_pct(v['apagada'])} "
               f"(n={v['apagada']['n']}) · lift {v['lift']}")
+
+    cm = r.get("contramano")
+    if cm:
+        print("\n— contramano: hecho con copa ante rivales fuera del padrón vs normal (996) —")
+        for k in ("conCopaAjena", "normal", "sinContramano"):
+            print(f"  {k:14s} {_pct(cm[k])}  n={cm[k]['n']}")
+        print(f"  diferencia copa − normal: {cm['difCopaMenosNormal']}")
 
     print("\n— por familia (separación = tasa alto/muy alto − tasa bajo) —")
     for f, v in r["porFamilia"].items():

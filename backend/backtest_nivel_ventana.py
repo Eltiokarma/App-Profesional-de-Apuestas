@@ -41,6 +41,19 @@ cuota), logística reajustada, diferencia de log-loss contra `actual`:
   (1,031 contra 0,970); con 3+ amistosos pierde 0,084 (1,024 contra 0,941,
   n = 989) y en el resto 0,041. Ahí el aviso de fiabilidad «media» se sostiene.
 La fórmula NO se cambia.
+
+ROTACIÓN (11/11/2026, incidencia 1041, aprobada por el usuario: Estudiantes con
+~7 rotados por fecha por la Libertadores, motor 25,7 contra mercado 49,3 en el
+local sin aviso). ¿Con onces muy rotados en la ventana de liga el motor queda
+más lejos del mercado, como con 3+ amistosos? `rotacion` de cada partido es la
+media de titulares cambiados entre onces consecutivos de LIGA en los últimos
+`ROTACION_PARTIDOS` con alineación capturada (3+ onces; si no, sin dato), el
+mayor de los dos lados; `conRotacion` = 6+ cambios por fecha, `sinRotacion` =
+con dato y menos. Se mide igual que los amistosos: por subconjunto y contra el
+mercado (`contraMercado.conRotacion` / `sinRotacion`). Si la distancia al
+mercado no se separa, `fiabilidadMu` no se toca.
+
+    python -m backend.backtest_nivel_ventana --padron --json rotacion.json
 """
 from __future__ import annotations
 
@@ -63,6 +76,31 @@ from backend.ingesta.pipeline import leer_fixtures, sin_duplicados  # noqa: E402
 PRUEBA = 0.2
 CLASES = ("L", "E", "V")
 VARIANTES = ("actual", "sinAmistosos", "sinAmistososNiInternacionales")
+ROTACION_PARTIDOS = 5    # onces de liga que se miran antes del partido (1041)
+ROTACION_UMBRAL = 6.0    # titulares cambiados por fecha que cuentan como «muy rotado»
+
+
+def onces_titulares() -> dict[tuple[int, int], frozenset]:
+    """(team_id, fixture_id) → ids de los titulares capturados (tabla `alineaciones`)."""
+    out: dict[tuple[int, int], set] = {}
+    try:
+        filas = db.query("sad", "SELECT fixture_id, team_id, player_id FROM alineaciones WHERE titular=1")
+    except Exception:  # noqa: BLE001 — base sin la ficha ingestada: no hay rotación que medir (queda sin dato)
+        return {}
+    for r in filas:
+        out.setdefault((r["team_id"], r["fixture_id"]), set()).add(r["player_id"])
+    return {k: frozenset(v) for k, v in out.items() if len(v) >= 10}
+
+
+def rotacion_antes(fechas: list[str], onces: list[frozenset], fecha: str) -> float | None:
+    """Media de titulares cambiados entre onces consecutivos de liga ANTES de `fecha`
+    (los últimos ROTACION_PARTIDOS con once; con menos de 3, sin dato)."""
+    i = bisect_left(fechas, fecha)
+    ventana = onces[max(0, i - ROTACION_PARTIDOS):i]
+    if len(ventana) < 3:
+        return None
+    cambios = [len(b - a) for a, b in zip(ventana, ventana[1:])]
+    return sum(cambios) / len(cambios)
 
 
 def _nombres_ligas() -> dict[int, str]:
@@ -117,10 +155,15 @@ def composicion_antes(fechas: list[str], clases: list[str], fecha: str) -> dict:
     return {"amistosos": previos.count("amistoso"), "internacionales": previos.count("internacional")}
 
 
-def observaciones(fixtures, ligas_objetivo: set[int] | None) -> tuple[list[dict], dict]:
+def observaciones(fixtures, ligas_objetivo: set[int] | None, onces: dict | None = None) -> tuple[list[dict], dict]:
     nombres = _nombres_ligas()
     inter = vn._internacionales()
     h = historias(fixtures, nombres, inter)
+    onces = onces_titulares() if onces is None else onces
+    rot: dict[int, tuple[list[str], list[frozenset]]] = {}
+    for t, hh in h.items():
+        liga = [(d, onces[(t, f)]) for f, d, _gf, _ga, cl in hh if cl == "otro" and (t, f) in onces]
+        rot[t] = ([d for d, _ in liga], [x for _, x in liga])
     niv = {v: {t: niveles_variante(x, v) for t, x in h.items()} for v in VARIANTES}
     idx = {t: ([x[1] for x in hh], [x[4] for x in hh]) for t, hh in h.items()}
     obs = []
@@ -142,6 +185,8 @@ def observaciones(fixtures, ligas_objetivo: set[int] | None) -> tuple[list[dict]
              "y": "L" if gh > ga else "V" if gh < ga else "E",
              "amistosos": max(ca["amistosos"], cb["amistosos"]),
              "internacionales": max(ca["internacionales"], cb["internacionales"])}
+        rots = [r for r in (rotacion_antes(*rot[home], fecha), rotacion_antes(*rot[away], fecha)) if r is not None]
+        o["rotacion"] = round(max(rots), 2) if rots else None
         for v, (nl, nv_) in lv.items():
             mu_l, mu_v = mu(nl, nv_, 1.0), mu(nv_, nl, 0.0)
             o[v] = {"nivelL": round(nl, 4), "nivelV": round(nv_, 4), "muL": mu_l, "muV": mu_v, "d": mu_l - mu_v}
@@ -175,6 +220,8 @@ SUBCONJUNTOS = {
     "conAmistosos": lambda o: o["amistosos"] >= vn.UMBRAL_AMISTOSOS,
     "conInternacionales": lambda o: o["internacionales"] >= 2,
     "resto": lambda o: o["amistosos"] < vn.UMBRAL_AMISTOSOS and o["internacionales"] < 2,
+    "conRotacion": lambda o: o.get("rotacion") is not None and o["rotacion"] >= ROTACION_UMBRAL,
+    "sinRotacion": lambda o: o.get("rotacion") is not None and o["rotacion"] < ROTACION_UMBRAL,
 }
 
 
@@ -219,6 +266,8 @@ def evaluar(obs: list[dict], mercado: dict | None = None) -> dict:
                    for v in VARIANTES},
                 "conAmistosos": _contra_mercado_sub(test, idx, perd, mercado,
                                                     lambda o: o["amistosos"] >= vn.UMBRAL_AMISTOSOS),
+                "conRotacion": _contra_mercado_sub(test, idx, perd, mercado, SUBCONJUNTOS["conRotacion"]),
+                "sinRotacion": _contra_mercado_sub(test, idx, perd, mercado, SUBCONJUNTOS["sinRotacion"]),
             }
         else:
             out["contraMercado"] = {"n": len(idx), "nota": "menos de 30 partidos de la prueba con cuota"}

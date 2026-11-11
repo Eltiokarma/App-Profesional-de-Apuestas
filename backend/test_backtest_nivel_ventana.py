@@ -97,5 +97,33 @@ o = obs[len(obs) // 2]
 check("el caso muestra niveles y 1X2 por variante",
       set(bt.caso(obs, None, o["fixtureId"])) >= {"actual", "sinAmistosos", "sinAmistososNiInternacionales"})
 
+# ROTACIÓN (1041): la media de titulares cambiados entre onces de liga consecutivos
+_a = frozenset(range(11))
+_b = frozenset(range(5, 16))          # 5 cambios respecto de _a
+_c = frozenset(range(10, 21))         # 5 cambios respecto de _b
+check("1041: rotación = media de cambios entre onces consecutivos ANTES del partido",
+      bt.rotacion_antes(["2025-01-01", "2025-01-08", "2025-01-15"], [_a, _b, _c], "2025-01-20") == 5.0)
+check("1041: el once del mismo día o posterior no entra (sin fuga)",
+      bt.rotacion_antes(["2025-01-01", "2025-01-08", "2025-01-15"], [_a, _b, _c], "2025-01-15") is None)
+check("1041: con menos de 3 onces la rotación queda sin dato, no en cero",
+      bt.rotacion_antes(["2025-01-01", "2025-01-08"], [_a, _b], "2025-02-01") is None)
+# Sintético: un equipo que rota 7 por fecha en liga queda en `conRotacion`
+_fx = sinteticos(False)
+_ids, _k = {}, 0
+for fid, _d, home, away, *_r in _fx:
+    for t in (home, away):
+        if t == 1:   # el equipo 1 cambia 7 titulares cada fecha; los demás repiten el once
+            _ids[(t, fid)], _k = frozenset(range(_k * 7, _k * 7 + 11)), _k + 1
+        else:
+            _ids[(t, fid)] = frozenset(range(1000 + t * 20, 1011 + t * 20))
+obs_r, _ = bt.observaciones(_fx, None, _ids)
+_con = [o for o in obs_r if o["rotacion"] is not None and o["rotacion"] >= bt.ROTACION_UMBRAL]
+check("1041: los partidos del equipo que rota 7 por fecha caen en conRotacion; los demás en sinRotacion",
+      _con and all(o["rotacion"] == 7.0 for o in _con)
+      and any(o["rotacion"] == 0.0 for o in obs_r), (len(_con), sorted({o["rotacion"] for o in obs_r})[:5]))
+r_r = bt.evaluar(obs_r)
+check("1041: el subconjunto conRotacion se evalúa con el mismo intervalo que los amistosos",
+      "conRotacion" in r_r["porSubconjunto"] and "sinRotacion" in r_r["porSubconjunto"], list(r_r["porSubconjunto"]))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
