@@ -360,6 +360,15 @@ function TablaTrasFallos({ t, isMobile }: { t: TrasFallos; isMobile: boolean }) 
   )
 }
 
+// el estado del criterio por escalones (11/11/2026), cada uno con su color
+const ESTADO_SEMAFORO: Record<ResumenSemaforo['criterio']['estado'], { etiqueta: string; color: string; fondo: string }> = {
+  en_observacion: { etiqueta: 'EN OBSERVACIÓN', color: 'var(--t2)', fondo: 'var(--bg3)' },
+  prometedor: { etiqueta: 'PROMETEDOR', color: 'color-mix(in oklch, var(--up) 55%, var(--mark))', fondo: 'color-mix(in oklch, color-mix(in oklch, var(--up) 55%, var(--mark)), transparent 84%)' },
+  confirmado: { etiqueta: 'CONFIRMADO', color: 'var(--up)', fondo: 'color-mix(in oklch, var(--up), transparent 84%)' },
+  no_se_sostiene: { etiqueta: 'NO SE SOSTIENE', color: 'var(--down)', fondo: 'color-mix(in oklch, var(--down), transparent 84%)' },
+  sin_contacto: { etiqueta: 'SIN CONTACTO', color: 'var(--t2)', fondo: 'var(--bg3)' },
+}
+
 /** EL SEMÁFORO DEL ELEGIDO (11/11/2026): verdes contra amarillos, contra lo que pedía la
  *  cuota. Cuenta para el criterio SOLO lo nuevo (desde el 11/11); la regla está fijada. */
 function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean }) {
@@ -367,7 +376,7 @@ function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean 
   const ic = (i: [number, number] | null) => (i ? `${num(100 * i[0], 0)}-${num(100 * i[1], 0)} %` : '—')
   const celda: React.CSSProperties = { padding: '5px 6px', textAlign: 'right' }
   const c = r.criterio
-  const color = c.estado === 'senal' ? 'var(--up)' : c.estado === 'sin_senal' ? 'var(--t2)' : 'var(--mark)'
+  const est = ESTADO_SEMAFORO[c.estado] ?? ESTADO_SEMAFORO.en_observacion
   const bloques: [string, ResumenSemaforo['nuevo']][] = [[`desde el ${fecha(r.desde).split(' ').slice(0, 2).join(' ')} (cuenta)`, r.nuevo], ['todo lo simulado', r.todo]]
   const filas: [string, keyof ResumenSemaforo['nuevo']][] = [['🟢 verde', 'verde'], ['🟡 amarillo', 'amarillo'], ['⚪ sin dato', 'sinDato']]
   return (
@@ -375,8 +384,20 @@ function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean 
       <div style={{ ...rotulo, marginBottom: 4 }}>Semáforo del elegido · verdes contra amarillos</div>
       <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
         Verde: nuestro 1X2 a ≤ {num(r.umbral, 0)} pts de la casa en los tres resultados y el marcador declarado con el elegido.
-        Se toma en serio con {c.nMinimo}+ verdes nuevos, el elegido {num(100 * c.ventajaMinima, 0)}+ pts sobre lo que pedía la
-        cuota con el intervalo entero por encima y los amarillos por debajo.
+        Por escalones de verdes nuevos ({c.escalones.join(' · ')}): en {c.escalones.slice(0, -1).join(' y ')}, prometedor si el
+        intervalo queda entero sobre lo que pedía la cuota; en {c.nMinimo}, confirmado con el elegido {num(100 * c.ventajaMinima, 0)}+ pts
+        sobre lo que pedía, el intervalo encima y los amarillos por debajo. En cualquier escalón, no se sostiene si acierta menos de lo que pedía.
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg3)', font: '700 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          {c.escalon ? `escalón ${c.escalon}` : 'antes del escalón 70'}
+        </span>
+        <span style={{ padding: '3px 9px', borderRadius: 6, background: est.fondo, font: '700 10.5px var(--mono)', color: est.color, letterSpacing: '.3px' }}>
+          {est.etiqueta}
+        </span>
+        <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
+          {c.n} verdes{c.proximoEscalon ? ` · faltan ${c.faltan} para el ${c.proximoEscalon}` : ''}
+        </span>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
@@ -412,9 +433,8 @@ function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean 
           ))}
         </table>
       </div>
-      <div style={{ marginTop: 8, font: '600 11px var(--sans)', color, lineHeight: 1.45 }}>
-        {c.estado === 'en_observacion' ? `En observación: ${c.n} de ${c.nMinimo} verdes nuevos cerrados (faltan ${c.faltan}).`
-          : c.estado === 'senal' ? 'Señal: el criterio se cumple. Tomarlo en serio.' : 'Sin señal: con los verdes suficientes, el criterio no se cumple.'}
+      <div style={{ marginTop: 8, font: '600 11px var(--sans)', color: est.color, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+        {c.texto}
       </div>
     </div>
   )

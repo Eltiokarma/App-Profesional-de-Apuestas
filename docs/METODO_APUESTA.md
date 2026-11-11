@@ -140,11 +140,34 @@ Medido el 11/11 sobre los mismos 374 partes (15/09-01/11):
 
 Se encontró mirando esos mismos datos, así que **se mide hacia adelante con
 una regla fija** (como el criterio de contacto, no se mueve): cuenta desde
-los partidos del **11/11/2026** (00:00 de Lima, `semaforo.DESDE`), y se toma
-en serio si con **150+ verdes NUEVOS** el elegido le gana a lo que pedía su
-cuota (media de 1/cuota) por **5+ puntos**, con el intervalo de Wilson al
-95 % **entero por encima** de lo que pedía, y los amarillos quedan **por
-debajo** de los verdes. La cuenta es `simulacion.resumen_semaforo` (campo
+los partidos del **11/11/2026** (00:00 de Lima, `semaforo.DESDE`).
+
+### El criterio por escalones (11/11/2026)
+
+El usuario, el mismo 11/11: «150 son muchos, lo ponemos de forma
+progresiva». La regla se fijó ese día, **antes de que hubiera un solo verde
+nuevo** (`simulacion.criterio_semaforo`). Con *n* verdes nuevos cerrados,
+`acierto` = la tasa del elegido en verde, `pide` = la media de 1/cuota del
+elegido en verde e IC = el intervalo de Wilson al 95 % del acierto:
+
+| escalón | estado |
+|---|---|
+| antes de 70 | `en_observacion` (con `faltan` hasta el 70), pase lo que pase |
+| **70** y **110** | `prometedor` si el límite **inferior** del IC queda por encima de `pide`; `no_se_sostiene` si `acierto` < `pide`; si no, `en_observacion` |
+| **150** | `confirmado` si `acierto` − `pide` ≥ **5 pts**, el límite inferior del IC por encima de `pide` y la tasa de los amarillos por debajo de la de los verdes (la regla original); `no_se_sostiene` si `acierto` < `pide`; si no, `sin_contacto` |
+
+Por qué así: **con 70 solo pasa si sigue tan fuerte como lo visto** (+12 pts
+aprox. sobre lo que pide la cuota, para que el límite inferior del IC quede
+encima con ese n); y si no sirve —acierta menos de lo que pide— **se sabe en
+una semana**, sin esperar a los 150. Los números de referencia, sobre datos
+YA vistos (por eso no cuentan): con el 1X2 a ≤ 2 pts de la casa el elegido
+ganó **66,7 %** contra **53,7 %** de su cuota (n 177). Solo `confirmado`
+(escalón 150) es tomarlo en serio; `prometedor` es una marca intermedia, no
+un permiso para cargar más.
+
+El estado viaja con `escalon` (0 · 70 · 110 · 150), `proximoEscalon`,
+`faltan`, `acierto`, `pide`, `intervalo`, `n`, `amarillos` y un `texto` en
+español. La cuenta es `simulacion.resumen_semaforo` (campo
 `semaforo` de `GET /analisis/simulacion`, tabla «Semáforo del elegido» en la
 pantalla), con una serie en papel nueva, **`metodoVerde`**: el método (1 % de
 la banca y el mismo freno por tramo) apostando SOLO en verde. La rutina de

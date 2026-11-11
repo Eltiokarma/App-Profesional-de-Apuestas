@@ -1,5 +1,5 @@
 """El semáforo del elegido (11/11/2026): la regla, la serie en papel, el criterio
-fijo y la REGLA ANTI-GOODHART (el analista no lo ve).
+por escalones (70 · 110 · 150) y la REGLA ANTI-GOODHART (el analista no lo ve).
 
     python -m backend.test_semaforo
 """
@@ -87,7 +87,7 @@ def main():
           sin["apuestas"][0]["semaforo"]["estado"] == "sinDato"
           and next(e for e in sin["estrategias"] if e["clave"] == "metodoVerde")["apuestas"] == 0)
 
-    # ── el criterio fijo: solo lo nuevo, 150+ verdes, +5 pts con el IC encima ──
+    # ── el criterio por escalones (70 · 110 · 150), solo lo nuevo ─────────
     def lote(n, aciertan, desde_h=0, dia="2026-11-12", verde=True):
         out = []
         for i in range(n):
@@ -95,23 +95,58 @@ def main():
             out.append(ap(1000 + i + desde_h * 1000, hora, pegado if verde else (70, 20, 10), cuotas,
                           "local" if i < aciertan else "visita", "2-1"))
         return out
+
+    def crit(verdes, aciertan, amarillos=0, am_aciertan=0):
+        lotes = lote(verdes, aciertan) + (lote(amarillos, am_aciertan, desde_h=10, verde=False) if amarillos else [])
+        return sim.simular(lotes)["semaforo"]["criterio"]
     r = sim.simular(lote(40, 30, dia="2026-11-05"))["semaforo"]
     check("lo anterior al 11/11 entra en «todo» pero NO cuenta para el criterio",
           r["todo"]["verde"]["n"] == 40 and r["nuevo"]["verde"]["n"] == 0
-          and r["criterio"]["estado"] == "en_observacion", r["criterio"])
-    r = sim.simular(lote(149, 120))["semaforo"]
-    check("con 149 verdes nuevos sigue en observación aunque acierten mucho",
-          r["criterio"]["estado"] == "en_observacion" and r["criterio"]["faltan"] == 1, r["criterio"])
-    r = sim.simular(lote(160, 110) + lote(40, 10, desde_h=10, verde=False))["semaforo"]
-    check("150+ verdes nuevos, +5 pts con el intervalo encima y los amarillos abajo: SEÑAL",
-          r["criterio"]["estado"] == "senal" and r["criterio"]["cumple"]
-          and r["nuevo"]["verde"]["ventaja"] >= 0.05 and r["nuevo"]["amarillo"]["n"] == 40, r["criterio"])
-    r = sim.simular(lote(160, 85))["semaforo"]
-    check("150+ verdes que no le ganan a la cuota por 5: sin señal",
-          r["criterio"]["estado"] == "sin_senal" and not r["criterio"]["cumple"], r["criterio"])
-    r = sim.simular(lote(160, 110) + lote(40, 38, desde_h=10, verde=False))["semaforo"]
-    check("si los amarillos aciertan más que los verdes, tampoco",
-          r["criterio"]["estado"] == "sin_senal" and r["criterio"]["amarillosDebajo"] is False, r["criterio"])
+          and r["criterio"]["estado"] == "en_observacion" and r["criterio"]["escalon"] == 0
+          and r["criterio"]["faltan"] == 70 and r["criterio"]["acierto"] is None, r["criterio"])
+    c = crit(69, 60)
+    check("antes de 70: en observación aunque acierten mucho, con lo que falta al escalón 70",
+          c["estado"] == "en_observacion" and c["escalon"] == 0 and c["proximoEscalon"] == 70
+          and c["faltan"] == 1 and c["n"] == 69, c)
+    c = crit(69, 20)
+    check("antes de 70 tampoco se declara «no se sostiene» (pocos casos)", c["estado"] == "en_observacion", c)
+    c = crit(70, 50)
+    check("escalón 70: el límite inferior del IC sobre lo que pide → PROMETEDOR",
+          c["estado"] == "prometedor" and c["escalon"] == 70 and c["proximoEscalon"] == 110 and c["faltan"] == 40
+          and c["intervalo"][0] > c["pide"] and c["acierto"] == round(50 / 70, 4) and c["pide"] == 0.5
+          and not c["cumple"], c)
+    c = crit(70, 40)
+    check("escalón 70: acierta más que la cuota pero el IC no queda entero encima → en observación",
+          c["estado"] == "en_observacion" and c["escalon"] == 70 and c["acierto"] > c["pide"]
+          and c["intervalo"][0] <= c["pide"], c)
+    c = crit(70, 30)
+    check("escalón 70: acierta menos de lo que pide la cuota → NO SE SOSTIENE",
+          c["estado"] == "no_se_sostiene" and c["escalon"] == 70 and c["acierto"] < c["pide"], c)
+    c = crit(110, 72)
+    check("escalón 110: el IC encima → PROMETEDOR, faltan 40 para el 150",
+          c["estado"] == "prometedor" and c["escalon"] == 110 and c["proximoEscalon"] == 150 and c["faltan"] == 40, c)
+    c = crit(110, 60)
+    check("escalón 110: sin el IC encima → en observación", c["estado"] == "en_observacion" and c["escalon"] == 110, c)
+    c = crit(110, 50)
+    check("escalón 110: por debajo de la cuota → NO SE SOSTIENE", c["estado"] == "no_se_sostiene", c)
+    c = crit(160, 110, 40, 10)
+    check("escalón 150: +5 pts, IC encima y amarillos abajo → CONFIRMADO",
+          c["estado"] == "confirmado" and c["cumple"] and c["escalon"] == 150 and c["proximoEscalon"] is None
+          and c["faltan"] == 0 and c["amarillos"] == {"n": 40, "tasa": 0.25} and c["amarillosDebajo"], c)
+    c = crit(160, 85)
+    check("escalón 150: le gana a la cuota pero sin los 5 pts con el IC encima → sin contacto",
+          c["estado"] == "sin_contacto" and not c["cumple"] and c["acierto"] > c["pide"], c)
+    c = crit(160, 110, 40, 38)
+    check("escalón 150: si los amarillos aciertan más que los verdes → sin contacto",
+          c["estado"] == "sin_contacto" and c["amarillosDebajo"] is False and c["intervaloSobreLaCuota"], c)
+    c = crit(160, 70)
+    check("escalón 150: por debajo de la cuota → NO SE SOSTIENE (sigue valiendo)",
+          c["estado"] == "no_se_sostiene" and c["escalon"] == 150, c)
+    check("cada estado trae su texto en español con el escalón",
+          all(k in c for k in ("escalon", "proximoEscalon", "faltan", "acierto", "pide", "intervalo", "n",
+                               "amarillos", "texto")) and "escalón 150" in c["texto"], c)
+    check("los escalones están fijados (70 · 110 · 150, +5 pts en el último)",
+          sim.SEMAFORO_ESCALONES == (70, 110, 150) and sim.SEMAFORO_VENTAJA == 0.05)
 
     # ── de punta a punta, y LA REGLA ANTI-GOODHART ──────────────────────────
     tmp = tempfile.mkdtemp(prefix="sad_semaforo_")

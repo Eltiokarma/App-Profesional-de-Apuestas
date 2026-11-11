@@ -1063,9 +1063,17 @@ conversación se pierde en la siguiente.
    +2,5 %). Va en Partidos y en el parte (chip), en la simulación (cada
    apuesta, la serie en papel `metodoVerde` y la tabla «Semáforo del
    elegido») y en la sección «Semáforo» de `python -m backend.contacto`.
-   **Criterio fijo**, desde los partidos del 11/11: 150+ verdes nuevos, el
-   elegido +5 pts sobre lo que pedía la cuota con el intervalo (Wilson 95 %)
-   entero por encima y los amarillos por debajo (`docs/METODO_APUESTA.md`).
+   **Criterio POR ESCALONES** (11/11/2026, usuario: «150 son muchos, lo
+   ponemos de forma progresiva»; fijado el mismo día, antes de que hubiera
+   verdes nuevos), desde los partidos del 11/11: en **70** y **110** verdes
+   nuevos, `prometedor` si el límite inferior del IC (Wilson 95 %) queda sobre
+   lo que pedía la cuota; en **150**, `confirmado` con el elegido +5 pts sobre
+   lo que pedía, el IC entero encima y los amarillos por debajo (la regla
+   original), si no `sin_contacto`; en cualquier escalón, `no_se_sostiene` si
+   acierta menos de lo que pedía; antes de 70, en observación
+   (`simulacion.criterio_semaforo`, `docs/METODO_APUESTA.md`). Con 70 solo
+   pasa si sigue tan fuerte como lo visto (+12 pts aprox.): si no sirve se
+   sabe en una semana.
    **Anti-Goodhart**: el analista no lo ve (ni recibo, ni prompt, ni endpoint
    del token de Cowork; `test_semaforo` lo verifica). La demo de Simulación
    ahora se rehace con `python scripts/generar_simulacion_demo.py`.
