@@ -2732,7 +2732,7 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'proporcional' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60'
+export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
@@ -2771,7 +2771,7 @@ export interface EstrategiaSimulada {
   montoMaximo: number
   /** solo martingala: líneas abiertas, cuántas vienen de perder y el próximo monto más alto */
   lineas: { abiertas: number; perdiendo: number; proximoMayor: number } | null
-  /** solo el método (proporcional): el freno de cada tramo de confianza ahora */
+  /** solo el método (proporcional y metodoVerde): el freno de cada tramo de confianza ahora */
   tramos: FrenoTramo[] | null
   serie: { fixtureId: number | null; pitazo: string | null; banca: number }[]
 }
@@ -2793,6 +2793,8 @@ export interface ApuestaSimulada {
   kelly: { seleccion: Resultado1x2; fraccion: number; valor: number }
   /** en quién desconfiar (desde el 10/11/2026; null antes) */
   alerta?: AlertaConfianza | null
+  /** el semáforo del elegido (11/11/2026) */
+  semaforo?: SemaforoElegido
   porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
 }
 
@@ -2821,6 +2823,55 @@ export interface TrasFallos {
     estado: 'en_observacion' | 'sin_contacto' | 'contacto'
     texto: string
   }
+}
+
+/** EL SEMÁFORO DEL ELEGIDO (11/11/2026, backend/analisis/semaforo.py). Calculado,
+ *  nunca declarado, y fuera de la vista del analista (el token de Cowork no lo lee).
+ *  `confirma` 🟢 = nuestro 1X2 a ≤ `umbral` pts de la casa en los tres y el marcador
+ *  con el elegido · `duda` 🟡 = falla una · `sinDato` ⚪. */
+export interface SemaforoElegido {
+  estado: 'confirma' | 'duda' | 'sinDato'
+  motivos: { codigo: 'LEJOS-DE-LA-CASA' | 'MARCADOR-CONTRADICE' | 'SIN-1X2' | 'SIN-CUOTAS' | 'SIN-MARCADOR'; detalle: string }[]
+  elegido: Resultado1x2 | null
+  /** la mayor |nuestro − casa| de los tres, en pts */
+  distancia: number | null
+  marcadorSigno: Resultado1x2 | null
+  umbral: number
+}
+
+export interface GrupoSemaforo {
+  n: number
+  aciertos: number
+  tasa: number | null
+  /** Wilson 95 %, 0-1 */
+  intervalo: [number, number] | null
+  /** media de 1/cuota del elegido, 0-1 */
+  pide: number | null
+  /** tasa − pide */
+  ventaja: number | null
+  roiPlano: number | null
+}
+
+export interface GruposSemaforo { verde: GrupoSemaforo; amarillo: GrupoSemaforo; sinDato: GrupoSemaforo }
+
+export interface ResumenSemaforo {
+  desde: string
+  umbral: number
+  todo: GruposSemaforo
+  /** desde `desde`: lo único que cuenta para el criterio */
+  nuevo: GruposSemaforo
+  criterio: {
+    nMinimo: number
+    ventajaMinima: number
+    n: number
+    faltan: number
+    intervaloSobreLaCuota: boolean
+    amarillosDebajo: boolean
+    cumple: boolean
+    estado: 'en_observacion' | 'sin_senal' | 'senal'
+    texto: string
+  }
+  nota: string
 }
 
 /** En quién desconfiar (10/11/2026): marca por apuesta, no cambia el elegido */
@@ -2863,6 +2914,8 @@ export interface SimulacionApuesta {
   trasFallos: TrasFallos
   /** en quién desconfiar: con alerta contra sin alerta, y el descarte */
   alertaConfianza?: ResumenAlerta
+  /** el semáforo del elegido: verdes contra amarillos y su criterio fijo (11/11/2026) */
+  semaforo?: ResumenSemaforo
   porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
   apuestas: ApuestaSimulada[]
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]

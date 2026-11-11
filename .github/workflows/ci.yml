@@ -89,6 +89,8 @@ jobs:
         run: python -m backend.test_cowork
       - name: Simulación de apuesta (plana, Kelly y martingala; versión por hora de subida)
         run: python -m backend.test_simulacion
+      - name: El semáforo del elegido (la regla, metodoVerde, el criterio fijo y que Cowork no lo vea)
+        run: python -m backend.test_semaforo
       - name: Velocidad sin cambiar un número (caché de Aprendizaje y Simulación con huella de insumos)
         run: python -m backend.test_velocidad
       - name: Tests del reventón de burbuja (guía calculada, vectores dorados compartidos con el TS)

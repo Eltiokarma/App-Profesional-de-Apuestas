@@ -64,7 +64,7 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 
 from backend import db as saddb
-from backend.analisis import veredicto as _vered
+from backend.analisis import semaforo as _sem, veredicto as _vered
 from backend.analisis.escala import copas_nacionales
 from backend.analisis.lecciones import CORTE_VERSION, TRAMOS_CONFIANZA, cuotas_mercado, tramo_confianza
 
@@ -126,6 +126,13 @@ ESTRATEGIAS = (
     ("proporcional", "Proporcional con freno",
      f"{100 * PROPORCION:g} % de la banca a nuestro elegido; un tramo de confianza se pausa si en sus últimos "
      f"{FRENO_VENTANA} partidos acertó menos de lo que pedía la cuota, y vuelve cuando se recupera"),
+    # EL MÉTODO SOLO EN VERDE (11/11/2026, usuario: «me apoyaré de ese
+    # semáforo»): el mismo 1 % y el mismo freno, pero apuesta solo cuando el
+    # semáforo del elegido está en verde (backend/analisis/semaforo.py). En papel
+    ("metodoVerde", "Método solo en verde",
+     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando el "
+     f"semáforo del elegido está en verde: nuestro 1X2 a ≤ {_sem.UMBRAL_CASA:g} pts de la casa y el marcador "
+     "declarado con el elegido"),
     ("plana", "Apuesta plana (control)",
      f"{UNIDAD:g} unidad a nuestro elegido en cada partido"),
     # CONTROL DE CONFIANZA (29/10/2026, usuario): el tramo de 60 %+ es el que
@@ -146,6 +153,8 @@ ESTRATEGIAS = (
      f"la misma martingala por líneas, solo cuando nuestro elegido tiene {CONFIANZA_ALTA:g} % o más"),
 )
 _MARTINGALAS = ("martingala", "martingala60")
+# las dos series con el freno por tramo (anotan todo partido cerrado del tramo)
+_CON_FRENO = ("proporcional", "metodoVerde")
 _SOLO_ALTA = ("plana60", "martingala60")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
@@ -228,6 +237,72 @@ def resumen_alerta(cerradas: list[dict]) -> dict:
         "nota": ("la alerta no cambia el elegido ni ninguna estrategia: se registra por apuesta desde el 10/11/2026 "
                  "y se mide hacia adelante (docs/revisiones/ESTUDIO_ECHADOS_2026-11.md). Con 100+ partidos con alerta "
                  "se decide si frena la carga del método"),
+    }
+
+
+# EL CRITERIO DEL SEMÁFORO, FIJO (11/11/2026, usuario; como el de contacto, NO
+# se mueve): cuenta desde los partidos del 11/11/2026 (`semaforo.DESDE`). Se
+# toma en serio si con 150+ verdes NUEVOS el elegido le gana a lo que pedía
+# su cuota por 5+ puntos con el intervalo de Wilson al 95 % entero por encima
+# de lo que pedía, y los amarillos quedan por debajo de los verdes.
+SEMAFORO_N = 150
+SEMAFORO_VENTAJA = 0.05
+
+
+def _grupo_semaforo(fs: list[dict]) -> dict:
+    n = len(fs)
+    if not n:
+        return {"n": 0, "aciertos": 0, "tasa": None, "intervalo": None, "pide": None, "ventaja": None,
+                "roiPlano": None}
+    ac = sum(1 for f in fs if f["resultado"] == f["elegido"])
+    pide = sum(1 / f["cuotas"][f["elegido"]] for f in fs) / n
+    gan = sum((f["cuotas"][f["elegido"]] - 1) if f["resultado"] == f["elegido"] else -1 for f in fs)
+    return {"n": n, "aciertos": ac, "tasa": round(ac / n, 4), "intervalo": _wilson(ac, n),
+            "pide": round(pide, 4), "ventaja": round(ac / n - pide, 4), "roiPlano": round(gan / n, 4)}
+
+
+def resumen_semaforo(cerradas: list[dict]) -> dict:
+    """Verdes, amarillos y sin dato: el acierto del elegido contra lo que pedía
+    la cuota (1/cuota media) y la plana a 1 u, en todo lo simulado y en lo
+    NUEVO (desde `semaforo.DESDE`), que es lo único que cuenta para el criterio."""
+    def por_estado(fs):
+        return {"verde": _grupo_semaforo([f for f in fs if (f.get("semaforo") or {}).get("estado") == "confirma"]),
+                "amarillo": _grupo_semaforo([f for f in fs if (f.get("semaforo") or {}).get("estado") == "duda"]),
+                "sinDato": _grupo_semaforo([f for f in fs if (f.get("semaforo") or {}).get("estado")
+                                            not in ("confirma", "duda")])}
+    desde = _utc(_sem.DESDE)
+    nuevas = [f for f in cerradas if (_utc(f["pitazo"]) or desde) >= desde]
+    todo, nuevo = por_estado(cerradas), por_estado(nuevas)
+    v, a = nuevo["verde"], nuevo["amarillo"]
+    sobre = v["intervalo"] is not None and v["intervalo"][0] > v["pide"]
+    amarillos_abajo = a["ventaja"] is None or (v["ventaja"] is not None and a["ventaja"] < v["ventaja"])
+    cumple = (v["n"] >= SEMAFORO_N and v["ventaja"] is not None and v["ventaja"] >= SEMAFORO_VENTAJA
+              and sobre and amarillos_abajo)
+    pct = lambda x: f"{100 * x:.1f} %"  # noqa: E731
+    if cumple:
+        texto = (f"SEÑAL: con {v['n']} verdes nuevos el elegido acierta {pct(v['tasa'])} contra {pct(v['pide'])} que "
+                 f"pedía la cuota ({100 * v['ventaja']:+.1f} pts), el intervalo entero por encima y los amarillos "
+                 "por debajo: tomarlo en serio")
+    elif v["n"] < SEMAFORO_N:
+        texto = (f"en observación: {v['n']} de {SEMAFORO_N} verdes nuevos"
+                 + (f", el elegido acierta {pct(v['tasa'])} contra {pct(v['pide'])} que pedía la cuota "
+                    f"({100 * v['ventaja']:+.1f} pts)" if v["tasa"] is not None else ""))
+    else:
+        texto = (f"sin señal: con {v['n']} verdes nuevos el elegido acierta {pct(v['tasa'])} contra "
+                 f"{pct(v['pide'])} que pedía la cuota ({100 * v['ventaja']:+.1f} pts); pide "
+                 f"+{100 * SEMAFORO_VENTAJA:.0f} pts con el intervalo entero por encima y los amarillos abajo")
+    return {
+        "desde": _sem.DESDE, "umbral": _sem.UMBRAL_CASA,
+        "todo": todo, "nuevo": nuevo,
+        "criterio": {"nMinimo": SEMAFORO_N, "ventajaMinima": SEMAFORO_VENTAJA, "n": v["n"],
+                     "faltan": max(0, SEMAFORO_N - v["n"]), "intervaloSobreLaCuota": sobre,
+                     "amarillosDebajo": amarillos_abajo, "cumple": cumple,
+                     "estado": "senal" if cumple else ("en_observacion" if v["n"] < SEMAFORO_N else "sin_senal"),
+                     "texto": texto},
+        "nota": ("verde = nuestro 1X2 a ≤ 2 pts de la casa (sin margen) en los tres resultados y el marcador declarado "
+                 "con el elegido; amarillo = falla una. Calculado, nunca declarado, y fuera de la vista del analista "
+                 "(no va al recibo ni a un endpoint del token de Cowork). El criterio cuenta solo los partidos desde "
+                 "el 11/11/2026"),
     }
 
 
@@ -347,7 +422,13 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     """Arma la apuesta de una estrategia en el pitazo, con lo que ya se cobró."""
     libre = max(e["banca"] - e["comprometido"], 0.0)
     linea = None
-    if clave == "proporcional":
+    if clave == "metodoVerde" and (fila.get("semaforo") or {}).get("estado") != "confirma":
+        estado = (fila.get("semaforo") or {}).get("estado") or "sinDato"
+        fila["porEstrategia"][clave] = {
+            "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,
+            "motivo": "semáforo en amarillo" if estado == "duda" else "semáforo sin dato"}
+        return
+    if clave in _CON_FRENO:
         sel = fila["elegido"]
         tr = tramo_confianza(fila["probabilidades"][sel])
         f = freno_tramo(e["tramos"].setdefault(tr, deque(maxlen=FRENO_VENTANA)))
@@ -389,7 +470,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             motivo = "sin plata libre"
         elif clave in _SOLO_ALTA:
             motivo = f"bajo {CONFIANZA_ALTA:g} %"
-        elif clave == "proporcional":
+        elif clave in _CON_FRENO:
             motivo = "banca en cero"
         else:
             motivo = "sin ventaja"
@@ -429,7 +510,7 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             e["quebro"] = fila["fixtureId"]
     else:
         r["ganancia"] = 0.0
-    if clave == "proporcional":
+    if clave in _CON_FRENO:
         # el freno anota TODO partido cerrado del tramo, se haya apostado o no
         sel = fila["elegido"]
         e["tramos"].setdefault(tramo_confianza(fila["probabilidades"][sel]), deque(maxlen=FRENO_VENTANA)).append(
@@ -450,7 +531,9 @@ def simular(apuestas: list[dict]) -> dict:
     for i, a in enumerate(orden):
         p = _normalizar(a["probabilidades"])
         sel_k, f = _mejor_kelly(p, a["cuotas"])
-        filas.append({**a, "probabilidades": {k: round(100 * p[k], 1) for k in CLAVES},
+        # sin semáforo armado por quien llama (una apuesta de prueba), sin dato
+        sem = a.get("semaforo") or _sem.semaforo(a["probabilidades"], None, None)
+        filas.append({**a, "semaforo": sem, "probabilidades": {k: round(100 * p[k], 1) for k in CLAVES},
                       "elegido": _elegido(p), "_f": f,
                       "kelly": {"seleccion": sel_k, "fraccion": round(f, 4),
                                 "valor": round(p[sel_k] * a["cuotas"][sel_k] - 1, 4)},
@@ -498,7 +581,7 @@ def simular(apuestas: list[dict]) -> dict:
                        if clave in _MARTINGALAS else None),
             # solo el método: cómo está hoy el freno de cada tramo
             "tramos": ([{"tramo": tr, **freno_tramo(e["tramos"].get(tr, ()))} for tr, _, _ in TRAMOS_CONFIANZA]
-                       if clave == "proporcional" else None),
+                       if clave in _CON_FRENO else None),
             "serie": e["serie"],
         })
 
@@ -532,6 +615,8 @@ def simular(apuestas: list[dict]) -> dict:
         "porVersion": sorted(por_version.values(), key=lambda x: x["version"]),
         # en quién desconfiar (10/11/2026): con alerta contra sin alerta, y el descarte
         "alertaConfianza": resumen_alerta(cerradas),
+        # el semáforo del elegido (11/11/2026): verdes contra amarillos y su criterio fijo
+        "semaforo": resumen_semaforo(cerradas),
         # lo más nuevo arriba en la pantalla
         "apuestas": list(reversed(filas)),
     }
@@ -556,7 +641,8 @@ def huella_simulacion() -> tuple:
         partes = con.execute(
             "SELECT fixture_id, version, creado_en, deposito_previo_en, cuarentena_json, json_valid(parte_json) AS ok, "
             "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.pronostico.probabilidades') END AS probs, "
-            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.version') END AS vparte "
+            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.version') END AS vparte, "
+            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.pronostico.marcador') END AS marcador "
             "FROM parte_cowork WHERE fecha >= ? ORDER BY fixture_id", (DESDE[:10],)).fetchall()
     ids = [f["fixture_id"] for f in partes]
     fx, cu = (), ()
@@ -689,6 +775,8 @@ def _simulacion() -> dict:
             "mercado": mercado_pct,
             "resultado": reales.get(fid),
             "alerta": alerta,
+            # el semáforo del elegido con el mercado SIN redondear (11/11/2026)
+            "semaforo": _sem.del_parte(parte, m["prob"]),
         })
     out = simular(apuestas)
     out["excluidos"] = sorted(excluidos, key=lambda x: x["pitazo"], reverse=True)

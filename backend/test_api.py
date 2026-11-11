@@ -1406,8 +1406,8 @@ def main():
           c.delete(A + f"/analisis/cowork/{fx}", headers=wb).status_code == 403
           and c.post(A + f"/analisis/cowork/{fx}/cuarentena", json={"motivo": "x" * 20}, headers=wb).status_code == 403)
     r_sim = c.get(A + "/analisis/simulacion", headers=wb)
-    check("web: lee la simulación de apuesta (ocho estrategias, desde el 28/10)",
-          r_sim.status_code == 200 and len(r_sim.json()["estrategias"]) == 8
+    check("web: lee la simulación de apuesta (nueve estrategias, desde el 28/10)",
+          r_sim.status_code == 200 and len(r_sim.json()["estrategias"]) == 9
           and r_sim.json()["desde"].startswith("2026-10-28"), r_sim.text[:200])
     check("web: el backtest (calibración pesada) tampoco", 
           c.get(A + "/analisis/burbujas/backtest", headers=wb).status_code == 403)

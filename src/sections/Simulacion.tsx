@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, Resultado1x2, ResumenAlerta, SimulacionApuesta, TrasFallos } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenSemaforo, SimulacionApuesta, TrasFallos } from '../api/types'
+import { SemaforoChip } from '../components/SemaforoChip'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 
@@ -14,8 +15,8 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'proporcional' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60', string> = {
-  proporcional: 'var(--sim-proporcional)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
+const COLOR: Record<'proporcional' | 'metodoVerde' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60', string> = {
+  proporcional: 'var(--sim-proporcional)', metodoVerde: 'var(--sim-metodo-verde)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
@@ -23,7 +24,7 @@ const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -64,6 +65,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
   const est = (c: EstrategiaClave) => d.estrategias.find((e) => e.clave === c)!
   const visibles: { clave: EstrategiaClave; color: string }[] = [
     { clave: 'proporcional', color: COLOR.proporcional },
+    // el método solo en verde (11/11/2026): en papel, para medir el semáforo
+    ...(d.estrategias.some((e) => e.clave === 'metodoVerde') ? [{ clave: 'metodoVerde' as EstrategiaClave, color: COLOR.metodoVerde }] : []),
     { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
     { clave: 'martingala60', color: COLOR.martingala60 },
   ]
@@ -110,6 +113,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
 
       {d.trasFallos && d.trasFallos.base.n > 0 && <TablaTrasFallos t={d.trasFallos} isMobile={isMobile} />}
 
+      {d.semaforo && <TablaSemaforo r={d.semaforo} isMobile={isMobile} />}
+
       {d.alertaConfianza && <TablaAlerta r={d.alertaConfianza} isMobile={isMobile} />}
 
       <div style={{ ...rotulo, margin: '18px 0 8px' }}>Apuestas · la más nueva primero</div>
@@ -139,7 +144,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
       )}
 
       <div style={{ marginTop: 16, font: '500 11px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-        {d.estrategias.filter((e) => ['proporcional', 'plana', 'plana60', kelly, 'martingala', 'martingala60'].includes(e.clave)).map((e) => (
+        {d.estrategias.filter((e) => ['proporcional', 'metodoVerde', 'plana', 'plana60', kelly, 'martingala', 'martingala60'].includes(e.clave)).map((e) => (
           <div key={e.clave}><b style={{ color: 'var(--t2)' }}>{e.nombre}</b>: {e.descripcion}.</div>
         ))}
         <div style={{ marginTop: 6 }}>{d.nota}.</div>
@@ -355,6 +360,66 @@ function TablaTrasFallos({ t, isMobile }: { t: TrasFallos; isMobile: boolean }) 
   )
 }
 
+/** EL SEMÁFORO DEL ELEGIDO (11/11/2026): verdes contra amarillos, contra lo que pedía la
+ *  cuota. Cuenta para el criterio SOLO lo nuevo (desde el 11/11); la regla está fijada. */
+function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean }) {
+  const tasa = (x: number | null | undefined) => (x == null ? '—' : `${num(100 * x, 1)} %`)
+  const ic = (i: [number, number] | null) => (i ? `${num(100 * i[0], 0)}-${num(100 * i[1], 0)} %` : '—')
+  const celda: React.CSSProperties = { padding: '5px 6px', textAlign: 'right' }
+  const c = r.criterio
+  const color = c.estado === 'senal' ? 'var(--up)' : c.estado === 'sin_senal' ? 'var(--t2)' : 'var(--mark)'
+  const bloques: [string, ResumenSemaforo['nuevo']][] = [[`desde el ${fecha(r.desde).split(' ').slice(0, 2).join(' ')} (cuenta)`, r.nuevo], ['todo lo simulado', r.todo]]
+  const filas: [string, keyof ResumenSemaforo['nuevo']][] = [['🟢 verde', 'verde'], ['🟡 amarillo', 'amarillo'], ['⚪ sin dato', 'sinDato']]
+  return (
+    <div style={{ ...tarjeta, marginTop: 12 }}>
+      <div style={{ ...rotulo, marginBottom: 4 }}>Semáforo del elegido · verdes contra amarillos</div>
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
+        Verde: nuestro 1X2 a ≤ {num(r.umbral, 0)} pts de la casa en los tres resultados y el marcador declarado con el elegido.
+        Se toma en serio con {c.nMinimo}+ verdes nuevos, el elegido {num(100 * c.ventajaMinima, 0)}+ pts sobre lo que pedía la
+        cuota con el intervalo entero por encima y los amarillos por debajo.
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          <thead>
+            <tr style={{ color: 'var(--t3)' }}>
+              <th style={{ ...celda, textAlign: 'left', fontWeight: 600 }}></th>
+              <th style={{ ...celda, fontWeight: 600 }}>casos</th>
+              <th style={{ ...celda, fontWeight: 600 }}>acierta</th>
+              <th style={{ ...celda, fontWeight: 600 }}>pedía</th>
+              <th style={{ ...celda, fontWeight: 600 }}>±</th>
+              <th style={{ ...celda, fontWeight: 600 }}>IC 95 %</th>
+              <th style={{ ...celda, fontWeight: 600 }}>1 u plano</th>
+            </tr>
+          </thead>
+          {bloques.map(([titulo, g]) => (
+            <tbody key={titulo}>
+              <tr><td colSpan={7} style={{ ...celda, textAlign: 'left', paddingTop: 9, font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px' }}>{titulo.toUpperCase()}</td></tr>
+              {filas.map(([nombre, k]) => {
+                const x: GrupoSemaforo = g[k]
+                return (
+                  <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
+                    <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: 700, fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>{nombre}</td>
+                    <td style={celda}>{x.n}</td>
+                    <td style={{ ...celda, color: 'var(--t1)', fontWeight: 700 }}>{tasa(x.tasa)}</td>
+                    <td style={celda}>{tasa(x.pide)}</td>
+                    <td style={{ ...celda, color: colorDe(x.ventaja), fontWeight: 700 }}>{x.ventaja == null ? '—' : `${signo(100 * x.ventaja, 1)} pts`}</td>
+                    <td style={celda}>{ic(x.intervalo)}</td>
+                    <td style={{ ...celda, color: colorDe(x.roiPlano) }}>{pct(x.roiPlano)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          ))}
+        </table>
+      </div>
+      <div style={{ marginTop: 8, font: '600 11px var(--sans)', color, lineHeight: 1.45 }}>
+        {c.estado === 'en_observacion' ? `En observación: ${c.n} de ${c.nMinimo} verdes nuevos cerrados (faltan ${c.faltan}).`
+          : c.estado === 'senal' ? 'Señal: el criterio se cumple. Tomarlo en serio.' : 'Sin señal: con los verdes suficientes, el criterio no se cumple.'}
+      </div>
+    </div>
+  )
+}
+
 // EN QUIÉN DESCONFIAR (10/11/2026, usuario): la alerta no cambia el elegido;
 // esto mide, hacia adelante, si con alerta acertamos menos que sin ella
 function TablaAlerta({ r, isMobile }: { r: ResumenAlerta; isMobile: boolean }) {
@@ -487,7 +552,9 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
           const salio = a.resultado === k
           return (
             <div key={k} style={{ padding: '5px 7px', borderRadius: 8, background: salio ? 'var(--bg3)' : 'transparent', border: `1px solid ${elegido ? 'var(--accent)' : 'var(--line)'}`, minWidth: 0 }}>
-              <div style={{ font: '600 9.5px var(--sans)', color: 'var(--t3)' }}>{RES[k]}{elegido ? ' · elegido' : ''}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', font: '600 9.5px var(--sans)', color: 'var(--t3)' }}>
+                {RES[k]}{elegido ? ' · elegido' : ''}{elegido && <SemaforoChip s={a.semaforo} corta />}
+              </div>
               <div style={{ font: '700 12px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
                 {num(a.probabilidades[k], 0)} % <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>@ {num(a.cuotas[k])}</span>
               </div>
@@ -515,7 +582,7 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
-                    : v.clave === 'proporcional' ? `no apuesta: ${r.motivo}`
+                    : v.clave === 'proporcional' || v.clave === 'metodoVerde' ? `no apuesta: ${r.motivo}`
                     : v.clave === 'plana60' || v.clave === 'martingala60' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>

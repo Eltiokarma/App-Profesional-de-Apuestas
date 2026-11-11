@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las ocho estrategias (con el método)", len(out["estrategias"]) == 8, out.keys())
+check("simulacion() responde con las nueve estrategias (con el método y el método en verde)", len(out["estrategias"]) == 9, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo

@@ -2809,6 +2809,16 @@ def cowork_lecciones(skill: str = Query(default=""), estado: str = Query(default
                                 desde=desde, cuantas=cuantas, buscar=buscar)
 
 
+@app.get(API + "/analisis/semaforo")
+def analisis_semaforo(ids: str = Query(..., max_length=4000, description="fixtures separados por coma")):
+    """El semáforo del elegido de estos partidos, para la web (11/11/2026).
+    NO está abierto a Cowork, a propósito (regla anti-Goodhart: si el analista
+    lo viera, aprendería a pintarse de verde pegándose a la casa)."""
+    from backend.analisis import semaforo
+    lista = [int(x) for x in ids.replace(" ", "").split(",") if x.isdigit()]
+    return {"partes": {str(k): v for k, v in semaforo.de_partidos(lista).items()}}
+
+
 @app.get(API + "/analisis/simulacion")
 def analisis_simulacion():
     """Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana

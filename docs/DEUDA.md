@@ -1052,6 +1052,24 @@ conversación se pierde en la siguiente.
    anteriores de cada skill. **Pendiente de la app**: lo que está en
    `docs/revisiones/PENDIENTES.md`, «Redactado el 10/11».
 
+29. **El semáforo del elegido** (11/11/2026, usuario: «dale, encárgalo… me
+   apoyaré de ese semáforo»). Un color calculado al lado de la etiqueta del
+   elegido (`backend/analisis/semaforo.py`): 🟢 nuestro 1X2 a ≤ 2 pts de la
+   casa sin margen en los tres resultados y el marcador declarado con el
+   elegido · 🟡 falla una · ⚪ sin dato. Medido sobre 374 partes
+   (15/09-01/11): a ≤ 2 pts el elegido ganó 66,7 % contra 53,7 % de la cuota
+   (n 177); con el marcador en contra, 39,8 % (83 de 374); apostando solo
+   cuando el marcador acompaña, 60,1 % contra 55,6 % (ROI +4,3 % contra
+   +2,5 %). Va en Partidos y en el parte (chip), en la simulación (cada
+   apuesta, la serie en papel `metodoVerde` y la tabla «Semáforo del
+   elegido») y en la sección «Semáforo» de `python -m backend.contacto`.
+   **Criterio fijo**, desde los partidos del 11/11: 150+ verdes nuevos, el
+   elegido +5 pts sobre lo que pedía la cuota con el intervalo (Wilson 95 %)
+   entero por encima y los amarillos por debajo (`docs/METODO_APUESTA.md`).
+   **Anti-Goodhart**: el analista no lo ve (ni recibo, ni prompt, ni endpoint
+   del token de Cowork; `test_semaforo` lo verifica). La demo de Simulación
+   ahora se rehace con `python scripts/generar_simulacion_demo.py`.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

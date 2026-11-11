@@ -105,12 +105,57 @@ pitazo), viaja en `trasFallos` de `GET /analisis/simulacion` y la sección
 Simulación la muestra en la tabla «Criterio de contacto».
 
 **Se mide cada fin de semana**: la rutina «SAD · criterio de contacto
-(semanal)» (`trig_011ha3sLwm2qqjCpfpHLmFYx`, lunes 07:43 de Lima, para que
+(semanal, v2)» (`trig_01FPQZSDDb1GsMtYdbKAAFYu` desde el 09/11, en su propia
+sesión; la v1 `trig_011ha3sLwm2qqjCpfpHLmFYx` quedó desactivada; lunes 07:43 de Lima, para que
 entren los partidos del domingo por la noche) corre `python -m backend.contacto`,
 que rearma las mismas apuestas desde la API con el token de Cowork (la
 simulación no está abierta a ese token) y reporta la tabla y el estado. El
 primer conteo, el 04/11: 9 casos tras 3 fallos desde el 28/10 (6 aciertos), a
 ~9 por semana: el criterio se puede decidir hacia febrero de 2027.
+
+## El semáforo del elegido (11/11/2026)
+
+El usuario: «me apoyaré de ese semáforo». No lee la prosa del parte: mira la
+etiqueta del elegido, y ahora esa etiqueta lleva un color CALCULADO
+(`backend/analisis/semaforo.py`; el parte no declara nada de esto):
+
+- 🟢 **confirma**: nuestro 1X2 (`pronostico.probabilidades`, normalizado)
+  queda a **≤ 2,0 puntos** de la casa sin margen (la última captura
+  prepartido, la misma de `lecciones.cuotas_mercado`) en **los tres**
+  resultados, **y** el marcador declarado (`pronostico.marcador`, el primer
+  N-N) tiene el mismo signo que el elegido.
+- 🟡 **duda**: falla una (o las dos); `motivos` dice cuál
+  (`LEJOS-DE-LA-CASA` · `MARCADOR-CONTRADICE`).
+- ⚪ **sin dato**: sin las tres cuotas, sin el 1X2 o sin un marcador legible.
+
+Medido el 11/11 sobre los mismos 374 partes (15/09-01/11):
+
+- Cuando nuestro 1X2 queda a ≤ 2 pts de la casa en los tres, el elegido ganó
+  **66,7 %** contra **53,7 %** que daba la cuota (n 177); cuando se aparta
+  más, rinde por debajo de su cuota (−2,5 a −5 pts).
+- Cuando el marcador declarado **contradice** al elegido (83 de 374), el
+  elegido acierta **39,8 %**. Apostando solo cuando el marcador lo acompaña:
+  **60,1 %** contra **55,6 %** (291 de 374), ROI **+4,3 %** contra +2,5 %;
+  desde el 28/10, 64,7 % contra 61,3 %.
+
+Se encontró mirando esos mismos datos, así que **se mide hacia adelante con
+una regla fija** (como el criterio de contacto, no se mueve): cuenta desde
+los partidos del **11/11/2026** (00:00 de Lima, `semaforo.DESDE`), y se toma
+en serio si con **150+ verdes NUEVOS** el elegido le gana a lo que pedía su
+cuota (media de 1/cuota) por **5+ puntos**, con el intervalo de Wilson al
+95 % **entero por encima** de lo que pedía, y los amarillos quedan **por
+debajo** de los verdes. La cuenta es `simulacion.resumen_semaforo` (campo
+`semaforo` de `GET /analisis/simulacion`, tabla «Semáforo del elegido» en la
+pantalla), con una serie en papel nueva, **`metodoVerde`**: el método (1 % de
+la banca y el mismo freno por tramo) apostando SOLO en verde. La rutina de
+los lunes la reporta en la sección «Semáforo» de `python -m backend.contacto`.
+
+**REGLA ANTI-GOODHART**: el semáforo NO se le muestra a Cowork ni al
+analista —ni en el recibo del depósito, ni en el prompt, ni en ningún
+endpoint que lea su token—. Si lo viera, aprendería a «pintarse de verde»
+pegándose a la casa y la señal moriría. Viaja solo en `/analisis/simulacion`
+y en `/analisis/semaforo` (el chip de la web), que el token de Cowork no abre;
+`backend/test_semaforo.py` lo verifica.
 
 ## Qué falta
 

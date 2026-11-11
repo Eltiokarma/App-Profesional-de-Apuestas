@@ -11,9 +11,11 @@
 // razonable del impacto. Cuando el once aparece —de la ficha ya ingestada o
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
 import { GolesAcotadosPartido } from './GolesAcotados'
+import { SemaforoChip } from './SemaforoChip'
+import { getDataSource } from '../services/datasource'
 import { useEffect, useMemo, useState } from 'react'
 import type { MatrizParte,
-  BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, TdeParte,
+  BloqueTde, DisponibilidadParte, DocumentoParte, EquipoParte, JugadorParte, ParteCoworkDTO, RamaF, Semaforo, SemaforoElegido, TdeParte,
   VentajaMercado, VeredictoParte, ZonaF, DesconfianzaParte,
 } from '../api/types'
 import { COLOR_TRAMO, tramoConfianza } from '../lib/confianza'
@@ -771,6 +773,14 @@ function ConfianzaUnXDos({ o }: { o: VeredictoParte['objetivo'] }) {
 /** Arriba del ensayo, a la vista (pedido del usuario, 24/10/2026): cuánto
  *  dijimos ANTES del partido y, si ya hay veredicto, cómo salió. */
 function PronosticoDelEnsayo({ parte, nombreDe }: { parte: ParteCoworkDTO; nombreDe: (l: 'a' | 'b') => string }) {
+  // el semáforo del elegido (11/11/2026): lo calcula el backend en un endpoint
+  // que el token de Cowork no lee; sin él, el pronóstico se pinta igual
+  const [sem, setSem] = useState<SemaforoElegido | null>(null)
+  useEffect(() => {
+    let vivo = true
+    getDataSource().semaforo([parte.fixtureId]).then((r) => { if (vivo) setSem(r[parte.fixtureId] ?? null) }).catch(() => { /* sin semáforo */ })
+    return () => { vivo = false }
+  }, [parte.fixtureId, parte.pronostico?.marcador])
   const pr = parte.pronostico?.probabilidades
   const o = parte.veredicto?.objetivo
   const jugado = !!(o?.jugado && o.unXDos)
@@ -792,6 +802,7 @@ function PronosticoDelEnsayo({ parte, nombreDe }: { parte: ParteCoworkDTO; nombr
             : <span style={{ color: 'var(--t3)' }}>sin favorito claro</span>}
           {' '}<span style={{ color: 'var(--t3)' }}>({pct.join('/')})</span>
           {sel && <>{' '}<span style={{ padding: '1px 6px', borderRadius: 5, background: `color-mix(in oklch, ${COLOR_TRAMO[tramoConfianza(max)]}, transparent 85%)`, font: '700 9.5px var(--mono)', color: COLOR_TRAMO[tramoConfianza(max)] }}>tramo {tramoConfianza(max)}</span></>}
+          {sel && sem && <>{' '}<SemaforoChip s={sem} /></>}
           {parte.pronostico?.marcador && <><span style={{ color: 'var(--t3)' }}> · </span>marcador {parte.pronostico.marcador}</>}
         </span>
       )}

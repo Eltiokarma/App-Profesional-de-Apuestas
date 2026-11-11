@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
-import { fixtureNum, loadMarcasCowork, refrescarLiga } from '../services/appdata'
+import { fixtureNum, loadMarcasCowork, loadSemaforos, refrescarLiga } from '../services/appdata'
 import { COLOR_TRAMO, SEL_CORTA, SEL_LARGA } from '../lib/confianza'
-import type { MarcaCoworkDTO } from '../api/types'
+import type { MarcaCoworkDTO, SemaforoElegido } from '../api/types'
+import { SemaforoChip } from '../components/SemaforoChip'
 import type { Match, MatchStatus } from '../data/types'
 import { LatidoCowork } from '../components/LatidoCowork'
 import { RevisorDiario } from '../components/RevisorDiario'
@@ -148,6 +149,15 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     if (!idsDia) { setMarcas({}); return }
     let vivo = true
     loadMarcasCowork(idsDia.split(',')).then((r) => { if (vivo) setMarcas(r) }).catch(() => { /* la marca no rompe la lista */ })
+    return () => { vivo = false }
+  }, [idsDia])
+  // EL SEMÁFORO DEL ELEGIDO (11/11/2026): al lado de la etiqueta del elegido;
+  // como la marca, si la llamada falla la lista sigue igual
+  const [semaforos, setSemaforos] = useState<Record<number, SemaforoElegido>>({})
+  useEffect(() => {
+    if (!idsDia) { setSemaforos({}); return }
+    let vivo = true
+    loadSemaforos(idsDia.split(',')).then((r) => { if (vivo) setSemaforos(r) }).catch(() => { /* el semáforo no rompe la lista */ })
     return () => { vivo = false }
   }, [idsDia])
 
@@ -361,6 +371,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                     {!isMobile && (
                       <span style={{ width: 158, flexShrink: 0, display: 'flex' }}>
                         <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta={false} />
+                        {marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} />}
                       </span>
                     )}
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: isMobile ? 6 : 10 }}>
@@ -376,6 +387,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                         {live ? m.min : fin ? 'FIN' : 'PROX'}
                       </span>
                       {isMobile && <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta />}
+                      {isMobile && marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} corta />}
                     </span>
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
                       <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
