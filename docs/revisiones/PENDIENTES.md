@@ -24,6 +24,25 @@ Ya registrado en la Simulación desde el 10/11 (PR #469). Qué hacer con la
 alerta en el método (seguir, bajar carga o jugar elegido-o-empate) se decide
 con 100+ partidos con alerta.
 
+## Agregado del usuario el 11/11/2026 — distancia a la casa y marcador (OBSERVACIÓN)
+
+Para sad-analysis v4.6, en «Medido en conversación», como observación y no
+como regla (`SAD_v4.5_propuesta.md`, puntos 21 y 22):
+
+- **(h) Distancia a la casa:** con ≤ 2 pts en los tres resultados el elegido
+  ganó 66,7 % contra 53,7 % (n 177, 374 partes del 15/09-01/11); de 2 a 5 pts,
+  44,2 contra 46,7 (n 104); de 5 a 10, 46,0 contra 51,1 (n 63); de + 10, 50,0
+  contra 53,1 (n 30). Eligiendo distinto que la casa (33): 11 contra 10. El
+  valor está en marcar cuándo creerle a la casa.
+- **(i) Marcador contra el elegido:** en 83 de 374 el elegido acierta 39,8 %;
+  con el marcador acompañando, 60,1 % contra 55,6 %. Refuerza la regla (h) de
+  la v4.4: el marcador acompaña al elegido salvo un hecho nombrado de este
+  partido.
+- **La app** calcula un SEMÁFORO con las dos señales desde el 11/11, con regla
+  fija. **El skill no lo menciona** ni pide acercarse a la casa para «quedar en
+  verde» (anti-Goodhart). Las reglas del número contra el mercado quedan como
+  en la v4.4.
+
 ## Redactado el 10/11/2026 — lo que queda de la APP
 
 Las cuatro revisiones aprobadas el 10/11 (sad-analysis v4.5, TDE v0.1.26,

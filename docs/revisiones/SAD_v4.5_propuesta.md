@@ -1594,6 +1594,48 @@ bajados por la API). Los scripts no quedaron en el repo: el método es el texto.
     el punto 11 empujan **hacia** el número del mercado (el 20 frena la
     subida y prohíbe bajar sin dato).
 
+
+### 21 (h). Cuánto se aparta nuestro 1X2 de la casa separa los partidos *(agregado del usuario, 11/11/2026; OBSERVACIÓN, no regla)*
+
+374 partes del 15/09 al 01/11, por la mayor distancia entre nuestro 1X2 y la
+casa (sin margen) en cualquiera de los tres resultados:
+
+| Distancia máxima a la casa | n | Elegido ganó | Lo que pedía la casa |
+|---|---:|---:|---:|
+| ≤ 2 pts en los tres | 177 | **66,7 %** | 53,7 % |
+| 2-5 pts | 104 | 44,2 % | 46,7 % |
+| 5-10 pts | 63 | 46,0 % | 51,1 % |
+| + 10 pts | 30 | 50,0 % | 53,1 % |
+
+Cuando elegimos distinto que la casa (33 veces): 11 aciertos contra 10 del
+favorito de la casa. **Lectura:** el valor no está en apartarse de la casa;
+está en marcar **cuándo creerle**. Cerca de la casa el elegido rinde 13 puntos
+sobre lo que pide la cuota; lejos, por debajo. Es coherente con el punto 19 (no
+se busca valor contra la casa) y con el motivo `SOBRE-LA-CASA` de
+`DESCONFIAR_propuesta.md`.
+
+### 22 (i). Un marcador que contradice al elegido marca duda *(agregado del usuario, 11/11/2026; OBSERVACIÓN, no regla)*
+
+En 83 de los 374 partes el marcador declarado contradice al elegido del 1X2.
+Ahí el elegido acierta **39,8 %**. Con el marcador acompañando, **60,1 %**
+contra 55,6 % que pedía la casa. **Refuerza la regla (h) de la v4.4** (espina,
+marcador y 1X2 no se contradicen en silencio) y pide que **el marcador acompañe
+al elegido salvo que se nombre un hecho de ESTE partido** que lo separe.
+
+### Lo que hace la app con (h) e (i) — y lo que el skill NO dice
+
+- La app calcula un **SEMÁFORO** con estas dos señales, medido desde el
+  11/11/2026 con regla fija. Es de la app, como `DESCONFIAR`.
+- **Anti-Goodhart:** el skill **no menciona el semáforo** ni le pide al
+  analista acercarse a la casa para «quedar en verde». Si el analista copia a
+  la casa para pintar verde, la señal deja de medir nada.
+- **Las reglas del número contra el mercado quedan como en la v4.4.** (h) e (i)
+  entran como observación medida; no mueven ningún número del parte.
+- **Estado:** la v4.5 ya está redactada y subida (10/11, ~07:15 de Lima). Estos
+  dos puntos **no cambian el texto subido**: se anotan acá como medición y en
+  `PENDIENTES.md` para la próxima versión (v4.6), junto con «en quién
+  desconfiar».
+
 ---
 
 ## Lo que no cambia
