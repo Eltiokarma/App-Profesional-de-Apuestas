@@ -2860,15 +2860,31 @@ export interface ResumenSemaforo {
   todo: GruposSemaforo
   /** desde `desde`: lo único que cuenta para el criterio */
   nuevo: GruposSemaforo
+  /** POR ESCALONES (11/11/2026, fijado antes de que haya verdes nuevos): 70 y 110 →
+   *  `prometedor` si el límite inferior del IC queda sobre lo que pide; 150 → `confirmado`
+   *  (+5 pts, IC encima, amarillos abajo) o `sin_contacto`; `no_se_sostiene` si acierta
+   *  menos de lo que pide en cualquier escalón; antes de 70, en observación. */
   criterio: {
+    /** 0 = antes de 70 */
+    escalon: 0 | 70 | 110 | 150
+    proximoEscalon: number | null
+    escalones: number[]
+    /** hasta el próximo escalón (0 desde 150) */
+    faltan: number
+    n: number
+    /** 0-1 */
+    acierto: number | null
+    /** 0-1: media de 1/cuota del elegido en verde */
+    pide: number | null
+    /** Wilson 95 %, 0-1 */
+    intervalo: [number, number] | null
+    amarillos: { n: number; tasa: number | null }
     nMinimo: number
     ventajaMinima: number
-    n: number
-    faltan: number
     intervaloSobreLaCuota: boolean
     amarillosDebajo: boolean
     cumple: boolean
-    estado: 'en_observacion' | 'sin_senal' | 'senal'
+    estado: 'en_observacion' | 'prometedor' | 'no_se_sostiene' | 'confirmado' | 'sin_contacto'
     texto: string
   }
   nota: string

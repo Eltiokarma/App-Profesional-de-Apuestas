@@ -1055,15 +1055,32 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    }
   },
   "criterio": {
+   "escalon": 0,
+   "proximoEscalon": 70,
+   "escalones": [
+    70,
+    110,
+    150
+   ],
+   "faltan": 68,
+   "n": 2,
+   "acierto": 0.5,
+   "pide": 0.6266,
+   "intervalo": [
+    0.0945,
+    0.9055
+   ],
+   "amarillos": {
+    "n": 1,
+    "tasa": 0.0
+   },
    "nMinimo": 150,
    "ventajaMinima": 0.05,
-   "n": 2,
-   "faltan": 148,
    "intervaloSobreLaCuota": false,
    "amarillosDebajo": true,
    "cumple": false,
    "estado": "en_observacion",
-   "texto": "en observación: 2 de 150 verdes nuevos, el elegido acierta 50.0 % contra 62.7 % que pedía la cuota (-12.7 pts)"
+   "texto": "en observación: 2 verdes nuevos, el elegido acierta 50.0 % contra 62.7 % que pedía la cuota (-12.7 pts, IC 9-91 %) · faltan 68 para el escalón 70"
   },
   "nota": "verde = nuestro 1X2 a ≤ 2 pts de la casa (sin margen) en los tres resultados y el marcador declarado con el elegido; amarillo = falla una. Calculado, nunca declarado, y fuera de la vista del analista (no va al recibo ni a un endpoint del token de Cowork). El criterio cuenta solo los partidos desde el 11/11/2026"
  },

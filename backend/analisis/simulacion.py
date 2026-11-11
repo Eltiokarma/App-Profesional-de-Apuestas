@@ -240,12 +240,22 @@ def resumen_alerta(cerradas: list[dict]) -> dict:
     }
 
 
-# EL CRITERIO DEL SEMÁFORO, FIJO (11/11/2026, usuario; como el de contacto, NO
-# se mueve): cuenta desde los partidos del 11/11/2026 (`semaforo.DESDE`). Se
-# toma en serio si con 150+ verdes NUEVOS el elegido le gana a lo que pedía
-# su cuota por 5+ puntos con el intervalo de Wilson al 95 % entero por encima
-# de lo que pedía, y los amarillos quedan por debajo de los verdes.
-SEMAFORO_N = 150
+# EL CRITERIO DEL SEMÁFORO, POR ESCALONES (11/11/2026, usuario: «150 son
+# muchos, lo ponemos de forma progresiva»; fijado ANTES de que haya verdes
+# nuevos y, como el de contacto, NO se mueve). Cuenta desde los partidos del
+# 11/11/2026 (`semaforo.DESDE`). Con n verdes nuevos, acierto = tasa del
+# elegido, pide = media de 1/cuota, IC = Wilson 95 %:
+#   - n < 70: en observación (faltan hasta el próximo escalón).
+#   - escalón 70 y 110: `prometedor` si el límite INFERIOR del IC queda por
+#     encima de lo que pide; `no_se_sostiene` si acierto < pide; si no, en
+#     observación. Con 70 solo pasa si sigue tan fuerte como lo visto (+12 pts
+#     aprox.): si no sirve se sabe en una semana.
+#   - escalón 150: `confirmado` si acierto − pide ≥ 5 pts, el límite inferior
+#     por encima de lo que pide y los amarillos aciertan menos que los verdes
+#     (la regla original); si no, `sin_contacto`. `no_se_sostiene` sigue
+#     valiendo si acierto < pide.
+SEMAFORO_ESCALONES = (70, 110, 150)
+SEMAFORO_N = SEMAFORO_ESCALONES[-1]
 SEMAFORO_VENTAJA = 0.05
 
 
@@ -261,6 +271,55 @@ def _grupo_semaforo(fs: list[dict]) -> dict:
             "pide": round(pide, 4), "ventaja": round(ac / n - pide, 4), "roiPlano": round(gan / n, 4)}
 
 
+def criterio_semaforo(v: dict, a: dict) -> dict:
+    """El estado del criterio por escalones con los verdes (`v`) y amarillos
+    (`a`) NUEVOS, cada uno como lo arma `_grupo_semaforo`."""
+    n = v["n"]
+    escalon = max((e for e in SEMAFORO_ESCALONES if n >= e), default=0)
+    proximo = next((e for e in SEMAFORO_ESCALONES if n < e), None)
+    acierto, pide, ic = v["tasa"], v["pide"], v["intervalo"]
+    sobre = ic is not None and pide is not None and ic[0] > pide
+    debajo_de_la_cuota = acierto is not None and pide is not None and acierto < pide
+    amarillos_abajo = a["tasa"] is None or (acierto is not None and a["tasa"] < acierto)
+    ventaja = None if acierto is None or pide is None else acierto - pide
+    if escalon == 0:
+        estado = "en_observacion"
+    elif debajo_de_la_cuota:
+        estado = "no_se_sostiene"
+    elif escalon < SEMAFORO_N:
+        estado = "prometedor" if sobre else "en_observacion"
+    else:
+        estado = ("confirmado" if ventaja is not None and ventaja >= SEMAFORO_VENTAJA - 1e-9 and sobre
+                  and amarillos_abajo else "sin_contacto")
+    pct = lambda x: f"{100 * x:.1f} %"  # noqa: E731
+    cifras = (f"el elegido acierta {pct(acierto)} contra {pct(pide)} que pedía la cuota ({100 * ventaja:+.1f} pts, "
+              f"IC {100 * ic[0]:.0f}-{100 * ic[1]:.0f} %)" if acierto is not None else "")
+    sigue = f" · faltan {proximo - n} para el escalón {proximo}" if proximo else ""
+    if estado == "confirmado":
+        texto = (f"CONFIRMADO en el escalón {escalon}: con {n} verdes nuevos {cifras}, 5+ pts con el intervalo "
+                 "entero por encima y los amarillos por debajo: tomarlo en serio")
+    elif estado == "no_se_sostiene":
+        texto = f"NO SE SOSTIENE en el escalón {escalon}: con {n} verdes nuevos {cifras}, por debajo de su cuota"
+    elif estado == "prometedor":
+        texto = (f"PROMETEDOR en el escalón {escalon}: con {n} verdes nuevos {cifras}, el intervalo entero por "
+                 f"encima de lo que pedía{sigue}")
+    elif estado == "sin_contacto":
+        texto = (f"sin contacto en el escalón {escalon}: con {n} verdes nuevos {cifras}; pide +"
+                 f"{100 * SEMAFORO_VENTAJA:.0f} pts con el intervalo entero por encima y los amarillos abajo")
+    else:
+        texto = (f"en observación{f' (escalón {escalon})' if escalon else ''}: {n} verdes nuevos"
+                 + (f", {cifras}" if cifras else "") + sigue)
+    return {
+        "escalon": escalon, "proximoEscalon": proximo, "escalones": list(SEMAFORO_ESCALONES),
+        "faltan": (proximo - n) if proximo else 0, "n": n,
+        "acierto": acierto, "pide": pide, "intervalo": ic,
+        "amarillos": {"n": a["n"], "tasa": a["tasa"]},
+        "nMinimo": SEMAFORO_N, "ventajaMinima": SEMAFORO_VENTAJA,
+        "intervaloSobreLaCuota": sobre, "amarillosDebajo": amarillos_abajo,
+        "cumple": estado == "confirmado", "estado": estado, "texto": texto,
+    }
+
+
 def resumen_semaforo(cerradas: list[dict]) -> dict:
     """Verdes, amarillos y sin dato: el acierto del elegido contra lo que pedía
     la cuota (1/cuota media) y la plana a 1 u, en todo lo simulado y en lo
@@ -273,32 +332,11 @@ def resumen_semaforo(cerradas: list[dict]) -> dict:
     desde = _utc(_sem.DESDE)
     nuevas = [f for f in cerradas if (_utc(f["pitazo"]) or desde) >= desde]
     todo, nuevo = por_estado(cerradas), por_estado(nuevas)
-    v, a = nuevo["verde"], nuevo["amarillo"]
-    sobre = v["intervalo"] is not None and v["intervalo"][0] > v["pide"]
-    amarillos_abajo = a["ventaja"] is None or (v["ventaja"] is not None and a["ventaja"] < v["ventaja"])
-    cumple = (v["n"] >= SEMAFORO_N and v["ventaja"] is not None and v["ventaja"] >= SEMAFORO_VENTAJA
-              and sobre and amarillos_abajo)
-    pct = lambda x: f"{100 * x:.1f} %"  # noqa: E731
-    if cumple:
-        texto = (f"SEÑAL: con {v['n']} verdes nuevos el elegido acierta {pct(v['tasa'])} contra {pct(v['pide'])} que "
-                 f"pedía la cuota ({100 * v['ventaja']:+.1f} pts), el intervalo entero por encima y los amarillos "
-                 "por debajo: tomarlo en serio")
-    elif v["n"] < SEMAFORO_N:
-        texto = (f"en observación: {v['n']} de {SEMAFORO_N} verdes nuevos"
-                 + (f", el elegido acierta {pct(v['tasa'])} contra {pct(v['pide'])} que pedía la cuota "
-                    f"({100 * v['ventaja']:+.1f} pts)" if v["tasa"] is not None else ""))
-    else:
-        texto = (f"sin señal: con {v['n']} verdes nuevos el elegido acierta {pct(v['tasa'])} contra "
-                 f"{pct(v['pide'])} que pedía la cuota ({100 * v['ventaja']:+.1f} pts); pide "
-                 f"+{100 * SEMAFORO_VENTAJA:.0f} pts con el intervalo entero por encima y los amarillos abajo")
+    criterio = criterio_semaforo(nuevo["verde"], nuevo["amarillo"])
     return {
         "desde": _sem.DESDE, "umbral": _sem.UMBRAL_CASA,
         "todo": todo, "nuevo": nuevo,
-        "criterio": {"nMinimo": SEMAFORO_N, "ventajaMinima": SEMAFORO_VENTAJA, "n": v["n"],
-                     "faltan": max(0, SEMAFORO_N - v["n"]), "intervaloSobreLaCuota": sobre,
-                     "amarillosDebajo": amarillos_abajo, "cumple": cumple,
-                     "estado": "senal" if cumple else ("en_observacion" if v["n"] < SEMAFORO_N else "sin_senal"),
-                     "texto": texto},
+        "criterio": criterio,
         "nota": ("verde = nuestro 1X2 a ≤ 2 pts de la casa (sin margen) en los tres resultados y el marcador declarado "
                  "con el elegido; amarillo = falla una. Calculado, nunca declarado, y fuera de la vista del analista "
                  "(no va al recibo ni a un endpoint del token de Cowork). El criterio cuenta solo los partidos desde "

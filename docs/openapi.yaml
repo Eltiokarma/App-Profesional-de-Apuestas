@@ -2029,9 +2029,11 @@ components:
           description: >
             EL SEMÁFORO DEL ELEGIDO (11/11/2026): verdes (`confirma`), amarillos (`duda`) y sin dato, con el acierto
             del elegido contra lo que pedía la cuota y la plana a 1 u, en todo lo simulado (`todo`) y en lo NUEVO
-            desde `desde` (`nuevo`), que es lo único que cuenta para el criterio fijo: 150+ verdes nuevos, el
-            elegido 5+ pts sobre lo que pedía la cuota con el intervalo entero por encima y los amarillos debajo
-            (docs/METODO_APUESTA.md). Calculado; NUNCA se le muestra al analista ni al token de Cowork.
+            desde `desde` (`nuevo`), que es lo único que cuenta para el criterio POR ESCALONES (11/11/2026,
+            fijado antes de que haya verdes nuevos): en 70 y 110 verdes, `prometedor` si el límite inferior del
+            IC queda sobre lo que pedía la cuota; en 150, `confirmado` con el elegido 5+ pts sobre lo que pedía,
+            el IC entero encima y los amarillos debajo (si no, `sin_contacto`); en cualquier escalón,
+            `no_se_sostiene` si acierta menos de lo que pedía (docs/METODO_APUESTA.md). Calculado; NUNCA se le muestra al analista ni al token de Cowork.
           properties:
             desde: { type: string, description: 'UTC; 00:00 de Lima del 11/11/2026' }
             umbral: { type: number, description: 'puntos de probabilidad sobre/bajo la casa (sin margen) en cada resultado' }
@@ -2040,14 +2042,25 @@ components:
             criterio:
               type: object
               properties:
-                nMinimo: { type: integer }
-                ventajaMinima: { type: number, description: '0-1: lo que el elegido tiene que acertar sobre lo que pedía la cuota' }
+                escalon: { type: integer, enum: [0, 70, 110, 150], description: 'el último escalón alcanzado por los verdes nuevos (0 = antes de 70)' }
+                proximoEscalon: { type: integer, nullable: true, description: 'null desde 150' }
+                escalones: { type: array, items: { type: integer } }
+                faltan: { type: integer, description: 'verdes nuevos que faltan para el próximo escalón (0 desde 150)' }
                 n: { type: integer, description: 'verdes nuevos cerrados' }
-                faltan: { type: integer }
+                acierto: { type: number, nullable: true, description: '0-1: tasa del elegido en verde' }
+                pide: { type: number, nullable: true, description: '0-1: media de 1/cuota del elegido en verde' }
+                intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 % del acierto, 0-1' }
+                amarillos:
+                  type: object
+                  properties:
+                    n: { type: integer }
+                    tasa: { type: number, nullable: true }
+                nMinimo: { type: integer, description: 'el escalón final (150)' }
+                ventajaMinima: { type: number, description: '0-1: lo que el elegido tiene que acertar sobre lo que pedía la cuota en el escalón final' }
                 intervaloSobreLaCuota: { type: boolean }
                 amarillosDebajo: { type: boolean }
-                cumple: { type: boolean }
-                estado: { type: string, enum: [en_observacion, sin_senal, senal] }
+                cumple: { type: boolean, description: 'true solo con `confirmado`' }
+                estado: { type: string, enum: [en_observacion, prometedor, no_se_sostiene, confirmado, sin_contacto] }
                 texto: { type: string }
             nota: { type: string }
         alertaConfianza:
