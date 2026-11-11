@@ -1,5 +1,5 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
-import type { BurbujasEquipoDTO, SimulacionApuesta } from './types'
+import type { BurbujasEquipoDTO, SemaforoElegido, SimulacionApuesta } from './types'
 import { apiDelete, apiGet, apiPost, qs } from './client'
 import type {
   CausaIncidencia,
@@ -167,6 +167,10 @@ export const SadApi = {
    *  Sin onces, se intenta con la ficha que ya capturó la ingesta. */
   resolverXi: (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     apiPost<ParteCoworkDTO>(`/analisis/cowork/${fixtureId}/xi`, body, { timeoutMs: 20_000 }),
+
+  /** El semáforo del elegido de estos partidos (web; el token de Cowork no lo lee, a propósito). */
+  semaforo: (fixtureIds: number[]) =>
+    apiGet<{ partes: Record<string, SemaforoElegido> }>('/analisis/semaforo' + qs({ ids: fixtureIds.join(',') })),
 
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026 (plana, Kelly, martingala). */
   simulacion: () => apiGet<SimulacionApuesta>('/analisis/simulacion', { timeoutMs: 60_000 }),

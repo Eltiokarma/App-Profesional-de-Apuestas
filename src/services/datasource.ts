@@ -46,6 +46,7 @@ import type {
   InventarioLecciones,
   LeccionesParams,
   SimulacionApuesta,
+  SemaforoElegido,
   SeparacionLigaDTO,
   RevisionSkillDTO,
   DerrotasFavoritoDTO,
@@ -185,6 +186,8 @@ export interface SadDataSource {
   /** Llega el once y el bloque F se cierra en el backend (aritmética, sin IA).
    *  Sin onces en el cuerpo, se intenta con la ficha ya ingestada. */
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
+  /** El semáforo del elegido (11/11/2026): calculado, para el usuario; el analista no lo ve. */
+  semaforo(fixtureIds: number[]): Promise<Record<number, SemaforoElegido>>
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana, Kelly y martingala. */
   simulacion(): Promise<SimulacionApuesta>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
@@ -903,6 +906,24 @@ class MockDataSource implements SadDataSource {
     return { partes, total: Object.keys(partes).length }
   }
 
+  async semaforo(fixtureIds: number[]): Promise<Record<number, SemaforoElegido>> {
+    // de muestra, estable por partido (como las marcas): verde, amarillo por la
+    // casa, amarillo por el marcador y sin dato, en rotación
+    const out: Record<number, SemaforoElegido> = {}
+    for (const fid of fixtureIds) {
+      if (!MATCHES.some((x) => FIXTURE_NUM(x.id) === fid)) continue
+      const caso = fid % 4
+      out[fid] = {
+        estado: caso === 0 || caso === 1 ? 'confirma' : caso === 3 ? 'sinDato' : 'duda',
+        motivos: caso === 2
+          ? [{ codigo: 'LEJOS-DE-LA-CASA', detalle: 'en local le damos 58.0 % y la casa 52.4 % (+5.6 pts; el verde pide ≤ 2 en los tres)' }]
+          : caso === 3 ? [{ codigo: 'SIN-CUOTAS', detalle: 'sin las tres cuotas del 1X2 capturadas' }] : [],
+        elegido: 'local', distancia: caso === 3 ? null : caso === 2 ? 5.6 : 1.2, marcadorSigno: 'local', umbral: 2,
+      }
+    }
+    return out
+  }
+
   async simulacion(): Promise<SimulacionApuesta> {
     return SIMULACION_DEMO
   }
@@ -1285,6 +1306,11 @@ class HttpDataSource implements SadDataSource {
     fixtureIds.length ? SadApi.coworkMarcas(fixtureIds) : Promise.resolve({ partes: {}, total: 0 })
   resolverXi = (fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }) =>
     SadApi.resolverXi(fixtureId, body)
+  semaforo = async (fixtureIds: number[]) => {
+    if (!fixtureIds.length) return {}
+    const r = await SadApi.semaforo(fixtureIds)
+    return Object.fromEntries(Object.entries(r.partes).map(([k, v]) => [Number(k), v]))
+  }
   simulacion = () => SadApi.simulacion()
   lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
   cuarentena = (fixtureId: number, motivo: string, ensena = false) => SadApi.cuarentena(fixtureId, motivo, ensena)

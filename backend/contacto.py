@@ -32,6 +32,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 os.environ.setdefault("SAD_SIN_HILOS", "1")
 
+from backend.analisis import semaforo  # noqa: E402
 from backend.analisis import simulacion as sim  # noqa: E402
 from backend.analisis.escala import es_copa_nacional  # noqa: E402
 
@@ -96,6 +97,8 @@ def armar(datos: dict) -> tuple[list[dict], list[dict]]:
             "versionPrompt": parte.get("version") or "", "probabilidades": probs,
             "cuotas": {k: round(c[k], 3) for k in sim.CLAVES},
             "mercado": {k: round(100 * inv[k] / tot, 1) for k in sim.CLAVES}, "resultado": resultado,
+            # el semáforo del elegido (11/11/2026) con el 1X2 sin margen de /cuotas
+            "semaforo": semaforo.del_parte(parte, {k: 100 * inv[k] / tot for k in sim.CLAVES}),
         })
     return apuestas, excluidos
 
@@ -148,6 +151,32 @@ def informe(out: dict) -> str:
     if m:
         lineas.append(f"  martingala: banca {m['banca']:.2f}, caída máx. {100 * m['caidaMaxima']:.1f} %, "
                       f"apuesta máx. {m['montoMaximo']:.0f} u")
+    lineas += ["", informe_semaforo(out)]
+    return "\n".join(lineas)
+
+
+def informe_semaforo(out: dict) -> str:
+    """La sección «Semáforo» del informe de los lunes (11/11/2026)."""
+    s = out.get("semaforo")
+    if not s:
+        return "Semáforo · sin datos"
+    pct = lambda x: "—" if x is None else f"{100 * x:.1f} %"  # noqa: E731
+    pts = lambda x: "—" if x is None else f"{100 * x:+.1f} pts"  # noqa: E731
+    ic = lambda i: "—" if not i else f"{100 * i[0]:.0f}-{100 * i[1]:.0f} %"  # noqa: E731
+    lineas = [f"Semáforo · cuenta desde {s['desde'][:10]} (verde = a ≤ {s['umbral']:g} pts de la casa y el "
+              "marcador con el elegido)"]
+    for etiqueta, clave in (("nuevos", "nuevo"), ("todo lo simulado", "todo")):
+        g = s[clave]
+        lineas.append(f"  {etiqueta}:")
+        for nombre, k in (("verdes", "verde"), ("amarillos", "amarillo"), ("sin dato", "sinDato")):
+            x = g[k]
+            lineas.append(f"    {nombre}: {x['aciertos']} de {x['n']} ({pct(x['tasa'])}, IC {ic(x['intervalo'])}) · "
+                          f"la cuota pedía {pct(x['pide'])} · {pts(x['ventaja'])} · ROI plano {pct(x['roiPlano'])}")
+    lineas.append(f"  → {s['criterio']['texto']}")
+    mv = next((e for e in out.get("estrategias") or [] if e["clave"] == "metodoVerde"), None)
+    if mv:
+        lineas.append(f"  método solo en verde: banca {mv['banca']:.2f} en {mv['apuestas']} apuestas, "
+                      f"caída máx. {100 * mv['caidaMaxima']:.1f} %")
     return "\n".join(lineas)
 
 

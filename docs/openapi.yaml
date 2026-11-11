@@ -1376,7 +1376,7 @@ paths:
       summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
       description: >
         Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
-        partes, con ocho series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
+        partes, con nueve series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
         derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
@@ -1393,6 +1393,25 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SimulacionApuesta' }
+  /analisis/semaforo:
+    get:
+      summary: El semáforo del elegido de estos partidos (web; NO abierto a Cowork)
+      description: >
+        Para el chip al lado del elegido en Partidos y en el parte (11/11/2026). Calculado del 1X2 del parte, la
+        última captura de cuotas (sin margen) y el marcador declarado (`Semaforo`). REGLA ANTI-GOODHART: el token
+        de Cowork NO lo lee —ni acá ni en el recibo ni en el GET del parte—: si el analista lo viera aprendería a
+        pintarse de verde pegándose a la casa. Solo vienen los partidos con parte.
+      parameters:
+        - { name: ids, in: query, required: true, schema: { type: string }, description: 'fixtures separados por coma (hasta 300)' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  partes: { type: object, additionalProperties: { $ref: '#/components/schemas/SemaforoElegido' } }
   /analisis/cowork/espina/calibracion:
     get:
       summary: La espina de la tarjeta medida contra los veredictos ciegos
@@ -1874,6 +1893,41 @@ components:
             aciertos: { type: integer }
             tasa: { type: number }
             pide: { type: number, description: 'la casa sin margen, 0-1' }
+    SemaforoElegido:
+      type: object
+      description: >
+        El semáforo del elegido (11/11/2026, backend/analisis/semaforo.py): `confirma` = nuestro 1X2 a ≤ `umbral`
+        pts de la casa (sin margen, última captura prepartido) en los tres resultados Y el marcador declarado con el
+        mismo signo que el elegido; `duda` = falla una (`motivos`); `sinDato` = sin cuotas, sin 1X2 o sin marcador.
+      properties:
+        estado: { type: string, enum: [confirma, duda, sinDato] }
+        motivos:
+          type: array
+          items:
+            type: object
+            properties:
+              codigo: { type: string, enum: [LEJOS-DE-LA-CASA, MARCADOR-CONTRADICE, SIN-1X2, SIN-CUOTAS, SIN-MARCADOR] }
+              detalle: { type: string }
+        elegido: { type: string, nullable: true, enum: [local, empate, visita, null] }
+        distancia: { type: number, nullable: true, description: 'la mayor diferencia |nuestro − casa| de los tres, en pts' }
+        marcadorSigno: { type: string, nullable: true, enum: [local, empate, visita, null] }
+        umbral: { type: number }
+    GrupoSemaforo:
+      type: object
+      properties:
+        n: { type: integer }
+        aciertos: { type: integer }
+        tasa: { type: number, nullable: true }
+        intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 %, 0-1' }
+        pide: { type: number, nullable: true, description: 'media de 1/cuota del elegido, 0-1' }
+        ventaja: { type: number, nullable: true, description: 'tasa − pide' }
+        roiPlano: { type: number, nullable: true, description: '1 u al elegido: ganancia / apostado' }
+    GruposSemaforo:
+      type: object
+      properties:
+        verde: { $ref: '#/components/schemas/GrupoSemaforo' }
+        amarillo: { $ref: '#/components/schemas/GrupoSemaforo' }
+        sinDato: { $ref: '#/components/schemas/GrupoSemaforo' }
     SimulacionApuesta:
       type: object
       properties:
@@ -1889,7 +1943,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [proporcional, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60] }
+              clave: { type: string, enum: [proporcional, metodoVerde, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -1913,7 +1967,7 @@ components:
               tramos:
                 type: array
                 nullable: true
-                description: 'solo el método (proporcional): el freno de cada tramo de confianza AHORA, sobre sus últimos 50 partidos cerrados (con o sin apuesta)'
+                description: 'solo el método (proporcional y metodoVerde): el freno de cada tramo de confianza AHORA, sobre sus últimos 50 partidos cerrados (con o sin apuesta)'
                 items:
                   type: object
                   properties:
@@ -1970,6 +2024,32 @@ components:
                 cumple: { type: boolean }
                 estado: { type: string, enum: [en_observacion, sin_contacto, contacto] }
                 texto: { type: string }
+        semaforo:
+          type: object
+          description: >
+            EL SEMÁFORO DEL ELEGIDO (11/11/2026): verdes (`confirma`), amarillos (`duda`) y sin dato, con el acierto
+            del elegido contra lo que pedía la cuota y la plana a 1 u, en todo lo simulado (`todo`) y en lo NUEVO
+            desde `desde` (`nuevo`), que es lo único que cuenta para el criterio fijo: 150+ verdes nuevos, el
+            elegido 5+ pts sobre lo que pedía la cuota con el intervalo entero por encima y los amarillos debajo
+            (docs/METODO_APUESTA.md). Calculado; NUNCA se le muestra al analista ni al token de Cowork.
+          properties:
+            desde: { type: string, description: 'UTC; 00:00 de Lima del 11/11/2026' }
+            umbral: { type: number, description: 'puntos de probabilidad sobre/bajo la casa (sin margen) en cada resultado' }
+            todo: { $ref: '#/components/schemas/GruposSemaforo' }
+            nuevo: { $ref: '#/components/schemas/GruposSemaforo' }
+            criterio:
+              type: object
+              properties:
+                nMinimo: { type: integer }
+                ventajaMinima: { type: number, description: '0-1: lo que el elegido tiene que acertar sobre lo que pedía la cuota' }
+                n: { type: integer, description: 'verdes nuevos cerrados' }
+                faltan: { type: integer }
+                intervaloSobreLaCuota: { type: boolean }
+                amarillosDebajo: { type: boolean }
+                cumple: { type: boolean }
+                estado: { type: string, enum: [en_observacion, sin_senal, senal] }
+                texto: { type: string }
+            nota: { type: string }
         alertaConfianza:
           type: object
           description: >
@@ -2046,6 +2126,7 @@ components:
                       properties:
                         codigo: { type: string, enum: [SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO] }
                         detalle: { type: string }
+              semaforo: { $ref: '#/components/schemas/SemaforoElegido' }
               kelly:
                 type: object
                 properties:
