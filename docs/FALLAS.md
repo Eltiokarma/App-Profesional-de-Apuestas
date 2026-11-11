@@ -270,6 +270,7 @@ Tres lugares donde vive una guardia:
   - **Sesiones fijas** con `git pull` en cada disparo.
   - **Ids anotados** en docs/DEUDA.md (deudas 11 y 17).
   - **El texto manda poco:** el texto de la rutina solo apunta al skill y el skill del repo manda.
+  - **La salida temprana vive en el skill, no en el texto** (11/11/2026, 1377): las rutinas de partes, veredictos y rehacer no se pueden editar desde el mantenimiento, así que el índice `corrida-sad/SKILL.md` pone la primera llamada de cada modo y la salida en una línea ANTES de leer el modo; con un texto viejo («invocá el skill y seguí el modo X») la corrida vacía igual sale barata. Lo cuida `test_arquitectura` 5-ter. El texto nuevo, para pegar, queda en `docs/DEUDA.md` punto 20.
   - **La cola no se llena de lo mismo:** el escaneo mira 48 h de jugados en tres pasadas por día; un hallazgo del mismo partido que ya se cerró sin parche (`dato_api` · `por_diseno` · `descartada`) vuelve en `yaClasificadas` y no se reabre (`incidencias.depositar`, 03/11/2026: Lommel–Gent, 1145 → 1159).
   - **El escaneo no juzga lo que la automatización todavía no intentó:** «sin cuotas» suena a menos de `SAD_REFRESCO_VENTANA_HORAS` − 1 del pitazo (`escaneo.HORAS_CUOTAS`, 06/11/2026, 1255): con 12 h depositaba partidos que el refresco de 6 h aún no había pedido. Test en `backend/test_sanciones.py`.
 - **Si vuelve:** cambiar el skill, no el texto de la rutina. Si hay que cambiar el texto, crear la rutina nueva y desactivar la vieja.
