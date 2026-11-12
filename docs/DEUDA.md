@@ -1231,3 +1231,7 @@ conversación se pierde en la siguiente.
    sigue siendo ciego. La app nunca mueve un peso de un skill por su cuenta.
    Snapshot de los skills en `docs/skills/`.
 7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
+8. **NBA (fase 0 hecha, 12/11/2026, `docs/NBA_FASE0.md`)**: la teoría no
+   agrega nada sobre la cuota de cierre ni en ganador ni en hándicap; no se
+   construye nada más. Abierto, si el usuario lo pide: medir contra la cuota
+   de apertura, las bajas de jugadores, otras ligas.

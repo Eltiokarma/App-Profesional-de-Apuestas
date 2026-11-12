@@ -76,6 +76,82 @@ remuestreos). «Mejora» quiere decir que el IC queda entero bajo 0.
   con lo que decía la cuota, por largo de racha. Después, la logística de la
   cuota sola contra la cuota más la burbuja.
 
-## 4. Resultados
+## 4. Resultados (12/11/2026, primera corrida)
 
-(se completa con la corrida)
+Datos: 14.336 partidos de 2015-16 a hoy (2026-27 va por 170), todos con
+cuota. La temporada 2015-16 es solo arranque. Entrenamiento: hasta noviembre
+de 2024. Prueba: 2.604 partidos desde el 19/11/2024.
+
+**Localía.** El local gana entre 54 y 59 % según la temporada, con +1,2 a +3,1
+puntos de margen. Bajó desde 2021 (55 %, contra 59 % antes de la pandemia).
+La burbuja de 2020 sale con 175 partidos neutrales.
+
+**ESCALA_G = 5**, elegida en el entrenamiento: log-loss de validación 0,6329,
+contra 0,6342 sin la G y 0,6456 con escala 40. La G de puntos ayuda poco y
+solo con poco peso.
+
+### 4.1 Ganador
+
+| modelo | log-loss | acierto |
+|---|---|---|
+| G0 · nivel + localía | 0,6217 | 65,7 % |
+| G1 · + descanso | 0,6199 | 66,0 % |
+| G2 · + racha y K | 0,6204 | 65,7 % |
+| G3 · + reventón (la teoría entera) | 0,6207 | 66,0 % |
+| **MK0 · la cuota sola** | **0,5776** | **69,2 %** |
+| MK1 · cuota + la teoría | 0,5796 | 68,5 % |
+| MK2 · cuota + descanso | 0,5771 | 69,2 % |
+
+- El **descanso** mejora al nivel: −0,0019, IC [−0,0035, −0,0003]. La
+  racha, las K y el reventón no agregan nada encima.
+- La **cuota le gana al motor** por 0,044 de log-loss, IC [+0,034, +0,055]:
+  es lejos, la mejor fuente.
+- **La teoría sobre la cuota no agrega nada.** MK1 contra MK0 da +0,0020,
+  IC [−0,0001, +0,0041]; si algo, empeora un poco. El descanso sobre la cuota
+  da −0,0005, IC [−0,0010, +0,0001]: la cuota ya lo tiene.
+- **Simulación plana.** Apostando cuando MK1 ve 3 puntos o más: 655 apuestas,
+  ROI −5,2 %, IC [−13,8 %, +4,4 %]. No hay ventaja; es lo que cuesta el
+  margen de la casa.
+
+### 4.2 Hándicap
+
+- **Error del margen (RMSE).** La línea se equivoca en 14,1 puntos; el motor,
+  en 15,1 (y 15,0 con la teoría entera).
+- **Cubrir la línea.** Ningún modelo se separa de la moneda al aire: H1 da
+  −0,0002, IC [−0,0005, +0,0001], y la teoría entera da +0,0001.
+- **Simulación.** Con un valor esperado de 3 % o más, el modelo casi nunca
+  apuesta (una sola vez): no ve ventaja.
+
+### 4.3 Reventón
+
+26.040 lados con racha abierta y base propia (3 o más reventones del signo).
+**Las rachas se cortan como dice la cuota.** La diferencia queda entre −3 y
++3 puntos en cada tramo de largo, sin patrón (la tabla está en `fase0.txt`).
+Con las rachas de 9 o más el margen es de +2,8 en las positivas y +0,8 en
+las negativas, con n de 252 y 365.
+
+- **Cuota más burbuja contra cuota sola:** +0,0002, IC [−0,0002, +0,0006].
+  No agrega.
+- **La burbuja sola, sin la cuota,** sí predice el corte (log-loss 0,646). Los
+  coeficientes van en el sentido de la teoría: el rival en zona de riesgo
+  empuja al corte (+0,44) y la racha larga lo frena (−0,22). Pero la cuota
+  sola es mucho mejor (−0,068) y ya contiene todo eso.
+
+### 4.4 Lectura
+
+Es lo mismo que en el fútbol (REVENTON §13.3), y más marcado. La teoría
+**describe** bien (el nivel predice, la burbuja ve el corte con el sentido
+correcto), pero **no ve nada que la cuota de cierre de la NBA no tenga ya**,
+ni en ganador ni en hándicap. Según la regla de la fase 0, no se construye
+ingesta, pantalla ni skill de NBA con esta teoría.
+
+**Lo que queda abierto, si el usuario quiere seguir:**
+
+1. **Contra la cuota de APERTURA** en vez de la de cierre. La de cierre es
+   la más eficiente que existe. ESPN trae la apertura y el cierre separados
+   desde ~2022-23; habría que medir si la teoría anticipa el movimiento de la
+   línea.
+2. **Las bajas de jugadores** (el EFE del básquet). Es lo que más mueve una
+   línea de la NBA, y la teoría de rachas no lo ve.
+3. **Otras ligas de básquet**, menos eficientes. La Euroliga quedó afuera a
+   pedido del usuario.
