@@ -99,5 +99,7 @@ jobs:
         run: python -m backend.test_backtest_burbuja
       - name: Backtest de la burbuja en el 1X2 (método sobre sintéticos + demo)
         run: python -m backend.test_backtest_1x2
+      - name: NBA fase 0 (descarga recortada, motor sin fuga, el método no inventa ventaja)
+        run: python -m backend.test_nba_fase0
       - name: Pipeline sin dejar a quien lee sin tabla (rehace las derivadas en una transacción)
         run: python -m backend.ingesta.test_pipeline

@@ -56,3 +56,6 @@ __pycache__/
 !/tsconfig.json
 !/tsconfig.app.json
 !/tsconfig.node.json
+
+# NBA fase 0: descarga de ESPN (solo para medir, nunca se versiona)
+nba_data/
