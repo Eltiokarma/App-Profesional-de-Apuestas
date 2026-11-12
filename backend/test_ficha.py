@@ -94,7 +94,8 @@ def db(vieja=False) -> sqlite3.Connection:
     preparar_tablas(con)
     con.executescript("""CREATE TABLE IF NOT EXISTS fixtures (
         id INTEGER PRIMARY KEY, date TEXT, status_short TEXT, league_id INTEGER,
-        home_team_id INTEGER, away_team_id INTEGER);""")
+        home_team_id INTEGER, away_team_id INTEGER, goals_home INTEGER, goals_away INTEGER,
+        fulltime_home INTEGER, fulltime_away INTEGER);""")
     return con
 
 
@@ -286,7 +287,25 @@ def main():
             (33, (_p33 + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 0),
             (34, (_p33 + timedelta(hours=10)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 0),
             (35, (_p33 - timedelta(days=4)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 30)])
+        # 1381: sellada con stats pero con los goles cortados (1 de 3) → se repide si fue temprano
+        e = sqlite3.connect(os.path.join(tmp, "efe.db"))
+        e.executemany("INSERT INTO parte_cowork VALUES (?)", [(36,), (37,)])
+        e.commit()
+        e.close()
+        con.executemany("INSERT INTO fixtures (id, date, status_short, league_id, home_team_id, away_team_id, "
+                        "goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?)",
+                        [(36, dia(-1), "FT", liga, 962, 963, 1, 2), (37, dia(-1), "FT", liga, 964, 965, 1, 0)])
+        con.executemany("INSERT INTO fixture_eventos (fixture_id, minuto, extra, tipo, detalle, equipo_id, jugador) "
+                        "VALUES (?,?,?,?,?,?,?)", [(36, 14, 0, "Goal", "Normal Goal", 962, "Sanguinetti"),
+                                                   (37, 30, 0, "Goal", "Normal Goal", 964, "X"),
+                                                   (37, 70, 0, "Goal", "Missed Penalty", 965, "Y")])
+        con.executemany("INSERT OR REPLACE INTO fichas_meta (fixture_id, capturado_en, alineaciones, eventos, stats) "
+                        "VALUES (?,?,?,?,?)", [
+            (36, (_p33 + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 30),
+            (37, (_p33 + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), 22, 5, 30)])
         cp = fixtures_con_parte(con, sad_path)
+        check("1381: ficha sellada temprano con goles que no dan el marcador se repide; la que cuadra (penal errado aparte), no",
+              36 in cp and 37 not in cp, cp)
         check("una ficha sellada sin stats a menos de 3 h del pitazo, en liga que da stats, se repide; tarde, no",
               33 in cp and 34 not in cp, cp)
         check("un partido jugado con parte entra a la cola aunque ninguno juegue pronto",

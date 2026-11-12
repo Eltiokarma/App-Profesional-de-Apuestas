@@ -81,6 +81,20 @@ def _goles(fixture_id: int, home_id: int) -> list[dict]:
     return goles_de_filas(filas, home_id)
 
 
+def goles_cuadran_90(goles: list[dict], gl, gv) -> bool:
+    """¿Los eventos de gol dan el marcador de los 90'? (11/11/2026, incidencias
+    1381 y 1382, Inter de Bogotá 1-2 América: la ficha traía eventos solo hasta
+    el 14' —un gol de tres— y el objetivo calculó tramos, la salida de la rama y
+    la rama jugada del DTP como si el 1-0 hubiera durado hasta el final). Los
+    goles de la prórroga no cuentan: el marcador es el de los 90 (la misma
+    regla que `dtp_cowork.goles_cuadran`)."""
+    if gl is None or gv is None:
+        return False
+    en_90 = [g for g in goles if (g["baseAnadido"] if g.get("enAnadido") else g["minuto"]) <= 90]
+    return (sum(1 for g in en_90 if g["lado"] == "a") == gl
+            and sum(1 for g in en_90 if g["lado"] == "b") == gv)
+
+
 def goles_de_filas(filas: list, home_id: int) -> list[dict]:
     """Las filas `Goal` de `fixture_eventos` (minuto, extra, detalle,
     equipo_id, jugador) como goles del veredicto."""
@@ -451,6 +465,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     declarado, top = declarado_1x2(reparto if isinstance(reparto, dict) else None)
 
     goles = _goles(fixture_id, fx["home_team_id"])
+    terminado = (fx["status_short"] or "") in FIN_SHORT
     marcador_texto = f"{gl}-{gv}"
     exacto = marcador_declarado(pron.get("marcador"))
 
@@ -479,10 +494,21 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
             "goles": goles,
             "primerGol": goles[0] if goles else None,
             "var": _var(fixture_id, fx["home_team_id"]),
-            "conFicha": bool(goles) or (gl + gv == 0),
-            "nota": ("" if goles or gl + gv == 0 else
+            # LA FICHA SIRVE SI SUS GOLES DAN EL MARCADOR (1381/1382): con un
+            # gol de tres, los tramos, las salidas y las ramas se calculaban
+            # sobre un partido que no fue. Sin cuadrar, no se calcula nada de
+            # eso y se dice; el marcador y el 1X2 siguen (vienen del fixture).
+            # (solo con el partido TERMINADO: en juego, el marcador de la base y
+            # los eventos pueden ir desfasados de verdad —modo COND—)
+            "conFicha": (gl + gv == 0) or (bool(goles) and (not terminado or goles_cuadran_90(goles, gl, gv))),
+            "golesCuadran": (gl + gv == 0) or goles_cuadran_90(goles, gl, gv),
+            "nota": ("" if gl + gv == 0 or (goles and (not terminado or goles_cuadran_90(goles, gl, gv))) else
                      "el partido tuvo goles pero la ficha no está capturada: "
-                     "corre `python -m backend.ingesta.ficha_partido` si quieres comprobar minutos"),
+                     "corre `python -m backend.ingesta.ficha_partido` si quieres comprobar minutos"
+                     if not goles else
+                     f"los eventos de gol de la ficha ({len(goles)}) no dan el marcador {gl}-{gv}: "
+                     "la ventana, los tramos, la salida de la rama y la rama jugada no se calculan "
+                     "(evidencia incompleta); se juzgan en la autopsia con la crónica"),
         },
     }
 
@@ -652,7 +678,7 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     out["matriz"] = matriz_objetivo(parte.get("matriz") or {}, real)
     # ── el veredicto del M2 del DTP: la rama que se jugó (DTP v1.6) ─────────
     if (parte.get("dtp") or {}).get("bloques"):
-        out["dtp"] = dtp_objetivo(parte.get("dtp") or {}, goles, sin_eventos=not goles and bool(gl or gv),
+        out["dtp"] = dtp_objetivo(parte.get("dtp") or {}, goles, sin_eventos=not out["evidencia"]["conFicha"],
                                   ventaja_ida=ventaja)
     # ── la llave: el 1X2 es a 90' y el «ganador» de arriba también; quién PASÓ
     # sale aparte, con la tanda y el global (incidencia 774: «ganador b» y
@@ -730,7 +756,8 @@ def dtp_objetivo(dtp: dict, goles: list[dict], sin_eventos: bool = False,
             out["porBloque"].append({"equipo": lado, "ramaJugada": None, "minutos": None,
                                      "veredictoDeLaRama": "", "razonDeLaRama": "",
                                      "veredictoUnico": m2.get("veredicto") or "",
-                                     "sinEventos": "la ficha no trae los minutos de gol: la rama no se calcula"})
+                                     "sinEventos": ("la ficha no trae los minutos de gol (o sus goles no dan "
+                                                    "el marcador, 1382): la rama no se calcula")})
             continue
         ida = (ventaja_ida or {}).get(lado) or 0
         rj = rama_del_foco(goles, lado, ida)
