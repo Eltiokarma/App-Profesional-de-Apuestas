@@ -390,6 +390,18 @@ def main():
     check("1239: el suplente del RIVAL nombrado en un duelo también pide rehacer",
           any(m.startswith("duelo del M2: Cuello") for m in
               _reh(_b1239([{"carril": "derecho", "duelo": "Savarino contra Cuello"}]), _of1239)["motivos"]))
+    # 1390 (Chequia–España 1528961): «Pedro Porro» (titular) casaba con Pedri,
+    # del banco, por una letra de la pila, y el duelo pedía rehacer
+    _tit1390b = ["Unai Simón", "Pedro Porro", "Le Normand", "Laporte", "Cucurella", "Rodri", "Fabián Ruiz",
+                 "Lamine Yamal", "Dani Olmo", "Nico Williams", "Morata"]
+    _of1390 = {"a": {"formacion": "4-2-3-1", "defensores": 4, "titulares": _tit1239a, "banca": []},
+               "b": {"formacion": "4-3-3", "defensores": 4, "titulares": _tit1390b,
+                     "banca": ["Pedri", "Fermín López", "Zubimendi"]}}
+    check("1390: «Pedro Porro» en un duelo no nombra a Pedri, del banco; «Pedri» sí",
+          not any(m.startswith("duelo del M2") for m in _reh(_b1239(
+              [{"carril": "izquierdo", "duelo": "Cuiabano contra Pedro Porro"}]), _of1390)["motivos"])
+          and any(m.startswith("duelo del M2: Pedri") for m in _reh(_b1239(
+              [{"carril": "centro", "duelo": "Gregore contra Pedri"}]), _of1390)["motivos"]))
     # 1170 (Nacional Asunción): una pieza del M2 que el mismo parte tiene en `fuera`
     from backend.analisis.dtp_cowork import avisos_piezas_fuera
     _dtp1170 = {"bloques": [{"equipo": "a", "apertura": {"m2": {"piezas": [
