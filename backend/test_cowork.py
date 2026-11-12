@@ -3051,6 +3051,26 @@ def main():
     check("1382: …la rama jugada del DTP tampoco se calcula, y la nota lo dice",
           _o1382["dtp"]["porBloque"][0]["ramaJugada"] is None and "no dan el marcador" in _o1382["evidencia"]["nota"],
           (_o1382["dtp"], _o1382["evidencia"]["nota"]))
+    # 1387 (Tavernes 0-6): la rama se cobra con el SOB2 heredado del DTP, como la muestra el parte
+    _ft87 = dbmod.query_one("sad", "SELECT id, goals_home AS gh, goals_away AS ga FROM fixtures "
+                                   "WHERE status_short='FT' AND goals_away >= 1 AND goals_home = 0 LIMIT 1")
+    _g87 = [{"minuto": 10 + i, "lado": "b", "jugador": f"g{i}", "autogol": False, "enAnadido": False,
+             "baseAnadido": None} for i in range(_ft87["ga"])]
+    from backend.analisis import dtp_cowork as _dtpc87
+    _orig_her = _dtpc87.herencia_tde
+    _vd._goles, _vd._rojas = (lambda fid, hid: _g87), (lambda fid, hid: [])
+    _dtpc87.herencia_tde = lambda dtp: {"a": {"SOB2persiguiendo": {"valor": 1.0, "de": "rest defense persiguiendo"}}}
+    try:
+        _o87 = _vd.objetivo(_ft87["id"], {"tde": {"bloques": [{
+            "equipo": "a", "ventana": "75-90'", "indicadores": {"SOB1": 0.5, "SOB2": 0.5, "SOB3": 1.0},
+            "reasignacion": {"siRecibePrimero": {"sob1": 0.5, "sob2": 0.5, "sob3": 1.0, "ventana": "75-90'"}}}]},
+            "dtp": {"bloques": [{"equipo": "a"}]}})
+    finally:
+        _vd._goles, _vd._rojas = _orig_g, _orig_r
+        _dtpc87.herencia_tde = _orig_her
+    _ld87 = (_o87["tde"]["bloques"][0]["reasignacion"] or {}).get("loDeclarado") or {}
+    check("1387: la rama siRecibePrimero se cobra con el SOB2 que hereda del DTP (1.0, ISE 8.33), no con el escrito",
+          _ld87.get("sob2") == 1.0 and _ld87.get("iseRama") == 8.33, _ld87)
     check("1382: los goles que SÍ dan el marcador de los 90 cuadran (la prórroga y el añadido de la prórroga no cuentan)",
           _vd.goles_cuadran_90([{"minuto": 94, "lado": "a", "enAnadido": True, "baseAnadido": 90},
                                 {"minuto": 102, "lado": "b", "enAnadido": False, "baseAnadido": None}], 1, 0))
@@ -5760,6 +5780,16 @@ def main():
     check("453: un 45+5 abre el tramo de ventaja en el 45, con su ventana +15 desde ahí",
           [(t["desde"], t["hasta"], t["rama"]) for t in _ta] == [(0, 45, "base"), (45, 90, "siMarcaPrimero")]
           and _ta[1]["rango"] == [45, 60], _ta)
+    # 1388 (Once Caldas 1-1 Nacional): gol del foco al 38', rojas de los dos (paridad) y la del rival al 80':
+    # el tramo que abre la roja sigue con la ventana «desde el gol +15» anclada en el 38, no en el 80
+    _t1388 = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"ventana": "desde el gol +15"}}},
+                                 [{"minuto": 38, "lado": "a"}, {"minuto": 88, "lado": "b"}], "a",
+                                 [{"minuto": 60, "lado": "a", "jugador": "R1"}, {"minuto": 80, "lado": "b", "jugador": "R2"}])
+    _ab1388 = [t for t in _t1388 if t["rama"] == "siMarcaPrimero"]
+    check("1388: tras una roja, la ventana relativa al gol sigue anclada en el gol (38-53), no en la roja (80-95)",
+          _ab1388 and all(t["rango"] == [38, 53] for t in _ab1388)
+          and all(t["golEnVentana"] in (None, False) for t in _ab1388),
+          [(t["desde"], t["hasta"], t["rama"], t["rango"], t["golEnVentana"]) for t in _t1388])
     # incidencias 446 y 448: la roja propia abre tramo con siExpulsion (declarada o no)
     # ── TDE v0.1.23 (25/10/2026) ────────────────────────────────────────────
     from backend.analisis.parte import tipologia_vs_indices as _tvi
