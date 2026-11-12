@@ -168,5 +168,9 @@ quedan iguales, montados sobre un nivel que sabe quién es mejor.
 **Lectura:** el problema nunca fue la burbuja, era el nivel. Con un nivel que
 mide la calidad del rival, el mismo momentum del SAD acierta más en los dos
 circuitos y en casi todos los escalones. **Para el tenis, el nivel recomendado
-es el SAD sobre Elo.** Falta que la fase 0 lo use por defecto, y eso queda a
-decisión del usuario.
+es el SAD sobre Elo.**
+
+**Decisión del usuario (12/11/2026): es el NIVEL OFICIAL del tenis.**
+`python -m backend.tenis.fase0` ya lo usa por defecto, con el Elo en su propio
+módulo, `backend/tenis/elo.py`. La tabla del §3 queda como historia del nivel
+anterior; los números vigentes son los de este §5.

@@ -105,11 +105,12 @@ def main() -> int:
           any(pozos[i]["local"]["nivel"] != todos[i]["local"]["nivel"] for i in pozos)
           and all((pozos[i]["local"]["racha"], pozos[i]["local"]["signo"]) == (todos[i]["local"]["racha"], todos[i]["local"]["signo"])
                   for i in pozos))
-    pe, fin = niv.elo(m)
+    from backend.tenis.elo import elo as _elo, elo_como_nivel as _ecn
+    pe, fin = _elo(m)
     check("Elo (vara): sin nivel antes de 20 partidos y el fuerte termina arriba",
           all(pe[p["id"]]["local"]["nivel"] is None for p in m[:5]) and len(fin) == 40)
 
-    ext, fin_ext, conv = niv.elo_como_nivel(m, todos)
+    ext, fin_ext, conv = _ecn(m, todos)
     est_ext = {}
     sobre = motor.construir(m, escala_g=2.0, escala_margen=fase0.ESCALA_MARGEN, estado_final=est_ext,
                             nivel_externo=ext, nivel_final=fin_ext)

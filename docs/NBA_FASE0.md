@@ -396,3 +396,27 @@ C 83 % ✓ · D 68 % ✓. **Se sostiene también en las conferencias chicas.**
   La lectura es correcta, pero las cuotas de esos partidos son muy bajas.
   Para el sistema (`docs/METODO_APUESTA.md`: «aunque la cuota sea 1.02») eso
   no es un problema.
+
+## 8. Las fases que siguen (propuesta, 12/11/2026; no decidida)
+
+Valen para el básquet y para el tenis. La fase 0 (medir) está cerrada.
+
+1. **Fase 1 · datos diarios.** La ingesta automática de ESPN: los resultados
+   de ayer y la agenda de los próximos días, en sus propias bases y nunca en
+   `sad.db`, para no subir la factura de Railway. Corre una vez al día, igual
+   que la corrida del fútbol.
+2. **Fase 2 · la lectura en la app.** Contrato primero (`docs/openapi.yaml`):
+   los endpoints de momentum por equipo o jugador y la pantalla de Burbujas
+   con selector de deporte. Es la misma lectura de `burbujas.py`, pero
+   visible.
+3. **Fase 3 · el elegido y su aprendizaje.** Una regla escrita de dónde va la
+   plata, partido por partido (los tramos A-D con su nivel de riesgo), el
+   veredicto después del partido y su win rate por tramo. Es el bucle de
+   Aprendizaje del fútbol, pero calculado y sin IA.
+4. **Fase 4 · la simulación del método.** El proporcional con freno por tramo
+   (`docs/METODO_APUESTA.md`) sobre los elegidos de la fase 3, contando desde
+   que empiezan a registrarse.
+5. **Fase 5 · la capa de juego (si hace falta).** El equivalente del EFE: las
+   bajas, el descanso y los viajes en el básquet; la superficie y la fatiga de
+   las rondas en el tenis. Solo si la fase 3 muestra fallos que el momentum no
+   ve.

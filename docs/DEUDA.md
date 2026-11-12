@@ -1248,5 +1248,8 @@ conversación se pierde en la siguiente.
    §4 (variantes medidas): pesar por el rival casi no cambia; «pozos» mejora
    el momentum; el Elo es el mejor para «quién es mejor». §5 (corrección del
    usuario): el Elo COMO nivel del SAD gana en todo (64 % de acierto, tramos
-   74-81 %, la foto de hoy es la élite). Pendiente: que la fase 0 del tenis lo
-   use por defecto.
+   74-81 %, la foto de hoy es la élite). OFICIAL desde el 12/11/2026
+   (`backend/tenis/elo.py`, la fase 0 lo usa por defecto).
+10. **Básquet y tenis: fase 0 cerrada (12/11/2026).** Las fases siguientes que
+   se le propusieron al usuario están en `docs/NBA_FASE0.md` §8; ninguna está
+   decidida todavía.

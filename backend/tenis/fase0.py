@@ -31,6 +31,7 @@ from datetime import date, timedelta
 from backend.nba import burbujas, motor
 from backend.nba.ligas import ACIERTO_FIRME, N_FIRME, TRAMOS, _tercio
 from backend.tenis import descarga
+from backend.tenis.elo import elo_como_nivel
 
 ESCALA_MARGEN = 5.0     # 5 juegos de diferencia ≈ «un gol» (un 6-3 6-4 da 5)
 ESCALAS_G = (2.0, 5.0, 10.0)
@@ -184,26 +185,34 @@ def hoy(ps: list[dict], crudos: list[dict], escala_g: float, **variante) -> dict
 
 
 def correr() -> dict:
+    """Con el NIVEL OFICIAL del tenis: el Elo en la escala del SAD (§5). La
+    conversión se mide con 2017-2020 sobre el nivel SAD de la ventana, y de ahí
+    en adelante todo (q, riesgo, tercios, foto de hoy) usa el Elo convertido."""
     crudos = descarga.cargar()
     if len(crudos) < 2000:
         raise SystemExit("faltan datos: python -m backend.tenis.descarga")
     ps = a_motor(crudos)
     esc = elegir_escala(ps)
-    previos = motor.construir(ps, escala_g=esc["elegida"], escala_margen=ESCALA_MARGEN)
+    sad = motor.construir(ps, escala_g=esc["elegida"], escala_margen=ESCALA_MARGEN)
+    ext, fin_ext, conv = elo_como_nivel(ps, sad, AÑO_VALIDACION)
+    previos = motor.construir(ps, escala_g=esc["elegida"], escala_margen=ESCALA_MARGEN, nivel_externo=ext)
     inv = defaultdict(lambda: defaultdict(int))
     for p in ps:
         inv[p["temporada"]][f"{p['tour']} {p['escalon']}"] += 1
-    return {"parametros": {"escalaG": esc, "escalaMargen": ESCALA_MARGEN, "minPartidos": MIN_PARTIDOS,
+    return {"parametros": {"nivel": "Elo en la escala del SAD (oficial, §5)", "conversion": conv,
+                           "escalaG": esc, "escalaMargen": ESCALA_MARGEN, "minPartidos": MIN_PARTIDOS,
                            "midesDesde": AÑO_VALIDACION + 1},
             "inventario": {str(a): dict(v) for a, v in sorted(inv.items())},
-            "estudio": estudiar(ps, previos), "hoy": hoy(ps, crudos, esc["elegida"])}
+            "estudio": estudiar(ps, previos),
+            "hoy": hoy(ps, crudos, esc["elegida"], nivel_externo=ext, nivel_final=fin_ext)}
 
 
 def texto(r: dict) -> str:
     L = ["TENIS · fase 0 · momentum sin cuotas (% de veces que se cumplió la lectura)", ""]
     e = r["parametros"]["escalaG"]
-    L.append(f"ESCALA_G {e['elegida']} (acierto del nivel 2017-{AÑO_VALIDACION}: {e['aciertoValidacion']}); "
-             f"se mide desde {r['parametros']['midesDesde']}")
+    c = r["parametros"]["conversion"]
+    L.append(f"NIVEL OFICIAL: Elo en la escala del SAD · nivel = {c['nivelMedia']} + (Elo − {c['eloMedia']}) / "
+             f"{c['puntosElo1Nivel']} (conversión con 2017-{AÑO_VALIDACION}); se mide desde {r['parametros']['midesDesde']}")
     L.append("partidos por año: " + " · ".join(f"{a}: {sum(v.values())}" for a, v in r["inventario"].items()))
     for tour, s in r["estudio"].items():
         L += ["", f"{tour} · {s['partidosMedidos']} partidos medidos · el de más nivel gana: "
