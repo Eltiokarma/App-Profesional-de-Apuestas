@@ -35,8 +35,8 @@ import sys
 import zlib
 from datetime import datetime, timedelta, timezone
 
-from backend.ingesta.extractor import (COPAS_EUROPA, LIGAS, LIGAS_RUIDO, Cliente, leer_clave, ligas_vivo,
-                                      reserva_del_dia)
+from backend.ingesta.extractor import (AMISTOSOS_SELECCIONES, COPAS_EUROPA, LIGAS, LIGAS_RUIDO, Cliente, leer_clave,
+                                      ligas_vivo, reserva_del_dia)
 from backend.nombres import limpiar_nombre
 
 DIAS_NS_DEFAULT = 3
@@ -380,7 +380,10 @@ def fixtures_pendientes(con: sqlite3.Connection, dias: int, ultimos: int) -> lis
     # un partido de copa europea no elige equipos (el de quinta división de la
     # FA Cup no alimenta ningún parte); los nuestros entran por su liga, y su
     # partido de copa sí entra entre sus «últimos N» (incidencia 406)
-    eligen = sorted(set(LIGAS) - COPAS_EUROPA)
+    # tampoco un amistoso de selecciones (12/11/2026): en una fecha FIFA juegan
+    # amistosos cien selecciones de todo el mundo; las nuestras entran por su
+    # torneo oficial y el amistoso cuenta entre sus «últimos N»
+    eligen = sorted(set(LIGAS) - COPAS_EUROPA - {AMISTOSOS_SELECCIONES})
     marcas = ",".join("?" * len(eligen))
     equipos: list[int] = []
     for home, away in con.execute(

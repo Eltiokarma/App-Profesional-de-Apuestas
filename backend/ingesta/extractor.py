@@ -157,8 +157,7 @@ DELAY_MIN = 0.25
 
 # Única fuente de verdad de ligas (el viejo tenía 3 listas divergentes).
 LIGAS = {
-    # Mundial (jun-jul 2026: la ventana diaria mantiene resultados y cuotas al día)
-    1: "Copa del Mundo",
+    # El Mundial y los demás torneos de selecciones: TORNEOS_SELECCIONES, más abajo.
     # Sudamérica — por país, con TODAS las categorías donde puede jugar un mismo
     # equipo (1ª, 2ª y copa nacional): para analizar un país no puede faltar
     # ninguna. Las 2ª divisiones y las copas nacionales son "menores" (ver
@@ -262,6 +261,56 @@ LIGAS = {
     206: "Turquía - Copa de Turquía",
 }
 
+# TORNEOS DE SELECCIONES (12/11/2026, usuario: «ya es tiempo de meterle diente
+# a estas ligas»). UNA sola lista: la agenda (`parte._prioridad`), la escala
+# (`escala`) y la separación del reventón (`separacion_liga`) la importan de
+# acá. Antes de esto la base tenía a las selecciones a medias —el Mundial, la
+# Euro 2024, las eliminatorias y los amistosos hasta junio, bajados a mano para
+# el Mundial— y NADA de la Liga de las Naciones ni de lo jugado después de
+# julio: la K de Bélgica terminaba en la final del Mundial. Con la historia que
+# sí había, el reventón separa en selecciones como en las ligas con más
+# jerarquía (REVENTON §16.2: AUC 0,69 sobre 1.900 burbujas, 32 % → 75 %).
+# Para analizar una selección no puede faltar ninguno de sus torneos (la misma
+# regla que los países): todos entran a la base y al backfill histórico.
+TORNEOS_SELECCIONES = {
+    1: "Copa del Mundo",
+    5: "UEFA Nations League",
+    4: "Eurocopa",
+    960: "Eurocopa - Clasificación",
+    9: "Copa América",
+    6: "Copa Africana de Naciones",
+    7: "Copa Asiática",
+    22: "Copa Oro CONCACAF",
+    536: "CONCACAF Nations League",
+    32: "Mundial - Eliminatorias UEFA",
+    34: "Mundial - Eliminatorias CONMEBOL",
+    31: "Mundial - Eliminatorias CONCACAF",
+    29: "Mundial - Eliminatorias CAF",
+    30: "Mundial - Eliminatorias AFC",
+    33: "Mundial - Eliminatorias OFC",
+    37: "Mundial - Repechaje intercontinental",
+    10: "Amistosos de Selecciones",
+}
+# Los amistosos de selecciones son MENORES (sin cuotas en vivo ni agenda, como
+# los de clubes) y de ellos se guardan solo los de ABSOLUTAS: la liga 10 de la
+# API mezcla sub-17, sub-20, sub-23 y femeninas (249 de 500 en 2026), que
+# pedirían cuotas prepartido en cada corrida sin que ninguna casa las dé.
+AMISTOSOS_SELECCIONES = 10
+LIGAS.update(TORNEOS_SELECCIONES)
+
+
+def es_seleccion_juvenil(nombre: str | None) -> bool:
+    """«Brazil U17», «Spain U21», «England W»: selección juvenil o femenina."""
+    import re
+    return bool(re.search(r"\bU\s?\d{2}\b|\bwomen\b|\sW$", (nombre or "").strip(), re.I))
+
+
+def _amistoso_juvenil(item: dict) -> bool:
+    if (item.get("league") or {}).get("id") != AMISTOSOS_SELECCIONES:
+        return False
+    teams = item.get("teams") or {}
+    return any(es_seleccion_juvenil((teams.get(l) or {}).get("name")) for l in ("home", "away"))
+
 
 def _ligas_extra() -> dict[int, str]:
     """SAD_LIGAS_EXTRA="414:Copa Chile,999:Copa de la Liga Perú" añade torneos
@@ -358,6 +407,12 @@ _MENORES_DEFAULT = {
     79,       # 2. Bundesliga
     62,       # Ligue 2
     263,      # Liga de Expansión MX
+    # Selecciones (12/11/2026): los amistosos, y los torneos donde casi nunca
+    # hay cuota en juego ni un partido que merezca agenda (Oceanía, la Nations
+    # League de la Concacaf, con Ligas B y C de islas). Su historia entra igual.
+    AMISTOSOS_SELECCIONES,
+    33,       # Mundial - Eliminatorias OFC
+    536,      # CONCACAF Nations League
 }
 # Las copas nacionales de Europa (incidencia 406): sus partidos entran a la base
 # y al motor, pero un equipo de quinta división que juega la FA Cup no nos
@@ -776,6 +831,8 @@ def guardar_fixtures(con: sqlite3.Connection, respuesta: list) -> int:
         # amistosos con rival por confirmar: la API manda el equipo en null
         home, away = teams.get("home") or {}, teams.get("away") or {}
         if not f.get("id") or not f.get("date") or not home.get("id") or not away.get("id"):
+            continue
+        if _amistoso_juvenil(item):  # feed por fecha y backfill pasan por acá
             continue
         for equipo in (home, away):
             con.execute(

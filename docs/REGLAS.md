@@ -97,7 +97,16 @@
   (prioridad 8) sin ser del padrón: Taça, Coupe de France, Copa del Rey y DFB
   Pokal en cualquier ronda, FA Cup y Coppa Italia desde cuartos, la EFL Cup
   nunca (`separacion_liga.copa_en_agenda`); su 1X2 sale del mercado, no del
-  motor (localía negativa en copas). La fase de grupos / fase liga
+  motor (localía negativa en copas). **Desde el 12/11/2026** (usuario; REVENTON
+  §16.2) los **torneos de selecciones** son UNA lista
+  (`extractor.TORNEOS_SELECCIONES`) y entran todos a la base y al backfill: para
+  analizar una selección no puede faltar ninguno de sus torneos. Los oficiales
+  son del padrón y entran SOLOS a la agenda, también en fase de grupos / fase
+  liga (prioridad 4; una llave, 2): Liga de las Naciones, eliminatorias, Euro,
+  Copa América, el Mundial. Los amistosos de selecciones (solo absolutas: la
+  liga 10 mezcla sub-XX y femeninas), Oceanía y la Nations League de la
+  Concacaf son menores. Una selección es de «primera» en la escala en
+  cualquiera de sus torneos, y `separacionLiga` trae la del torneo del partido. La fase de grupos / fase liga
   de los demás torneos internacionales y las segundas divisiones quedan FUERA por defecto
   (`grupos=true` / `segundas=true` las meten, al final): un jueves de Europa
   League llenaba los cupos con partidos de relleno. Sin `fecha` la agenda es
@@ -335,7 +344,10 @@
   simulación (`excluidos`). Un favorito al 90 % contra uno de quinta a cuota
   1.02 inflaba el tramo de 60 %+ y la simulación. La marca sale de
   `escala.copas_nacionales` (lista `COPAS` o el nombre; los torneos
-  internacionales de clubes no son copa aunque digan «Cup»).
+  internacionales de clubes no son copa aunque digan «Cup», y los de
+  SELECCIONES tampoco: «World Cup», «Copa America» y «Africa Cup of Nations»
+  casaban con el nombre y sacaban de las métricas al Mundial y a las
+  eliminatorias del 29/10 al 12/11/2026 — `escala.torneos_selecciones`).
 - **El rol contra el grid** (29/10/2026, incidencia 646):
   `contraElOnce.rolesVsGrid` compara el rol que `m1.rolesReasignados` le da a
   un titular con su casilla del grid oficial (línea, y banda de laterales,

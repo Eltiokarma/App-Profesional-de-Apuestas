@@ -57,6 +57,53 @@ SEPARACION = {
     48: (0.555, 1310),    # Inglaterra · EFL Cup
 }
 COPAS_MEDIDAS = {96, 66, 143, 81, 45, 137, 48}
+
+# SELECCIONES (12/11/2026, REVENTON §16.2). Medido con la historia que la base
+# ya tenía (el Mundial, las eliminatorias de cinco confederaciones, la Euro 2024
+# y los amistosos, 2020-2026) bajada de la API con el token de Cowork y pasada
+# por `backtest_burbuja.observar_equipo` (horizonte 1, sin fuga): 1.845 burbujas
+# evaluadas en torneos de selecciones, de 143 selecciones absolutas, riesgo bajo
+# 32 % → muy alto 77 %, AUC 0,697, monótona y estable en los cuatro tramos de
+# tiempo (0,66-0,78). Separa más
+# donde la jerarquía es enorme (eliminatorias de la UEFA: Inglaterra contra
+# Andorra) y menos entre pares (el Mundial). La Liga de las Naciones no estaba en
+# la base: hasta que se mida va con la de todas las selecciones.
+MEDIDO_SELECCIONES = "2026-11-12"
+SEPARACION_SELECCIONES = {
+    32: (0.743, 236),     # Mundial · eliminatorias UEFA
+    30: (0.742, 188),     # Mundial · eliminatorias AFC
+    29: (0.718, 131),     # Mundial · eliminatorias CAF
+    34: (0.697, 348),     # Mundial · eliminatorias CONMEBOL
+    10: (0.685, 602),     # amistosos de selecciones
+    1: (0.647, 277),      # Copa del Mundo 2026
+}
+SELECCIONES_TODAS = (0.697, 1845)
+
+
+def _es_de_selecciones(liga_id: int | None) -> bool:
+    if not liga_id:
+        return False
+    from backend.analisis.escala import torneos_selecciones
+    return liga_id in torneos_selecciones()
+
+
+def de_selecciones(liga_id: int, nombre: str | None = None) -> dict:
+    """La separación de un torneo de selecciones: la suya si está medida, si no
+    la de todas las selecciones (con la nota que lo dice)."""
+    liga = nombre or f"liga {liga_id}"
+    propia = SEPARACION_SELECCIONES.get(liga_id)
+    auc, n = propia or SELECCIONES_TODAS
+    nivel = nivel_de(auc)
+    if propia:
+        nota = (f"en {liga} el riesgo del reventón separa {'bien' if nivel == 'alta' else 'a medias'} "
+                f"(AUC {auc:.2f}, {n} burbujas): entre selecciones la jerarquía se lee; la guía pesa "
+                "en la lectura. Que se lea fácil no quiere decir que pague: la casa también la ve")
+    else:
+        nota = (f"{liga} sin medir por sí sola (no estaba en la base): va la separación de TODAS las "
+                f"selecciones (AUC {auc:.2f}, {n} burbujas, alta). Entre pares separa menos —el Mundial, "
+                "0,65—, y la Liga de las Naciones agrupa por nivel: pesá la guía con esa cautela")
+    return {"ligaId": liga_id, "liga": nombre, "auc": auc, "n": n, "nivel": nivel, "competicion": "liga",
+            "medidoEn": MEDIDO_SELECCIONES, "nota": nota}
 # las copas entran a la agenda según cuánto separa el riesgo en ellas (decisión
 # del usuario, 29/10/2026): alta → siempre, al final · media → desde cuartos ·
 # baja → nunca. El 1X2 de un partido de copa sale del MERCADO y de los skills,
@@ -74,6 +121,8 @@ def nivel_de(auc: float | None) -> str:
 
 def de_liga(liga_id: int | None, nombre: str | None = None) -> dict:
     """Lo que viaja en `/burbujas.separacionLiga` para la liga doméstica del equipo."""
+    if _es_de_selecciones(liga_id):
+        return de_selecciones(liga_id, nombre)
     auc, n = SEPARACION.get(liga_id, (None, None)) if liga_id else (None, None)
     nivel = nivel_de(auc)
     liga = nombre or (f"liga {liga_id}" if liga_id else "su liga")
@@ -108,7 +157,10 @@ def del_partido(base_id: int | None, base_nombre: str | None,
     doméstica del equipo. Incidencia 869: Elversberg, ascendido, salía con la
     «baja» de la 2. Bundesliga (su base del último año) en un partido de
     Bundesliga (alta)."""
-    if liga_px and liga_px != base_id and (liga_px in COPAS_MEDIDAS or liga_px in SEPARACION):
+    if liga_px and liga_px != base_id and (liga_px in COPAS_MEDIDAS or liga_px in SEPARACION
+                                            or _es_de_selecciones(liga_px)):
+        # una selección juega cada torneo con otra escala (la Liga de las
+        # Naciones entre pares, las eliminatorias contra Andorra): manda el del partido
         return de_liga(liga_px, liga_px_nombre)
     return de_liga(base_id, base_nombre)
 

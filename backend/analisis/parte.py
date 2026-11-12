@@ -6093,6 +6093,19 @@ def _nombre_ingesta(liga_id: int) -> str:
         return ""
 
 
+# Los torneos de selecciones, de la ingesta (UNA lista: `extractor.TORNEOS_SELECCIONES`);
+# sin la ingesta a mano, la mínima declarada. Los amistosos son menores.
+_SELECCIONES_MIN = {1: "Copa del Mundo", 5: "UEFA Nations League"}
+
+
+def _torneos_selecciones() -> dict[int, str]:
+    try:
+        from backend.ingesta.extractor import TORNEOS_SELECCIONES
+        return dict(TORNEOS_SELECCIONES)
+    except Exception:  # noqa: BLE001 — sin la ingesta importable (tests aislados): la lista mínima declarada
+        return dict(_SELECCIONES_MIN)
+
+
 def _padron() -> dict[int, str]:
     """Las ligas cubiertas, con su nombre. Sale de la ingesta, no de una copia."""
     try:
@@ -6100,7 +6113,7 @@ def _padron() -> dict[int, str]:
         return {lid: LIGAS.get(lid, f"liga {lid}") for lid in ligas_vivo()}
     except Exception:
         # sin la ingesta a mano (tests aislados), el padrón mínimo declarado
-        return {**SEGUNDAS, **INTERNACIONALES, 281: "Perú · Liga 1"}
+        return {**SEGUNDAS, **INTERNACIONALES, **_SELECCIONES_MIN, 281: "Perú · Liga 1"}
 
 
 # fases que el usuario llama «importantes»: de octavos en adelante. «final»
@@ -6140,6 +6153,18 @@ def _prioridad(liga: dict, etiquetas: set[str], pos_local: int, pos_visita: int,
     / `segundas=true`, y mientras tanto van a `descartados` con este motivo.
     """
     padron = _padron()
+    # LOS TORNEOS DE SELECCIONES ENTRAN SOLOS (12/11/2026, usuario: Liga de las
+    # Naciones, eliminatorias, Euro, Copa América, el Mundial), también en fase
+    # de grupos / fase liga: en una fecha FIFA no hay otra cosa y el reventón
+    # separa en selecciones como en las ligas con más jerarquía (REVENTON
+    # §16.2, AUC 0,69). Los amistosos y los torneos menores (Oceanía, Nations
+    # League de la Concacaf) no son del padrón y caen abajo con su motivo.
+    if liga_id in _torneos_selecciones() and liga_id in padron:
+        nombre_s = padron[liga_id]
+        if es_fase_decisiva(ronda):
+            return 2, f"{nombre_s} · fase decisiva ({ronda or 'sin ronda declarada'})"
+        return 4, (f"{nombre_s} · {ronda or 'fase de grupos'} (torneo de selecciones: entra solo; "
+                   "el reventón separa alto en selecciones, REVENTON §16.2)")
     if liga_id in INTERNACIONALES:
         nombre_i = INTERNACIONALES[liga_id]
         if es_fase_decisiva(ronda):

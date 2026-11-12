@@ -1109,6 +1109,35 @@ conversación se pierde en la siguiente.
    **Anti-Goodhart**: el analista no lo ve (ni recibo, ni prompt, ni endpoint
    del token de Cowork; `test_semaforo` lo verifica). La demo de Simulación
    ahora se rehace con `python scripts/generar_simulacion_demo.py`.
+30. **Las selecciones entran** (12/11/2026, usuario: «ya es tiempo de
+   meterle diente a estas ligas»). Medido antes de tocar nada (REVENTON
+   §16.2): el reventón separa en selecciones con AUC 0,697 sobre 1.845
+   burbujas, monótono en cuatro tramos de tiempo, pero quien trabaja es el
+   nivel, no la K. Hecho: `extractor.TORNEOS_SELECCIONES` (una lista: Mundial,
+   Liga de las Naciones, Euro y su clasificación, Copa América, Copa Africana,
+   Copa Asiática, Copa Oro, Nations League de la Concacaf, las seis
+   eliminatorias y el repechaje, y los amistosos SOLO de absolutas) en la base
+   y el backfill; los oficiales al padrón y a la agenda (prioridad 4, una
+   llave 2); amistosos, Oceanía y la Concacaf NL menores; la escala ya no
+   toma «World Cup»/«Copa America»/«Asian Cup»/«Africa Cup of Nations» por
+   copas nacionales —**eso los sacaba de Aprendizaje y de la simulación desde
+   el 29/10: los partes del Mundial vuelven a contar**—. Pendiente:
+   - **medir la Liga de las Naciones** cuando el backfill la baje
+     (`backtest_burbuja --liga 5`) y anotar su AUC en
+     `separacion_liga.SEPARACION_SELECCIONES`;
+   - **contra el mercado**: `backtest_burbuja_1x2` sobre selecciones cuando
+     haya cuotas capturadas (hoy casi no hay: el sesgo que el usuario
+     sospecha —que la burbuja lea el nivel que la casa también ve— solo se
+     zanja ahí);
+   - **la μ**: `backtest_gap --por-liga` en selecciones (sedes neutrales del
+     Mundial, localía de las eliminatorias en altura); la ventana de 20 de
+     una selección son dos años, y los amistosos bajan `fiabilidadMu` (860):
+     se mide, la fórmula no se toca;
+   - **sanciones**: la regla de amarillas de la Liga de las Naciones y de las
+     eliminatorias no está en `sanciones.UMBRALES` (sin regla no se infiere);
+   - **en vivo**: `en_vivo.rango_liga` no distingue selecciones (rango 2); en
+     una fecha FIFA casi no hay clubes y no hace falta, se mira si el cupo
+     se queda corto.
 
 ## Siguientes pasos (en orden)
 

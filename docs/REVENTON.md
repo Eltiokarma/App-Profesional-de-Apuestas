@@ -1095,6 +1095,63 @@ cuotas en vivo. `separacionLiga` de `/burbujas` trae la de la copa cuando el
 próximo partido es de copa (`competicion: copa`), y el prompt pide sacar el
 1X2 de un partido de copa del mercado y de los skills, no del motor.
 
+### 16.2 Las selecciones (12/11/2026)
+
+Pedido del usuario («ya es tiempo de meterle diente a estas ligas: la burbuja
+ayudaba bien a predecirlos, aunque pueden ser sesgos»), con la Liga de las
+Naciones de noviembre en la pantalla. La base tenía a las selecciones a
+medias: el Mundial 2026, la Euro 2024, las eliminatorias de cinco
+confederaciones y los amistosos, bajados a mano para el Mundial; **nada** de
+la Liga de las Naciones ni de la Copa América, y nada después de la final del
+Mundial (la K de Bélgica terminaba el 10/07/2026).
+
+Cómo se midió, sin la base a mano: la historia de las 405 selecciones de esos
+torneos bajada con el token de Cowork (`/constantes` y `/niveles`, 0 requests
+de API-Football) y pasada por el MISMO `backtest_burbuja.observar_equipo`
+(horizonte 1, sin fuga, nivel del rival de antes del partido), con las
+funciones de la base cambiadas por las de los archivos. Solo selecciones
+absolutas (fuera sub-XX y femeninas) y solo partidos de torneos de selecciones:
+
+| | n | bajo | medio | alto | muy alto | AUC |
+|---|---|---|---|---|---|---|
+| Todas (143 selecciones) | 1.845 | 32 % | 50 % | 63 % | 77 % | **0,697** |
+| Eliminatorias UEFA | 236 | 25 % | | 72 % (alto+) | | 0,743 |
+| Eliminatorias AFC | 188 | 34 % | | 79 % (alto+) | | 0,742 |
+| Eliminatorias CAF | 131 | 21 % | | 61 % (alto+) | | 0,718 |
+| Eliminatorias CONMEBOL | 348 | 34 % | | 67 % (alto+) | | 0,697 |
+| Amistosos | 602 | 32 % | | 66 % (alto+) | | 0,685 |
+| Mundial 2026 | 277 | 38 % | | 64 % (alto+) | | 0,647 |
+
+Por tramo de tiempo, 0,78 (2021-jun 2024) · 0,67 · 0,70 · 0,66 (desde el
+Mundial): monótona en los cuatro. Por signo, la burbuja + separa más (0,72)
+que la − (0,65), como en clubes.
+
+**Lectura**. El usuario tenía razón: separa como las ligas con más jerarquía
+(Eredivisie 0,68) y como las copas donde un grande cruza con uno chico. La
+REGLA de §16 se cumple: separa más donde la diferencia de nivel es enorme
+(Inglaterra contra Andorra en las eliminatorias) y menos entre pares (el
+Mundial, 0,65). Y los **sesgos** que el usuario sospechaba están: quien hace
+el trabajo es el nivel —`favorito` (−0,69) y `muyFavorito` (−1,34) en la
+logística, `rivalEnZona` +18 pts de lift— y no la K (`kGeMediana` y `kGeMax`
+con lift negativo, igual que en clubes, §8). Que se lea fácil no quiere decir
+que pague: la casa también ve que Inglaterra es mejor que Andorra. El
+contraste contra el mercado (`backtest_burbuja_1x2`) queda pendiente hasta
+que haya cuotas de selecciones en la base (DEUDA 30).
+
+**La Liga de las Naciones** no estaba en la base y no se pudo medir. Agrupa
+por nivel (Liga A con Liga A): hay que esperar menos jerarquía que en las
+eliminatorias, cerca del Mundial. Hasta que se mida va con la de todas
+(`separacion_liga.SELECCIONES_TODAS`) y la nota de `separacionLiga` lo dice.
+
+**Lo que se hizo**: los puntos y los cortes NO cambian. Los torneos de
+selecciones son UNA lista (`extractor.TORNEOS_SELECCIONES`) y entran a la base
+y al backfill; los oficiales, al padrón y a la agenda (entran solos, también en
+fase de grupos: prioridad 4, y 2 una llave); los amistosos, Oceanía y la
+Nations League de la Concacaf son menores. `separacionLiga` trae la del
+torneo del PARTIDO (`separacion_liga.de_selecciones`). Y la escala dejó de
+tratar «World Cup», «Copa America» o «Africa Cup of Nations» como copas
+nacionales (ver REGLAS, Agenda).
+
 
 ## 17. ¿Las constantes de goles ACOTAN los goles? (`backend/backtest_goles.py`, 30/10/2026)
 
