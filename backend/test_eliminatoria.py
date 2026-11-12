@@ -75,6 +75,12 @@ def montar():
         (1015, "2026-10-29 20:00:00", "FT", 90, "Round of 64", X, Y, 0, 2, 0, 2, None, None, None, None),
         # 1106: la semifinal de la copa de Bélgica (147) es a ida y vuelta: no se afirma a 90'
         (1016, "2026-10-29 20:00:00", "FT", 147, "Semi-finals", X, Y, 1, 0, 1, 0, None, None, None, None),
+        # 1384: Copa AUF (930), cuartos 1-1 directo a penales y la API copió el 1-1 en el alargue
+        (1017, "2026-11-10 23:00:00", "PEN", 930, "Quarter-finals", X, Y, 1, 1, 1, 1, 1, 1, 0, 3),
+        # 1383: Copa AUF a partido único, cuartos resueltos a 90' (Boston River 1-2 Torque)
+        (1018, "2026-11-10 19:30:00", "FT", 930, "Quarter-finals", X, Y, 1, 2, 1, 2, None, None, None, None),
+        # 1384: prórroga real con goles: 1-1 a 90', 1-1 en el alargue (2-2 en total), penales
+        (1019, "2026-11-10 23:00:00", "PEN", 143, "Round of 32", X, Y, 2, 2, 1, 1, 1, 1, 4, 2),
         # fase de grupos: nunca es una llave
         (1009, "2026-10-05 20:00:00", "FT", LIB, "Group Stage - 3", PAL, OTRO, 2, 0, 2, 0, None, None, None, None),
     ]
@@ -127,6 +133,13 @@ check("977: la EFL Cup que va directo a penales no tuvo prórroga; la tanda la g
       eliminatoria.desenlace(1013)["prorroga"] is False and eliminatoria.desenlace(1013)["avanza"] == X,
       eliminatoria.desenlace(1013))
 check("977: con marcador de alargue (1004) sí hubo prórroga", eliminatoria.desenlace(1004)["prorroga"] is True)
+check("1384: el «alargue» que copia el 1-1 de los 90 sin sumarlo al total no es prórroga; la tanda la gana la visita",
+      eliminatoria.desenlace(1017)["prorroga"] is False and eliminatoria.desenlace(1017)["avanza"] == Y,
+      eliminatoria.desenlace(1017))
+check("1384: un 1-1 en el alargue que SÍ suma al total (2-2) es prórroga de verdad",
+      eliminatoria.desenlace(1019)["prorroga"] is True, eliminatoria.desenlace(1019))
+check("1383: la Copa AUF es a partido único: cuartos 1-2 a 90' → avanza la visita",
+      eliminatoria.desenlace(1018)["avanza"] == Y, eliminatoria.desenlace(1018))
 check("1017: Copa Paraguay a partido único resuelta a 90': pasa la visita",
       eliminatoria.desenlace(1014)["avanza"] == Y, eliminatoria.desenlace(1014))
 check("1106: KNVB Beker a partido único resuelta a 90': pasa Emmen (la visita)",
