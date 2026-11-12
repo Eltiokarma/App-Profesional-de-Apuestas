@@ -37,12 +37,19 @@ NIVEL_RIVAL_FALLBACK = 1.0
 DESCANSO_TOPE = 4        # 4 días o más es «descansado»; el primero de temporada también
 
 
-def nivel_de(ventana: list[tuple[int, int]], escala_g: float = ESCALA_G) -> float:
-    """`ventana`: los últimos 20 (pf, pa) en orden. Nivel = P + G + 1."""
-    p = 3 * sum(1 for pf, pa in ventana if pf > pa) / VENTANA
+def nivel_de(ventana: list[tuple], escala_g: float = ESCALA_G, por_rival: bool = False) -> float:
+    """`ventana`: los últimos 20 (pf, pa) o (pf, pa, nivel_rival) en orden.
+    Nivel = P + G + 1. Con `por_rival` (tenis, docs/TENIS_FASE0.md §4) la P
+    pesa cada victoria por el nivel del rival: P = 3·Σ(victoria·nr)/Σ nr, que
+    con todos los rivales iguales es la P de siempre (misma escala 0-3)."""
+    if por_rival:
+        nr = [(v[2] if len(v) > 2 and v[2] is not None else NIVEL_RIVAL_FALLBACK) for v in ventana]
+        p = 3 * sum(n for v, n in zip(ventana, nr) if v[0] > v[1]) / sum(nr)
+    else:
+        p = 3 * sum(1 for v in ventana if v[0] > v[1]) / VENTANA
     u5 = ventana[-ULTIMOS:]
-    dg = sum(pf - pa for pf, pa in u5)
-    tg = sum(pf + pa for pf, pa in u5)
+    dg = sum(v[0] - v[1] for v in u5)
+    tg = sum(v[0] + v[1] for v in u5)
     g = 0.0 if tg == 0 else dg / tg
     return p + escala_g * g + 1
 
@@ -110,7 +117,8 @@ def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, tempo
 
 
 def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool, neutral: bool,
-             fecha: str, temporada, escala_g: float, escala_margen: float):
+             fecha: str, temporada, escala_g: float, escala_margen: float,
+             cuenta_nivel: bool = True, por_rival: bool = False):
     res = 1 if pf > pa else -1
     nr = NIVEL_RIVAL_FALLBACK if nivel_rival is None else nivel_rival
     mult = 1.0 if (local or neutral) else VISITA_MULT
@@ -141,19 +149,25 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
             f["reventones"].append({"partidos": f["racha"], "kPico": f["kPico"], "nivelRival": nivel_rival,
                                     "fecha": fecha})
             st["fam"][nombre] = _familia0() | {"reventones": f["reventones"]}
-    st["res"].append((pf, pa))
+    # el nivel solo con los partidos que CUENTAN (tenis: el cuadro principal, §4);
+    # los demás mueven igual la K y las burbujas
+    if cuenta_nivel:
+        st["res"].append((pf, pa, nivel_rival))
     st["ultimo"] = (fecha, temporada)
     if len(st["res"]) >= VENTANA:
-        st["nivel"] = nivel_de(st["res"][-VENTANA:], escala_g)
+        st["nivel"] = nivel_de(st["res"][-VENTANA:], escala_g, por_rival)
 
 
 def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: float = ESCALA_MARGEN,
-              estado_final: dict | None = None) -> dict[int, dict]:
+              estado_final: dict | None = None, nivel_por_rival: bool = False,
+              cuenta_nivel=None) -> dict[int, dict]:
     """Una pasada cronológica por TODOS los partidos. Devuelve, por id de
     partido, lo que se sabía de cada lado ANTES de jugarlo:
     {id: {"local": {...}, "visita": {...}}}. `partidos` ordenados por fecha.
     Con `estado_final` (un dict), deja ahí el estado de cada equipo tras su
-    último partido: lo que la guía mira para el PRÓXIMO."""
+    último partido: lo que la guía mira para el PRÓXIMO.
+    `nivel_por_rival` y `cuenta_nivel(partido) -> bool` son las variantes del
+    nivel del tenis (docs/TENIS_FASE0.md §4); apagadas, el motor es el de siempre."""
     estado: dict[int, dict] = {} if estado_final is None else estado_final
     out: dict[int, dict] = {}
     for p in partidos:
@@ -163,6 +177,9 @@ def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: f
         out[p["id"]] = {"local": _previo(L, V, True, neutral, p["fecha"], p["temporada"]),
                         "visita": _previo(V, L, False, neutral, p["fecha"], p["temporada"])}
         nl, nv = L["nivel"], V["nivel"]   # previos: no ven este partido
-        _avanzar(L, p["ptsLocal"], p["ptsVisita"], nv, True, neutral, p["fecha"], p["temporada"], escala_g, escala_margen)
-        _avanzar(V, p["ptsVisita"], p["ptsLocal"], nl, False, neutral, p["fecha"], p["temporada"], escala_g, escala_margen)
+        cuenta = True if cuenta_nivel is None else bool(cuenta_nivel(p))
+        _avanzar(L, p["ptsLocal"], p["ptsVisita"], nv, True, neutral, p["fecha"], p["temporada"], escala_g, escala_margen,
+                 cuenta, nivel_por_rival)
+        _avanzar(V, p["ptsVisita"], p["ptsLocal"], nl, False, neutral, p["fecha"], p["temporada"], escala_g, escala_margen,
+                 cuenta, nivel_por_rival)
     return out

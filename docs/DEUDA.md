@@ -1245,3 +1245,6 @@ conversación se pierde en la siguiente.
    la qualy del ATP es el límite. Pendiente, decisión del usuario: que el nivel
    del tenis distinga la categoría del torneo o pese al rival (hoy la foto de
    «los mejores» mezcla torneos chicos); ESPN no da superficie ni Challengers.
+   §4 (variantes medidas): pesar por el rival casi no cambia; «pozos» mejora
+   el momentum; el Elo es el mejor para «quién es mejor». Propuesta abierta:
+   doble nivel (Elo para quién es mejor, SAD con pozos para el momentum).

@@ -145,10 +145,11 @@ def estudiar(ps: list[dict], previos: dict) -> dict:
     return res
 
 
-def hoy(ps: list[dict], crudos: list[dict], escala_g: float) -> dict:
-    """La lectura de momentum de los 20 de mayor nivel de cada circuito HOY."""
+def hoy(ps: list[dict], crudos: list[dict], escala_g: float, **variante) -> dict:
+    """La lectura de momentum de los 20 de mayor nivel de cada circuito HOY.
+    `variante`: las opciones del nivel de motor.construir (§4)."""
     estado: dict[int, dict] = {}
-    motor.construir(ps, escala_g=escala_g, escala_margen=ESCALA_MARGEN, estado_final=estado)
+    motor.construir(ps, escala_g=escala_g, escala_margen=ESCALA_MARGEN, estado_final=estado, **variante)
     nombre, tour_de, ultimo = {}, {}, {}
     for p in crudos:
         nombre[p["ganadorId"]], nombre[p["perdedorId"]] = p["ganador"], p["perdedor"]

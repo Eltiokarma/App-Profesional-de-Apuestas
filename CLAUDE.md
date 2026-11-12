@@ -59,7 +59,7 @@ python -m backend.backtest_localia_liga --padron --fixture 1584455 # ¿el 1X2 de
 python -m backend.backtest_forma --desde-dir carpeta  # ¿la forma de 5 SIN amistosos mejora el gap? (MOTOR §5; medido 26/10: no) · test_backtest_forma
 python -m backend.backtest_culebra --api --cache carpeta # ley anticulebras: ¿tras locales/favoritos ganadores de la misma liga-día, el siguiente empata o cae más? (DEUDA 24; medido 07/11: no; --api baja con el token de Cowork, sin --api rehace lo bajado) · test_backtest_culebra
 python -m backend.nba.descarga && python -m backend.nba.fase0 # NBA fase 0: ¿la teoría ve algo que la cuota no? (ganador, hándicap, reventón; ESPN sin clave, en ./nba_data; docs/NBA_FASE0.md) · test_nba_fase0 · `python -m backend.nba.burbujas` = lectura de MOMENTUM de la temporada (top 20 por nivel; `--desde 21 --top 30` los otros 10; victorias/derrotas separadas, posición, extremo y riesgo del fútbol, sin cuotas) · `python -m backend.nba.ligas` = hasta qué escalón baja (G League, NBL, WNBA, NCAA; bajar antes con `descarga --liga`)
-python -m backend.tenis.descarga && python -m backend.tenis.fase0 # tenis: el momentum por jugador, ATP/WTA por escalón (Grand Slam, cuadro, qualy), sin cuotas (docs/TENIS_FASE0.md) · test_tenis_fase0
+python -m backend.tenis.descarga && python -m backend.tenis.fase0 # tenis: el momentum por jugador, ATP/WTA por escalón (Grand Slam, cuadro, qualy), sin cuotas (docs/TENIS_FASE0.md) · test_tenis_fase0 · `python -m backend.tenis.nivel` = variantes del nivel (actual, rival, pozos, Elo de vara)
 
 # ingesta (dueña de los datos; el backend HTTP sigue siendo de solo lectura)
 python -m backend.ingesta.extractor --probar    # 1 request de prueba (API_FOOTBALL_KEY en .env)

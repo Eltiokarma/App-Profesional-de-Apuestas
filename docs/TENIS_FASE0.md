@@ -85,3 +85,46 @@ cumplió la lectura, de 2021 a hoy:
   la lectura en cada tercio. La lista de «los mejores de hoy» no vale, hasta
   que el nivel distinga la categoría del torneo o pese al rival en la P. Eso
   es una decisión de teoría, así que queda para el usuario.
+
+## 4. ¿Con qué nivel? Las variantes, lado a lado (12/11/2026)
+
+`python -m backend.tenis.nivel` (→ `tenis_data/nivel.txt`). Las variantes
+están en el motor, apagadas por defecto: `nivel_por_rival` y `cuenta_nivel`
+de `motor.construir`. La NBA no cambia. ESCALA_G = 2 en todas, para comparar
+solo la P.
+
+| variante | el de más nivel gana: 2017-20 | ATP 21+ | WTA 21+ | tramos ATP A·B·C·D | tramos WTA A·B·C·D |
+|---|---|---|---|---|---|
+| actual | 62,2 % | 61,1 % | 60,1 % | 77✓ 71✓ 70 77✓ | 73✓ 74✓ 71✓ 70✓ |
+| rival (P pesada por el rival) | 62,2 % | 61,1 % | 60,3 % | 78✓ 72 71 74✓ | 74✓ 75✓ 71✓ 71✓ |
+| **pozos** (nivel solo con cuadro principal) | 62,2 % | **62,7 %** | 60,3 % | **78✓ 73✓ 74✓ 80✓** | 75✓ 70 70✓ 72✓ |
+| rival + pozos | 62,2 % | 62,4 % | 60,6 % | 80✓ 71 74✓ 78✓ | 75✓ 71 70 72✓ |
+| **Elo (vara de afuera)** | **63,8 %** | **64,2 %** | **64,4 %** | — | — |
+
+**Top 10 de hoy:**
+- **Elo:** Alcaraz, Zverev, Djokovic, Fils, Shelton, Fritz, Medvedev… y en la
+  WTA Rybakina, Sabalenka, Gauff, Pegula, Swiatek, Andreeva…
+- **Las cuatro variantes SAD** siguen con Burel, Andreescu, F. Jones o C. Liu
+  arriba en la WTA, y sin Sabalenka ni Gauff.
+
+### Lectura
+
+- **«Rival» casi no cambia nada.** Pesar la victoria por el nivel del rival no
+  alcanza, porque el nivel del rival también es de forma. Un pozo de
+  jugadoras que se ganan entre sí en torneos chicos se infla igual. Es la
+  circularidad que se esperaba.
+- **«Pozos» es la mejor para el MOMENTUM:** los 4 tramos firmes en el ATP
+  (74-80 %) y +1,6 puntos de acierto en el ATP. Pero no arregla la foto,
+  porque los WTA 125 están dentro del «cuadro principal» de ESPN.
+- **El Elo es el mejor para saber QUIÉN ES MEJOR:** 2 a 4 puntos más de
+  acierto y un top 10 que tiene sentido. Pero no es la teoría.
+
+### Lo que sigue (decisión del usuario)
+
+Un **doble nivel** (la alternativa 6 de la discusión):
+- **El Elo dice quién es mejor:** arriba y abajo, la foto de hoy, el favorito.
+- **El SAD con pozos dice el momentum:** las K, las burbujas, el riesgo y el
+  extremo.
+
+La prueba pendiente es ver si los tramos siguen firmes cuando «arriba y
+abajo» salen del Elo.

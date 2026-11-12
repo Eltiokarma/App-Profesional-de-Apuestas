@@ -91,6 +91,24 @@ def main() -> int:
     h = fase0.hoy(m, ps, 5.0)
     check("hoy: top por circuito con las dos familias", len(h["ATP"]) > 0 and set(h["ATP"][0]["familias"]) == set(motor.FAMILIAS))
 
+    # ── las variantes del nivel (§4) ─────────────────────────────────────────
+    v = [(6, 3, 4.0)] * 10 + [(3, 6, 2.0)] * 10
+    check("nivel por rival: con todos los rivales iguales es la P de siempre",
+          abs(motor.nivel_de([(6, 3, 2.0)] * 10 + [(3, 6, 2.0)] * 10, 2.0, True)
+              - motor.nivel_de([(6, 3)] * 10 + [(3, 6)] * 10, 2.0)) < 1e-12)
+    check("nivel por rival: ganarle a los fuertes (4) y perder con los flojos (2) vale más que 10/20",
+          abs(motor.nivel_de(v, 2.0, True) - (3 * 40 / 60 + 2.0 * (-15 / 45) + 1)) < 1e-12, motor.nivel_de(v, 2.0, True))
+    from backend.tenis import nivel as niv
+    pozos = motor.construir(m, escala_g=2.0, escala_margen=fase0.ESCALA_MARGEN, **niv.VARIANTES["pozos"])
+    todos = motor.construir(m, escala_g=2.0, escala_margen=fase0.ESCALA_MARGEN)
+    check("pozos: la qualy no entra al nivel (cambia) pero sí a las burbujas (misma racha y signo)",
+          any(pozos[i]["local"]["nivel"] != todos[i]["local"]["nivel"] for i in pozos)
+          and all((pozos[i]["local"]["racha"], pozos[i]["local"]["signo"]) == (todos[i]["local"]["racha"], todos[i]["local"]["signo"])
+                  for i in pozos))
+    pe, fin = niv.elo(m)
+    check("Elo (vara): sin nivel antes de 20 partidos y el fuerte termina arriba",
+          all(pe[p["id"]]["local"]["nivel"] is None for p in m[:5]) and len(fin) == 40)
+
     print("\nTODO OK" if not fallas else f"\n{fallas} FALLAS")
     return 1 if fallas else 0
 
