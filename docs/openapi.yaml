@@ -5455,7 +5455,8 @@ components:
                   baseAnadido: { type: integer, nullable: true }
             primerGol: { type: object, nullable: true, additionalProperties: true }
             var: { type: array, items: { type: object, additionalProperties: true }, description: 'decisiones del VAR de la ficha (gol anulado, penal confirmado o anulado) con minuto, extra, detalle, jugador y lado (1066): evidencia, no cambia el marcador' }
-            conFicha: { type: boolean }
+            conFicha: { type: boolean, description: 'la ficha sirve para medir minutos: sus goles dan el marcador de los 90 (o fue 0-0). Con false no se calculan ventana, tramos, salida ni rama jugada (1381/1382)' }
+            golesCuadran: { type: boolean, description: 'los eventos de gol de la ficha suman el marcador de los 90 (1382)' }
             nota: { type: string }
         reventon:
           type: object

@@ -1890,6 +1890,8 @@ export interface VeredictoObjetivo {
              rebotePenal?: boolean; enAnadido?: boolean; baseAnadido?: number | null }[]
     primerGol: { minuto: number; lado: 'a' | 'b'; jugador: string } | null
     conFicha: boolean
+    /** los goles de la ficha dan el marcador de los 90 (1382) */
+    golesCuadran?: boolean
     nota: string
   }
   /** El reventón de la burbuja, comprobado por lado (docs/REVENTON.md §11):

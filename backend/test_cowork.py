@@ -3032,6 +3032,28 @@ def main():
     check("1310: la ventana 81-96 cobra el 89 y anota el 90+3 en golesEnAnadido",
           [g["minuto"] for g in _ob1310["a"]["goles"]] == [89]
           and [g["minuto"] for g in _ob1310["a"]["golesEnAnadido"]] == [93], _ob1310["a"])
+    # 1381/1382 (Inter de Bogotá 1-2 América): la ficha de un partido TERMINADO
+    # con un gol de tres no sirve para medir minutos: ni tramos, ni rama, ni DTP
+    _ft = dbmod.query_one("sad", "SELECT id, goals_home AS gh, goals_away AS ga FROM fixtures "
+                                 "WHERE status_short='FT' AND goals_home + goals_away >= 2 LIMIT 1")
+    _g1382 = [{"minuto": 14, "lado": "a", "jugador": "x", "autogol": False, "enAnadido": False, "baseAnadido": None}]
+    _vd._goles, _vd._rojas = (lambda fid, hid: _g1382), (lambda fid, hid: [])
+    try:
+        _o1382 = _vd.objetivo(_ft["id"], {"tde": {"bloques": [{"equipo": "a", "ventana": "75-90'"}]},
+                                          "dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {}}}]}})
+    finally:
+        _vd._goles, _vd._rojas = _orig_g, _orig_r
+    _b1382 = _o1382["tde"]["bloques"][0]
+    check("1382: goles de la ficha que no dan el marcador → conFicha false, sin tramos, sin rama ni ventana",
+          _o1382["evidencia"]["conFicha"] is False and _o1382["evidencia"]["golesCuadran"] is False
+          and not _b1382["tramos"] and _b1382["golEnVentana"] is None
+          and (_b1382["reasignacion"] or {}).get("rama") is None, (_o1382["evidencia"], _b1382))
+    check("1382: …la rama jugada del DTP tampoco se calcula, y la nota lo dice",
+          _o1382["dtp"]["porBloque"][0]["ramaJugada"] is None and "no dan el marcador" in _o1382["evidencia"]["nota"],
+          (_o1382["dtp"], _o1382["evidencia"]["nota"]))
+    check("1382: los goles que SÍ dan el marcador de los 90 cuadran (la prórroga y el añadido de la prórroga no cuentan)",
+          _vd.goles_cuadran_90([{"minuto": 94, "lado": "a", "enAnadido": True, "baseAnadido": 90},
+                                {"minuto": 102, "lado": "b", "enAnadido": False, "baseAnadido": None}], 1, 0))
     with _sq2.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM fixture_eventos WHERE fixture_id=? AND jugador IN "
                      "('Expulsado', 'DT expulsado', 'Añadido 1T')", (con_ficha,))

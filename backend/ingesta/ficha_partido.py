@@ -446,11 +446,17 @@ def fixtures_con_parte(con: sqlite3.Connection, db: str, dias: int = CON_PARTE_D
     # sello es de menos de REPEDIR_STATS_HORAS después del partido, vuelve; al
     # re-sellarla la hora del sello ya es tardía y no se repite.
     cob = cobertura_por_liga(con)
+    # LOS GOLES QUE NO DAN EL MARCADOR TAMBIÉN SON UN SELLO TEMPRANO (11/11/2026,
+    # incidencia 1381, Inter de Bogotá 1-2 América: la ficha quedó con los
+    # eventos hasta el 14' —un gol de tres— y sellada). Misma regla, una sola
+    # vez: sellada a menos de REPEDIR_STATS_HORAS del pitazo, se vuelve a pedir.
+    cortas = goles_que_no_cuadran(con, ids)
     sellados = set()
     for fid, stats, sello, fecha, liga in con.execute(
             "SELECT m.fixture_id, m.stats, m.capturado_en, f.date, f.league_id "
             "FROM fichas_meta m LEFT JOIN fixtures f ON f.id=m.fixture_id"):
-        if not stats and fecha and sello and (cob.get(liga) or {}).get("stats"):
+        sin_stats = not stats and (cob.get(liga) or {}).get("stats")
+        if (sin_stats or fid in cortas) and fecha and sello:
             try:
                 pitazo = datetime.fromisoformat(str(fecha).replace("Z", "+00:00")).replace(tzinfo=None)
                 temprano = datetime.strptime(str(sello)[:19], "%Y-%m-%d %H:%M:%S") \
@@ -469,6 +475,30 @@ def fixtures_con_parte(con: sqlite3.Connection, db: str, dias: int = CON_PARTE_D
                 AND status_short IN ({','.join('?' * len(TERMINADOS))}) AND date >= ?
                 ORDER BY date DESC""", (*lote, *TERMINADOS, desde)) if fid not in sellados]
     return fuera
+
+
+def goles_que_no_cuadran(con: sqlite3.Connection, ids: list[int]) -> set[int]:
+    """De `ids`, los partidos TERMINADOS cuyos eventos de gol (sin penales
+    errados, sin la prórroga) no dan el marcador de los 90 (1381)."""
+    out: set[int] = set()
+    for i in range(0, len(ids), 500):
+        lote = ids[i:i + 500]
+        try:
+            filas = con.execute(
+                f"""SELECT f.id, COALESCE(f.fulltime_home, f.goals_home), COALESCE(f.fulltime_away, f.goals_away),
+                           SUM(CASE WHEN e.equipo_id=f.home_team_id THEN 1 ELSE 0 END),
+                           SUM(CASE WHEN e.equipo_id=f.away_team_id THEN 1 ELSE 0 END)
+                    FROM fixtures f LEFT JOIN fixture_eventos e ON e.fixture_id=f.id AND e.tipo='Goal'
+                         AND LOWER(COALESCE(e.detalle, '')) NOT LIKE '%missed%'
+                         AND COALESCE(e.minuto, 0) - COALESCE(e.extra, 0) <= 90
+                    WHERE f.id IN ({','.join('?' * len(lote))})
+                      AND f.status_short IN ({','.join('?' * len(TERMINADOS))})
+                    GROUP BY f.id""", (*lote, *TERMINADOS)).fetchall()
+        except sqlite3.Error:
+            return out    # base sin las columnas del marcador o de eventos: no se repide nada de más
+        out |= {fid for fid, gh, ga, eh, ea in filas
+                if gh is not None and ga is not None and ((eh or 0), (ea or 0)) != (gh, ga)}
+    return out
 
 
 def cobertura_por_liga(con: sqlite3.Connection) -> dict[int, dict]:
