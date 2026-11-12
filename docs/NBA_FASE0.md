@@ -483,3 +483,33 @@ cuota mediana.
 **Tenis:** sin cuotas no se puede hacer esta cuenta. Si se paga una API para
 el tenis, que traiga cuotas HISTÓRICAS, para hacer esta misma cuenta antes de
 apostar.
+
+### 9.2 ¿Mejor que el apostador de internet? Plana y martingala (12/11/2026)
+
+El apostador de internet apuesta SIEMPRE al favorito. «El nuestro» es el
+favorito sin la alerta DESCONFIAR. Cada uno con plana (1 u) y con la
+martingala del repo, por líneas (`simulacion.py`: cada línea arranca en 1, se
+duplica tras perder y vuelve a 1 al ganar; los partidos del mismo día toman
+líneas distintas; quiebra = la apuesta del día no cabe en la banca). La banca
+arranca en 100. Se mide la secuencia real y 2.000 remuestreos por días.
+
+| 2023-24 → hoy | acierto | plana: banca final | martingala: P(quiebra) |
+|---|---|---|---|
+| favorito siempre | 69,1 % | −47,9 (−3,6 % por apuesta) | **99 %** |
+| **nuestro** | **70,4 %** | **−2,0** (−2,8 %) | **93 %** |
+
+En 2016-17 → 2022-23 la diferencia es más chica: con plana, −261 contra
+−223. Con la martingala, quiebra en el 100 % de los remuestreos para los dos.
+
+- **El nuestro es mejor que el de internet:** acierta más y pierde menos, en
+  los dos períodos. Pero en la NBA ninguno de los dos gana.
+- **La martingala con favoritos está rota por la cuota, no por el
+  análisis.** A cuota 1,35, ganar la apuesta duplicada devuelve solo el 35 %
+  de lo que se juega: perder 1 y después ganar 2 deja −0,3. La martingala
+  necesita cuotas cerca de 2 para recuperar con una sola victoria. Con
+  favoritos de 1,2-1,4 cada derrota se arrastra, y con varias líneas por noche
+  la banca no aguanta.
+- **En el fútbol la martingala salió 255 en la secuencia real**
+  (`docs/METODO_APUESTA.md`) porque el elegido paga más (cerca de 1,8) y el
+  win rate supera a la cuota. Pero sin esa ventaja quiebra en el 68 % de los
+  remuestreos. Es lo mismo que se ve acá.
