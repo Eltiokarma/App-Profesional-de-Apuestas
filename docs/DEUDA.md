@@ -1139,6 +1139,31 @@ conversación se pierde en la siguiente.
      una fecha FIFA casi no hay clubes y no hace falta, se mira si el cupo
      se queda corto.
 
+31. **«Quién avanza» aparte del 1X2 en las eliminatorias** (12/11/2026,
+   usuario, sin construir). Caso: Tarancón 1-2 Levante (1644379, Copa del
+   Rey, partido único): el parte dijo VISITA 84 %, a los 90 fue 1-1 y Levante
+   ganó en la prórroga. El ✗ es correcto: el 1X2 se liquida a los 90'
+   (`veredicto._G90_*`, como las casas), y una apuesta a Levante se perdía.
+   Pero el «84 %» mezcla dos preguntas —gana en los 90 y pasa de ronda— que
+   en una copa contra un equipo de categorías abajo pueden estar lejos: el
+   chico aguanta los 90 y cae en la prórroga. Usuario: «si hubiésemos
+   apostado al equipo, perdíamos, pero si apostábamos a quién clasifica,
+   ganábamos; el analista tendría que tomar en consideración que hay
+   prórroga». Propuesta, por decidir (toca el contrato del parte y los
+   skills, zona del usuario):
+   - en una eliminatoria (partido único o vuelta), el parte declara además
+     `avanza` (lado + probabilidad), con el 1X2 a los 90 intacto;
+   - el veredicto lo mide contra `backend/eliminatoria.py` (`avanza`; null
+     no se cuenta) y Aprendizaje lo muestra aparte del 1X2, sin mezclarlo;
+   - el skill `sad-analysis` dice cómo pasar del 1X2 a «avanza» (prórroga y
+     penales; en la vuelta, el global);
+   - en la lista de partidos, «PRÓR.»/«PEN.» bajo el marcador y el 1-1 de
+     los 90 en el título del chip, para que el ✗ no parezca contradecir el
+     1-2 (campo nuevo en `/fixtures`, contrato primero).
+   Las copas nacionales siguen fuera de las métricas y de la simulación
+   (`escala.copas_nacionales`); esto pesa sobre todo en las internacionales
+   de clubes y de selecciones.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
