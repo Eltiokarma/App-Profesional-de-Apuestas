@@ -339,8 +339,8 @@ check("1371: el club peruano (todo en Perú) no tiene ajenos, y sin mayoría cla
       and partido_ajeno.ajenos([(1, COL, "Colombia"), (2, CPERU, "Peru")], set()) == (None, set()))
 check("1371: un club que cruza la frontera de verdad (Toronto: MLS y Campeonato Canadiense) no se marca",
       partido_ajeno.ajenos([(i, 253, "USA") for i in range(10)] + [(99, 952, "Canada")], set())[1] == set())
-check("1371: el escaneo lo deposita (`partido-ajeno`, no informativo) en el lado de Nacional",
-      not escaneo.CHEQUEOS["partido-ajeno"].get("informativo")
+check("1371/1378: el escaneo lo marca (`partido-ajeno`, informativo desde el 12/11: se cerraba siempre por diseño) en el lado de Nacional",
+      escaneo.CHEQUEOS["partido-ajeno"].get("informativo")
       and [(h["chequeo"], h["lado"]) for h in escaneo._pre(
           {"fixtureId": 77, "partido": "Once Caldas vs Atletico Nacional", "fecha": "2026-11-10", "hora": "23:00",
            "equipoA": "Once Caldas", "equipoB": "Atletico Nacional"}, _ahora) if h["chequeo"] == "partido-ajeno"]
