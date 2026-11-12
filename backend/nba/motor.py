@@ -49,7 +49,7 @@ def nivel_de(ventana: list[tuple[int, int]], escala_g: float = ESCALA_G) -> floa
 
 def _nuevo() -> dict:
     return {"res": [], "kPos": 0.0, "kNeg": 0.0, "kLoc": 0.0, "kVis": 0.0,
-            "racha": 0, "kPico": 0.0, "reventones": {1: [], -1: []}, "ultimo": None, "nivel": None}
+            "racha": 0, "kPico": 0.0, "conds": [], "reventones": {1: [], -1: []}, "ultimo": None, "nivel": None}
 
 
 def _signo(v: float) -> int:
@@ -64,6 +64,10 @@ def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, tempo
     desc = None
     if st["ultimo"] is not None:
         desc = DESCANSO_TOPE if st["ultimo"][1] != temporada else dias_descanso(st["ultimo"][0], fecha)
+    # la contramano del fútbol (REVENTON §12): 2/3 o más de la racha en la
+    # condición contraria a la de este partido (neutral no cuenta para ninguna)
+    cond = None if neutral else ("L" if local else "V")
+    contra = sum(1 for c in st["conds"] if c is not None and cond is not None and c != cond)
     med_part = median(r["partidos"] for r in rev) if rev else None
     med_pico = median(r["kPico"] for r in rev) if rev else None
     med_niv = median(r["nivelRival"] for r in rev if r["nivelRival"] is not None) if any(
@@ -75,6 +79,7 @@ def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, tempo
         "descanso": None if desc is None else max(0, min(DESCANSO_TOPE, desc)),
         "reventonesSigno": len(rev), "medianaPartidos": med_part, "medianaKPico": med_pico,
         "medianaNivelRival": med_niv,
+        "contramano": bool(st["conds"]) and cond is not None and contra * 3 >= 2 * len(st["conds"]),
     }
 
 
@@ -94,8 +99,9 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
     s_antes, s = _signo(k_antes), _signo(k)
     if s_antes and s != s_antes:          # revienta: se cierra la burbuja con su rival
         st["reventones"][s_antes].append({"partidos": st["racha"], "kPico": st["kPico"], "nivelRival": nivel_rival})
-        st["racha"], st["kPico"] = 0, 0.0
+        st["racha"], st["kPico"], st["conds"] = 0, 0.0, []
     st["racha"] += 1
+    st["conds"].append(None if neutral else ("L" if local else "V"))
     st["kPico"] = max(st["kPico"], abs(k))
     st["res"].append((pf, pa))
     st["ultimo"] = (fecha, temporada)
@@ -103,11 +109,14 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
         st["nivel"] = nivel_de(st["res"][-VENTANA:], escala_g)
 
 
-def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: float = ESCALA_MARGEN) -> dict[int, dict]:
+def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: float = ESCALA_MARGEN,
+              estado_final: dict | None = None) -> dict[int, dict]:
     """Una pasada cronológica por TODOS los partidos. Devuelve, por id de
     partido, lo que se sabía de cada lado ANTES de jugarlo:
-    {id: {"local": {...}, "visita": {...}}}. `partidos` ordenados por fecha."""
-    estado: dict[int, dict] = {}
+    {id: {"local": {...}, "visita": {...}}}. `partidos` ordenados por fecha.
+    Con `estado_final` (un dict), deja ahí el estado de cada equipo tras su
+    último partido: lo que la guía mira para el PRÓXIMO."""
+    estado: dict[int, dict] = {} if estado_final is None else estado_final
     out: dict[int, dict] = {}
     for p in partidos:
         L = estado.setdefault(p["localId"], _nuevo())

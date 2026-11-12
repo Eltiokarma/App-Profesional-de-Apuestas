@@ -155,3 +155,40 @@ ingesta, pantalla ni skill de NBA con esta teoría.
    línea de la NBA, y la teoría de rachas no lo ve.
 3. **Otras ligas de básquet**, menos eficientes. La Euroliga quedó afuera a
    pedido del usuario.
+
+## 5. Las burbujas de esta temporada, los 20 de mayor nivel (12/11/2026)
+
+`python -m backend.nba.burbujas` (→ `nba_data/burbujas.txt`). A pedido del
+usuario, no es otro backtest de miles de partidos. Es la pantalla de Burbujas
+del fútbol llevada a la NBA, solo sobre la temporada 2026-27 (170 partidos al
+12/11) y solo sobre los **20 equipos de mayor nivel del motor hoy**.
+
+- **El riesgo es el del fútbol.** Se usan las mismas reglas y puntos de
+  `backend/analisis/burbuja.py`, importados y no copiados: racha ≥ mediana +1,
+  rival fuerte o muy fuerte en la dirección del riesgo +1 o +2, favorito −1 o
+  muy favorito −3, contramano +1.
+- **El motor recorre la historia entera** porque la necesita. El nivel pide 20
+  partidos, y en noviembre nadie llegó a 20 en la temporada. La base de cada
+  equipo son sus reventones previos, igual que en el fútbol. Lo que se mide es
+  solo la temporada.
+
+**La guía en la temporada** (228 lados de los 20 con burbuja y base):
+
+| riesgo | n | se cortó | la cuota decía | fútbol (backtest) |
+|---|---|---|---|---|
+| bajo | 45 | 27 % | 27 % | 40–50 % |
+| medio | 39 | 36 % | 38 % | 55 % |
+| alto | 96 | 45 % | 50 % | 62–67 % |
+| muy alto | 48 | 62 % | 64 % | 71–75 % |
+
+- **La guía ordena bien:** a más riesgo, más corte, igual que en el fútbol.
+  Las tasas son más bajas porque en la NBA no hay empate que corte la racha.
+- **La cuota dice lo mismo, tramo por tramo.** Es lo mismo que en el §4.3: la
+  guía describe, pero no le gana a la cuota.
+- **La mediana de racha de casi todos es 1 o 2.** Sin empate las rachas son
+  cortas, así que «racha ≥ mediana» suma casi siempre. En el básquet esa
+  regla discrimina poco.
+- **La base sale de toda la historia desde 2015** (200 o más reventones por
+  equipo, con planteles que ya no existen). Si la guía se usara en serio,
+  habría que acotarla, por ejemplo a las últimas 2 temporadas.
+- **n chico:** es una foto de un mes, no una medición.

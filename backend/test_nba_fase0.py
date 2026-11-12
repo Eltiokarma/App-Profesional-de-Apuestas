@@ -14,7 +14,7 @@ import random
 import sys
 import tempfile
 
-from backend.nba import descarga, fase0, motor
+from backend.nba import burbujas, descarga, fase0, motor
 
 fallas = 0
 
@@ -130,6 +130,20 @@ def main() -> int:
     check("motor: el visitante pesa ×1,4 en su K (como el fútbol, sin calibrar)",
           abs(pm[1]["visita"]["k"] - (-1.4)) < 1e-12, pm[1]["visita"]["k"])
     check("motor: descanso por horas (24 h = 1 día: back-to-back)", pm[1]["local"]["descanso"] == 1)
+
+    # ── la guía de burbujas: los puntos del fútbol, sin copiar números ───────
+    base = {"signo": 1, "racha": 4, "k": 9.0, "kPico": 9.0, "nivel": 3.0, "nivelRival": 3.0,
+            "reventonesSigno": 10, "medianaPartidos": 2, "medianaKPico": 5.0, "medianaNivelRival": 2.5,
+            "contramano": True}
+    rg = burbujas.riesgo(base)
+    check("burbujas: racha ≥ mediana +1, rival muy fuerte +2, contramano +1 → muy alto (+4)",
+          rg["puntos"] == 4 and rg["nivel"] == "muy alto" and rg["tramo"] == "muy fuerte", rg)
+    check("burbujas: sin base propia (< 3 reventones del signo) no hay riesgo",
+          burbujas.riesgo({**base, "reventonesSigno": 2}) is None)
+    rg2 = burbujas.riesgo({**base, "signo": -1, "nivel": 2.0, "nivelRival": 3.5, "medianaNivelRival": 3.0,
+                           "contramano": False})
+    check("burbujas: con racha − el rival FLOJO empuja al corte; el rival muy fuerte resta (muy favorito)",
+          rg2["tramo"] == "lejos" and rg2["favorito"] == "muy favorito" and rg2["puntos"] == 1 - 3, rg2)
 
     # ── el método: detecta un efecto real y no inventa uno ───────────────────
     rnd = random.Random(5)
