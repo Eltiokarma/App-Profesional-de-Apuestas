@@ -177,4 +177,8 @@
   (1375: manda la total, REVENTON §13; la de la condición viaja como dato);
   y el partido de un homónimo de otro país en la base de un equipo de interés
   (1371, 1378: `backend/partido_ajeno.py` ya lo saca de la historia, el nivel y
-  el calendario; el escaneo lo marca a propósito).
+  el calendario; el escaneo lo marca a propósito). Y desde la pasada del 11/11
+  (noche): el parte de una copa sin alineaciones que queda en `pendiente_xi`
+  al cerrar el veredicto (1380, 941: con la ficha sellada sin once va a
+  `nuncaVaALlegar` mientras no hay veredicto; después ese estado es la
+  constancia de que el bloque F no cerró).
