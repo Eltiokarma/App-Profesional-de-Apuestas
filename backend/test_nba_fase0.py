@@ -150,6 +150,25 @@ def main() -> int:
           pm[4]["local"]["familias"]["derrotas"]["k"] == 1.0 and pm[4]["local"]["familias"]["victorias"]["k"] == 0
           and pm[4]["local"]["familias"]["victorias"]["reventonesSigno"] == 1)
 
+    # ── la K de PUNTOS (§10): anotar / recibir por encima de su media de 20 ─
+    hist = [{"id": 5000 + n, "fecha": f"2024-0{1 + n // 28}-{1 + n % 28:02d}T00:00Z", "temporada": 2024, "tipo": "regular",
+             "localId": 1, "visitaId": 2, "ptsLocal": pl, "ptsVisita": 100, "neutral": False}
+            for n, pl in enumerate([110 if n % 2 else 90 for n in range(20)] + [115, 120, 95, 100])]
+    pp = motor.construir(hist)
+    v20, v21, v22, v23 = (pp[5020]["local"]["puntos"], pp[5021]["local"]["puntos"],
+                          pp[5022]["local"]["puntos"], pp[5023]["local"]["puntos"])
+    check("puntos: sin 20 partidos previos no hay media (ni burbuja)",
+          pp[5019]["local"]["puntos"]["mediaAnota"] is None and v20["mediaAnota"] == 100)
+    check("puntos: anotar 115 y 120 sobre su media abre y alarga la burbuja «anota»",
+          v21["anota"]["abierta"] and v22["anota"]["racha"] == 2 and v22["anota"]["k"] > v21["anota"]["k"])
+    check("puntos: anotar debajo de su media la revienta A CERO y queda en la base",
+          not v23["anota"]["abierta"] and v23["anota"]["reventonesSigno"] == 1)
+    from backend.nba import puntos as _pts
+    t = _pts.totales([{"casa": "A", "overUnder": 220.5, "overCuota": -110, "underCuota": -110},
+                      {"casa": "B", "overUnder": 221.5, "overCuota": -105, "underCuota": -115},
+                      {"casa": "X - Live Odds", "overUnder": 250, "overCuota": -110, "underCuota": -110}])
+    check("puntos: la línea de más/menos es la mediana sin las de vivo", t["linea"] == 221.0, t)
+
     # ── la guía de burbujas: los puntos del fútbol, sin copiar números ───────
     base = {"signo": 1, "racha": 4, "k": 9.0, "kPico": 9.0, "nivel": 3.0, "nivelRival": 3.0,
             "reventonesSigno": 10, "medianaPartidos": 2, "medianaKPico": 5.0, "medianaNivelRival": 2.5,

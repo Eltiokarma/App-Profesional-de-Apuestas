@@ -55,6 +55,13 @@ def nivel_de(ventana: list[tuple], escala_g: float = ESCALA_G, por_rival: bool =
 
 
 FAMILIAS = {"victorias": 1, "derrotas": -1}
+# LA K DE PUNTOS (12/11/2026, usuario: «medir la K de goles… análisis por
+# diferencia de puntos»): en el básquet todos anotan siempre, así que «anotó»
+# es anotar POR ENCIMA de su media de los 20 partidos anteriores (y «recibió»,
+# recibir por encima de su media). La K acumula el exceso (÷ ESCALA_MARGEN)
+# por el nivel del rival y revienta a 0 la primera vez que queda por debajo.
+# Puede tomar valores grandes: no importa. No toca victorias/derrotas.
+FAMILIAS_PUNTOS = ("anota", "recibe")
 
 
 def _familia0() -> dict:
@@ -64,7 +71,7 @@ def _familia0() -> dict:
 def _nuevo() -> dict:
     return {"res": [], "kPos": 0.0, "kNeg": 0.0, "kLoc": 0.0, "kVis": 0.0,
             "racha": 0, "kPico": 0.0, "conds": [], "reventones": {1: [], -1: []}, "ultimo": None, "nivel": None,
-            "fam": {f: _familia0() for f in FAMILIAS}}
+            "fam": {f: _familia0() for f in (*FAMILIAS, *FAMILIAS_PUNTOS)}, "pts": []}
 
 
 def _contramano(conds: list, cond: str | None) -> bool:
@@ -97,6 +104,23 @@ def _signo(v: float) -> int:
     return 1 if v > 0 else -1 if v < 0 else 0
 
 
+def _media_puntos(st: dict) -> tuple[float, float] | None:
+    """Media de puntos a favor y en contra de los últimos 20 partidos (antes de este)."""
+    if len(st["pts"]) < VENTANA:
+        return None
+    u = st["pts"][-VENTANA:]
+    return sum(x[0] for x in u) / VENTANA, sum(x[1] for x in u) / VENTANA
+
+
+def _vista_puntos(st: dict) -> dict:
+    m = _media_puntos(st)
+    out = {"mediaAnota": None if m is None else m[0], "mediaRecibe": None if m is None else m[1]}
+    for n in FAMILIAS_PUNTOS:
+        f = st["fam"][n]
+        out[n] = {"k": f["k"], "racha": f["racha"], "kPico": f["kPico"], "abierta": f["k"] > 0, **_base(f["reventones"])}
+    return out
+
+
 def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, temporada) -> dict:
     """Lo que se sabe del equipo ANTES del partido (nada de este partido)."""
     k = st["kPos"] + st["kNeg"]
@@ -113,6 +137,7 @@ def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, tempo
         "descanso": None if desc is None else max(0, min(DESCANSO_TOPE, desc)),
         **_base(rev), "contramano": _contramano(st["conds"], cond),
         "familias": {n: _vista_familia(st, n, cond, rival["nivel"]) for n in FAMILIAS},
+        "puntos": _vista_puntos(st),
     }
 
 
@@ -149,6 +174,20 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
             f["reventones"].append({"partidos": f["racha"], "kPico": f["kPico"], "nivelRival": nivel_rival,
                                     "fecha": fecha})
             st["fam"][nombre] = _familia0() | {"reventones": f["reventones"]}
+    # la K de puntos: contra la media de los 20 anteriores (sin este partido)
+    m = _media_puntos(st)
+    if m is not None:
+        for n, exceso in (("anota", pf - m[0]), ("recibe", pa - m[1])):
+            f = st["fam"][n]
+            if exceso > 0:
+                f["k"] += (exceso / escala_margen) * nr
+                f["racha"] += 1
+                f["kPico"] = max(f["kPico"], f["k"])
+            elif f["k"] > 0:                 # revienta A CERO
+                f["reventones"].append({"partidos": f["racha"], "kPico": f["kPico"], "nivelRival": nivel_rival,
+                                        "fecha": fecha})
+                st["fam"][n] = _familia0() | {"reventones": f["reventones"]}
+    st["pts"].append((pf, pa))
     # el nivel solo con los partidos que CUENTAN (tenis: el cuadro principal, §4);
     # los demás mueven igual la K y las burbujas
     if cuenta_nivel:

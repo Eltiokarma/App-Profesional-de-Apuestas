@@ -131,7 +131,10 @@ def recortar_cuotas(crudo: dict) -> list[dict]:
                       "mlLocal": _num(h.get("moneyLine")), "mlVisita": _num(a.get("moneyLine")),
                       "spreadLocal": _num(it.get("spread")),
                       "spreadCuotaLocal": _num(h.get("spreadOdds")), "spreadCuotaVisita": _num(a.get("spreadOdds")),
-                      "favoritoLocal": h.get("favorite")})
+                      "favoritoLocal": h.get("favorite"),
+                      # la línea de puntos totales (más/menos), para el análisis de puntos (§10)
+                      "overUnder": _num(it.get("overUnder")),
+                      "overCuota": _num(it.get("overOdds")), "underCuota": _num(it.get("underOdds"))})
     return filas
 
 
@@ -165,7 +168,16 @@ def bajar(desde: str = INICIO, hasta: str | None = None, hilos: int = 4) -> dict
 
     _en_paralelo(faltan, un_dia, hilos, "días")
     partidos = cargar_partidos(base)
-    sin = [p["id"] for p in partidos if not os.path.exists(os.path.join(base, "cuotas", f"{p['id']}.json"))]
+    def _falta(i: int) -> bool:
+        ruta = os.path.join(base, "cuotas", f"{i}.json")
+        if not os.path.exists(ruta):
+            return True
+        with open(ruta) as f:
+            filas = json.load(f)
+        # bajada antes del 12/11/2026, sin la línea de puntos: se vuelve a pedir
+        return bool(filas) and "overUnder" not in filas[0]
+
+    sin = [p["id"] for p in partidos if _falta(p["id"])]
     print(f"partidos terminados: {len(partidos)}; cuotas por pedir: {len(sin)}")
 
     def una_cuota(i: int) -> int:
