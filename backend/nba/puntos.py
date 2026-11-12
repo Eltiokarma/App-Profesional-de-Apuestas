@@ -8,6 +8,8 @@ su media de los 20 anteriores, con su K y su reventón a cero.
 
   1 · ¿La burbuja de puntos sigue? (sin cuotas): el que viene anotando de más,
       ¿vuelve a anotar de más? Por largo de racha, contra la tasa de todos.
+  (dos VARAS: «propia» = la media de 20 del equipo; «casa» = lo que la casa
+   esperaba de ese equipo en ese partido, (total ∓ hándicap)/2)
   2 · HÁNDICAP con la dirección ya elegida: el elegido es el favorito de la casa
       sin la alerta DESCONFIAR (el método, §9.1). ¿Cubre más o menos según el
       cruce de puntos? ataque = el elegido viene anotando de más + el rival
@@ -33,6 +35,9 @@ from backend.nba import burbujas, descarga, motor
 from backend.nba.fase0 import consenso, decimal
 
 ESCALA_G = 5.0
+# las dos varas (usuario, 12/11/2026: «la 1 más la 3»): contra su propia media
+# de 20 y contra lo que la casa esperaba de ese equipo en ese partido
+VARAS = {"propia": ("anota", "recibe"), "casa": ("anotaCasa", "recibeCasa")}
 PERIODOS = (("2016-17 → 2022-23", 2017, 2023), ("2023-24 → hoy", 2024, 9999))
 
 
@@ -67,10 +72,22 @@ def _fmt(x) -> dict:
             "pide": round(x[3] / x[0], 4) if x[0] else None, "roi": round(x[2] / x[0], 4) if x[0] else None}
 
 
+def linea_puntos(ps: list[dict], cu: dict) -> dict:
+    """{id: (esperados del local, de la visita)} según la casa: con el total y el
+    hándicap del local (negativo = local favorito), local = (total − hándicap)/2."""
+    out = {}
+    for p in ps:
+        c, t = consenso(cu.get(p["id"], [])), totales(cu.get(p["id"], []))
+        if c and t and c["spreadLocal"] is not None:
+            out[p["id"]] = ((t["linea"] - c["spreadLocal"]) / 2, (t["linea"] + c["spreadLocal"]) / 2)
+    return out
+
+
 def correr() -> dict:
     ps = descarga.cargar_partidos()
     cu = descarga.cargar_cuotas()
-    prev = motor.construir(ps, escala_g=ESCALA_G)
+    lp = linea_puntos(ps, cu)
+    prev = motor.construir(ps, escala_g=ESCALA_G, linea_puntos=lp)
     cont = defaultdict(lambda: [0, 0])          # (periodo, familia, tramo) → [n, siguió]
     base = defaultdict(lambda: [0, 0])          # (periodo, familia) → [n, por encima]
     hand = defaultdict(_cuenta)                 # (periodo, balance) → cuenta
@@ -83,12 +100,17 @@ def correr() -> dict:
         f = prev[p["id"]]
         pts = {"local": (p["ptsLocal"], p["ptsVisita"]), "visita": (p["ptsVisita"], p["ptsLocal"])}
         # 1 · ¿la burbuja de puntos sigue?
+        esp = lp.get(p["id"])
         for lado in ("local", "visita"):
             v = f[lado]["puntos"]
-            if v["mediaAnota"] is None:
-                continue
             pf, pa = pts[lado]
-            for fam, valor, media in (("anota", pf, v["mediaAnota"]), ("recibe", pa, v["mediaRecibe"])):
+            refs = []
+            if v["mediaAnota"] is not None:
+                refs += [("anota", pf, v["mediaAnota"]), ("recibe", pa, v["mediaRecibe"])]
+            if esp is not None:
+                e_pf, e_pa = esp if lado == "local" else (esp[1], esp[0])
+                refs += [("anotaCasa", pf, e_pf), ("recibeCasa", pa, e_pa)]
+            for fam, valor, media in refs:
                 encima = valor > media
                 base[(per, fam)][0] += 1
                 base[(per, fam)][1] += encima
@@ -109,16 +131,17 @@ def correr() -> dict:
         pe, pr = f[el]["puntos"], f[ri]["puntos"]
         if pe["mediaAnota"] is None or pr["mediaAnota"] is None:
             continue
-        ataque = pe["anota"]["abierta"] + pr["recibe"]["abierta"]
-        defensa = pe["recibe"]["abierta"] + pr["anota"]["abierta"]
-        # 2 · hándicap del elegido
+        # 2 · hándicap del elegido, con cada vara
         if c["spreadLocal"] is not None:
             linea_el = c["spreadLocal"] if el == "local" else -c["spreadLocal"]
             margen = pts[el][0] - pts[el][1]
             if margen + linea_el != 0:
                 dec = c["decSpreadLocal"] if el == "local" else c["decSpreadVisita"]
-                for k in ("todos", f"balance {ataque - defensa:+d}"):
-                    _suma(hand[(per, k)], dec, margen + linea_el > 0)
+                _suma(hand[(per, "todos")], dec, margen + linea_el > 0)
+                for vara, (fa, fr) in VARAS.items():
+                    ataque = pe[fa]["abierta"] + pr[fr]["abierta"]
+                    defensa = pe[fr]["abierta"] + pr[fa]["abierta"]
+                    _suma(hand[(per, f"{vara} · balance {ataque - defensa:+d}")], dec, margen + linea_el > 0)
         # 3 · más/menos
         t = totales(cu.get(p["id"], []))
         if t is None:
@@ -127,8 +150,11 @@ def correr() -> dict:
         total = p["ptsLocal"] + p["ptsVisita"]
         if total == t["linea"]:
             continue
-        presion = pe["anota"]["abierta"] + pe["recibe"]["abierta"] + pr["anota"]["abierta"] + pr["recibe"]["abierta"]
-        for k in ("todos", f"presión {presion}"):
+        claves = ["todos"]
+        for vara, (fa, fr) in VARAS.items():
+            presion = pe[fa]["abierta"] + pe[fr]["abierta"] + pr[fa]["abierta"] + pr[fr]["abierta"]
+            claves.append(f"{vara} · presión {presion}")
+        for k in claves:
             _suma(tot[(per, k, "más")], t["decOver"], total > t["linea"])
             _suma(tot[(per, k, "menos")], t["decUnder"], total < t["linea"])
     out = {"periodos": [n for n, _, _ in PERIODOS], "sinLineaDePuntos": sin_ou, "continuacion": {}, "handicap": {}, "totales": {}}
@@ -138,29 +164,30 @@ def correr() -> dict:
                                                            "sigue": round(cont[(per, fam, t)][1] / cont[(per, fam, t)][0], 4)
                                                            if cont[(per, fam, t)][0] else None}
                                                        for t in ("1", "2", "3", "4-5", "6+")}}
-                                    for fam in motor.FAMILIAS_PUNTOS}
+                                    for fam in (*motor.FAMILIAS_PUNTOS, *motor.FAMILIAS_CASA)}
         out["handicap"][per] = {k: _fmt(v) for (pp, k), v in sorted(hand.items()) if pp == per}
         out["totales"][per] = {f"{k} · {lado}": _fmt(v) for (pp, k, lado), v in sorted(tot.items()) if pp == per}
     return out
 
 
 def texto(r: dict) -> str:
-    L = ["NBA · la K de PUNTOS (anotar / recibir por encima de su media de 20), con la dirección del método", ""]
+    L = ["NBA · la K de PUNTOS con dos varas: «propia» = por encima de su media de 20; «casa» = por encima de lo que",
+         "la casa esperaba de ese equipo ese partido ((total ∓ hándicap)/2). Con la dirección del método.", ""]
     L.append("1 · ¿LA BURBUJA DE PUNTOS SIGUE? (% de veces que el siguiente partido también queda por encima de su media)")
     for per, d in r["continuacion"].items():
         for fam, v in d.items():
-            L.append(f"  {per:18s} {fam:6s} todos {v['base']:.1%} · con burbuja abierta de " + " · ".join(
+            L.append(f"  {per:18s} {fam:10s} todos {v['base']:.1%} · con burbuja abierta de " + " · ".join(
                 f"{t}: {x['sigue']:.1%} ({x['n']})" for t, x in v["porRacha"].items() if x["n"]))
     L += ["", "2 · HÁNDICAP DEL ELEGIDO (favorito sin DESCONFIAR) · balance = ataque − defensa de las burbujas de puntos"]
     for per, d in r["handicap"].items():
         L.append(f"  {per}")
         for k, v in d.items():
-            L.append(f"    {k:12s} {v['n']:5d} · cubre {v['acierto']:.1%} · pide {v['pide']:.1%} · ROI {v['roi']:+.1%}")
+            L.append(f"    {k:24s} {v['n']:5d} · cubre {v['acierto']:.1%} · pide {v['pide']:.1%} · ROI {v['roi']:+.1%}")
     L += ["", f"3 · MÁS/MENOS · presión = burbujas de puntos abiertas (0-4) · partidos sin línea: {r['sinLineaDePuntos']}"]
     for per, d in r["totales"].items():
         L.append(f"  {per}")
         for k, v in d.items():
-            L.append(f"    {k:18s} {v['n']:5d} · sale {v['acierto']:.1%} · pide {v['pide']:.1%} · ROI {v['roi']:+.1%}")
+            L.append(f"    {k:30s} {v['n']:5d} · sale {v['acierto']:.1%} · pide {v['pide']:.1%} · ROI {v['roi']:+.1%}")
     return "\n".join(L)
 
 

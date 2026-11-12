@@ -62,6 +62,11 @@ FAMILIAS = {"victorias": 1, "derrotas": -1}
 # por el nivel del rival y revienta a 0 la primera vez que queda por debajo.
 # Puede tomar valores grandes: no importa. No toca victorias/derrotas.
 FAMILIAS_PUNTOS = ("anota", "recibe")
+# LA SEGUNDA VARA (12/11/2026, usuario: «la 1 más la 3»): anotar / recibir por
+# encima de lo que la CASA esperaba de ese equipo en ese partido, sacado del
+# más/menos y del hándicap: local = (total − hándicap del local)/2, visita =
+# (total + hándicap del local)/2. Partido sin línea: estas dos no se mueven.
+FAMILIAS_CASA = ("anotaCasa", "recibeCasa")
 
 
 def _familia0() -> dict:
@@ -71,7 +76,7 @@ def _familia0() -> dict:
 def _nuevo() -> dict:
     return {"res": [], "kPos": 0.0, "kNeg": 0.0, "kLoc": 0.0, "kVis": 0.0,
             "racha": 0, "kPico": 0.0, "conds": [], "reventones": {1: [], -1: []}, "ultimo": None, "nivel": None,
-            "fam": {f: _familia0() for f in (*FAMILIAS, *FAMILIAS_PUNTOS)}, "pts": []}
+            "fam": {f: _familia0() for f in (*FAMILIAS, *FAMILIAS_PUNTOS, *FAMILIAS_CASA)}, "pts": []}
 
 
 def _contramano(conds: list, cond: str | None) -> bool:
@@ -115,7 +120,7 @@ def _media_puntos(st: dict) -> tuple[float, float] | None:
 def _vista_puntos(st: dict) -> dict:
     m = _media_puntos(st)
     out = {"mediaAnota": None if m is None else m[0], "mediaRecibe": None if m is None else m[1]}
-    for n in FAMILIAS_PUNTOS:
+    for n in (*FAMILIAS_PUNTOS, *FAMILIAS_CASA):
         f = st["fam"][n]
         out[n] = {"k": f["k"], "racha": f["racha"], "kPico": f["kPico"], "abierta": f["k"] > 0, **_base(f["reventones"])}
     return out
@@ -143,7 +148,8 @@ def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, tempo
 
 def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool, neutral: bool,
              fecha: str, temporada, escala_g: float, escala_margen: float,
-             cuenta_nivel: bool = True, por_rival: bool = False, externo: bool = False):
+             cuenta_nivel: bool = True, por_rival: bool = False, externo: bool = False,
+             esperado: tuple | None = None):
     res = 1 if pf > pa else -1
     nr = NIVEL_RIVAL_FALLBACK if nivel_rival is None else nivel_rival
     mult = 1.0 if (local or neutral) else VISITA_MULT
@@ -176,8 +182,13 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
             st["fam"][nombre] = _familia0() | {"reventones": f["reventones"]}
     # la K de puntos: contra la media de los 20 anteriores (sin este partido)
     m = _media_puntos(st)
+    varas = []
     if m is not None:
-        for n, exceso in (("anota", pf - m[0]), ("recibe", pa - m[1])):
+        varas += [("anota", pf - m[0]), ("recibe", pa - m[1])]
+    if esperado is not None:              # la vara de la casa: (puntos esperados a favor, en contra)
+        varas += [("anotaCasa", pf - esperado[0]), ("recibeCasa", pa - esperado[1])]
+    if varas:
+        for n, exceso in varas:
             f = st["fam"][n]
             if exceso > 0:
                 f["k"] += (exceso / escala_margen) * nr
@@ -200,7 +211,7 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
 def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: float = ESCALA_MARGEN,
               estado_final: dict | None = None, nivel_por_rival: bool = False,
               cuenta_nivel=None, nivel_externo: dict | None = None,
-              nivel_final: dict | None = None) -> dict[int, dict]:
+              nivel_final: dict | None = None, linea_puntos: dict | None = None) -> dict[int, dict]:
     """Una pasada cronológica por TODOS los partidos. Devuelve, por id de
     partido, lo que se sabía de cada lado ANTES de jugarlo:
     {id: {"local": {...}, "visita": {...}}}. `partidos` ordenados por fecha.
@@ -211,7 +222,9 @@ def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: f
     `nivel_externo` = {id: {"local": x, "visita": y}}: el nivel de cada lado ANTES
     del partido viene de afuera (el Elo en la escala del SAD, §5) y reemplaza al
     de la ventana en todo: la q, el riesgo, los tercios. `nivel_final` = {equipo: x},
-    el nivel después de su último partido (para la foto de hoy)."""
+    el nivel después de su último partido (para la foto de hoy).
+    `linea_puntos` = {id: (puntos esperados del local, de la visita)} según la
+    casa: mueve las familias «anotaCasa» / «recibeCasa» (§10)."""
     estado: dict[int, dict] = {} if estado_final is None else estado_final
     out: dict[int, dict] = {}
     for p in partidos:
@@ -226,10 +239,11 @@ def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: f
         nl, nv = L["nivel"], V["nivel"]   # previos: no ven este partido
         cuenta = True if cuenta_nivel is None else bool(cuenta_nivel(p))
         ext = nivel_externo is not None
+        lp = (linea_puntos or {}).get(p["id"])
         _avanzar(L, p["ptsLocal"], p["ptsVisita"], nv, True, neutral, p["fecha"], p["temporada"], escala_g, escala_margen,
-                 cuenta, nivel_por_rival, ext)
+                 cuenta, nivel_por_rival, ext, None if lp is None else (lp[0], lp[1]))
         _avanzar(V, p["ptsVisita"], p["ptsLocal"], nl, False, neutral, p["fecha"], p["temporada"], escala_g, escala_margen,
-                 cuenta, nivel_por_rival, ext)
+                 cuenta, nivel_por_rival, ext, None if lp is None else (lp[1], lp[0]))
     if nivel_final is not None:
         for t, x in nivel_final.items():
             if t in estado:

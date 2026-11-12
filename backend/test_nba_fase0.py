@@ -163,6 +163,14 @@ def main() -> int:
           v21["anota"]["abierta"] and v22["anota"]["racha"] == 2 and v22["anota"]["k"] > v21["anota"]["k"])
     check("puntos: anotar debajo de su media la revienta A CERO y queda en la base",
           not v23["anota"]["abierta"] and v23["anota"]["reventonesSigno"] == 1)
+    pc = motor.construir(hist, linea_puntos={5020: (105.0, 100.0), 5021: (125.0, 95.0)})
+    check("puntos (vara de la casa): anotar 115 con 105 esperados abre «anotaCasa»; 120 con 125 esperados la revienta",
+          pc[5021]["local"]["puntos"]["anotaCasa"]["abierta"] and not pc[5022]["local"]["puntos"]["anotaCasa"]["abierta"]
+          and pc[5022]["local"]["puntos"]["anotaCasa"]["reventonesSigno"] == 1)
+    check("puntos (vara de la casa): la visita lee la línea del otro lado (recibe 115 con 105 esperados en contra)",
+          pc[5021]["visita"]["puntos"]["recibeCasa"]["abierta"])
+    check("puntos (vara de la casa): sin línea, la familia de la casa no se mueve",
+          pc[5023]["local"]["puntos"]["anotaCasa"] == pc[5022]["local"]["puntos"]["anotaCasa"])
     from backend.nba import puntos as _pts
     t = _pts.totales([{"casa": "A", "overUnder": 220.5, "overCuota": -110, "underCuota": -110},
                       {"casa": "B", "overUnder": 221.5, "overCuota": -105, "underCuota": -115},
