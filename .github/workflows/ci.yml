@@ -101,5 +101,7 @@ jobs:
         run: python -m backend.test_backtest_1x2
       - name: NBA fase 0 (descarga recortada, motor sin fuga, el método no inventa ventaja)
         run: python -m backend.test_nba_fase0
+      - name: Tenis fase 0 (sin walkovers ni retiros, el lado del ganador no se filtra, tramos por escalón)
+        run: python -m backend.test_tenis_fase0
       - name: Pipeline sin dejar a quien lee sin tabla (rehace las derivadas en una transacción)
         run: python -m backend.ingesta.test_pipeline
