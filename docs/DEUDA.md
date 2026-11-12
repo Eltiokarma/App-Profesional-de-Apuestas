@@ -1246,5 +1246,7 @@ conversación se pierde en la siguiente.
    del tenis distinga la categoría del torneo o pese al rival (hoy la foto de
    «los mejores» mezcla torneos chicos); ESPN no da superficie ni Challengers.
    §4 (variantes medidas): pesar por el rival casi no cambia; «pozos» mejora
-   el momentum; el Elo es el mejor para «quién es mejor». Propuesta abierta:
-   doble nivel (Elo para quién es mejor, SAD con pozos para el momentum).
+   el momentum; el Elo es el mejor para «quién es mejor». §5 (corrección del
+   usuario): el Elo COMO nivel del SAD gana en todo (64 % de acierto, tramos
+   74-81 %, la foto de hoy es la élite). Pendiente: que la fase 0 del tenis lo
+   use por defecto.

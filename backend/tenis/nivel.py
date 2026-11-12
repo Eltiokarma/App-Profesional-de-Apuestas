@@ -68,6 +68,32 @@ def elo(ps: list[dict]) -> tuple[dict, dict]:
     return previos, dict(r)
 
 
+def elo_como_nivel(ps: list[dict], previos_sad: dict) -> tuple[dict, dict, dict]:
+    """El Elo en la ESCALA del nivel SAD, para que los umbrales del riesgo del
+    fútbol (zona ±0,15, fuerte 0,45, favorito 0,5 / 1,0) signifiquen lo mismo:
+    misma media y mismo desvío que el nivel SAD, medidos SOLO en 2017-2020
+    (los años que se miden después no se miran). Devuelve el nivel previo de
+    cada lado por partido, el final por jugador y la conversión usada."""
+    pe, final = elo(ps)
+    xs, ys = [], []
+    for p in ps:
+        if 2017 <= p["temporada"] <= fase0.AÑO_VALIDACION:
+            for lado in ("local", "visita"):
+                e, s_ = pe[p["id"]][lado]["nivel"], previos_sad[p["id"]][lado]["nivel"]
+                if e is not None:
+                    xs.append(e)
+                if s_ is not None:
+                    ys.append(s_)
+    me, ms = sum(xs) / len(xs), sum(ys) / len(ys)
+    de = (sum((x - me) ** 2 for x in xs) / len(xs)) ** 0.5
+    ds = (sum((y - ms) ** 2 for y in ys) / len(ys)) ** 0.5
+    a = lambda e: None if e is None else ms + (e - me) * ds / de  # noqa: E731
+    ext = {i: {"local": a(v["local"]["nivel"]), "visita": a(v["visita"]["nivel"])} for i, v in pe.items()}
+    return ext, {t: a(e) for t, e in final.items()}, {"eloMedia": round(me, 1), "eloDesvio": round(de, 1),
+                                                     "nivelMedia": round(ms, 3), "nivelDesvio": round(ds, 3),
+                                                     "puntosElo1Nivel": round(de / ds, 1)}
+
+
 def _activos(crudos) -> tuple[dict, dict, set]:
     fin = date.fromisoformat(max(p["fecha"] for p in crudos)[:10])
     d_act, d_año = (fin - timedelta(days=fase0.ACTIVO_DIAS)).isoformat(), (fin - timedelta(days=365)).isoformat()
@@ -99,6 +125,26 @@ def correr() -> dict:
                     "tramos": {t: {k: {"acierto": v["total"]["acierto"], "n": v["total"]["n"], "firme": v["firme"]}
                                    for k, v in est[t]["tramos"]["todos"].items()} for t in ("ATP", "WTA")},
                     "top10": top}
+    # EL ELO COMO NIVEL DEL SAD (decisión del usuario, §5): el mismo motor, las
+    # mismas burbujas y el mismo riesgo, con el Elo en el lugar del nivel
+    sad = motor.construir(ps, escala_g=ESCALA_G, escala_margen=fase0.ESCALA_MARGEN)
+    ext, fin_ext, conv = elo_como_nivel(ps, sad)
+    estado = {}
+    previos = motor.construir(ps, escala_g=ESCALA_G, escala_margen=fase0.ESCALA_MARGEN, estado_final=estado,
+                              nivel_externo=ext, nivel_final=fin_ext)
+    est = fase0.estudiar(ps, previos)
+    out["SAD sobre Elo"] = {
+        "conversion": conv,
+        "validacion": _acierto(ps, previos, 2017, fase0.AÑO_VALIDACION),
+        "prueba": {t: _acierto(ps, previos, fase0.AÑO_VALIDACION + 1, tour=t) for t in ("ATP", "WTA")},
+        "tramos": {t: {k: {"acierto": v["total"]["acierto"], "n": v["total"]["n"], "firme": v["firme"]}
+                       for k, v in est[t]["tramos"]["todos"].items()} for t in ("ATP", "WTA")},
+        "tramosPorEscalon": {t: {esc: {k: {"acierto": v["total"]["acierto"], "n": v["total"]["n"], "firme": v["firme"]}
+                                       for k, v in tab.items()} for esc, tab in est[t]["tramos"].items()}
+                             for t in ("ATP", "WTA")},
+        "top10": {t: [nombre[i] for i in sorted((i for i in activos if tour_de[i] == t and fin_ext.get(i) is not None),
+                                                key=lambda i: -fin_ext[i])[:10]] for t in ("ATP", "WTA")},
+        "hoy": fase0.hoy(ps, crudos, ESCALA_G, nivel_externo=ext, nivel_final=fin_ext)}
     previos, final = elo(ps)
     out["Elo (vara)"] = {
         "validacion": _acierto(ps, previos, 2017, fase0.AÑO_VALIDACION),
@@ -120,6 +166,29 @@ def texto(r: dict) -> str:
         L.append(f"{nom:14s} {v['validacion']['acierto']:12.1%} {v['prueba']['ATP']['acierto']:8.1%} "
                  f"{v['prueba']['WTA']['acierto']:8.1%}   {tr('ATP'):30s}  {tr('WTA')}")
     L += ["", "✓ = firme (todos sus años con 30+ casos ≥ 65 %)", ""]
+    se = r.get("SAD sobre Elo")
+    if se:
+        c = se["conversion"]
+        L += [f"SAD sobre Elo · conversión: nivel = {c['nivelMedia']} + (Elo − {c['eloMedia']}) / {c['puntosElo1Nivel']}"
+              f" (1 punto de nivel = {c['puntosElo1Nivel']} de Elo)", "  tramos por escalón (A B C D):"]
+        for t in ("ATP", "WTA"):
+            for esc, tab in se["tramosPorEscalon"][t].items():
+                L.append(f"    {t} {esc:17s} " + " ".join(
+                    (f"{tab[k]['acierto']:.0%}({tab[k]['n']}){'✓' if tab[k]['firme'] else ' '}" if tab[k]["n"] else "—") for k in TRAMOS))
+        L.append("")
+        for t in ("ATP", "WTA"):
+            L.append(f"SAD sobre Elo · HOY · {t} · momentum de los 20 de mayor nivel")
+            for f in se["hoy"][t]:
+                partes = []
+                for n, m in f["familias"].items():
+                    if not m["abierta"]:
+                        continue
+                    ex, pos = m.get("extremo") or {}, m.get("posicion") or {}
+                    marca = " 🔴 EXTREMO" if ex.get("activo") else " 🟠 cerca" if ex.get("cerca") else ""
+                    rp = " 🟡 récord del período" if (m.get("recordPeriodo") or {}).get("activo") else ""
+                    partes.append(f"{n} {m['racha']}, K {m['k']}" + (f" (sobre {pos['percentilK']}/100)" if pos else "") + marca + rp)
+                L.append(f"  {f['rank']:2d} {f['jugador'][:22]:22s} nivel {f['nivel']:.2f} · " + "; ".join(partes))
+            L.append("")
     for nom, v in r.items():
         L.append(f"{nom} · top 10 de hoy")
         for t in ("ATP", "WTA"):

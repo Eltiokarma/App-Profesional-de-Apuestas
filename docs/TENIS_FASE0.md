@@ -128,3 +128,45 @@ Un **doble nivel** (la alternativa 6 de la discusión):
 
 La prueba pendiente es ver si los tramos siguen firmes cuando «arriba y
 abajo» salen del Elo.
+
+## 5. El Elo COMO el nivel del SAD (12/11/2026, corrección del usuario)
+
+El usuario corrigió la propuesta de la doble capa del §4: el Elo no va
+«al lado» del SAD, **va como el nivel del SAD**. Es el número que entra en
+la q (el peso del rival en la K), en el riesgo (rival en zona o fuerte,
+favorito) y en los tercios. Las burbujas, el extremo y el récord del período
+quedan iguales, montados sobre un nivel que sabe quién es mejor.
+
+- **Escala:** el Elo se pasa a la escala del nivel SAD con la misma media y el
+  mismo desvío, medidos SOLO en 2017-2020, para que los umbrales del fútbol
+  (zona ±0,15, fuerte 0,45, favorito 0,5 / 1,0) signifiquen lo mismo. Queda
+  nivel = 2,62 + (Elo − 1.678) / 240: **1 punto de nivel = 240 de Elo**.
+- **El Elo** es el de FiveThirtyEight para tenis: k = 250/(n+5)^0,4, sobre
+  todos los partidos, con nivel recién a partir de 20 partidos, como el SAD.
+- **En el motor:** `motor.construir(nivel_externo=…, nivel_final=…)`;
+  `backend/tenis/nivel.py` (`elo_como_nivel`).
+
+| | el de más nivel gana: ATP 21+ | WTA 21+ | tramos ATP A·B·C·D | tramos WTA A·B·C·D |
+|---|---|---|---|---|
+| SAD con su nivel (actual) | 61,1 % | 60,1 % | 77✓ 71✓ 70 77✓ | 73✓ 74✓ 71✓ 70✓ |
+| **SAD sobre Elo** | **64,2 %** | **64,4 %** | **81✓ 79✓ 74 73✓** | **79✓ 81✓ 74✓ 77✓** |
+
+**Por escalón, con el SAD sobre Elo:**
+- **Grand Slam:** 83-87 %.
+- **Cuadro principal:** ATP 71-79 %; WTA 73-81 %, los 4 firmes.
+- **Qualy WTA:** 73-80 %, firme. Antes era el límite.
+- **Qualy ATP:** 62-74 %, sigue siendo el límite.
+
+**La foto de hoy por fin es la élite:**
+- **ATP:** Alcaraz (9 victorias seguidas), Zverev, Djokovic, Fils, Shelton,
+  Fritz…
+- **WTA:** Rybakina, Sabalenka, Gauff, Pegula, Swiatek…
+- **Alertas que aparecen:** Muchova y Bencic en 🟠🟡 con derrotas (cerca de
+  su peor racha y récord del período), Kostyuk 🟠 con 5 derrotas y
+  Chwalinska 🟠 con 6 victorias.
+
+**Lectura:** el problema nunca fue la burbuja, era el nivel. Con un nivel que
+mide la calidad del rival, el mismo momentum del SAD acierta más en los dos
+circuitos y en casi todos los escalones. **Para el tenis, el nivel recomendado
+es el SAD sobre Elo.** Falta que la fase 0 lo use por defecto, y eso queda a
+decisión del usuario.

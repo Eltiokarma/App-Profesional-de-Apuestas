@@ -118,7 +118,7 @@ def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, tempo
 
 def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool, neutral: bool,
              fecha: str, temporada, escala_g: float, escala_margen: float,
-             cuenta_nivel: bool = True, por_rival: bool = False):
+             cuenta_nivel: bool = True, por_rival: bool = False, externo: bool = False):
     res = 1 if pf > pa else -1
     nr = NIVEL_RIVAL_FALLBACK if nivel_rival is None else nivel_rival
     mult = 1.0 if (local or neutral) else VISITA_MULT
@@ -154,32 +154,45 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
     if cuenta_nivel:
         st["res"].append((pf, pa, nivel_rival))
     st["ultimo"] = (fecha, temporada)
-    if len(st["res"]) >= VENTANA:
+    if len(st["res"]) >= VENTANA and not externo:   # con nivel externo, el nivel lo pone quien llama
         st["nivel"] = nivel_de(st["res"][-VENTANA:], escala_g, por_rival)
 
 
 def construir(partidos: list[dict], escala_g: float = ESCALA_G, escala_margen: float = ESCALA_MARGEN,
               estado_final: dict | None = None, nivel_por_rival: bool = False,
-              cuenta_nivel=None) -> dict[int, dict]:
+              cuenta_nivel=None, nivel_externo: dict | None = None,
+              nivel_final: dict | None = None) -> dict[int, dict]:
     """Una pasada cronológica por TODOS los partidos. Devuelve, por id de
     partido, lo que se sabía de cada lado ANTES de jugarlo:
     {id: {"local": {...}, "visita": {...}}}. `partidos` ordenados por fecha.
     Con `estado_final` (un dict), deja ahí el estado de cada equipo tras su
     último partido: lo que la guía mira para el PRÓXIMO.
     `nivel_por_rival` y `cuenta_nivel(partido) -> bool` son las variantes del
-    nivel del tenis (docs/TENIS_FASE0.md §4); apagadas, el motor es el de siempre."""
+    nivel del tenis (docs/TENIS_FASE0.md §4); apagadas, el motor es el de siempre.
+    `nivel_externo` = {id: {"local": x, "visita": y}}: el nivel de cada lado ANTES
+    del partido viene de afuera (el Elo en la escala del SAD, §5) y reemplaza al
+    de la ventana en todo: la q, el riesgo, los tercios. `nivel_final` = {equipo: x},
+    el nivel después de su último partido (para la foto de hoy)."""
     estado: dict[int, dict] = {} if estado_final is None else estado_final
     out: dict[int, dict] = {}
     for p in partidos:
         L = estado.setdefault(p["localId"], _nuevo())
         V = estado.setdefault(p["visitaId"], _nuevo())
         neutral = bool(p.get("neutral"))
+        if nivel_externo is not None:
+            ext = nivel_externo.get(p["id"]) or {}
+            L["nivel"], V["nivel"] = ext.get("local"), ext.get("visita")
         out[p["id"]] = {"local": _previo(L, V, True, neutral, p["fecha"], p["temporada"]),
                         "visita": _previo(V, L, False, neutral, p["fecha"], p["temporada"])}
         nl, nv = L["nivel"], V["nivel"]   # previos: no ven este partido
         cuenta = True if cuenta_nivel is None else bool(cuenta_nivel(p))
+        ext = nivel_externo is not None
         _avanzar(L, p["ptsLocal"], p["ptsVisita"], nv, True, neutral, p["fecha"], p["temporada"], escala_g, escala_margen,
-                 cuenta, nivel_por_rival)
+                 cuenta, nivel_por_rival, ext)
         _avanzar(V, p["ptsVisita"], p["ptsLocal"], nl, False, neutral, p["fecha"], p["temporada"], escala_g, escala_margen,
-                 cuenta, nivel_por_rival)
+                 cuenta, nivel_por_rival, ext)
+    if nivel_final is not None:
+        for t, x in nivel_final.items():
+            if t in estado:
+                estado[t]["nivel"] = x
     return out

@@ -109,6 +109,19 @@ def main() -> int:
     check("Elo (vara): sin nivel antes de 20 partidos y el fuerte termina arriba",
           all(pe[p["id"]]["local"]["nivel"] is None for p in m[:5]) and len(fin) == 40)
 
+    ext, fin_ext, conv = niv.elo_como_nivel(m, todos)
+    est_ext = {}
+    sobre = motor.construir(m, escala_g=2.0, escala_margen=fase0.ESCALA_MARGEN, estado_final=est_ext,
+                            nivel_externo=ext, nivel_final=fin_ext)
+    i0 = next(p["id"] for p in m if ext[p["id"]]["local"] is not None and ext[p["id"]]["visita"] is not None)
+    check("SAD sobre Elo: el nivel previo de cada lado ES el Elo convertido (y el del rival también)",
+          sobre[i0]["local"]["nivel"] == ext[i0]["local"] and sobre[i0]["local"]["nivelRival"] == ext[i0]["visita"])
+    check("SAD sobre Elo: las burbujas son las mismas (racha y signo no dependen del nivel)",
+          all((sobre[i]["local"]["racha"], sobre[i]["local"]["signo"]) == (todos[i]["local"]["racha"], todos[i]["local"]["signo"])
+              for i in sobre))
+    check("SAD sobre Elo: la conversión tiene la escala del SAD y el estado final es el Elo de cada uno",
+          conv["puntosElo1Nivel"] > 0 and all(est_ext[t]["nivel"] == x for t, x in fin_ext.items()))
+
     print("\nTODO OK" if not fallas else f"\n{fallas} FALLAS")
     return 1 if fallas else 0
 
