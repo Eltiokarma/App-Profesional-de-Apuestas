@@ -128,7 +128,11 @@ PARTIDO_UNICO = {143: "Copa del Rey", 45: "FA Cup", 81: "DFB Pokal", 66: "Coupe 
                  # 1106: Groningen 0-2 Emmen (1641972, ronda de 64) salía sin
                  # `avanza`; la KNVB Beker es a partido único hasta la final, y la
                  # copa de Bélgica también, salvo las semifinales (ida y vuelta)
-                 90: "KNVB Beker", 147: "Copa de Bélgica"}
+                 90: "KNVB Beker", 147: "Copa de Bélgica",
+                 # 1383 (11/11/2026): la Copa AUF Uruguay es a partido único en
+                 # todas sus rondas (cuartos: Boston River 1-2 Torque y Liverpool
+                 # 1-1 Juventud, directo a penales; sin ida ni vuelta en la base)
+                 930: "Copa AUF Uruguay"}
 SEMIS_IDA_Y_VUELTA = {143, 96, 137, 48, 147}
 # LAS COPAS DE LIGAS CUYO FORMATO NO AFIRMAMOS (1106): una ronda de estas que no
 # trae la tanda, el global ni la prórroga queda con `avanza` null a propósito.
@@ -142,7 +146,6 @@ FORMATO_SIN_AFIRMAR = {
     1220: "Copa de la Liga de Chile: fase de grupos y llaves según la edición",
     502: "Copa Bicentenario (Perú): grupos y llaves según la edición",
     1232: "Copa de la Liga (Perú): formato sin confirmar",
-    930: "Copa AUF Uruguay: formato sin confirmar por ronda",
     917: "Copa Ecuador: llaves a ida y vuelta en algunas rondas",
     1113: "Copa Venezuela: formato sin confirmar por ronda",
     130: "Copa Argentina: a partido único, sin confirmar contra la base todavía",
@@ -157,6 +160,19 @@ def _ronda_unica(f) -> bool:
     if liga not in PARTIDO_UNICO:
         return False
     return not (liga in SEMIS_IDA_Y_VUELTA and _SEMI.search(_g(f, "league_round") or ""))
+
+
+def _alargue_copiado(f, et) -> bool:
+    """EL «MARCADOR DEL ALARGUE» QUE ES EL DE LOS 90 (11/11/2026, incidencia
+    1384, Liverpool 1-1 Juventud de la Copa AUF: fue directo a penales y la API
+    rellenó `score.extratime` con el 1-1 de los 90). Con prórroga de verdad, los
+    goles del partido son los de los 90 MÁS los del alargue; si el alargue
+    repite el marcador de los 90, no es cero y el total no lo suma, es una copia.
+    Un 0-0 en el alargue no se distingue de una copia de un 0-0: se deja como
+    prórroga (lo que la API dice)."""
+    ft = (_g(f, "fulltime_home"), _g(f, "fulltime_away"))
+    tot = (_g(f, "goals_home"), _g(f, "goals_away"))
+    return None not in ft and tuple(et) == ft and sum(et) > 0 and tot == ft
 
 
 def desenlace(fixture_id: int) -> dict | None:
@@ -198,7 +214,7 @@ def desenlace(fixture_id: int) -> dict | None:
         # la EFL Cup: va directo a penales y salía «prorroga: true» por el PEN)
         "marcador": f"{tot[0]}-{tot[1]}",
         "prorroga": (_g(f, "status_short") == "AET"
-                     or (_g(f, "status_short") == "PEN" and None not in et)),
+                     or (_g(f, "status_short") == "PEN" and None not in et and not _alargue_copiado(f, et))),
         "penales": f"{pen[0]}-{pen[1]}" if pen else None,
         "global": f"{glob[0]}-{glob[1]}" if glob else None,
         "ida": ida["id"] if ida is not None else None,
