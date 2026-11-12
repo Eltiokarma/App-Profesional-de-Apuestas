@@ -2,8 +2,16 @@
 
 > Pedido del usuario (12/11/2026): extender la teoría a otros deportes,
 > empezando por el básquet, **solo NBA**, mercados **ganador y hándicap**.
-> La fase 0 **solo mide**: no hay ingesta diaria, ni pantalla, ni skill. Si la
-> teoría no separa nada que la cuota no tenga ya, no se construye nada más.
+> La fase 0 **solo mide**: no hay ingesta diaria, ni pantalla, ni skill.
+>
+> **CORRECCIÓN DEL USUARIO (12/11/2026): la vara de esta fase estaba mal.**
+> El sistema no busca ganarle a la cuota ni sacarle valor (`docs/METODO_APUESTA.md`:
+> «no le ganamos en probabilidades a la casa; lo nuestro es el win rate y
+> saber dónde poner la plata, aunque la cuota sea 1.02»). Decidimos ANTES
+> dónde explota, se acaba o vuelve el momentum, y apostamos a nuestro
+> elegido; que la cuota coincida es una CONFIRMACIÓN, no un fracaso. Las
+> secciones 4.1 a 4.4 miden «¿le gana a la cuota?» y deben leerse como
+> contexto, no como veredicto. El veredicto con la vara correcta está en §6.
 
 ## 1. Qué se corre
 
@@ -286,3 +294,30 @@ Al 12/11, entre los 20 no hay ningún extremo 🔴. Hay tres en 🟠:
 - **LAL:** victorias, 7 partidos, K 18,0, 4,3 veces su mediana.
 - **BOS:** victorias, 5 partidos, K 25,7. Además está en 🟡: supera el récord
   de K de sus últimos 20 cortes (21,6) e iguala su racha más larga (5).
+
+## 6. Con la vara del sistema: win rate y dónde poner la plata (12/11/2026)
+
+La pregunta no es si la burbuja le gana a la cuota, sino si dice **dónde** el
+momentum sigue o se corta con un win rate alto. Se cuentan las burbujas
+abiertas de los 20 de mayor nivel al arrancar cada temporada, sin sesgo de
+selección (`--inicio`, §5.1).
+
+| tramo | lectura | 24-25 | 25-26 | 26-27 (hasta hoy) |
+|---|---|---|---|---|
+| victorias, riesgo **bajo** | la racha SIGUE: apostar a que gana | 75 % (284) | 77 % (276) | 82 % (38) |
+| victorias, riesgo **muy alto** | la racha se corta: no apostar a que siga | se cortó 59 % (189) | 53 % (201) | 57 % (14) |
+| derrotas, riesgo **muy alto** | la mala racha SE CORTA: apostar a que gana | 68 % (171) | 64 % (210) | 56 % (34) |
+| derrotas, riesgo **bajo** | la mala racha sigue: apostar al rival | 69 % (152) | 74 % (141) | 56 % (9) |
+
+(% de veces que se cumplió la lectura; n entre paréntesis)
+
+- **Victorias de riesgo bajo:** 3 de cada 4 veces la racha siguió, en las dos
+  temporadas completas y en esta.
+- **Derrotas de riesgo muy alto:** 2 de cada 3 veces la mala racha se cortó
+  en las temporadas completas. En esta temporada la muestra todavía es chica.
+- **El riesgo muy alto en victorias** sirve como FRENO: la racha se corta más
+  o menos la mitad de las veces, así que ahí no se carga.
+
+Que la cuota diga más o menos lo mismo (§4.3) es la confirmación. Lo que
+falta, si se sigue, es lo que pide el método: los tramos con el freno de
+`METODO_APUESTA.md` y la simulación proporcional sobre estas lecturas.

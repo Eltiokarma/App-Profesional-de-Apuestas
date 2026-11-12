@@ -1231,7 +1231,10 @@ conversación se pierde en la siguiente.
    sigue siendo ciego. La app nunca mueve un peso de un skill por su cuenta.
    Snapshot de los skills en `docs/skills/`.
 7. Fase nube completa cuando toque: `docs/SERVICIOS_EXTERNOS.md` (Postgres).
-8. **NBA (fase 0 hecha, 12/11/2026, `docs/NBA_FASE0.md`)**: la teoría no
-   agrega nada sobre la cuota de cierre ni en ganador ni en hándicap; no se
-   construye nada más. Abierto, si el usuario lo pide: medir contra la cuota
-   de apertura, las bajas de jugadores, otras ligas.
+8. **NBA (fase 0, 12/11/2026, `docs/NBA_FASE0.md`)**: la lectura de
+   momentum (burbujas de victorias y derrotas, riesgo y extremo del fútbol)
+   funciona en la NBA con la vara del sistema, que es win rate y dónde poner
+   la plata (§6). OJO: §4 mide «ganarle a la cuota», que NO es el objetivo
+   del sistema (corrección del usuario, `docs/METODO_APUESTA.md`). Pendiente,
+   si el usuario sigue: simular el método proporcional con freno sobre los
+   tramos de §6.
