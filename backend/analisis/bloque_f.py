@@ -200,6 +200,15 @@ def _buscar(plantel: list[dict], nombre_hoja: str) -> list[int]:
         th2 = [_una_letra(t, apellidos) or t for t in th]
         if th2 != th and _casa(tp, th2):
             out.append(i)
+    if out:
+        return out
+    # EL APELLIDO TRUNCADO POR LA API (11/11/2026, incidencia 1385: «Javi
+    # Entreca» por Javier Entrecanales), solo con la pila ENTERA de los dos
+    # lados y la misma: la regla vive en identidad.mismo_jugador
+    if len(th) >= 2 and len(th[0]) > 1:
+        out = [i for i, j in enumerate(plantel)
+               if _id.mismo_jugador(j.get("nombre", ""), nombre_hoja)
+               and any(_id.apellido_truncado(th[-1], x) for x in _tokens(j.get("nombre", ""))[1:])]
     return out
 
 
