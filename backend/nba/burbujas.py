@@ -139,7 +139,8 @@ def _proximos(dias: int = 5) -> list[dict]:
     return sorted(out, key=lambda p: p["fecha"])
 
 
-def _top(partidos, previos, estado, temporada, top, inicio) -> list[int]:
+def _top(partidos, previos, estado, temporada, top, inicio, desde: int = 1) -> list[int]:
+    """Los equipos de los puestos `desde`..`top` del ranking por nivel."""
     if inicio:
         nivel_ini = {}
         for p in partidos:
@@ -147,11 +148,12 @@ def _top(partidos, previos, estado, temporada, top, inicio) -> list[int]:
                 for lado, t in (("local", p["localId"]), ("visita", p["visitaId"])):
                     if t not in nivel_ini and previos[p["id"]][lado]["nivel"] is not None:
                         nivel_ini[t] = previos[p["id"]][lado]["nivel"]
-        return sorted(nivel_ini, key=lambda t: -nivel_ini[t])[:top]
-    return sorted((t for t in estado if estado[t]["nivel"] is not None), key=lambda t: -estado[t]["nivel"])[:top]
+        return sorted(nivel_ini, key=lambda t: -nivel_ini[t])[desde - 1:top]
+    return sorted((t for t in estado if estado[t]["nivel"] is not None), key=lambda t: -estado[t]["nivel"])[desde - 1:top]
 
 
-def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = True, inicio: bool = False) -> dict:
+def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = True, inicio: bool = False,
+           desde: int = 1) -> dict:
     """`inicio`: elegir a los 20 por el nivel de ANTES de la temporada (el de su
     primer partido), no por el de hoy, que ya sabe cómo les fue en el arranque."""
     partidos = descarga.cargar_partidos()
@@ -161,8 +163,8 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
     abrev = {}
     for p in partidos:
         abrev[p["localId"]], abrev[p["visitaId"]] = p["local"], p["visita"]
-    los20 = _top(partidos, previos, estado, temporada, top, inicio)
-    rank = {t: i + 1 for i, t in enumerate(los20)}
+    los20 = _top(partidos, previos, estado, temporada, top, inicio, desde)
+    rank = {t: desde + i for i, t in enumerate(los20)}
 
     # 1 · hoy
     proximos = _proximos() if con_proximos else []
@@ -217,7 +219,8 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
             por_familia[nombre][niv] = {"n": len(de), "seCortaron": sum(x["seCorto"] for x in de),
                                         "futbolBacktest": fut.TASA_BACKTEST[niv]}
     return {"generado": datetime.now(timezone.utc).isoformat(timespec="seconds"), "temporada": temporada,
-            "criterio": f"los {top} de mayor nivel del motor {'al ARRANCAR la temporada' if inicio else 'hoy'}",
+            "criterio": (f"los puestos {desde} a {top}" if desde > 1 else f"los {top}")
+                        + f" por nivel del motor {'al ARRANCAR la temporada' if inicio else 'hoy'}",
             "hoy": hoy, "guiaEnLaTemporada": {"burbujas": len(filas), "porFamilia": por_familia}, "detalle": filas}
 
 
@@ -269,7 +272,7 @@ def texto(r: dict) -> str:
             L += _linea_familia(nombre, h["familias"][nombre])
         L.append("")
     g = r["guiaEnLaTemporada"]
-    L += [f"CÓMO ORDENÓ LA GUÍA en la temporada ({g['burbujas']} burbujas abiertas con base, solo estos 20)",
+    L += [f"CÓMO ORDENÓ LA GUÍA en la temporada ({g['burbujas']} burbujas abiertas con base, solo estos {len(r['hoy'])})",
           "  riesgo      victorias: se cortaron     derrotas: se cortaron      fútbol (backtest)"]
     for niv in ("bajo", "medio", "alto", "muy alto"):
         v, d = g["porFamilia"]["victorias"][niv], g["porFamilia"]["derrotas"][niv]
@@ -284,9 +287,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--temporada", type=int, default=None)
     ap.add_argument("--top", type=int, default=20)
-    ap.add_argument("--inicio", action="store_true", help="los 20 por el nivel de antes de la temporada (sin sesgo)")
+    ap.add_argument("--desde", type=int, default=1, help="primer puesto del ranking (21 con --top 30 = los otros 10)")
+    ap.add_argument("--inicio", action="store_true", help="el ranking por el nivel de antes de la temporada (sin sesgo)")
     a = ap.parse_args()
-    r = correr(a.temporada, a.top, inicio=a.inicio)
+    r = correr(a.temporada, a.top, inicio=a.inicio, desde=a.desde)
     with open(os.path.join(descarga.carpeta(), "burbujas.json"), "w") as f:
         json.dump(r, f, ensure_ascii=False, indent=1)
     t = texto(r)

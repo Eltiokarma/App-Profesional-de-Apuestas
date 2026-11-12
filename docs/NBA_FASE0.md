@@ -321,3 +321,34 @@ selección (`--inicio`, §5.1).
 Que la cuota diga más o menos lo mismo (§4.3) es la confirmación. Lo que
 falta, si se sigue, es lo que pide el método: los tramos con el freno de
 `METODO_APUESTA.md` y la simulación proporcional sobre estas lecturas.
+
+### 6.1 Los otros 10 equipos de la liga (12/11/2026)
+
+`python -m backend.nba.burbujas --desde 21 --top 30`: los puestos 21 a 30 por
+nivel. Para medir sin sesgo, con `--inicio`: los 10 de menor nivel al
+ARRANCAR cada temporada.
+
+| tramo (los 10 de abajo) | lectura | 24-25 | 25-26 | 26-27 |
+|---|---|---|---|---|
+| derrotas, riesgo **bajo** | la mala racha SIGUE: apostar al rival | 79 % (204) | 82 % (208) | 93 % (28) |
+| victorias, riesgo **muy alto** | su racha buena se corta: apostar al rival | 75 % (72) | 66 % (71) | 67 % (9) |
+| victorias, riesgo **bajo** | su racha buena sigue | 70 % (54) | 78 % (32) | — |
+| derrotas, riesgo **muy alto** | la mala racha se corta | 50 % (86) | 52 % (115) | 56 % (16) |
+
+(% de veces que se cumplió la lectura; n entre paréntesis)
+
+- **El tramo más firme de toda la liga es el de los de abajo con la mala
+  racha de riesgo bajo:** 4 de cada 5 veces siguen perdiendo, en las dos
+  temporadas completas.
+- **Para los de abajo, la «mala racha que se corta» es una moneda** (50 %),
+  así que no es lugar para la plata. Para los de arriba sí lo era (64–68 %,
+  §6): la misma señal pesa distinto según quién sea el equipo.
+
+**Hoy** (al 12/11):
+- **MIL está en 🔴 EXTREMO:** 8 derrotas seguidas, la peor racha de K y de
+  largo de toda su historia en la base.
+- **En 🟠 cerca del extremo,** con derrotas: CHI (8), UTAH (10), WSH (5) y NO
+  (4).
+- **Con derrotas de riesgo bajo:** UTAH contra HOU, CHI contra ATL, WSH contra
+  DET, SAC contra POR y LAC contra OKC.
+- **IND:** victorias de riesgo muy alto contra NY.
