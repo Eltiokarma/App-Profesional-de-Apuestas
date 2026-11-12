@@ -164,6 +164,24 @@ def main() -> int:
     check("burbujas: con racha − el rival FLOJO empuja al corte; el rival muy fuerte resta (muy favorito)",
           rg2["tramo"] == "lejos" and rg2["favorito"] == "muy favorito" and rg2["puntos"] == 1 - 3, rg2)
 
+    # ── la lectura de momentum: extremo del fútbol + récord del período ──────
+    hist = [{"partidos": 2, "kPico": 5.0, "nivelRival": 2.5, "fecha": f"2020-01-{i + 1:02d}"} for i in range(30)]
+    hist[0] = {**hist[0], "partidos": 12, "kPico": 60.0}           # récord viejo, de otro plantel
+    fam = {"k": 30.0, "racha": 6, "kPico": 30.0, "conds": [], "reventones": hist}
+    mo = burbujas.momentum(fam, "victorias", 500)
+    check("momentum: sin superar el récord de toda la historia no es EXTREMO, pero pasa el 90 % → CERCA (regla del fútbol)",
+          not mo["extremo"]["activo"] and mo["extremo"]["cerca"], mo["extremo"])
+    check("momentum: sí pasa todo lo de los últimos 20 cortes → récord del período, dicho aparte",
+          mo["recordPeriodo"]["activo"] and len(mo["recordPeriodo"]["motivos"]) == 2, mo["recordPeriodo"])
+    check("momentum: la posición es contra los cortes de SU familia (K 30 sobre el 97 de cada 100)",
+          mo["posicion"]["percentilK"] == 97 and mo["posicion"]["kSobreMediana"] == 6.0, mo["posicion"])
+    mo2 = burbujas.momentum({**fam, "k": 70.0, "racha": 13}, "victorias", 500)
+    check("momentum: sobre el récord de toda la historia (K 70 > 60, racha 13 > 12) → EXTREMO",
+          mo2["extremo"]["activo"] and mo2["extremo"]["kRecord"] and mo2["extremo"]["rachaRecord"], mo2["extremo"])
+    cero = burbujas.momentum({"k": 0.0, "racha": 0, "kPico": 0.0, "conds": [], "reventones": hist}, "derrotas", 500)
+    check("momentum: la familia en cero dice cuándo y cómo terminó la última",
+          not cero["abierta"] and cero["ultima"]["cortada"] == "2020-01-30" and "extremo" not in cero, cero)
+
     # ── el método: detecta un efecto real y no inventa uno ───────────────────
     rnd = random.Random(5)
     obs = []

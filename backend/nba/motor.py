@@ -138,7 +138,8 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
             f["kPico"] = max(f["kPico"], f["k"])
             f["conds"].append(None if neutral else ("L" if local else "V"))
         elif f["k"] > 0:                  # revienta A CERO
-            f["reventones"].append({"partidos": f["racha"], "kPico": f["kPico"], "nivelRival": nivel_rival})
+            f["reventones"].append({"partidos": f["racha"], "kPico": f["kPico"], "nivelRival": nivel_rival,
+                                    "fecha": fecha})
             st["fam"][nombre] = _familia0() | {"reventones": f["reventones"]}
     st["res"].append((pf, pa))
     st["ultimo"] = (fecha, temporada)

@@ -254,3 +254,35 @@ elegidos por el nivel de ANTES de la temporada):
   afirmar nada.
 - **Conclusión:** la misma de la fase 0. La guía ordena, pero la cuota ya lo
   sabe.
+
+### 5.2 La lectura de momentum completa, SIN cuotas (12/11/2026)
+
+Pedido del usuario: «las burbujas no son cuota, son un análisis del
+momentum». Las comparaciones con la cuota de §5 y §5.1 eran para evaluar si
+la guía sirve para apostar, que no es su trabajo (REVENTON: «guía, no
+probabilidad»). `python -m backend.nba.burbujas` queda como lectura de
+momentum pura, sin ninguna cuota:
+
+- **Por familia** (victorias y derrotas), la burbuja abierta: racha y K.
+- **Su POSICIÓN frente a los cortes de esa familia:** en toda la historia y en
+  los últimos 20 cortes (el «período» del fútbol), el percentil de la K y de
+  la racha, la K sobre la mediana y los récords.
+- **EXTREMO 🔴 y CERCA DEL EXTREMO 🟠,** con la regla del fútbol importada
+  (`burbuja._extremo`: récord superado con 3+ partidos, o la franja del 90 %).
+- **RÉCORD DEL PERÍODO 🟡,** que es nuevo y va aparte: la burbuja ya pasó todo
+  lo de sus últimos 20 cortes. La historia arranca en 2015, y sus récords son
+  de planteles que ya no existen. El extremo sigue siendo contra toda la
+  historia, como en el fútbol.
+- **El riesgo de reventón** con los puntos y motivos del fútbol, ante el
+  próximo rival y por el NIVEL del motor.
+- **La familia en cero:** cuándo y cómo terminó su última burbuja.
+- **Cómo ordenó la guía en la temporada:** cuántas burbujas se cortaron en
+  cada nivel de riesgo (frecuencia de lo que pasó), con la referencia del
+  fútbol al lado.
+
+Al 12/11, entre los 20 no hay ningún extremo 🔴. Hay tres en 🟠:
+- **SA:** victorias, 10 partidos, K 36,3, que es 7,1 veces su mediana; está
+  por encima del 98 % de sus cortes en K y del 99 % en racha.
+- **LAL:** victorias, 7 partidos, K 18,0, 4,3 veces su mediana.
+- **BOS:** victorias, 5 partidos, K 25,7. Además está en 🟡: supera el récord
+  de K de sus últimos 20 cortes (21,6) e iguala su racha más larga (5).

@@ -1,38 +1,45 @@
-"""NBA · las burbujas de ESTA temporada, de los 20 equipos de mayor nivel
-(docs/NBA_FASE0.md §5).
+"""NBA · lectura de MOMENTUM: las burbujas de esta temporada de los 20 equipos
+de mayor nivel (docs/NBA_FASE0.md §5).
 
-No es un backtest de miles de partidos: es la pantalla de Burbujas del fútbol
-llevada a la NBA, sobre la temporada en curso.
+Es la pantalla de Burbujas del fútbol llevada a la NBA, SIN cuotas: la
+burbuja es una lectura del momentum del equipo frente a su propia historia,
+no una probabilidad ni una cuota.
 
-  1 · HOY: la burbuja abierta de cada uno de los 20, su base (cómo se le
-      cortaron antes las rachas de ese signo), el próximo partido con su
-      cuota y el riesgo de reventón con las MISMAS reglas y puntos del fútbol
-      (backend/analisis/burbuja.py: racha ≥ mediana, rival en la dirección
-      del riesgo, favorito, contramano). Guía, no probabilidad.
-  2 · CÓMO LE FUE A LA GUÍA en lo que va de la temporada: en cada partido ya
-      jugado de esos 20, el riesgo que se habría leído antes contra si la
-      racha se cortó, y contra lo que decía la cuota.
+Por equipo y por familia (la K separada como la de goles: VICTORIAS crece
+mientras gana y vuelve a 0 al perder; DERROTAS al revés):
+  - la burbuja abierta: racha, K, desde cuándo;
+  - su POSICIÓN frente a las burbujas de esa familia que ya se cortaron:
+    percentil de la K y de la racha, K sobre la mediana, récord previo;
+  - la misma referencia en los ÚLTIMOS 20 cortes (el equipo de ahora, no el de
+    2016: es el «período» del fútbol);
+  - EXTREMO (récord: rojo) y CERCA DEL EXTREMO (franja del 90 %: ámbar) con la
+    regla del fútbol (backend/analisis/burbuja._extremo, importada);
+  - el riesgo de reventón con los puntos y motivos del fútbol ante el próximo
+    rival (por NIVEL del motor, no por cuota);
+  - la familia en cero: cuándo y cómo terminó su última burbuja.
+Al final, cómo ordenó la guía en la temporada: qué parte de las burbujas se
+cortó en cada nivel de riesgo, junto a la referencia del fútbol.
 
-El motor recorre la historia entera porque la necesita: el nivel pide 20
-partidos (en noviembre nadie llegó a 20 en la temporada) y la base de cada
-equipo son sus reventones previos (como en el fútbol, que usa todos). Lo que
-se MIDE y se muestra es solo la temporada.
+El motor recorre la historia entera porque la necesita (el nivel pide 20
+partidos y la base son los cortes previos); lo que se muestra es la temporada.
 
-    python -m backend.nba.burbujas               # temporada en curso
-    python -m backend.nba.burbujas --temporada 2027 --top 20
+    python -m backend.nba.burbujas               # temporada en curso, top 20 por nivel de hoy
+    python -m backend.nba.burbujas --inicio      # top 20 por el nivel de antes de la temporada
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 from datetime import datetime, timedelta, timezone
+from statistics import median
 
 from backend.analisis import burbuja as fut
 from backend.nba import descarga, motor
-from backend.nba.fase0 import consenso
 
 ESCALA_G = 5.0     # la que eligió la fase 0 en el entrenamiento (docs/NBA_FASE0.md §4)
+ULTIMOS = fut.ULTIMOS_N   # los últimos 20 cortes: el «período» del fútbol
 
 
 def riesgo(f: dict) -> dict | None:
@@ -58,15 +65,62 @@ def riesgo(f: dict) -> dict | None:
             fav = "muy favorito" if g >= fut.MUY_FAVORITO else "favorito" if g >= fut.FAVORITO else "no"
             if fut.PUNTOS_FAVOR[fav]:
                 pts += fut.PUNTOS_FAVOR[fav]
-                motivos.append(f"{fav} a favor de que siga ({fut.PUNTOS_FAVOR[fav]:+d})")
+                motivos.append(f"{fav} por nivel, a favor de que siga ({fut.PUNTOS_FAVOR[fav]:+d})")
     if f.get("contramano"):
         pts += fut.PUNTOS_CONTRAMANO
         motivos.append(f"racha hecha en la otra condición (+{fut.PUNTOS_CONTRAMANO})")
     return {"puntos": pts, "nivel": fut._nivel_riesgo(pts), "tramo": tramo, "favorito": fav, "motivos": motivos}
 
 
+def _pct(vals: list[float], x: float) -> int:
+    """Percentil como la posición del fútbol: qué parte de los cortes queda en x o por debajo."""
+    return math.floor(100 * sum(1 for v in vals if v <= x) / len(vals) + 0.5) if vals else 0
+
+
+def momentum(fam: dict, nombre: str, partidos_historia: int) -> dict:
+    """Dónde está la burbuja abierta de una familia frente a las que se cortaron."""
+    rev = fam["reventones"]
+    signo = "+" if motor.FAMILIAS[nombre] > 0 else "-"
+    out = {"abierta": fam["k"] > 0, "racha": fam["racha"], "k": round(fam["k"], 2), "cortes": len(rev)}
+    if not rev:
+        return out
+    picos, largos = [r["kPico"] for r in rev], [r["partidos"] for r in rev]
+    out["historia"] = {"medianaK": round(median(picos), 2), "recordK": round(max(picos), 2),
+                       "medianaRacha": median(largos), "recordRacha": max(largos)}
+    rec = rev[-ULTIMOS:]
+    out["ultimos"] = {"n": len(rec), "medianaK": round(median(r["kPico"] for r in rec), 2),
+                      "recordK": round(max(r["kPico"] for r in rec), 2),
+                      "medianaRacha": median(r["partidos"] for r in rec), "recordRacha": max(r["partidos"] for r in rec),
+                      "desde": rec[0]["fecha"][:10]}
+    if not out["abierta"]:
+        u = rev[-1]
+        out["ultima"] = {"partidos": u["partidos"], "kPico": round(u["kPico"], 2), "cortada": u["fecha"][:10]}
+        return out
+    k, r = fam["k"], fam["racha"]
+    out["posicion"] = {"percentilK": _pct(picos, k), "percentilRacha": _pct(largos, r),
+                       "kSobreMediana": round(k / median(picos), 2) if median(picos) > 0 else None,
+                       "percentilKUltimos": _pct([x["kPico"] for x in rec], k),
+                       "percentilRachaUltimos": _pct([x["partidos"] for x in rec], r)}
+    base = {"kPico": {"max": max(picos)}, "partidos": {"max": max(largos)}}
+    out["extremo"] = fut._extremo(k, r, base, partidos_historia, signo, de=rev)
+    # RÉCORD DEL PERÍODO: la historia arranca en 2015 y sus récords son de
+    # planteles que ya no existen; el extremo (rojo) sigue siendo contra toda la
+    # historia, como en el fútbol, pero se dice aparte si la burbuja ya pasó
+    # todo lo de los últimos 20 cortes (la K, o la racha con 3+ partidos).
+    ku, ru = out["ultimos"]["recordK"], out["ultimos"]["recordRacha"]
+    motivos = []
+    if k > ku and r >= fut.RACHA_RECORD_MIN:
+        motivos.append(f"K {round(k, 2)} por encima del récord de sus últimos {len(rec)} cortes ({ku})")
+    if r > ru and r >= fut.RACHA_RECORD_MIN:
+        motivos.append(f"{r} partidos: más que la racha más larga de sus últimos {len(rec)} cortes ({ru})")
+    elif r == ru and r >= fut.RACHA_RECORD_MIN:
+        motivos.append(f"{r} partidos: iguala la racha más larga de sus últimos {len(rec)} cortes")
+    out["recordPeriodo"] = {"activo": bool(motivos), "motivos": motivos}
+    return out
+
+
 def _proximos(dias: int = 5) -> list[dict]:
-    """Partidos sin jugar de los próximos días (ESPN), con su cuota si ya está."""
+    """Partidos sin jugar de los próximos días (ESPN): solo quién y cuándo."""
     hoy = datetime.now(timezone.utc).date()
     out = []
     for k in range(dias):
@@ -81,30 +135,11 @@ def _proximos(dias: int = 5) -> list[dict]:
             li, vi = int(lados["home"]["team"]["id"]), int(lados["away"]["team"]["id"])
             if li in descarga.FRANQUICIAS and vi in descarga.FRANQUICIAS:
                 out.append({"id": int(e["id"]), "fecha": e["date"], "localId": li, "visitaId": vi,
-                            "local": lados["home"]["team"]["abbreviation"],
-                            "visita": lados["away"]["team"]["abbreviation"],
                             "neutral": bool(c.get("neutralSite"))})
     return sorted(out, key=lambda p: p["fecha"])
 
 
-def _p_corte(signo: int, p_gana: float | None) -> float | None:
-    if p_gana is None:
-        return None
-    return (1 - p_gana) if signo > 0 else p_gana
-
-
-def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = True, inicio: bool = False) -> dict:
-    """`inicio`: elegir a los 20 por el nivel de ANTES de la temporada (el de su
-    primer partido), no por el de hoy: el de hoy ya sabe cómo les fue en el
-    arranque y sesga la medición de la guía (docs/NBA_FASE0.md §5.1)."""
-    partidos = descarga.cargar_partidos()
-    cuotas = descarga.cargar_cuotas()
-    temporada = temporada or max(p["temporada"] for p in partidos)
-    estado: dict[int, dict] = {}
-    previos = motor.construir(partidos, escala_g=ESCALA_G, estado_final=estado)
-    abrev = {}
-    for p in partidos:
-        abrev[p["localId"]], abrev[p["visitaId"]] = p["local"], p["visita"]
+def _top(partidos, previos, estado, temporada, top, inicio) -> list[int]:
     if inicio:
         nivel_ini = {}
         for p in partidos:
@@ -112,10 +147,21 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
                 for lado, t in (("local", p["localId"]), ("visita", p["visitaId"])):
                     if t not in nivel_ini and previos[p["id"]][lado]["nivel"] is not None:
                         nivel_ini[t] = previos[p["id"]][lado]["nivel"]
-        los20 = sorted(nivel_ini, key=lambda t: -nivel_ini[t])[:top]
-    else:
-        los20 = sorted((t for t in estado if estado[t]["nivel"] is not None),
-                       key=lambda t: -estado[t]["nivel"])[:top]
+        return sorted(nivel_ini, key=lambda t: -nivel_ini[t])[:top]
+    return sorted((t for t in estado if estado[t]["nivel"] is not None), key=lambda t: -estado[t]["nivel"])[:top]
+
+
+def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = True, inicio: bool = False) -> dict:
+    """`inicio`: elegir a los 20 por el nivel de ANTES de la temporada (el de su
+    primer partido), no por el de hoy, que ya sabe cómo les fue en el arranque."""
+    partidos = descarga.cargar_partidos()
+    temporada = temporada or max(p["temporada"] for p in partidos)
+    estado: dict[int, dict] = {}
+    previos = motor.construir(partidos, escala_g=ESCALA_G, estado_final=estado)
+    abrev = {}
+    for p in partidos:
+        abrev[p["localId"]], abrev[p["visitaId"]] = p["local"], p["visita"]
+    los20 = _top(partidos, previos, estado, temporada, top, inicio)
     rank = {t: i + 1 for i, t in enumerate(los20)}
 
     # 1 · hoy
@@ -124,45 +170,37 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
     for t in los20:
         st = estado[t]
         prox = next((q for q in proximos if t in (q["localId"], q["visitaId"])), None)
-        f, rival, cuota = None, None, None
+        rival = None
         if prox:
             local = prox["localId"] == t
             rival = prox["visitaId"] if local else prox["localId"]
             f = motor._previo(st, estado[rival], local, prox["neutral"], prox["fecha"], temporada)
-            c = consenso(descarga.recortar_cuotas(descarga._get(descarga.URL_CUOTAS.format(i=prox["id"])) or {}))
-            if c and c["pLocal"] is not None:
-                cuota = c["pLocal"] if local else 1 - c["pLocal"]
         else:
             f = motor._previo(st, st, True, False, "", temporada)
         temp = [p for p in partidos if p["temporada"] == temporada and t in (p["localId"], p["visitaId"])]
         gan = sum(1 for p in temp if (p["ptsLocal"] > p["ptsVisita"]) == (p["localId"] == t))
         familias = {}
-        for nombre, vista in f["familias"].items():
-            familias[nombre] = {
-                "abierta": bool(vista["signo"]), "racha": vista["racha"], "k": round(vista["k"], 2),
-                "base": {"reventones": vista["reventonesSigno"], "medianaRacha": vista["medianaPartidos"],
-                         "medianaKPico": None if vista["medianaKPico"] is None else round(vista["medianaKPico"], 2),
-                         "medianaNivelRival": None if vista["medianaNivelRival"] is None else round(vista["medianaNivelRival"], 3)},
-                "pCorteCuota": None if cuota is None or not vista["signo"] else round(_p_corte(vista["signo"], cuota), 3),
-                "riesgo": riesgo(vista) if prox else None}
+        for nombre in motor.FAMILIAS:
+            m = momentum(st["fam"][nombre], nombre, len(st["res"]))
+            m["riesgo"] = riesgo(f["familias"][nombre]) if prox and m["abierta"] else None
+            familias[nombre] = m
         hoy.append({"rank": rank[t], "equipo": abrev[t], "nivel": round(st["nivel"], 3),
                     "temporada": f"{gan}-{len(temp) - gan}", "familias": familias,
                     "proximo": None if not prox else {
                         "fecha": prox["fecha"], "rival": abrev.get(rival), "condicion": "L" if prox["localId"] == t else "V",
-                        "nivelRival": None if estado[rival]["nivel"] is None else round(estado[rival]["nivel"], 3),
-                        "pGanaCuota": None if cuota is None else round(cuota, 3)}})
+                        "nivelRival": None if estado[rival]["nivel"] is None else round(estado[rival]["nivel"], 3)}})
 
-    # 2 · cómo le fue a la guía en la temporada (solo partidos de los 20)
+    # 2 · cómo ordenó la guía en la temporada (solo partidos de los 20): qué
+    # parte de las burbujas se cortó en cada nivel de riesgo. Frecuencias de lo
+    # que pasó, sin cuotas; al lado, la referencia del fútbol (REVENTON §13.2).
     filas = []
     for p in partidos:
         if p["temporada"] != temporada:
             continue
-        c = consenso(cuotas.get(p["id"], []))
         for lado, t in (("local", p["localId"]), ("visita", p["visitaId"])):
             if t not in rank:
                 continue
             gana = (p["ptsLocal"] > p["ptsVisita"]) == (lado == "local")
-            p_gana = None if not c or c["pLocal"] is None else (c["pLocal"] if lado == "local" else 1 - c["pLocal"])
             for nombre, vista in previos[p["id"]][lado]["familias"].items():
                 r = riesgo(vista)
                 if r is None:
@@ -170,51 +208,75 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
                 filas.append({"fecha": p["fecha"][:10], "equipo": abrev[t], "familia": nombre,
                               "racha": vista["racha"], "puntos": r["puntos"], "nivel": r["nivel"],
                               # revienta a cero: la de victorias con una derrota, la de derrotas con una victoria
-                              "seCorto": int(gana if nombre == "derrotas" else not gana),
-                              "pCorteCuota": _p_corte(vista["signo"], p_gana)})
+                              "seCorto": int(gana if nombre == "derrotas" else not gana)})
     por_familia = {}
     for nombre in motor.FAMILIAS:
         por_familia[nombre] = {}
         for niv in ("bajo", "medio", "alto", "muy alto"):
             de = [x for x in filas if x["familia"] == nombre and x["nivel"] == niv]
-            cq = [x["pCorteCuota"] for x in de if x["pCorteCuota"] is not None]
-            por_familia[nombre][niv] = {
-                "n": len(de), "seCorta": round(sum(x["seCorto"] for x in de) / len(de), 3) if de else None,
-                "cuotaDecia": round(sum(cq) / len(cq), 3) if cq else None, "futbolBacktest": fut.TASA_BACKTEST[niv]}
+            por_familia[nombre][niv] = {"n": len(de), "seCortaron": sum(x["seCorto"] for x in de),
+                                        "futbolBacktest": fut.TASA_BACKTEST[niv]}
     return {"generado": datetime.now(timezone.utc).isoformat(timespec="seconds"), "temporada": temporada,
-            "criterio": f"los {top} de mayor nivel del motor {'al ARRANCAR la temporada' if inicio else 'hoy'} (ESCALA_G {ESCALA_G})",
-            "hoy": hoy, "guiaEnLaTemporada": {"lados": len(filas), "porFamilia": por_familia}, "detalle": filas}
+            "criterio": f"los {top} de mayor nivel del motor {'al ARRANCAR la temporada' if inicio else 'hoy'}",
+            "hoy": hoy, "guiaEnLaTemporada": {"burbujas": len(filas), "porFamilia": por_familia}, "detalle": filas}
+
+
+def _linea_familia(nombre: str, m: dict) -> list[str]:
+    h = m.get("historia")
+    if not h:
+        return [f"      {nombre:9s} {'ABIERTA' if m['abierta'] else 'en cero'} · sin cortes previos"]
+    u = m["ultimos"]
+    ref = (f"historia: {m['cortes']} cortes, K mediana {h['medianaK']} (récord {h['recordK']}), racha mediana "
+           f"{h['medianaRacha']:g} (récord {h['recordRacha']}) · últimos {u['n']} (desde {u['desde']}): K mediana "
+           f"{u['medianaK']} (récord {u['recordK']}), racha mediana {u['medianaRacha']:g} (récord {u['recordRacha']})")
+    if not m["abierta"]:
+        ul = m["ultima"]
+        return [f"      {nombre:9s} en cero · la última fue de {ul['partidos']} partidos, K pico {ul['kPico']}, "
+                f"cortada el {ul['cortada']}", f"                {ref}"]
+    po, ex, rg = m["posicion"], m["extremo"], m["riesgo"]
+    if ex["activo"]:
+        marca = "🔴 EXTREMO"
+    elif ex["cerca"]:
+        marca = "🟠 CERCA DEL EXTREMO"
+    else:
+        marca = "dentro de su rango"
+    out = [f"      {nombre:9s} ABIERTA {m['racha']} partidos · K {m['k']} · {marca}",
+           f"                posición: K sobre el {po['percentilK']} de cada 100 cortes ({po['kSobreMediana']}× la mediana), "
+           f"racha sobre el {po['percentilRacha']} · en los últimos {u['n']}: K sobre {po['percentilKUltimos']}, "
+           f"racha sobre {po['percentilRachaUltimos']}",
+           f"                {ref}"]
+    for mo in ex["motivos"]:
+        out.append(f"                ↳ {mo}")
+    for mo in m["recordPeriodo"]["motivos"]:
+        out.append(f"                ↳ 🟡 período reciente: {mo}")
+    if rg:
+        out.append(f"                riesgo de reventón {rg['nivel']} ({rg['puntos']:+d}): {' · '.join(rg['motivos']) or 'sin puntos'}")
+    return out
 
 
 def texto(r: dict) -> str:
-    L = [f"NBA · burbujas de la temporada {r['temporada'] - 1}-{str(r['temporada'])[2:]} · {r['criterio']}",
-         "Dos familias separadas, como la K de goles: VICTORIAS (crece mientras gana, a 0 al perder) y",
-         "DERROTAS (crece mientras pierde, a 0 al ganar). Siempre hay una abierta y la otra en cero.", ""]
+    L = [f"NBA · MOMENTUM · temporada {r['temporada'] - 1}-{str(r['temporada'])[2:]} · {r['criterio']}",
+         "La K separada como la de goles: VICTORIAS crece mientras gana y vuelve a 0 al perder; DERROTAS al revés.",
+         "Cada burbuja se lee contra las de su familia que ya se cortaron (toda la historia y los últimos 20).",
+         "Sin cuotas: es el momentum del equipo frente a sí mismo, no una probabilidad.", ""]
     for h in r["hoy"]:
         pr = h["proximo"]
-        prox = "sin próximo" if not pr else (f"próximo {pr['condicion']} {pr['rival']} {pr['fecha'][5:10]}"
-                                            + ("" if pr["pGanaCuota"] is None else f" · la cuota le da {pr['pGanaCuota']:.0%}"))
-        L.append(f"{h['rank']:2d}  {h['equipo']:5s} nivel {h['nivel']:.2f} · {h['temporada']} · {prox}")
-        for nombre, fa in h["familias"].items():
-            b = fa["base"]
-            base = (f"base {b['reventones']} reventones, mediana racha {b['medianaRacha']:g}, "
-                    f"K pico {b['medianaKPico']}, rival {b['medianaNivelRival']}") if b["reventones"] else "sin base"
-            if not fa["abierta"]:
-                L.append(f"      {nombre:9s} en cero · {base}")
-                continue
-            rg = fa["riesgo"]
-            pc = "" if fa["pCorteCuota"] is None else f" · cuota del corte {fa['pCorteCuota']:.0%}"
-            rgt = "" if not rg else f" · riesgo {rg['nivel']} ({rg['puntos']:+d}): {' · '.join(rg['motivos']) or 'sin puntos'}"
-            L.append(f"      {nombre:9s} ABIERTA {fa['racha']} partidos, K {fa['k']:.2f} · {base}{pc}{rgt}")
+        prox = ("sin próximo en 5 días" if not pr else
+                f"próximo {'de local' if pr['condicion'] == 'L' else 'de visita'} con {pr['rival']} "
+                f"(nivel {pr['nivelRival']}) el {pr['fecha'][5:10]}")
+        L.append(f"{h['rank']:2d}  {h['equipo']} · nivel {h['nivel']:.2f} · {h['temporada']} · {prox}")
+        for nombre in ("victorias", "derrotas"):
+            L += _linea_familia(nombre, h["familias"][nombre])
+        L.append("")
     g = r["guiaEnLaTemporada"]
-    L += ["", f"CÓMO LE FUE A LA GUÍA en la temporada ({g['lados']} burbujas abiertas con base, solo los 20)"]
-    for nombre, tabla in g["porFamilia"].items():
-        L += [f"  {nombre.upper()}", "  riesgo     n   se cortó   la cuota decía   fútbol (backtest)"]
-        for k, v in tabla.items():
-            sc = "—" if v["seCorta"] is None else f"{v['seCorta']:.0%}"
-            cq = "—" if v["cuotaDecia"] is None else f"{v['cuotaDecia']:.0%}"
-            fb = v["futbolBacktest"]
-            L.append(f"  {k:9s} {v['n']:3d}   {sc:>7s}   {cq:>13s}    {fb[0]:.0%}–{fb[1]:.0%}")
+    L += [f"CÓMO ORDENÓ LA GUÍA en la temporada ({g['burbujas']} burbujas abiertas con base, solo estos 20)",
+          "  riesgo      victorias: se cortaron     derrotas: se cortaron      fútbol (backtest)"]
+    for niv in ("bajo", "medio", "alto", "muy alto"):
+        v, d = g["porFamilia"]["victorias"][niv], g["porFamilia"]["derrotas"][niv]
+        fb = v["futbolBacktest"]
+        tv = f"{v['seCortaron']:3d} de {v['n']:3d} ({v['seCortaron'] / v['n']:.0%})" if v["n"] else "  —"
+        td = f"{d['seCortaron']:3d} de {d['n']:3d} ({d['seCortaron'] / d['n']:.0%})" if d["n"] else "  —"
+        L.append(f"  {niv:9s}   {tv:24s}  {td:24s} {fb[0]:.0%}–{fb[1]:.0%}")
     return "\n".join(L)
 
 
