@@ -26,6 +26,7 @@ import argparse
 import json
 import os
 from collections import defaultdict
+from datetime import date, timedelta
 
 from backend.nba import burbujas, motor
 from backend.nba.ligas import ACIERTO_FIRME, N_FIRME, TRAMOS, _tercio
@@ -36,6 +37,8 @@ ESCALAS_G = (2.0, 5.0, 10.0)
 AÑO_VALIDACION = 2020   # la ESCALA_G se elige con los años hasta acá (y se mide de ahí en adelante)
 MIN_PARTIDOS = 10       # en el año, para entrar a los tercios del circuito
 TOP = 20
+ACTIVO_DIAS = 60        # la foto de hoy: jugó en los últimos 60 días
+MIN_CUADRO = 10         # … y 10+ partidos de cuadro principal en el último año
 
 
 def a_motor(ps: list[dict]) -> list[dict]:
@@ -151,12 +154,23 @@ def hoy(ps: list[dict], crudos: list[dict], escala_g: float) -> dict:
         nombre[p["ganadorId"]], nombre[p["perdedorId"]] = p["ganador"], p["perdedor"]
         tour_de[p["ganadorId"]] = tour_de[p["perdedorId"]] = p["tour"]
         ultimo[p["ganadorId"]] = ultimo[p["perdedorId"]] = p["fecha"][:10]
-    corte = max(p["fecha"] for p in crudos)[:4]
+    # ACTIVOS Y DEL CIRCUITO: el nivel del motor mide FORMA (victorias y juegos),
+    # no la calidad del rival, y en el tenis todos van al mismo pozo: quien gana
+    # mucho en la qualy o en torneos chicos sube igual. Para la foto de hoy:
+    # jugó en los últimos ACTIVO_DIAS y tiene MIN_CUADRO partidos de cuadro
+    # principal en el último año (docs/TENIS_FASE0.md §3).
+    fin = date.fromisoformat(max(p["fecha"] for p in crudos)[:10])
+    desde_activo = (fin - timedelta(days=ACTIVO_DIAS)).isoformat()
+    desde_año = (fin - timedelta(days=365)).isoformat()
+    cuadro = defaultdict(int)
+    for p in crudos:
+        if not p["qualy"] and p["fecha"][:10] >= desde_año:
+            cuadro[p["ganadorId"]] += 1
+            cuadro[p["perdedorId"]] += 1
     out = {}
     for tour in ("ATP", "WTA"):
-        # activos: jugaron este año
         cand = [t for t, st in estado.items() if tour_de.get(t) == tour and st["nivel"] is not None
-                and ultimo.get(t, "")[:4] == corte]
+                and ultimo.get(t, "") >= desde_activo and cuadro[t] >= MIN_CUADRO]
         top = sorted(cand, key=lambda t: -estado[t]["nivel"])[:TOP]
         filas = []
         for i, t in enumerate(top, 1):
@@ -206,7 +220,7 @@ def texto(r: dict) -> str:
             for k in TRAMOS))
     L += ["", "✓ = firme: en TODOS sus años con 30+ casos acertó 65 % o más.", ""]
     for tour, filas in r["hoy"].items():
-        L.append(f"HOY · {tour} · los {TOP} de mayor nivel")
+        L.append(f"HOY · {tour} · los {TOP} de mayor nivel (activos en {ACTIVO_DIAS} días, {MIN_CUADRO}+ partidos de cuadro principal en el año)")
         for f in filas:
             partes = []
             for n, m in f["familias"].items():

@@ -1240,3 +1240,8 @@ conversación se pierde en la siguiente.
    NO en la G League (liga B, planteles que suben y bajan); NBL sin muestra.
    Pendiente, si el usuario sigue: simular el método proporcional con freno
    sobre los tramos de §6 y §7.
+9. **Tenis (fase 0 hecha, 12/11/2026, `docs/TENIS_FASE0.md`)**: el momentum
+   aguanta en el ATP y la WTA (los 4 tramos entre 70 y 77 %, Grand Slam 82-88 %);
+   la qualy del ATP es el límite. Pendiente, decisión del usuario: que el nivel
+   del tenis distinga la categoría del torneo o pese al rival (hoy la foto de
+   «los mejores» mezcla torneos chicos); ESPN no da superficie ni Challengers.
