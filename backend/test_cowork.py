@@ -1142,6 +1142,19 @@ def main():
               for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")),
           [prio_de(2, r)[1] for r in ("Round of 16", "Quarter-finals", "Semi-finals", "Final")])
     check("la Liga 1 de Perú sigue primera", prio_de(281)[0] == 1, prio_de(281))
+    # LOS TORNEOS DE SELECCIONES ENTRAN SOLOS (12/11/2026, usuario; REVENTON §16.2)
+    check("selecciones: la Liga de las Naciones entra sola en fase liga (4), sin grupos=true",
+          prio_de(5, "League A - 5")[0] == 4 and "selecciones" in prio_de(5, "League A - 5")[1],
+          prio_de(5, "League A - 5"))
+    check("selecciones: también las eliminatorias y la fase de grupos del Mundial",
+          prio_de(32, "Group A - 3")[0] == 4 and prio_de(1, "Group Stage - 1")[0] == 4,
+          (prio_de(32, "Group A - 3"), prio_de(1, "Group Stage - 1")))
+    check("selecciones: una llave (cuartos de la Liga de las Naciones, repechaje) es fase decisiva (2)",
+          prio_de(5, "Quarter-finals")[0] == 2 and prio_de(37, "Play-offs")[0] == 2,
+          (prio_de(5, "Quarter-finals"), prio_de(37, "Play-offs")))
+    check("selecciones: los amistosos y Oceanía quedan fuera, con su motivo",
+          prio_de(10, "Friendlies 1")[0] == 0 and "fuera del padrón" in prio_de(10, "Friendlies 1")[1]
+          and prio_de(33, "Group A - 1")[0] == 0, (prio_de(10, "Friendlies 1"), prio_de(33, "Group A - 1")))
     check("una segunda división (con segundas=true) entra, pero al final",
           prio_de(72, segundas=True)[0] > prio_de(140)[0] > 0, (prio_de(72, segundas=True), prio_de(140)))
     check("dentro de una liga, el equipo en el top 6 o en crisis va antes",

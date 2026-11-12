@@ -147,6 +147,8 @@ se carga en cada paso de cada agente). Leé la sección del área en
 - **Agenda**: el padrón es UNO, `extractor.ligas_vivo()` (vía `_padron()`); el
   orden, las copas medidas (prioridad 8), lo que queda fuera por defecto, el
   `corte` por `limite` y los descartes con motivo están en `docs/REGLAS.md`.
+  Los torneos de selecciones son UNA lista (`extractor.TORNEOS_SELECCIONES`):
+  los oficiales entran solos a la agenda; ninguno es copa nacional.
 - **Vigilancia**: `latido` (el silencio cuenta como fallo; cobertura contra lo
   que la agenda habría elegido), incidencias depositadas por cada corrida y el
   mantenimiento que las verifica, agrupa por CAUSA y arregla la CLASE con un PR

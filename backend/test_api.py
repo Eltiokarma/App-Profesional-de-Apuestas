@@ -512,6 +512,37 @@ def main():
           and _sep.del_partido(_b2, "base", None)["ligaId"] == _b2)
     check("una liga sin medir no inventa un AUC", _sep.de_liga(999)["auc"] is None
           and _sep.de_liga(999)["nivel"] == "sin medir")
+    # SELECCIONES (12/11/2026, REVENTON §16.2): un torneo medido da lo suyo; la
+    # Liga de las Naciones, sin historia en la base, la de TODAS las selecciones
+    _s32, _s5 = _sep.de_liga(32, "Eliminatorias UEFA"), _sep.de_liga(5, "UEFA Nations League")
+    check("selecciones: las eliminatorias UEFA dan su separación medida, fechada el 12/11",
+          _s32["auc"] == 0.743 and _s32["nivel"] == "alta" and _s32["medidoEn"] == _sep.MEDIDO_SELECCIONES, _s32)
+    check("selecciones: la Liga de las Naciones va con la de todas las selecciones y lo dice",
+          (_s5["auc"], _s5["n"]) == _sep.SELECCIONES_TODAS and "sin medir por sí sola" in _s5["nota"], _s5)
+    check("selecciones: manda el torneo del PARTIDO, no la base (eliminatorias → Liga de las Naciones)",
+          _sep.del_partido(32, "Eliminatorias UEFA", 5)["ligaId"] == 5)
+    # NINGÚN TORNEO DE SELECCIONES ES UNA COPA: «World Cup», «Copa America» y
+    # «Africa Cup of Nations» casaban con la expresión de copas y salían de las métricas
+    from backend.analisis import escala as _esc_sel
+    check("selecciones: el Mundial, las eliminatorias, la Copa América y la Copa Africana no son copa nacional",
+          not any(_esc_sel.es_copa_nacional(lid, nom, set()) for lid, nom in (
+              (1, "World Cup"), (32, "World Cup - Qualification Europe"), (9, "Copa America"),
+              (6, "Africa Cup of Nations"), (7, "Asian Cup")))
+          and _esc_sel.es_copa_nacional(143, "Copa del Rey", set()))
+    check("selecciones: ni copa en la escala, y de «primera» en cualquier torneo (también los menores)",
+          not _esc_sel.es_copa(32, "World Cup - Qualification Europe")
+          and _esc_sel.categoria(536, "CONCACAF Nations League") == "primera"
+          and 10 in _esc_sel.AMISTOSOS)
+    from backend.ingesta import extractor as _ext_sel
+    _amis = lambda liga, a, b: {"league": {"id": liga}, "teams": {"home": {"name": a}, "away": {"name": b}}}
+    check("selecciones: de los amistosos se guardan las absolutas (fuera sub-XX y femeninas)",
+          _ext_sel._amistoso_juvenil(_amis(10, "Brazil U17", "USA U17"))
+          and _ext_sel._amistoso_juvenil(_amis(10, "England W", "Spain W"))
+          and not _ext_sel._amistoso_juvenil(_amis(10, "Peru", "Bolivia"))
+          and not _ext_sel._amistoso_juvenil(_amis(32, "Spain U21", "Malta U21")))
+    check("selecciones: todos los torneos están en la ingesta; los amistosos, Oceanía y la Concacaf NL son menores",
+          set(_ext_sel.TORNEOS_SELECCIONES) <= set(_ext_sel.LIGAS)
+          and {10, 33, 536} <= _ext_sel.LIGAS_MENORES and 5 in _ext_sel.ligas_vivo())
     check("/equipos/999999/burbujas → 404", c.get(A + "/equipos/999999/burbujas").status_code == 404)
     # LOS GOLES ACOTADOS (REVENTON §17): sin modelo calibrado lo dice; con uno, intervalo y marcador acotado
     from backend.analisis import goles as _gol

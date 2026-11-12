@@ -45,13 +45,29 @@ COPAS = {
 }
 _COPA_RE = re.compile(r"\b(cup|copa|coppa|pokal|coupe|ta[cç]a|trophy|troph[ée]e|shield|super ?cup|supercopa|"
                       r"supercoppa|bicentenario)\b", re.I)
-AMISTOSOS = {667}
+AMISTOSOS = {667, 10}    # de clubes y de selecciones: nunca son la base de nadie
 HISTORIAL_MAX = 40       # filas de copa que se miran hacia atrás
+
+
+def torneos_selecciones() -> set[int]:
+    """Los torneos de SELECCIONES (`extractor.TORNEOS_SELECCIONES`, una lista).
+
+    Ninguno es una copa: «World Cup», «World Cup - Qualification Europe»,
+    «Copa America», «Asian Cup» y «Africa Cup of Nations» casaban con la
+    expresión de copas y caían en `copas_nacionales` —fuera de toda métrica, de
+    Aprendizaje y de la simulación— y en la escala como «copa» (12/11/2026)."""
+    try:
+        from backend.ingesta.extractor import TORNEOS_SELECCIONES
+        return set(TORNEOS_SELECCIONES)
+    except Exception:  # noqa: BLE001 — sin la ingesta importable: la lista mínima (Mundial y eliminatorias)
+        return {1, 4, 5, 6, 7, 9, 10, 22, 29, 30, 31, 32, 33, 34, 37, 536, 960}
 
 
 def es_copa(liga_id: int | None, nombre: str | None = None) -> bool:
     if liga_id in COPAS:
         return True
+    if liga_id is not None and liga_id in torneos_selecciones():
+        return False
     if nombre is None and liga_id is not None:
         from backend.app import liga_meta
         nombre = liga_meta(liga_id).get("nombre")
@@ -65,7 +81,8 @@ _INTERNACIONAL_RE = re.compile(r"uefa|conmebol|concacaf|fifa|caf |afc |recopa|le
 def es_copa_nacional(liga_id: int | None, nombre: str, internacionales: set[int]) -> bool:
     """La regla de `copas_nacionales` para UN torneo, sin base: la usa también
     quien la reconstruye desde la API (`backend.contacto`)."""
-    if liga_id in internacionales or liga_id in AMISTOSOS or _INTERNACIONAL_RE.search(nombre or ""):
+    if (liga_id in internacionales or liga_id in AMISTOSOS or liga_id in torneos_selecciones()
+            or _INTERNACIONAL_RE.search(nombre or "")):
         return False
     return es_copa(liga_id, nombre or "")
 
@@ -103,6 +120,11 @@ def _fuera_de_liga() -> set[int]:
 
 
 def categoria(liga_id: int, nombre: str | None = None) -> str:
+    # una selección es de «primera» en cualquiera de sus torneos: el nivel de
+    # todas se mide entre selecciones (la CONCACAF Nations League es menor por
+    # las cuotas en vivo, no por categoría)
+    if liga_id in torneos_selecciones():
+        return "primera"
     from backend.analisis.parte import _segunda
     return "segunda" if _segunda(liga_id, nombre) else "primera"
 
