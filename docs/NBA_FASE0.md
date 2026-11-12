@@ -452,3 +452,34 @@ NBA ya lo pide (aciertos de 77-82 % a cuotas de 1,2-1,4). Con el método
 proporcional, el freno pausaría A, B y D, y C quedaría en empate. **Para
 empezar, el fútbol es lo rentable;** la NBA con solo momentum no lo es. El
 tenis queda sin medir hasta tener cuotas.
+
+### 9.1 Con el método real: seguir a la casa, salvo que la burbuja diga «desconfiá» (12/11/2026)
+
+El usuario corrigió la servilleta: el método no apuesta a las lecturas de
+momentum. **Sigue al favorito de la casa** y la burbuja es la que dice «aquí
+no». Es la alerta `BURBUJA-DE-UN-PARTIDO` de `simulacion.alerta_confianza`
+(10/11/2026): la racha + del elegido es de UN solo partido y tiene riesgo
+alto o muy alto. La otra pieza, `SOBRE-LA-CASA`, necesita el 1X2 de los
+skills; sin análisis nuestra probabilidad es la de la casa y no se enciende.
+
+En la NBA: el elegido es el favorito de cierre de ESPN, apostado plano a su
+cuota mediana.
+
+| | 2016-17 → 2022-23 | 2023-24 → hoy |
+|---|---|---|
+| todos los favoritos | 67,2 % vs pide 70,2 % · ROI −4,1 % (8.820) | 69,1 % vs 71,6 % · **−3,6 %** (4.102) |
+| con DESCONFIAR (no se apuesta) | 62,8 % vs 65,4 % · −3,9 % (964) | 58,7 % vs 65,8 % · **−10,7 %** (429) |
+| **sin alerta (el método)** | 67,8 % vs 70,8 % · −4,1 % (7.856) | 70,4 % vs 72,3 % · **−2,8 %** (3.673) |
+
+- **La alerta hace su trabajo.** Los favoritos marcados rinden por debajo de
+  su cuota: 2,6 puntos en el período viejo y 7,1 en el reciente. Sacarlos
+  achica la pérdida, de −3,6 % a −2,8 %.
+- **No alcanza para dar vuelta el margen de la casa.** Seguir al favorito de
+  la NBA a la cuota de cierre cuesta alrededor del 3-4 %, y la burbuja sola
+  recupera menos de un punto.
+- **En el fútbol el resultado positivo no lo pone la burbuja sola,** sino los
+  skills y el análisis (el semáforo: 66,7 % contra 53,7 % que pedía la cuota).
+
+**Tenis:** sin cuotas no se puede hacer esta cuenta. Si se paga una API para
+el tenis, que traiga cuotas HISTÓRICAS, para hacer esta misma cuenta antes de
+apostar.
