@@ -93,7 +93,10 @@ def _p_corte(signo: int, p_gana: float | None) -> float | None:
     return (1 - p_gana) if signo > 0 else p_gana
 
 
-def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = True) -> dict:
+def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = True, inicio: bool = False) -> dict:
+    """`inicio`: elegir a los 20 por el nivel de ANTES de la temporada (el de su
+    primer partido), no por el de hoy: el de hoy ya sabe cómo les fue en el
+    arranque y sesga la medición de la guía (docs/NBA_FASE0.md §5.1)."""
     partidos = descarga.cargar_partidos()
     cuotas = descarga.cargar_cuotas()
     temporada = temporada or max(p["temporada"] for p in partidos)
@@ -102,8 +105,17 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
     abrev = {}
     for p in partidos:
         abrev[p["localId"]], abrev[p["visitaId"]] = p["local"], p["visita"]
-    los20 = sorted((t for t in estado if estado[t]["nivel"] is not None),
-                   key=lambda t: -estado[t]["nivel"])[:top]
+    if inicio:
+        nivel_ini = {}
+        for p in partidos:
+            if p["temporada"] == temporada:
+                for lado, t in (("local", p["localId"]), ("visita", p["visitaId"])):
+                    if t not in nivel_ini and previos[p["id"]][lado]["nivel"] is not None:
+                        nivel_ini[t] = previos[p["id"]][lado]["nivel"]
+        los20 = sorted(nivel_ini, key=lambda t: -nivel_ini[t])[:top]
+    else:
+        los20 = sorted((t for t in estado if estado[t]["nivel"] is not None),
+                       key=lambda t: -estado[t]["nivel"])[:top]
     rank = {t: i + 1 for i, t in enumerate(los20)}
 
     # 1 · hoy
@@ -170,7 +182,7 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
                 "n": len(de), "seCorta": round(sum(x["seCorto"] for x in de) / len(de), 3) if de else None,
                 "cuotaDecia": round(sum(cq) / len(cq), 3) if cq else None, "futbolBacktest": fut.TASA_BACKTEST[niv]}
     return {"generado": datetime.now(timezone.utc).isoformat(timespec="seconds"), "temporada": temporada,
-            "criterio": f"los {top} de mayor nivel del motor hoy (ESCALA_G {ESCALA_G})",
+            "criterio": f"los {top} de mayor nivel del motor {'al ARRANCAR la temporada' if inicio else 'hoy'} (ESCALA_G {ESCALA_G})",
             "hoy": hoy, "guiaEnLaTemporada": {"lados": len(filas), "porFamilia": por_familia}, "detalle": filas}
 
 
@@ -210,8 +222,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--temporada", type=int, default=None)
     ap.add_argument("--top", type=int, default=20)
+    ap.add_argument("--inicio", action="store_true", help="los 20 por el nivel de antes de la temporada (sin sesgo)")
     a = ap.parse_args()
-    r = correr(a.temporada, a.top)
+    r = correr(a.temporada, a.top, inicio=a.inicio)
     with open(os.path.join(descarga.carpeta(), "burbujas.json"), "w") as f:
         json.dump(r, f, ensure_ascii=False, indent=1)
     t = texto(r)

@@ -231,3 +231,26 @@ este arranque, así que la muestra junta a los que ganaron más de lo esperado.
 Para saber si hay algo, la medición limpia elegiría a los 20 por el nivel de
 ANTES de la temporada. La medición contra el mercado del §4.3 (26.040 rachas,
 sin selección) no encontró nada.
+
+**El control del sesgo** (`python -m backend.nba.burbujas --inicio`: los 20
+elegidos por el nivel de ANTES de la temporada):
+
+| riesgo | victorias 26-27 | victorias 25-26 | victorias 24-25 | derrotas 26-27 | derrotas 25-26 | derrotas 24-25 |
+|---|---|---|---|---|---|---|
+| bajo | 18 % vs 26 % (38) | 23 vs 24 (276) | 25 vs 24 (284) | 44 vs 30 (9) | 26 vs 28 (141) | 32 vs 31 (152) |
+| medio | 29 vs 36 (21) | 37 vs 40 (147) | 31 vs 36 (129) | 44 vs 38 (16) | 45 vs 45 (112) | 42 vs 45 (105) |
+| alto | 46 vs 49 (46) | 50 vs 48 (383) | 52 vs 47 (389) | 47 vs 50 (49) | 59 vs 54 (333) | 56 vs 53 (383) |
+| muy alto | 57 vs 56 (14) | 53 vs 57 (201) | 59 vs 59 (189) | 56 vs 65 (34) | 64 vs 69 (210) | 68 vs 68 (171) |
+
+(se cortó vs la cuota decía, con el n entre paréntesis)
+
+- **Sin el sesgo,** la ventaja de este arranque se achica (18 contra 26 % en
+  victorias de riesgo bajo, con n 38).
+- **En las dos temporadas completas anteriores** (unas 1.800 rachas por
+  temporada) la cuota y lo que pasó quedan a ±5 puntos, sin una dirección que
+  se repita, salvo un detalle chico: las rachas de victorias de riesgo
+  **medio** se cortaron 3 a 5 puntos menos que lo que decía la cuota en las
+  dos temporadas. Con n de alrededor de 140 por temporada, eso no alcanza para
+  afirmar nada.
+- **Conclusión:** la misma de la fase 0. La guía ordena, pero la cuota ya lo
+  sabe.
