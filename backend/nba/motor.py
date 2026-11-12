@@ -47,9 +47,43 @@ def nivel_de(ventana: list[tuple[int, int]], escala_g: float = ESCALA_G) -> floa
     return p + escala_g * g + 1
 
 
+FAMILIAS = {"victorias": 1, "derrotas": -1}
+
+
+def _familia0() -> dict:
+    return {"k": 0.0, "racha": 0, "kPico": 0.0, "conds": [], "reventones": []}
+
+
 def _nuevo() -> dict:
     return {"res": [], "kPos": 0.0, "kNeg": 0.0, "kLoc": 0.0, "kVis": 0.0,
-            "racha": 0, "kPico": 0.0, "conds": [], "reventones": {1: [], -1: []}, "ultimo": None, "nivel": None}
+            "racha": 0, "kPico": 0.0, "conds": [], "reventones": {1: [], -1: []}, "ultimo": None, "nivel": None,
+            "fam": {f: _familia0() for f in FAMILIAS}}
+
+
+def _contramano(conds: list, cond: str | None) -> bool:
+    """La contramano del fútbol (REVENTON §12): 2/3 o más de la racha en la
+    condición contraria a la de este partido (neutral no cuenta para ninguna)."""
+    contra = sum(1 for c in conds if c is not None and cond is not None and c != cond)
+    return bool(conds) and cond is not None and contra * 3 >= 2 * len(conds)
+
+
+def _base(rev: list[dict]) -> dict:
+    niv = [r["nivelRival"] for r in rev if r["nivelRival"] is not None]
+    return {"reventonesSigno": len(rev),
+            "medianaPartidos": median(r["partidos"] for r in rev) if rev else None,
+            "medianaKPico": median(r["kPico"] for r in rev) if rev else None,
+            "medianaNivelRival": median(niv) if niv else None}
+
+
+def _vista_familia(st: dict, nombre: str, cond: str | None, nivel_rival) -> dict:
+    """La familia separada, como la K de goles: la de VICTORIAS acumula mientras
+    gana y vuelve a 0 al perder; la de DERROTAS, al revés (su K es positiva:
+    cuánto lleva perdiendo). `signo` es la dirección del riesgo (+1 victorias,
+    −1 derrotas) y 0 si la familia está en cero (no hay burbuja abierta)."""
+    f = st["fam"][nombre]
+    return {"nivel": st["nivel"], "nivelRival": nivel_rival, "k": f["k"], "racha": f["racha"], "kPico": f["kPico"],
+            "signo": FAMILIAS[nombre] if f["k"] > 0 else 0, "contramano": _contramano(f["conds"], cond),
+            **_base(f["reventones"])}
 
 
 def _signo(v: float) -> int:
@@ -64,22 +98,14 @@ def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, tempo
     desc = None
     if st["ultimo"] is not None:
         desc = DESCANSO_TOPE if st["ultimo"][1] != temporada else dias_descanso(st["ultimo"][0], fecha)
-    # la contramano del fútbol (REVENTON §12): 2/3 o más de la racha en la
-    # condición contraria a la de este partido (neutral no cuenta para ninguna)
     cond = None if neutral else ("L" if local else "V")
-    contra = sum(1 for c in st["conds"] if c is not None and cond is not None and c != cond)
-    med_part = median(r["partidos"] for r in rev) if rev else None
-    med_pico = median(r["kPico"] for r in rev) if rev else None
-    med_niv = median(r["nivelRival"] for r in rev if r["nivelRival"] is not None) if any(
-        r["nivelRival"] is not None for r in rev) else None
     return {
         "nivel": st["nivel"], "nivelRival": rival["nivel"], "partidosPrevios": len(st["res"]),
         "k": k, "kCond": (st["kLoc"] if local else st["kVis"]) if not neutral else 0.0,
         "signo": s, "racha": st["racha"], "kPico": st["kPico"],
         "descanso": None if desc is None else max(0, min(DESCANSO_TOPE, desc)),
-        "reventonesSigno": len(rev), "medianaPartidos": med_part, "medianaKPico": med_pico,
-        "medianaNivelRival": med_niv,
-        "contramano": bool(st["conds"]) and cond is not None and contra * 3 >= 2 * len(st["conds"]),
+        **_base(rev), "contramano": _contramano(st["conds"], cond),
+        "familias": {n: _vista_familia(st, n, cond, rival["nivel"]) for n in FAMILIAS},
     }
 
 
@@ -103,6 +129,17 @@ def _avanzar(st: dict, pf: int, pa: int, nivel_rival: float | None, local: bool,
     st["racha"] += 1
     st["conds"].append(None if neutral else ("L" if local else "V"))
     st["kPico"] = max(st["kPico"], abs(k))
+    # las familias separadas (como la K de goles: «anotás o no anotás»)
+    for nombre, signo in FAMILIAS.items():
+        f = st["fam"][nombre]
+        if res == signo:
+            f["k"] += abs(q)
+            f["racha"] += 1
+            f["kPico"] = max(f["kPico"], f["k"])
+            f["conds"].append(None if neutral else ("L" if local else "V"))
+        elif f["k"] > 0:                  # revienta A CERO
+            f["reventones"].append({"partidos": f["racha"], "kPico": f["kPico"], "nivelRival": nivel_rival})
+            st["fam"][nombre] = _familia0() | {"reventones": f["reventones"]}
     st["res"].append((pf, pa))
     st["ultimo"] = (fecha, temporada)
     if len(st["res"]) >= VENTANA:

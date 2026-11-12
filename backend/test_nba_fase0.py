@@ -131,6 +131,25 @@ def main() -> int:
           abs(pm[1]["visita"]["k"] - (-1.4)) < 1e-12, pm[1]["visita"]["k"])
     check("motor: descanso por horas (24 h = 1 día: back-to-back)", pm[1]["local"]["descanso"] == 1)
 
+    # familias separadas (como la K de goles): sin empate, la de victorias es el
+    # tramo + de la K fusionada y la de derrotas el tramo −, con las mismas bases
+    distintos = 0
+    for d in prev.values():
+        for f in (d["local"], d["visita"]):
+            for nombre, s_ in motor.FAMILIAS.items():
+                v = f["familias"][nombre]
+                if f["signo"] == s_:
+                    distintos += not (v["signo"] == s_ and v["racha"] == f["racha"] and abs(v["k"] - abs(f["k"])) < 1e-9
+                                      and v["reventonesSigno"] == f["reventonesSigno"]
+                                      and v["medianaNivelRival"] == f["medianaNivelRival"])
+                else:
+                    distintos += not (v["signo"] == 0 and v["k"] == 0)
+    check("familias: victorias = tramo + de la K fusionada, derrotas = tramo − (misma racha, K y base); la otra en cero",
+          distintos == 0, distintos)
+    check("familias: la de derrotas acumula POSITIVO (cuánto lleva perdiendo) y revienta a cero al ganar",
+          pm[4]["local"]["familias"]["derrotas"]["k"] == 1.0 and pm[4]["local"]["familias"]["victorias"]["k"] == 0
+          and pm[4]["local"]["familias"]["victorias"]["reventonesSigno"] == 1)
+
     # ── la guía de burbujas: los puntos del fútbol, sin copiar números ───────
     base = {"signo": 1, "racha": 4, "k": 9.0, "kPico": 9.0, "nivel": 3.0, "nivelRival": 3.0,
             "reventonesSigno": 10, "medianaPartidos": 2, "medianaKPico": 5.0, "medianaNivelRival": 2.5,

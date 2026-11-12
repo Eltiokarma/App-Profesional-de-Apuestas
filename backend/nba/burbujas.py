@@ -124,19 +124,21 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
             f = motor._previo(st, st, True, False, "", temporada)
         temp = [p for p in partidos if p["temporada"] == temporada and t in (p["localId"], p["visitaId"])]
         gan = sum(1 for p in temp if (p["ptsLocal"] > p["ptsVisita"]) == (p["localId"] == t))
+        familias = {}
+        for nombre, vista in f["familias"].items():
+            familias[nombre] = {
+                "abierta": bool(vista["signo"]), "racha": vista["racha"], "k": round(vista["k"], 2),
+                "base": {"reventones": vista["reventonesSigno"], "medianaRacha": vista["medianaPartidos"],
+                         "medianaKPico": None if vista["medianaKPico"] is None else round(vista["medianaKPico"], 2),
+                         "medianaNivelRival": None if vista["medianaNivelRival"] is None else round(vista["medianaNivelRival"], 3)},
+                "pCorteCuota": None if cuota is None or not vista["signo"] else round(_p_corte(vista["signo"], cuota), 3),
+                "riesgo": riesgo(vista) if prox else None}
         hoy.append({"rank": rank[t], "equipo": abrev[t], "nivel": round(st["nivel"], 3),
-                    "temporada": f"{gan}-{len(temp) - gan}",
-                    "burbuja": {"signo": "+" if f["signo"] > 0 else "−", "racha": f["racha"], "k": round(f["k"], 2),
-                                "kPico": round(f["kPico"], 2)},
-                    "base": {"reventones": f["reventonesSigno"], "medianaRacha": f["medianaPartidos"],
-                             "medianaKPico": None if f["medianaKPico"] is None else round(f["medianaKPico"], 2),
-                             "medianaNivelRival": None if f["medianaNivelRival"] is None else round(f["medianaNivelRival"], 3)},
+                    "temporada": f"{gan}-{len(temp) - gan}", "familias": familias,
                     "proximo": None if not prox else {
                         "fecha": prox["fecha"], "rival": abrev.get(rival), "condicion": "L" if prox["localId"] == t else "V",
                         "nivelRival": None if estado[rival]["nivel"] is None else round(estado[rival]["nivel"], 3),
-                        "pGanaCuota": None if cuota is None else round(cuota, 3),
-                        "pCorteCuota": None if cuota is None else round(_p_corte(f["signo"], cuota), 3)},
-                    "riesgo": riesgo(f) if prox else None})
+                        "pGanaCuota": None if cuota is None else round(cuota, 3)}})
 
     # 2 · cómo le fue a la guía en la temporada (solo partidos de los 20)
     filas = []
@@ -147,48 +149,60 @@ def correr(temporada: int | None = None, top: int = 20, con_proximos: bool = Tru
         for lado, t in (("local", p["localId"]), ("visita", p["visitaId"])):
             if t not in rank:
                 continue
-            f = previos[p["id"]][lado]
-            r = riesgo(f)
-            if r is None:
-                continue
             gana = (p["ptsLocal"] > p["ptsVisita"]) == (lado == "local")
             p_gana = None if not c or c["pLocal"] is None else (c["pLocal"] if lado == "local" else 1 - c["pLocal"])
-            filas.append({"fecha": p["fecha"][:10], "equipo": abrev[t], "signo": "+" if f["signo"] > 0 else "−",
-                          "racha": f["racha"], "puntos": r["puntos"], "nivel": r["nivel"],
-                          "seCorto": int(gana if f["signo"] < 0 else not gana), "pCorteCuota": _p_corte(f["signo"], p_gana)})
-    por_nivel = {}
-    for niv in ("bajo", "medio", "alto", "muy alto"):
-        de = [x for x in filas if x["nivel"] == niv]
-        cq = [x["pCorteCuota"] for x in de if x["pCorteCuota"] is not None]
-        por_nivel[niv] = {"n": len(de), "seCorta": round(sum(x["seCorto"] for x in de) / len(de), 3) if de else None,
-                          "cuotaDecia": round(sum(cq) / len(cq), 3) if cq else None,
-                          "futbolBacktest": fut.TASA_BACKTEST[niv]}
+            for nombre, vista in previos[p["id"]][lado]["familias"].items():
+                r = riesgo(vista)
+                if r is None:
+                    continue
+                filas.append({"fecha": p["fecha"][:10], "equipo": abrev[t], "familia": nombre,
+                              "racha": vista["racha"], "puntos": r["puntos"], "nivel": r["nivel"],
+                              # revienta a cero: la de victorias con una derrota, la de derrotas con una victoria
+                              "seCorto": int(gana if nombre == "derrotas" else not gana),
+                              "pCorteCuota": _p_corte(vista["signo"], p_gana)})
+    por_familia = {}
+    for nombre in motor.FAMILIAS:
+        por_familia[nombre] = {}
+        for niv in ("bajo", "medio", "alto", "muy alto"):
+            de = [x for x in filas if x["familia"] == nombre and x["nivel"] == niv]
+            cq = [x["pCorteCuota"] for x in de if x["pCorteCuota"] is not None]
+            por_familia[nombre][niv] = {
+                "n": len(de), "seCorta": round(sum(x["seCorto"] for x in de) / len(de), 3) if de else None,
+                "cuotaDecia": round(sum(cq) / len(cq), 3) if cq else None, "futbolBacktest": fut.TASA_BACKTEST[niv]}
     return {"generado": datetime.now(timezone.utc).isoformat(timespec="seconds"), "temporada": temporada,
             "criterio": f"los {top} de mayor nivel del motor hoy (ESCALA_G {ESCALA_G})",
-            "hoy": hoy, "guiaEnLaTemporada": {"lados": len(filas), "porNivel": por_nivel}, "detalle": filas}
+            "hoy": hoy, "guiaEnLaTemporada": {"lados": len(filas), "porFamilia": por_familia}, "detalle": filas}
 
 
 def texto(r: dict) -> str:
-    L = [f"NBA · burbujas de la temporada {r['temporada'] - 1}-{str(r['temporada'])[2:]} · {r['criterio']}", ""]
-    L.append(" #  equipo  nivel  temp.   burbuja        base (n · med. racha · med. rival)   próximo           cuota corte  riesgo")
+    L = [f"NBA · burbujas de la temporada {r['temporada'] - 1}-{str(r['temporada'])[2:]} · {r['criterio']}",
+         "Dos familias separadas, como la K de goles: VICTORIAS (crece mientras gana, a 0 al perder) y",
+         "DERROTAS (crece mientras pierde, a 0 al ganar). Siempre hay una abierta y la otra en cero.", ""]
     for h in r["hoy"]:
-        b, ba, pr, rg = h["burbuja"], h["base"], h["proximo"], h["riesgo"]
-        prox = "—" if not pr else f"{pr['condicion']} {pr['rival']:4s} {pr['fecha'][5:10]}"
-        pc = "—" if not pr or pr["pCorteCuota"] is None else f"{pr['pCorteCuota']:.0%}"
-        base = (f"{ba['reventones']:3d} · {ba['medianaRacha']:g} · {ba['medianaNivelRival']}" if ba["reventones"] else "sin base")
-        rgt = "—" if not rg else f"{rg['nivel']} ({rg['puntos']:+d})"
-        L.append(f"{h['rank']:2d}  {h['equipo']:5s}  {h['nivel']:.2f}  {h['temporada']:6s}  {b['signo']}{b['racha']:<2d} K {b['k']:+6.2f}   "
-                 f"{base:34s}  {prox:16s}  {pc:>10s}  {rgt}")
-        if rg and rg["motivos"]:
-            L.append(f"      ↳ {' · '.join(rg['motivos'])}")
+        pr = h["proximo"]
+        prox = "sin próximo" if not pr else (f"próximo {pr['condicion']} {pr['rival']} {pr['fecha'][5:10]}"
+                                            + ("" if pr["pGanaCuota"] is None else f" · la cuota le da {pr['pGanaCuota']:.0%}"))
+        L.append(f"{h['rank']:2d}  {h['equipo']:5s} nivel {h['nivel']:.2f} · {h['temporada']} · {prox}")
+        for nombre, fa in h["familias"].items():
+            b = fa["base"]
+            base = (f"base {b['reventones']} reventones, mediana racha {b['medianaRacha']:g}, "
+                    f"K pico {b['medianaKPico']}, rival {b['medianaNivelRival']}") if b["reventones"] else "sin base"
+            if not fa["abierta"]:
+                L.append(f"      {nombre:9s} en cero · {base}")
+                continue
+            rg = fa["riesgo"]
+            pc = "" if fa["pCorteCuota"] is None else f" · cuota del corte {fa['pCorteCuota']:.0%}"
+            rgt = "" if not rg else f" · riesgo {rg['nivel']} ({rg['puntos']:+d}): {' · '.join(rg['motivos']) or 'sin puntos'}"
+            L.append(f"      {nombre:9s} ABIERTA {fa['racha']} partidos, K {fa['k']:.2f} · {base}{pc}{rgt}")
     g = r["guiaEnLaTemporada"]
-    L += ["", f"CÓMO LE FUE A LA GUÍA en la temporada ({g['lados']} lados con burbuja y base, solo los 20)",
-          "  riesgo     n   se cortó   la cuota decía   fútbol (backtest)"]
-    for k, v in g["porNivel"].items():
-        sc = "—" if v["seCorta"] is None else f"{v['seCorta']:.0%}"
-        cq = "—" if v["cuotaDecia"] is None else f"{v['cuotaDecia']:.0%}"
-        fb = v["futbolBacktest"]
-        L.append(f"  {k:9s} {v['n']:3d}   {sc:>7s}   {cq:>13s}    {fb[0]:.0%}–{fb[1]:.0%}")
+    L += ["", f"CÓMO LE FUE A LA GUÍA en la temporada ({g['lados']} burbujas abiertas con base, solo los 20)"]
+    for nombre, tabla in g["porFamilia"].items():
+        L += [f"  {nombre.upper()}", "  riesgo     n   se cortó   la cuota decía   fútbol (backtest)"]
+        for k, v in tabla.items():
+            sc = "—" if v["seCorta"] is None else f"{v['seCorta']:.0%}"
+            cq = "—" if v["cuotaDecia"] is None else f"{v['cuotaDecia']:.0%}"
+            fb = v["futbolBacktest"]
+            L.append(f"  {k:9s} {v['n']:3d}   {sc:>7s}   {cq:>13s}    {fb[0]:.0%}–{fb[1]:.0%}")
     return "\n".join(L)
 
 

@@ -192,3 +192,42 @@ del fútbol llevada a la NBA, solo sobre la temporada 2026-27 (170 partidos al
   equipo, con planteles que ya no existen). Si la guía se usara en serio,
   habría que acotarla, por ejemplo a las últimas 2 temporadas.
 - **n chico:** es una foto de un mes, no una medición.
+
+### 5.1 La K separada: burbuja de victorias y burbuja de derrotas (12/11/2026)
+
+Pedido del usuario: como no hay empate, tratar la K como la de goles («anotás
+o no anotás»). Quedan dos familias, cada una con su propia base:
+
+- **Victorias:** crece con cada victoria (|q|) y revienta **a cero** con la
+  primera derrota.
+- **Derrotas:** crece con cada derrota (en positivo: cuánto lleva perdiendo) y
+  revienta a cero con la primera victoria.
+
+Está en `motor.FAMILIAS` y `_vista_familia`, y `burbujas.py` las muestra por
+separado.
+
+**Matemáticamente son los mismos episodios que el tramo + y el tramo − de la
+K fusionada.** Comparadas en los 28.672 partidos-equipo, desde 2015, no hay
+ni una diferencia: misma racha, misma K (en valor absoluto) y misma base de
+reventones. El test lo controla. En el fútbol la separación sí cambia algo,
+porque el empate deja la K en 0 sin abrir la contraria. En el básquet siempre
+hay exactamente una familia abierta. Lo que cambia es la LECTURA: cada familia
+con su base y su guía.
+
+**La guía, por familia, en la temporada** (los 20; n chico):
+
+| riesgo | victorias: n · se cortó · cuota | derrotas: n · se cortó · cuota |
+|---|---|---|
+| bajo | 38 · 18 % · 26 % | 7 · 71 % · 32 % |
+| medio | 26 · 27 % · 35 % | 13 · 54 % · 43 % |
+| alto | 52 · 38 % · 48 % | 44 · 52 % · 52 % |
+| muy alto | 18 · 56 % · 57 % | 30 · 67 % · 67 % |
+
+En las dos familias la guía ordena. Las rachas de victorias de estos 20 se
+cortaron MENOS de lo que decía la cuota (unos 8 a 10 puntos), y las de derrotas
+se cortaron más en los tramos bajos. **Pero eso es casi seguro un sesgo de
+selección:** los 20 se eligieron por el nivel de HOY, o sea por cómo les fue en
+este arranque, así que la muestra junta a los que ganaron más de lo esperado.
+Para saber si hay algo, la medición limpia elegiría a los 20 por el nivel de
+ANTES de la temporada. La medición contra el mercado del §4.3 (26.040 rachas,
+sin selección) no encontró nada.
