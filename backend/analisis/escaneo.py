@@ -70,10 +70,14 @@ CHEQUEOS: dict[str, dict] = {
     # el id de Atlético Nacional (1137) a un club de la Copa Perú y sus partidos
     # entraban a la historia de Nacional (K en 0, DTP sin anterior, F2 corrido).
     # La regla vive en backend/partido_ajeno.py y los lectores ya los saltean;
-    # el chequeo SE DEPOSITA porque es un dato sucio de la API que hay que ver.
+    # INFORMATIVO desde el 12/11/2026 (mantenimiento, prevención 7-bis): se
+    # depositaba, y cada pasada cerraba igual el mismo caso (1378, por diseño:
+    # 1207398, Copa Ecuador 2024 en la base de Junior). La MISMA regla que lo
+    # marca ya lo saca de la historia, el nivel y el calendario: no queda nada
+    # que arreglar. Sigue saliendo en el escaneo como dato.
     "partido-ajeno": {
         "titulo": "Equipo con partidos de una competición nacional de otro país",
-        "area": "otro", "severidad": "error",
+        "area": "otro", "severidad": "aviso", "informativo": True,
         "regla": "un partido de una competición nacional (no internacional de clubes, no amistoso) de un "
                  "país distinto al del equipo es de un homónimo con el id cruzado por la API: no entra a su "
                  "historia ni a su calendario (backend/partido_ajeno.py)",
