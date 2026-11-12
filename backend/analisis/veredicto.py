@@ -529,7 +529,18 @@ def objetivo(fixture_id: int, parte: dict) -> dict:
     sin_ramas = servidor_sin_ramas(creado)
     con_defecto = regimen_desenlace(creado)
     bloques = []
-    for tde in bloques_tde(parte.get("tde") or {}):
+    # SE COBRA EL TDE QUE MUESTRA EL PARTE: CON LA HERENCIA DEL DTP (11/11/2026,
+    # incidencia 1387, Tavernes 0-6: la rama siRecibePrimero se cobraba con el
+    # SOB2 0.5 que se había escrito y el parte, tras HERENCIA-DTP, mostraba 1.0 e
+    # ISE de rama 8.33). Manda el DTP (skill teorema-del-echado: C1 y SOB2 no se
+    # re-estiman); lo escrito sigue en el parte, al lado, para auditar.
+    from backend.analisis.parte import _heredar
+    from backend.analisis import dtp_cowork as _dtpc
+    try:
+        _her = _dtpc.herencia_tde(parte.get("dtp") or {})
+    except Exception:  # noqa: BLE001 — un DTP ilegible no hereda nada: se cobra lo escrito
+        _her = {}
+    for tde in [_heredar(b, (_her or {}).get(b.get("equipo") or "")) for b in bloques_tde(parte.get("tde") or {})]:
         reasig = rama_jugada(tde, goles, gl + gv, out["evidencia"]["conFicha"], rojas, sin_ramas)
         # LA VENTANA DE LA RAMA QUE SE JUGÓ, si la declaró (disciplina 44)
         minuto_r, rama_r = (reasig or {}).get("minuto"), (reasig or {}).get("rama")
@@ -1137,6 +1148,11 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
     # siguiente de la MISMA rama no lo vuelve a juzgar (incidencias 687 y 689)
     resuelta = None
     propias, ajenas, roja_propia, roja_rival, inferior_desde = 0, 0, None, None, None
+    # LA VENTANA «DESDE EL GOL» SE ANCLA EN EL GOL, NO EN LA ROJA (11/11/2026,
+    # incidencia 1388, Once Caldas 1-1 Nacional: tras la roja del 80' el tramo
+    # 80-82 volvía a siMarcaPrimero con la ventana anclada en [80,95] y daba gol
+    # en ventana por el 82', mientras el bloque la tenía en 38-53 sin gol)
+    ultimo_gol = 0
     # CON PRÓRROGA EL PARTIDO TERMINA EN EL 120 (incidencia 854, SS Reyes–Coria:
     # el último tramo salía «desde 118 hasta 90»): un evento con reloj pasado el
     # 90 que no es del añadido es de la prórroga
@@ -1170,7 +1186,7 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         lo = tde if rama == "base" else decl.get(rama)
         texto = (lo or {}).get("ventana") or "" if isinstance(lo, dict) else ""
         ancla = (inferior_desde if rama == "siExpulsion" else
-                 roja_rival if rama == "siExpulsionRival" and roja_rival is not None else inicio)
+                 roja_rival if rama == "siExpulsionRival" and roja_rival is not None else ultimo_gol)
         rango = _ventana(texto) or (rango_relativo(texto, ancla, abierto=True) if rama != "base" else None)
         # el gol que CIERRA el tramo es el evento i (si es un gol del rival)
         concedio = ([eventos[i][4]] if i < len(eventos) and eventos[i][3] == "gol"
@@ -1250,6 +1266,7 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
                 previo = estado
             gf, gc = gf + (e["lado"] == foco), gc + (e["lado"] != foco)
             inicio, abre_anadido, inicio_txt = reloj(e), bool(e.get("enAnadido")), texto_min(e)
+            ultimo_gol = inicio
     return out
 
 
