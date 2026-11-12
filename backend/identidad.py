@@ -406,6 +406,41 @@ def solo_como_pila_de_otro(nombre: str, frase: str) -> bool:
     return vistas > 0
 
 
+def casi_solo_como_pila_de(nombre: str, frase: str, otros) -> bool:
+    """¿El nombre casa con la frase SOLO por la tolerancia de una letra, y cada
+    palabra que casa así es la PILA de uno de `otros`? La sigue, con un solo
+    espacio y mayúscula, el apellido de ese otro.
+
+    «Pedri» (banco) contra «Pedro Porro» (titular) en un duelo del M2: «pedro»
+    está a una letra de «pedri» y el DTP pedía rehacer porque Pedri «arrancó
+    en el banco» (12/11/2026, incidencia 1390, Chequia–España 1528961). La
+    pila sola no basta: tiene que ir pegada al apellido de alguien de `otros`
+    («Pedro suelto» sigue casando). Con una mención exacta, False: eso ya lo
+    decide `solo_como_pila_de_otro`."""
+    t = tokens(nombre)
+    if not t:
+        return False
+    apellidos_otros = {x for o in (otros or ()) for x in tokens(o)[1:] if len(x) >= 3}
+    if not apellidos_otros:
+        return False
+    limpio = limpiar_nombre(frase or "") or ""
+    hallados = list(re.finditer(r"[^\W_][\w'’]*", limpio))
+    palabras = [plano(m.group(0)).replace(" ", "") for m in hallados]
+    vistas = 0
+    for k, w in enumerate(palabras):
+        if w in t:
+            return False
+        if len(w) < 3 or not any(apellido_casi(a, w) for a in t if len(a) >= 3):
+            continue
+        vistas += 1
+        n = k + 1
+        if not (n < len(hallados) and hallados[n].group(0)[:1].isupper()
+                and palabras[n] in apellidos_otros
+                and limpio[hallados[k].end():hallados[n].start()] == " "):
+            return False
+    return vistas > 0
+
+
 def solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
     """¿La hoja casa con este jugador solo por el nombre de pila (sin apellido)?"""
     apellidos = set(tokens_plantel[1:]) or set(tokens_plantel)

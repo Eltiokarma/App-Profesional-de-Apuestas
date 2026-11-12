@@ -168,6 +168,12 @@ check("1241: «Gabriel Justino» nombra a «João Gabriel Castro Santos» solo c
       and not idn.solo_como_pila_de_otro("João Gabriel Castro Santos", "João Gabriel Castro Santos de central")
       and not idn.solo_como_pila_de_otro("João Gabriel Castro Santos", "Gabriel, Justino y Scarpa")
       and not idn.solo_como_pila_de_otro("João Gabriel Castro Santos", "Scarpa en el balón parado"))
+check("1390: «Pedro Porro» (titular) no nombra a Pedri por una letra; «Pedro» suelto, «Pedri» y «Pedro Gómez» sin titular, sí",
+      idn.casi_solo_como_pila_de("Pedri", "Pedro Porro contra Provod", ["Pedro Porro", "Lamine Yamal"])
+      and not idn.casi_solo_como_pila_de("Pedri", "entra Pedro por la derecha", ["Pedro Porro"])
+      and not idn.casi_solo_como_pila_de("Pedri", "Pedri y Pedro Porro", ["Pedro Porro"])
+      and not idn.casi_solo_como_pila_de("Pedri", "Pedro Gómez contra Provod", ["Pedro Porro"])
+      and not idn.casi_solo_como_pila_de("Pedri", "Pedro Porro contra Provod", []))
 check("1236: «Felipe Anderson» no menciona a «Matheus Felipe»; «Felipe» suelto, «Matheus Felipe» y «Felipe, Anderson» sí",
       not idn.menciona("Matheus Felipe", "Flaco López y Felipe Anderson en el banco")
       and not idn.menciona("Matheus Felipe", "Felipe Anderson entra por la izquierda")

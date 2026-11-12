@@ -819,6 +819,10 @@ def _suplentes_nombrados(banca: list[str], titulares: list[str], texto: str, cru
         # en identidad.py)
         if crudo and _identidad.solo_como_pila_de_otro(n, crudo):
             continue
+        # …ni la pila de un TITULAR que casa por una letra: «Pedro Porro» no es
+        # Pedri, del banco (incidencia 1390; la regla vive en identidad.py)
+        if crudo and _identidad.casi_solo_como_pila_de(n, crudo, titulares):
+            continue
         if not exacto(n) and any(_casi(a, w) for a in _apellidos(n) for w in tit_exactos):
             continue
         # la inicial también nombra: «A. Terrazas» no es J. Terrazas, el arquero
