@@ -513,3 +513,50 @@ En 2016-17 → 2022-23 la diferencia es más chica: con plana, −261 contra
   (`docs/METODO_APUESTA.md`) porque el elegido paga más (cerca de 1,8) y el
   win rate supera a la cuota. Pero sin esa ventaja quiebra en el 68 % de los
   remuestreos. Es lo mismo que se ve acá.
+
+## 10. La K de PUNTOS, con dos varas (12/11/2026)
+
+Pedido del usuario: medir la K de goles (en el básquet, de puntos) y
+combinarla con la dirección. En el básquet todos anotan siempre, así que el
+usuario pidió que la K se REINICIE contra una vara, y eligió dos (la 1 y la 3
+de la discusión):
+
+- **«propia»** (`anota` / `recibe`): anotar o recibir por encima de su media
+  de los 20 partidos anteriores.
+- **«casa»** (`anotaCasa` / `recibeCasa`): anotar o recibir por encima de lo
+  que la casa esperaba de ese equipo en ese partido. Local = (total −
+  hándicap del local)/2.
+
+La K acumula el exceso (÷ 10) por el nivel del rival y revienta a 0 la
+primera vez que queda por debajo. Está en `motor.FAMILIAS_PUNTOS` /
+`FAMILIAS_CASA` y en `backend/nba/puntos.py`. Revienta bien: unos 6.800
+reventones por familia, la mitad dura un partido, racha mediana 2, máximo
+18. La línea de más/menos se agregó a la descarga, que se rehízo para las
+14.336 cuotas.
+
+Dos períodos que tienen que coincidir (2016-17 → 2022-23 y 2023-24 → hoy):
+
+1. **¿La burbuja de puntos sigue?** Apenas. Con la vara propia, el siguiente
+   partido queda arriba de su media entre 50 y 55 % de las veces, contra 49-50
+   % de todos. Con la vara de la casa, nada (46-54 %, sin dirección): la casa
+   ya corrige su línea.
+2. **Hándicap del elegido** (favorito sin DESCONFIAR) según el cruce de
+   burbujas de puntos: **nada estable.** Cubre 50-51 % contra 52,4 % que pide
+   −110, y los cortes se contradicen entre períodos. Por ejemplo, «propia +2»
+   da 54,4 % en el viejo y 45,4 % en el nuevo.
+3. **Más/menos según la presión** (cuántas de las 4 burbujas de puntos están
+   abiertas, de los dos equipos): **la única señal que se repite.**
+
+| presión 4 · MÁS | 2016-17 → 2022-23 | 2023-24 → hoy |
+|---|---|---|
+| vara de la casa | 54,6 % vs pide 52,4 % · ROI +4,3 % (838) | 54,5 % vs 52,3 % · ROI +4,2 % (391) |
+| vara propia | 53,7 % · +2,5 % (780) | 52,8 % · +0,8 % (326) |
+
+La señal: cuando los dos equipos vienen anotando Y recibiendo por encima de lo
+que la casa esperaba, el partido tiende a pasarse del total.
+
+**Cautela:** salió de mirar unos 40 cortes a la vez. Juntando los dos
+períodos (1.229 partidos, 54,6 % contra 52,4 %) el intervalo todavía roza lo
+que pide la cuota (z ≈ 1,5). Lo que corresponde, como con el semáforo
+(`docs/METODO_APUESTA.md`), es **fijar la regla hoy y medirla hacia
+adelante** con escalones. Queda propuesto, sin decidir.
