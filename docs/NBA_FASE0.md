@@ -420,3 +420,35 @@ Valen para el básquet y para el tenis. La fase 0 (medir) está cerrada.
    bajas, el descanso y los viajes en el básquet; la superficie y la fatiga de
    las rondas en el tenis. Solo si la fase 3 muestra fallos que el momentum no
    ve.
+
+## 9. Servilleta: ¿más rentable que el fútbol? (12/11/2026)
+
+Pedido del usuario: antes de pagar una API para otro deporte, saber cuál es
+más rentable. Rentable = el win rate de nuestro elegido contra lo que pide la
+cuota (1/cuota): si se acierta más de lo que la cuota pide, se gana. Es la
+misma cuenta que hace el freno de `docs/METODO_APUESTA.md`.
+
+**NBA,** los cuatro tramos apostados planos a la cuota de cierre de ESPN
+(2023-24 → hoy, 1.680 apuestas):
+
+| tramo | acierto | la cuota pedía | cuota media | ROI |
+|---|---|---|---|---|
+| A · arriba sigue ganando | 77 % | 80 % | 1,25 | −5,3 % |
+| B · arriba corta la mala | 67 % | 73 % | 1,36 | −10,9 % |
+| C · abajo sigue perdiendo (al rival) | 82 % | 82 % | 1,22 | −0,2 % |
+| D · abajo se le corta (al rival) | 68 % | 73 % | 1,37 | −8,3 % |
+| **todo** | **76 %** | **79 %** | | **−4,6 %** |
+
+**Fútbol** (`docs/METODO_APUESTA.md`): con los skills, el win rate del
+elegido fue de 55,6 % contra el 54,8 % que pedía la cuota en total, y de
+61,3 % contra 55,6 % desde el 28/10. La simulación del método va de 100 a
+125,59.
+
+**Tenis:** no hay cuotas que se puedan bajar desde el contenedor, así que no
+se puede hacer la cuenta.
+
+**Lectura:** en la NBA el momentum solo acierta mucho, pero la cuota de la
+NBA ya lo pide (aciertos de 77-82 % a cuotas de 1,2-1,4). Con el método
+proporcional, el freno pausaría A, B y D, y C quedaría en empate. **Para
+empezar, el fútbol es lo rentable;** la NBA con solo momentum no lo es. El
+tenis queda sin medir hasta tener cuotas.
