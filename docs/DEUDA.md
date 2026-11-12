@@ -1235,6 +1235,8 @@ conversación se pierde en la siguiente.
    momentum (burbujas de victorias y derrotas, riesgo y extremo del fútbol)
    funciona en la NBA con la vara del sistema, que es win rate y dónde poner
    la plata (§6). OJO: §4 mide «ganarle a la cuota», que NO es el objetivo
-   del sistema (corrección del usuario, `docs/METODO_APUESTA.md`). Pendiente,
-   si el usuario sigue: simular el método proporcional con freno sobre los
-   tramos de §6.
+   del sistema (corrección del usuario, `docs/METODO_APUESTA.md`). §7: la
+   teoría baja hasta las conferencias chicas de la NCAA y aguanta en la WNBA;
+   NO en la G League (liga B, planteles que suben y bajan); NBL sin muestra.
+   Pendiente, si el usuario sigue: simular el método proporcional con freno
+   sobre los tramos de §6 y §7.

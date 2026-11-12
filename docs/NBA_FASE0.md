@@ -352,3 +352,47 @@ ARRANCAR cada temporada.
 - **Con derrotas de riesgo bajo:** UTAH contra HOU, CHI contra ATL, WSH contra
   DET, SAC contra POR y LAC contra OKC.
 - **IND:** victorias de riesgo muy alto contra NY.
+
+## 7. ¿Hasta qué escalón baja la teoría? (12/11/2026)
+
+`python -m backend.nba.descarga --liga <slug>` (solo marcadores, ESPN gratis,
+un pedido por día) y `python -m backend.nba.ligas` (→ `nba_data/ligas.txt`).
+Pedido del usuario: un estudio proporcional al de las ligas de fútbol, sin
+gastar, con los años necesarios. La primera temporada de cada liga solo
+calienta el nivel. La Euroliga no está en ESPN.
+
+Los cuatro tramos de la NBA (§6 y §6.1), con «arriba» y «abajo» como tercios
+de nivel al ARRANCAR la temporada. El porcentaje es la parte de los casos en
+que se cumplió la lectura:
+
+| liga | equipos | temporadas medidas | A arriba, victorias, riesgo bajo: sigue | B arriba, derrotas, muy alto: se corta | C abajo, derrotas, riesgo bajo: sigue | D abajo, victorias, muy alto: se corta |
+|---|---|---|---|---|---|---|
+| NBA (ref.) | 30 | 2022-23 → hoy | 76 % ✓ | 67 % | 79 % ✓ | 68 % |
+| **NCAA D1** | 366 | 2022-23 → 2025-26 | **81 % ✓** | **74 % ✓** | **81 % ✓** | **73 % ✓** |
+| WNBA | 15 | 2022 → 2026 | 74 % ✓ | 69 % | 78 % ✓ | 68 % |
+| NBL Australia | 10 | 2023-24 → hoy | 70 % | 60 % | 71 % | 82 % (27) |
+| **G League (liga B)** | 31 | 2022-23 → 2025-26 | 64 % | 56 % | 67 % | 57 % |
+
+✓ = firme: en TODAS sus temporadas con 30 o más casos acertó 65 % o más.
+
+**NCAA por la fuerza de la CONFERENCIA** (el escalón subregional, tercios de
+las ~32 conferencias por el nivel medio de sus equipos): A 82 % ✓ · B 70 % ✓ ·
+C 83 % ✓ · D 68 % ✓. **Se sostiene también en las conferencias chicas.**
+
+### Lectura
+
+- **El límite no es la profundidad geográfica.** La teoría baja hasta las
+  conferencias más chicas de la NCAA, con 366 equipos y los 4 tramos firmes en
+  las 4 temporadas.
+- **El límite es la ESTABILIDAD del plantel.** La G League es la liga B de la
+  NBA: los jugadores suben y bajan de la NBA durante la temporada. Ahí ningún
+  tramo es firme, y dos temporadas caen al 49 % (B) o al 53-56 % (D). Es lo
+  mismo que ya hacemos en el fútbol: la liga B no.
+- **NBL Australia:** con 10 equipos casi ninguna temporada junta 30 casos.
+  Apunta en la misma dirección, pero falta muestra para afirmarlo.
+- **La WNBA** aguanta como la NBA.
+- **Ojo con la NCAA:** sus porcentajes altos vienen en buena parte de las
+  diferencias enormes de nivel (un grande contra uno de conferencia chica).
+  La lectura es correcta, pero las cuotas de esos partidos son muy bajas.
+  Para el sistema (`docs/METODO_APUESTA.md`: «aunque la cuota sea 1.02») eso
+  no es un problema.
