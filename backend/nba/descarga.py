@@ -29,6 +29,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
 
 URL_DIA = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={d}&limit=100"
+URL_LIGA = "https://site.api.espn.com/apis/site/v2/sports/basketball/{liga}/scoreboard?dates={d}&limit=500{extra}"
+# Las otras ligas de básquet que da ESPN, para el estudio de hasta dónde baja la
+# teoría (docs/NBA_FASE0.md §7). Solo marcadores: las burbujas no usan cuotas.
+# `meses`: cuándo se juega (no se piden días vacíos); `extra`: la NCAA pide
+# groups=50 para traer TODA la primera división, no solo los destacados.
+LIGAS = {
+    "nba-development": {"nombre": "G League (la liga B de la NBA)", "meses": {11, 12, 1, 2, 3, 4}, "extra": ""},
+    "nbl": {"nombre": "NBL Australia", "meses": {9, 10, 11, 12, 1, 2, 3}, "extra": ""},
+    "wnba": {"nombre": "WNBA", "meses": {5, 6, 7, 8, 9, 10}, "extra": ""},
+    "mens-college-basketball": {"nombre": "NCAA D1 masculina", "meses": {11, 12, 1, 2, 3, 4}, "extra": "&groups=50"},
+}
 URL_CUOTAS = ("https://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/{i}"
               "/competitions/{i}/odds?limit=100")
 FRANQUICIAS = set(range(1, 31))   # ids de ESPN de los 30 equipos (afuera: All-Star, giras)
@@ -38,8 +49,9 @@ BURBUJA_2020 = ("2020-07-30", "2020-10-12")
 INICIO = "2015-10-01"
 
 
-def carpeta() -> str:
-    return os.environ.get("SAD_NBA_DIR", "nba_data")
+def carpeta(liga: str | None = None) -> str:
+    base = os.environ.get("SAD_NBA_DIR", "nba_data")
+    return base if liga in (None, "nba") else os.path.join(base, "ligas", liga)
 
 
 def _get(url: str, intentos: int = 5) -> dict | None:
@@ -65,9 +77,11 @@ def _int(x) -> int | None:
         return None
 
 
-def recortar_dia(crudo: dict) -> list[dict]:
+def recortar_dia(crudo: dict, franquicias: set[int] | None = FRANQUICIAS) -> list[dict]:
     """Del scoreboard de ESPN a lo que usa la fase 0. Solo partidos TERMINADOS
-    de temporada regular, play-in y playoffs entre dos franquicias."""
+    de temporada regular, play-in y playoffs. En la NBA, entre dos
+    franquicias; en las otras ligas (`franquicias=None`) entran todos y el
+    estudio descarta a quien juega poco (los rivales de otra división)."""
     out = []
     for e in crudo.get("events", []):
         temp = e.get("season") or {}
@@ -82,14 +96,18 @@ def recortar_dia(crudo: dict) -> list[dict]:
         loc, vis = lados["home"], lados["away"]
         li, vi = _int(loc["team"]["id"]), _int(vis["team"]["id"])
         pl, pv = _int(loc.get("score")), _int(vis.get("score"))
-        if li not in FRANQUICIAS or vi not in FRANQUICIAS or pl is None or pv is None or pl == pv:
+        if li is None or vi is None or pl is None or pv is None or pl == pv:
+            continue
+        if franquicias is not None and (li not in franquicias or vi not in franquicias):
             continue
         fecha = e.get("date") or c.get("date")
-        neutral = bool(c.get("neutralSite")) or BURBUJA_2020[0] <= fecha[:10] <= BURBUJA_2020[1]
+        neutral = bool(c.get("neutralSite")) or (franquicias is FRANQUICIAS
+                                                 and BURBUJA_2020[0] <= fecha[:10] <= BURBUJA_2020[1])
         out.append({"id": int(e["id"]), "fecha": fecha, "temporada": temp.get("year"), "tipo": TIPOS[temp["type"]],
                     "localId": li, "local": loc["team"].get("abbreviation"),
                     "visitaId": vi, "visita": vis["team"].get("abbreviation"),
-                    "ptsLocal": pl, "ptsVisita": pv, "neutral": neutral})
+                    "ptsLocal": pl, "ptsVisita": pv, "neutral": neutral,
+                    "localConf": _int(loc["team"].get("conferenceId")), "visitaConf": _int(vis["team"].get("conferenceId"))})
     return out
 
 
@@ -173,6 +191,32 @@ def _en_paralelo(items: list, fn, hilos: int, rotulo: str):
                 print(f"  {rotulo}: {hechos}/{len(items)} ({time.time() - t0:.0f} s)", flush=True)
 
 
+def bajar_liga(liga: str, desde: str, hasta: str | None = None, hilos: int = 4) -> int:
+    """Solo marcadores, un pedido por día con partidos posibles."""
+    cfg = LIGAS[liga]
+    base = carpeta(liga)
+    os.makedirs(os.path.join(base, "dias"), exist_ok=True)
+    hoy = datetime.now(timezone.utc).date()
+    hasta = hasta or hoy.isoformat()
+    d, fin, lista = date.fromisoformat(desde), date.fromisoformat(hasta), []
+    while d <= fin:
+        if d.month in cfg["meses"]:
+            lista.append(d.strftime("%Y%m%d"))
+        d += timedelta(days=1)
+    recientes = {(hoy - timedelta(days=k)).strftime("%Y%m%d") for k in range(4)}
+    faltan = [x for x in lista if x in recientes or not os.path.exists(os.path.join(base, "dias", f"{x}.json"))]
+    print(f"{liga}: {len(lista)} días, {len(faltan)} por pedir", flush=True)
+
+    def un_dia(x: str) -> int:
+        partidos = recortar_dia(_get(URL_LIGA.format(liga=liga, d=x, extra=cfg["extra"])) or {}, None)
+        with open(os.path.join(base, "dias", f"{x}.json"), "w") as f:
+            json.dump(partidos, f)
+        return len(partidos)
+
+    _en_paralelo(faltan, un_dia, hilos, f"días {liga}")
+    return len(cargar_partidos(base))
+
+
 def cargar_partidos(base: str | None = None) -> list[dict]:
     """Todos los partidos guardados, sin repetidos, ordenados por (fecha, id)."""
     base = base or carpeta()
@@ -200,8 +244,12 @@ def main():
     ap.add_argument("--desde", default=INICIO)
     ap.add_argument("--hasta", default=None)
     ap.add_argument("--hilos", type=int, default=4)
+    ap.add_argument("--liga", default="nba", help="nba (marcadores y cuotas) o una de LIGAS (solo marcadores)")
     a = ap.parse_args()
-    print(bajar(a.desde, a.hasta, a.hilos))
+    if a.liga == "nba":
+        print(bajar(a.desde, a.hasta, a.hilos))
+    else:
+        print({"liga": a.liga, "partidos": bajar_liga(a.liga, a.desde, a.hasta, a.hilos)})
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ import random
 import sys
 import tempfile
 
-from backend.nba import burbujas, descarga, fase0, motor
+from backend.nba import burbujas, descarga, fase0, ligas, motor
 
 fallas = 0
 
@@ -220,6 +220,24 @@ def main() -> int:
     check("corrida: hándicap y reventón salen con su prueba",
           res["handicap"]["prueba"] > 0 and res["reventon"]["prueba"] > 0, (res["handicap"].get("prueba"), res["reventon"].get("prueba")))
     check("corrida: el texto se arma", "REVENTÓN" in fase0.texto(res))
+
+    # ── el estudio de ligas: rivales de otra división afuera, tramos medidos ─
+    visita_rara = {"id": 1, "fecha": "2017-01-01T00:00Z", "temporada": 2017, "tipo": "regular", "localId": 1,
+                   "visitaId": 999, "local": "1", "visita": "X", "ptsLocal": 120, "ptsVisita": 60, "neutral": False}
+    filtrados = ligas._filtrar(partidos + [visita_rara])
+    check("ligas: un rival que juega 1 partido en la temporada (otra división) queda afuera",
+          all(999 not in (p["localId"], p["visitaId"]) for p in filtrados) and len(filtrados) == len(partidos))
+    os.environ["SAD_NBA_DIR"] = base
+    os.makedirs(os.path.join(descarga.carpeta("wnba"), "dias"))
+    with open(os.path.join(descarga.carpeta("wnba"), "dias", "todo.json"), "w") as f:
+        json.dump([{**p, "localConf": p["localId"] % 3, "visitaConf": p["visitaId"] % 3} for p in partidos], f)
+    est = ligas.estudiar("wnba")
+    check("ligas: la carpeta de cada liga es aparte de la NBA", descarga.carpeta("wnba").endswith(os.path.join("ligas", "wnba"))
+          and descarga.carpeta("nba") == base)
+    check("ligas: mide desde la 2.ª temporada (la 1.ª calienta el nivel)", min(est["temporadas"]) == "2017", est["temporadas"].keys())
+    check("ligas: el nivel acierta más que la moneda en una liga con fuerza real", est["aciertoNivel"] > 0.5, est["aciertoNivel"])
+    check("ligas: los cuatro tramos y la vista por conferencia salen", set(est["tramos"]) == set("ABCD")
+          and "tramosPorConferencia" in est and "✓ = firme" in ligas.texto([est]))
 
     print("\nTODO OK" if not fallas else f"\n{fallas} FALLAS")
     return 1 if fallas else 0
