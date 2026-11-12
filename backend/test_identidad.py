@@ -251,5 +251,37 @@ check("1330: dos candidatos por nombre no se afirman",
 check("1330: mismo apellido sin mirar la pila («Jose» / «Jesús Sagredo»); otro apellido, no",
       idn.mismo_apellido("Jose Sagredo", "Jesús Sagredo") and not idn.mismo_apellido("Jose Sagredo", "Jose Sagasti"))
 
+# 1385 (11/11/2026, Amorebieta y Logroñés): grafía vasca, pila I/J y apellido truncado por la API
+check("1385: «Eder Agirregomezkorta» (F1) y «Eder Aguirregomezcorta» (hoja) son el mismo",
+      idn.mismo_jugador("Eder Agirregomezkorta", "Eder Aguirregomezcorta")
+      and idn.apellido_casi("etxaniz", "echaniz"))
+check("1385: «Ion Etxaniz» y «Jon Etxaniz» son el mismo; «Ion» y «Jan», no",
+      idn.mismo_jugador("Ion Etxaniz", "Jon Etxaniz") and not idn.misma_pila("ion", "jan"))
+check("1385: el apellido truncado por la API casa con la pila entera («Javi Entreca», «Manu Pedre»)",
+      idn.mismo_jugador("Javier Entrecanales", "Javi Entreca") and idn.mismo_jugador("Manuel Pedreño", "Manu Pedre"))
+check("1385: …pero no con una inicial, ni con otra pila, ni «Martín» por «Martínez» con pilas distintas, "
+      "ni un corte de menos de 5 letras",
+      not idn.mismo_jugador("J. Entrecanales", "J. Entreca")
+      and not idn.mismo_jugador("Pedro Entrecanales", "Javi Entreca")
+      and not idn.mismo_jugador("Juan Martinez", "Pedro Martin")
+      and not idn.mismo_jugador("Manuel Pedreño", "Manu Pedr"))
+check("1385: el patronímico no es un apellido truncado: «Juan Martín» no es «Juan Martínez», ni «Luis Gonzalo» «Luis González»",
+      not idn.mismo_jugador("Juan Martin", "Juan Martinez") and not idn.mismo_jugador("Luis Gonzalo", "Luis Gonzalez"))
+check("1385: la grafía vasca no funde dos apellidos distintos («Urkiza» no es «Urquiola»)",
+      not idn.apellido_casi("urkiza", "urquiola"))
+from backend.analisis import bloque_f as _bf
+_pl1385 = [{"nombre": "Javier Entrecanales"}, {"nombre": "Eder Agirregomezkorta"}, {"nombre": "Ion Etxaniz"},
+           {"nombre": "Javier Martin"}]
+check("1385: la tabla F1 casa a los tres titulares de Amorebieta con la hoja (sin bajas falsas)",
+      [_bf._buscar(_pl1385, n) for n in ("Javi Entreca", "Eder Aguirregomezcorta", "Jon Etxaniz")] == [[0], [1], [2]],
+      [_bf._buscar(_pl1385, n) for n in ("Javi Entreca", "Eder Aguirregomezcorta", "Jon Etxaniz")])
+# 1386 (Amorebieta): en una lista de banco del DTP «Josep Díaz» nombra a Josep, no al titular Ekain Díaz
+check("1386: el trozo «Josep Díaz» (nombre suelto) no menciona a «Ekain Diaz»; «Díaz» suelto sí",
+      not idn.menciona("Ekain Diaz", "Josep Díaz", nombre_suelto=True)
+      and idn.menciona("Ekain Diaz", "Díaz", nombre_suelto=True)
+      and idn.menciona("Ekain Diaz", "Ekain Díaz", nombre_suelto=True))
+check("1386: sin la marca, la frase que arranca con mayúscula se sigue leyendo como antes («Entra Silva»)",
+      idn.menciona("K. Silva", "Entra Silva"))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)

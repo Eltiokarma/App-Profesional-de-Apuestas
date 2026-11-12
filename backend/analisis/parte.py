@@ -2091,8 +2091,8 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
         for foco, donde, texto in textos:
             for trozo in _dtp.nombrados_de_banco(_txt(texto)):
                 for n in tit:
-                    if n in vistos or not _identidad.menciona(n, trozo) \
-                            or _identidad.mencion_compartida(n, otros, trozo):
+                    if n in vistos or not _identidad.menciona(n, trozo, nombre_suelto=True) \
+                            or _identidad.mencion_compartida(n, otros, trozo, nombre_suelto=True):
                         continue
                     vistos.add(n)
                     hallados.append({"nombre": n, "dtp": foco, "donde": donde, "frase": _txt(texto)[:140]})

@@ -86,6 +86,11 @@ def misma_pila(uno: str, otro: str) -> bool:
     «jose» y «joselu» son personas distintas."""
     if uno == otro or _hipocoristico(uno, otro):
         return True
+    # LA I Y LA J INICIALES DE LA PILA VASCA (11/11/2026, incidencia 1385,
+    # Amorebieta: «Ion Etxaniz» en la tabla F1 y «Jon Etxaniz» en la hoja; salía
+    # de baja siendo titular). Solo esa letra y con el resto igual.
+    if len(uno) >= 3 and len(uno) == len(otro) and uno[1:] == otro[1:] and {uno[0], otro[0]} == {"i", "j"}:
+        return True
     if len(uno) > 3 and len(otro) > 3 and re.sub(r"(.)\1", r"\1", uno) == re.sub(r"(.)\1", r"\1", otro):
         return True
     if len(uno) == 1:
@@ -117,6 +122,12 @@ def apellido_casi(uno: str, otro: str, minimo: int = 5) -> bool:
     # Solo si uno trae «mp» donde el otro trae «b», y en apellidos largos.
     if "mp" in a + b and a.replace("mp", "b") == b.replace("mp", "b"):
         return True
+    # LA GRAFÍA VASCA Y LA CASTELLANA DEL MISMO APELLIDO (11/11/2026, incidencia
+    # 1385, Amorebieta: «Agirregomezkorta» en la tabla F1 y «Aguirregomezcorta»
+    # en la hoja). k ↔ c ante a/o/u, «gui/gue» ↔ «gi/ge», «tx» ↔ «ch». En
+    # apellidos de 6 letras o más.
+    if min(len(a), len(b)) >= 6 and _castellano(a) == _castellano(b):
+        return True
     # LAS MISMAS LETRAS EN OTRO ORDEN ES UN INTERCAMBIO, NO UN ANAGRAMA
     # (06/11/2026, incidencia 1256, Barracas–Racing: «mientras» de la prosa del
     # DTP es anagrama de «martines» y casaba con D. Martínez, y el DTP pedía
@@ -133,6 +144,24 @@ def apellido_casi(uno: str, otro: str, minimo: int = 5) -> bool:
         largo, corto = (a, b) if len(a) > len(b) else (b, a)
         return any(largo[:k] + largo[k + 1:] == corto for k in range(len(largo)))
     return False
+
+
+def _castellano(apellido: str) -> str:
+    """El apellido con la grafía vasca llevada a la castellana (1385)."""
+    t = apellido.replace("tx", "ch")
+    t = re.sub(r"gu(?=[ie])", "g", t)
+    return re.sub(r"k(?=[aou])", "c", t)
+
+
+def apellido_truncado(corto: str, largo: str) -> bool:
+    """LA API CORTA EL APELLIDO (11/11/2026, incidencia 1385: «Javi Entreca» por
+    Javier Entrecanales en Amorebieta, «Manu Pedre» por Manuel Pedreño en el
+    Logroñés). El corto es el comienzo del largo, con 5 letras o más y al menos
+    dos menos que el largo. Solo sirve CON la pila entera y la misma: «Martín» y
+    «Martínez» son dos apellidos, y por eso esto no va en `apellido_casi`."""
+    # el patronímico no es un corte: Martín/Martínez, Gonzalo/González
+    return (len(corto) >= 5 and len(largo) - len(corto) >= 2 and largo.startswith(corto)
+            and largo[len(corto):] not in ("ez", "es", "is", "iz", "ss"))
 
 
 def mismo_jugador(uno: str, otro: str) -> bool:
@@ -156,6 +185,9 @@ def mismo_jugador(uno: str, otro: str) -> bool:
                 and any(misma_pila(corto[0], p) for p in largo[1:-1] if len(p) > 1)
                 and (corto[-1] == largo[-1] or apellido_casi(corto[-1], largo[-1])))
     if a[-1] == b[-1] or apellido_casi(a[-1], b[-1]) or apellidos_juntos(a, b):
+        return True
+    # el apellido truncado por la API, con la pila ENTERA de los dos lados (1385)
+    if len(a[0]) > 1 and len(b[0]) > 1 and (apellido_truncado(a[-1], b[-1]) or apellido_truncado(b[-1], a[-1])):
         return True
     # EL NOMBRE CORTO LLEVA EL PRIMER APELLIDO (31/10/2026, incidencia 893: «A.
     # Torrez» y «A. W. Torrez Suarez» de Oriente, el mismo arquero con dos ids):
@@ -280,7 +312,7 @@ def pilas_enteras_distintas(nombres_uno, nombres_otro) -> bool:
                for a in pu for b in po)
 
 
-def menciona(nombre: str, frase: str) -> bool:
+def menciona(nombre: str, frase: str, nombre_suelto: bool = False) -> bool:
     """¿La frase nombra a ESTE jugador? Una mención de su apellido (4 letras o
     más) que no vaya pegada a la inicial o la pila de OTRO: «N. da Silva» no
     es «K. Silva» (Boston River, incidencia 1111: el aviso de `equipos.fuera`
@@ -306,7 +338,11 @@ def menciona(nombre: str, frase: str) -> bool:
             j -= 1
         # la palabra de antes es una pila si es una inicial o va con mayúscula
         # en medio de la frase («Entra Silva» al empezar no nombra a otro)
-        otra_pila = j >= 0 and crudo[j][:1].isupper() and (len(palabras[j]) == 1 or j > 0)
+        # …salvo que la frase SEA un nombre suelto (un trozo de una lista de
+        # banco: «Josep Díaz»): ahí la primera palabra con mayúscula es una pila
+        # (11/11/2026, incidencia 1386, Amorebieta: FUERA-EN-LA-HOJA tomaba el
+        # «Josep Díaz» del banco del DTP por el titular Ekain Díaz)
+        otra_pila = j >= 0 and crudo[j][:1].isupper() and (len(palabras[j]) == 1 or j > 0 or nombre_suelto)
         propia = j >= 0 and bool(pila) and misma_pila(palabras[j], pila)
         # Y AL REVÉS: el «apellido» es la PILA de otro si lo sigue, pegado y con
         # mayúscula, un apellido que no es de este jugador (05/11/2026,
@@ -325,7 +361,7 @@ def menciona(nombre: str, frase: str) -> bool:
     return False
 
 
-def mencion_compartida(nombre: str, otros, frase: str) -> bool:
+def mencion_compartida(nombre: str, otros, frase: str, nombre_suelto: bool = False) -> bool:
     """¿La frase nombra a `nombre` pero también podría ser OTRO de `otros` con
     su mismo apellido? «Castillo» suelto con E. Castillo titular y J. Castillo
     en el banco no dice de cuál habla: no se afirma nada (10/11/2026,
@@ -335,7 +371,7 @@ def mencion_compartida(nombre: str, otros, frase: str) -> bool:
         return False
     for otro in otros or ():
         o = tokens(otro)
-        if not o or o == t or not menciona(otro, frase):
+        if not o or o == t or not menciona(otro, frase, nombre_suelto):
             continue
         if o[-1] == t[-1] or apellido_casi(o[-1], t[-1]):
             return True
