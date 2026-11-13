@@ -1163,6 +1163,33 @@ conversación se pierde en la siguiente.
    Las copas nacionales siguen fuera de las métricas y de la simulación
    (`escala.copas_nacionales`); esto pesa sobre todo en las internacionales
    de clubes y de selecciones.
+32. **El semáforo pasa a las ESPINAS** (13/11/2026, usuario, tras Italia 3-1
+   Francia en verde: «no encontramos value a la cuota… el semáforo dice:
+   por más que la casa diga esto, mejor no apostemos»; «armá el semáforo
+   nuevo con las espinas»). Reemplaza la regla del punto 29, que medía
+   cercanía a la casa y pintaba verde casi todo (Francia 48 % = la casa, con
+   su espina NEGATIVA y su burbuja de visita en récord). Ahora
+   (`backend/analisis/semaforo.py`): 🟢 la espina del elegido positiva y la
+   del rival no dice que siga · 🟡 la del elegido cero, o la del rival
+   positiva o cero · 🔴 `noApostar`: la del elegido negativa · ⚪ sin espina
+   o sin 1X2. Medido sobre 721 partes (14/09-12/11, sin copas nacionales):
+   elegido con espina positiva 59 % (601), cero 44 % (34), negativa 26 %
+   (19); verde contra amarillo 59 % contra 43 % (75), +16 pts al elegirla y
+   +17 al comprobarla. Lo que NO entró, medido el mismo día (informes en el
+   scratchpad de la sesión): la burbuja del elegido (de un partido, riesgo
+   alto, récord) no baja su acierto —en récord gana MÁS—; la rotación del
+   once no revienta burbujas más que su riesgo (sí se anticipa: descanso
+   ≤ 3,5 días, rotó en el anterior, el próximo es copa o llega en ≤ 3,5 días;
+   pendiente de pedirla al analista en el porqué). **Criterio nuevo** desde
+   los partidos del 13/11 (`semaforo.DESDE`): lo que se juzga es la
+   desconfianza, no la cuota: en **30** amarillos + rojos nuevos,
+   `prometedor` si el verde acierta 10+ pts más; en **60**, `confirmado` con
+   10+ pts y el IC de los no-verdes entero por debajo del verde; en
+   cualquier escalón `no_se_sostiene` si no separan
+   (`simulacion.criterio_semaforo`). Sigue anti-Goodhart: el analista no ve
+   el color (si lo viera, escribiría la espina a favor de su elegido).
+   Pendiente del usuario: si el prompt le pide al analista que no elija
+   contra su propia espina (cambia la población que se mide).
 
 ## Siguientes pasos (en orden)
 

@@ -2832,14 +2832,23 @@ export interface TrasFallos {
  *  `confirma` 🟢 = nuestro 1X2 a ≤ `umbral` pts de la casa en los tres y el marcador
  *  con el elegido · `duda` 🟡 = falla una · `sinDato` ⚪. */
 export interface SemaforoElegido {
-  estado: 'confirma' | 'duda' | 'sinDato'
-  motivos: { codigo: 'LEJOS-DE-LA-CASA' | 'MARCADOR-CONTRADICE' | 'SIN-1X2' | 'SIN-CUOTAS' | 'SIN-MARCADOR'; detalle: string }[]
+  /** POR LAS ESPINAS (13/11/2026): confirma = la espina del elegido lo acompaña · duda = dice empate o la
+   *  del rival dice que sigue · noApostar = la del elegido dice que pierde · sinDato = sin 1X2 o sin espina */
+  estado: 'confirma' | 'duda' | 'noApostar' | 'sinDato'
+  motivos: { codigo: 'ESPINA-CONTRA-EL-ELEGIDO' | 'ESPINA-ELEGIDO-EMPATA' | 'ESPINA-RIVAL-SIGUE' | 'ESPINA-NO-EMPATA' | 'SIN-ESPINA' | 'SIN-1X2'; detalle: string }[]
   elegido: Resultado1x2 | null
-  /** la mayor |nuestro − casa| de los tres, en pts */
+  regla: 'espinas'
+  espinaElegido: EspinaLectura | null
+  espinaRival: EspinaLectura | null
+  espinas: { a: EspinaLectura | null; b: EspinaLectura | null }
+  /** solo información (no decide): la mayor |nuestro − casa| de los tres, en pts */
   distancia: number | null
+  /** solo información (no decide) */
   marcadorSigno: Resultado1x2 | null
-  umbral: number
 }
+
+/** la lectura de una espina que el semáforo juzga (la neutra no se juzga) */
+export type EspinaLectura = Exclude<LecturaEspina, 'neutra'>
 
 export interface GrupoSemaforo {
   n: number
@@ -2854,37 +2863,35 @@ export interface GrupoSemaforo {
   roiPlano: number | null
 }
 
-export interface GruposSemaforo { verde: GrupoSemaforo; amarillo: GrupoSemaforo; sinDato: GrupoSemaforo }
+export interface GruposSemaforo { verde: GrupoSemaforo; amarillo: GrupoSemaforo; rojo: GrupoSemaforo; sinDato: GrupoSemaforo }
 
 export interface ResumenSemaforo {
   desde: string
-  umbral: number
+  regla: 'espinas'
   todo: GruposSemaforo
   /** desde `desde`: lo único que cuenta para el criterio */
   nuevo: GruposSemaforo
-  /** POR ESCALONES (11/11/2026, fijado antes de que haya verdes nuevos): 70 y 110 →
-   *  `prometedor` si el límite inferior del IC queda sobre lo que pide; 150 → `confirmado`
-   *  (+5 pts, IC encima, amarillos abajo) o `sin_contacto`; `no_se_sostiene` si acierta
-   *  menos de lo que pide en cualquier escalón; antes de 70, en observación. */
+  /** POR ESCALONES DE NO-VERDES (13/11/2026, fijado antes de que haya partidos nuevos): el amarillo y el
+   *  rojo tienen que acertar MENOS que el verde. 30 → `prometedor` con 10+ pts de separación; 60 →
+   *  `confirmado` con 10+ pts y el IC de los no-verdes entero debajo del verde, o `sin_contacto`;
+   *  `no_se_sostiene` si no separan en cualquier escalón; antes de 30, en observación. */
   criterio: {
-    /** 0 = antes de 70 */
-    escalon: 0 | 70 | 110 | 150
+    /** 0 = antes de 30 */
+    escalon: 0 | 30 | 60
     proximoEscalon: number | null
     escalones: number[]
-    /** hasta el próximo escalón (0 desde 150) */
+    /** no-verdes que faltan hasta el próximo escalón (0 desde 60) */
     faltan: number
+    /** no-verdes (amarillos + rojos) nuevos cerrados */
     n: number
-    /** 0-1 */
-    acierto: number | null
-    /** 0-1: media de 1/cuota del elegido en verde */
-    pide: number | null
-    /** Wilson 95 %, 0-1 */
-    intervalo: [number, number] | null
-    amarillos: { n: number; tasa: number | null }
+    verdes: { n: number; tasa: number | null }
+    /** tasa 0-1 e IC Wilson 95 % */
+    noVerdes: { n: number; tasa: number | null; intervalo: [number, number] | null }
+    /** verdes − no-verdes, 0-1 */
+    separacion: number | null
     nMinimo: number
-    ventajaMinima: number
-    intervaloSobreLaCuota: boolean
-    amarillosDebajo: boolean
+    separacionMinima: number
+    noVerdesDebajo: boolean
     cumple: boolean
     estado: 'en_observacion' | 'prometedor' | 'no_se_sostiene' | 'confirmado' | 'sin_contacto'
     texto: string

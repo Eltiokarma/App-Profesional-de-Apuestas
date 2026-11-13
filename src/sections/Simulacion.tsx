@@ -369,8 +369,9 @@ const ESTADO_SEMAFORO: Record<ResumenSemaforo['criterio']['estado'], { etiqueta:
   sin_contacto: { etiqueta: 'SIN CONTACTO', color: 'var(--t2)', fondo: 'var(--bg3)' },
 }
 
-/** EL SEMÁFORO DEL ELEGIDO (11/11/2026): verdes contra amarillos, contra lo que pedía la
- *  cuota. Cuenta para el criterio SOLO lo nuevo (desde el 11/11); la regla está fijada. */
+/** EL SEMÁFORO DEL ELEGIDO, POR LAS ESPINAS (13/11/2026): verdes contra amarillos y rojos. Lo que se
+ *  juzga es la desconfianza: el amarillo y el rojo tienen que acertar MENOS que el verde. La cuota va
+ *  como información. Cuenta para el criterio SOLO lo nuevo (desde el 13/11); la regla está fijada. */
 function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean }) {
   const tasa = (x: number | null | undefined) => (x == null ? '—' : `${num(100 * x, 1)} %`)
   const ic = (i: [number, number] | null) => (i ? `${num(100 * i[0], 0)}-${num(100 * i[1], 0)} %` : '—')
@@ -378,25 +379,26 @@ function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean 
   const c = r.criterio
   const est = ESTADO_SEMAFORO[c.estado] ?? ESTADO_SEMAFORO.en_observacion
   const bloques: [string, ResumenSemaforo['nuevo']][] = [[`desde el ${fecha(r.desde).split(' ').slice(0, 2).join(' ')} (cuenta)`, r.nuevo], ['todo lo simulado', r.todo]]
-  const filas: [string, keyof ResumenSemaforo['nuevo']][] = [['🟢 verde', 'verde'], ['🟡 amarillo', 'amarillo'], ['⚪ sin dato', 'sinDato']]
+  const filas: [string, keyof ResumenSemaforo['nuevo']][] = [['🟢 verde', 'verde'], ['🟡 amarillo', 'amarillo'], ['🔴 rojo', 'rojo'], ['⚪ sin dato', 'sinDato']]
   return (
     <div style={{ ...tarjeta, marginTop: 12 }}>
-      <div style={{ ...rotulo, marginBottom: 4 }}>Semáforo del elegido · verdes contra amarillos</div>
+      <div style={{ ...rotulo, marginBottom: 4 }}>Semáforo del elegido · por las espinas</div>
       <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
-        Verde: nuestro 1X2 a ≤ {num(r.umbral, 0)} pts de la casa en los tres resultados y el marcador declarado con el elegido.
-        Por escalones de verdes nuevos ({c.escalones.join(' · ')}): en {c.escalones.slice(0, -1).join(' y ')}, prometedor si el
-        intervalo queda entero sobre lo que pedía la cuota; en {c.nMinimo}, confirmado con el elegido {num(100 * c.ventajaMinima, 0)}+ pts
-        sobre lo que pedía, el intervalo encima y los amarillos por debajo. En cualquier escalón, no se sostiene si acierta menos de lo que pedía.
+        Sale de las espinas del parte, no de la cuota. Verde: la espina del elegido lo acompaña. Amarillo: dice empate, o la del
+        rival dice que sigue. Rojo: la espina del elegido dice que pierde, no apostar. Por escalones de amarillos y rojos nuevos
+        ({c.escalones.join(' · ')}): en {c.escalones.slice(0, -1).join(' y ')}, prometedor si el verde acierta {num(100 * c.separacionMinima, 0)}+ pts más;
+        en {c.nMinimo}, confirmado con esos puntos y el intervalo de los amarillos y rojos entero por debajo del verde. En cualquier
+        escalón, no se sostiene si el amarillo y el rojo no aciertan menos que el verde.
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg3)', font: '700 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
-          {c.escalon ? `escalón ${c.escalon}` : 'antes del escalón 70'}
+          {c.escalon ? `escalón ${c.escalon}` : `antes del escalón ${c.escalones[0]}`}
         </span>
         <span style={{ padding: '3px 9px', borderRadius: 6, background: est.fondo, font: '700 10.5px var(--mono)', color: est.color, letterSpacing: '.3px' }}>
           {est.etiqueta}
         </span>
         <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
-          {c.n} verdes{c.proximoEscalon ? ` · faltan ${c.faltan} para el ${c.proximoEscalon}` : ''}
+          {c.n} amarillos o rojos{c.proximoEscalon ? ` · faltan ${c.faltan} para el ${c.proximoEscalon}` : ''}
         </span>
       </div>
       <div style={{ overflowX: 'auto' }}>
