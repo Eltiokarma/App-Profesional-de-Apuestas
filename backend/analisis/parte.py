@@ -6647,11 +6647,17 @@ def _choques(filas) -> dict[int, dict[int, str]]:
         except ValueError:
             continue
         for tid, nombre in ((f["home_team_id"], f["home_name"]), (f["away_team_id"], f["away_name"])):
+            # EL HOMÓNIMO NO ES UN CHOQUE (13/11/2026, incidencia 1398: Atlético
+            # Nacional «también figura» en un partido de la Copa Perú que es de
+            # un club peruano con su id de la API). Los partidos ajenos ya los
+            # saltean los demás lectores (backend/partido_ajeno.py, 1371).
+            from backend import partido_ajeno
+            ajenos = partido_ajeno.ajenos_del_equipo(tid)
             # el MÁS CERCANO primero: con 24 h justas (1288) entra también el de la
             # jornada siguiente, y el motivo tiene que nombrar el choque de verdad
             for o in sorted(por_equipo.get(tid, []), key=lambda o, _t=t0: (
                     abs((_fecha_o(o) - _t).total_seconds()) if _fecha_o(o) else 1e12)):
-                if o["id"] == f["id"]:
+                if o["id"] == f["id"] or o["id"] in ajenos:
                     continue
                 try:
                     t1 = datetime.strptime((o["date"] or "")[:19], "%Y-%m-%d %H:%M:%S")

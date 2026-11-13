@@ -91,6 +91,11 @@ def misma_pila(uno: str, otro: str) -> bool:
     # de baja siendo titular). Solo esa letra y con el resto igual.
     if len(uno) >= 3 and len(uno) == len(otro) and uno[1:] == otro[1:] and {uno[0], otro[0]} == {"i", "j"}:
         return True
+    # LA «X» DEL AZERÍ SE TRANSLITERA «KH» (13/11/2026, incidencia 1397,
+    # Azerbaiyán: «Aykhan Abbasov» en la hoja y «Ayxan Abbasov» en la base).
+    # Solo si uno trae «kh» donde el otro trae «x», con el resto igual.
+    if "kh" in uno + otro and uno.replace("kh", "x") == otro.replace("kh", "x"):
+        return True
     if len(uno) > 3 and len(otro) > 3 and re.sub(r"(.)\1", r"\1", uno) == re.sub(r"(.)\1", r"\1", otro):
         return True
     if len(uno) == 1:
@@ -455,7 +460,9 @@ def solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
 # EL APODO DEL DT ES SU NOMBRE (31/10/2026, incidencia 951: la base marcó un
 # cambio de DT en el Granada de «Pacheta» a «José Rojo Martín», que es la misma
 # persona). Lista CERRADA, con el caso que la pidió: apodo → nombre civil.
-APODOS_DT = {"pacheta": "jose rojo martin"}
+# «Koldo» (13/11/2026, incidencia 1397, Andorra en la Nations League: la hoja
+# trae el apodo y la base el nombre civil; DT-DISCREPANCIA sonaba en falso).
+APODOS_DT = {"pacheta": "jose rojo martin", "koldo": "jesus luis alvarez de eulate guergue"}
 
 
 def tokens_dt(nombre: str) -> list[str]:

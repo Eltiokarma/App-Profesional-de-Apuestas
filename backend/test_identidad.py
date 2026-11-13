@@ -97,6 +97,14 @@ check("811: la «ð» es «d» en la normalización que usan todos (Guðmundsson
 from backend.analisis import dtp_cowork as _dtp811  # noqa: E402
 check("811: el ejecutor «A. Gudmundsson» se reconoce en una línea que dice «Guðmundsson»",
       _dtp811._nombra_ejecutor("penal: Guðmundsson (3 de 3)", ["A. Gudmundsson"]))
+# 1397 (13/11/2026, Nations League): el apodo y la transliteración del azerí
+check("1397: DT «Koldo» = «Jesús Luis Álvarez de Eulate Güergue» (Andorra: apodo)",
+      idn.mismo_dt("Koldo", "Jesús Luis Álvarez de Eulate Güergue")
+      and idn.mismo_nombre_dt("Koldo", "Jesús Luis Álvarez de Eulate Güergue"))
+check("1397: DT «Aykhan Abbasov» = «Ayxan Abbasov» (Azerbaiyán: x ↔ kh)",
+      idn.mismo_dt("Aykhan Abbasov", "Ayxan Abbasov") and idn.mismo_nombre_dt("Aykhan Abbasov", "Ayxan Abbasov"))
+check("1397: la x ↔ kh es solo de la pila y no junta a dos personas («Aykhan» no es «Ayman»)",
+      not idn.misma_pila("aykhan", "ayman") and not idn.mismo_nombre_dt("Aykhan Abbasov", "Ayman Abbasov"))
 check("DT: «Gustavo Alfaro» no es «Ricardo Gareca»", not idn.mismo_dt("Gustavo Alfaro", "Ricardo Gareca")
       and not idn.mismo_nombre_dt("Gustavo Alfaro", "Ricardo Gareca"))
 check("1096: «Héctor Ignacio Rodríguez Peña» no es «Andrés Rodríguez» (dos pilas enteras distintas)",
