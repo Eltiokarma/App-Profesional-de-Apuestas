@@ -1437,9 +1437,17 @@ def main():
           c.delete(A + f"/analisis/cowork/{fx}", headers=wb).status_code == 403
           and c.post(A + f"/analisis/cowork/{fx}/cuarentena", json={"motivo": "x" * 20}, headers=wb).status_code == 403)
     r_sim = c.get(A + "/analisis/simulacion", headers=wb)
-    check("web: lee la simulación de apuesta (doce estrategias, desde el 28/10)",
-          r_sim.status_code == 200 and len(r_sim.json()["estrategias"]) == 12
+    check("web: lee la simulación de apuesta (trece estrategias, desde el 28/10)",
+          r_sim.status_code == 200 and len(r_sim.json()["estrategias"]) == 13
           and r_sim.json()["desde"].startswith("2026-10-28"), r_sim.text[:200])
+    # 13/11/2026: la página y el gzip (usuario: «esa página demora mucho en cargarse»)
+    r_pag = c.get(A + "/analisis/simulacion", params={"pagina": 1, "porPagina": 20}, headers=wb)
+    check("web: la simulación paginada trae `paginacion` y `linea`, y sin porPagina todo como antes",
+          r_pag.status_code == 200 and r_pag.json()["paginacion"]["porPagina"] == 20
+          and isinstance(r_pag.json()["linea"], list) and "paginacion" not in r_sim.json(), r_pag.text[:200])
+    r_gz = c.get(A + "/analisis/simulacion", headers={**wb, "Accept-Encoding": "gzip"})
+    check("las respuestas grandes van comprimidas con gzip si el cliente lo acepta",
+          r_gz.status_code == 200 and r_gz.headers.get("content-encoding") == "gzip", dict(r_gz.headers))
     check("web: el backtest (calibración pesada) tampoco", 
           c.get(A + "/analisis/burbujas/backtest", headers=wb).status_code == 403)
     eq_w = c.get(A + "/fixtures?limit=1", headers=wb).json()[0]["local"]["id"]

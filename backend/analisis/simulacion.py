@@ -163,21 +163,30 @@ ESTRATEGIAS = (
     # solo con los partidos donde el elegido tiene 60 %+
     ("martingala60", f"Martingala {CONFIANZA_ALTA:g} %+",
      f"la misma martingala por líneas, solo cuando nuestro elegido tiene {CONFIANZA_ALTA:g} % o más"),
-    # la martingala del método con el marcador (13/11/2026, usuario: «también
-    # voy a querer un martingala a este método»; y el mismo día: «reemplazala
-    # por la del marcador alineado 🟢⚽, no solo por martingala ⚽»): con el
-    # semáforo en verde Y el marcador más probable con el elegido
-    ("martingalaVerdeMarcador", "Martingala en verde con el marcador",
-     "la misma martingala por líneas, solo con el semáforo en verde Y el marcador más probable con el elegido"),
+    # LA MARTINGALA AJUSTADA A LA CUOTA (13/11/2026, usuario: «agrega la
+    # martingala ajustada a la cuota tanto a Martin 60 % y al Método 🟢⚽, borra
+    # martingala Método 🟢⚽ sin ajuste»). La clásica duplica y solo recupera
+    # con cuota 2,00+; con favoritos (1,40-1,60) dos derrotas dejan un hueco que
+    # el acierto no tapa (la 🟢⚽ clásica ganó 76 de 112 y quedó en −0,8 %). La
+    # ajustada apuesta lo que recupera lo perdido en la línea MÁS lo que habría
+    # ganado 1 u: 1 + pérdida / (cuota − 1). Recupera de verdad, y crece más
+    # rápido que duplicar: la caída máxima y la apuesta máxima lo dicen.
+    ("martingala60Ajustada", f"Martingala {CONFIANZA_ALTA:g} %+ ajustada",
+     f"por líneas, solo con nuestro elegido a {CONFIANZA_ALTA:g} % o más; tras perder apuesta 1 + lo perdido en "
+     "la línea / (cuota − 1): recupera todo y gana lo de 1 u, con cualquier cuota"),
+    ("martingalaAjustadaVerdeMarcador", "Martingala 🟢⚽ ajustada",
+     "la martingala ajustada a la cuota, solo con el semáforo en verde Y el marcador más probable con el elegido"),
 )
-_MARTINGALAS = ("martingala", "martingala60", "martingalaVerdeMarcador")
+_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaAjustadaVerdeMarcador")
+# las que, tras perder, apuestan lo que recupera según la cuota (no duplican)
+_AJUSTADAS = ("martingala60Ajustada", "martingalaAjustadaVerdeMarcador")
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
 _CON_FRENO = ("proporcional", "metodoVerde", "metodoMarcador", "metodoVerdeMarcador")
 # las que apuestan solo con el marcador más probable alineado con el elegido
-_CON_MARCADOR = ("metodoMarcador", "metodoVerdeMarcador", "martingalaVerdeMarcador")
+_CON_MARCADOR = ("metodoMarcador", "metodoVerdeMarcador", "martingalaAjustadaVerdeMarcador")
 # …y las que además piden el semáforo en verde
-_VERDE_MARCADOR = ("metodoVerdeMarcador", "martingalaVerdeMarcador")
-_SOLO_ALTA = ("plana60", "martingala60")
+_VERDE_MARCADOR = ("metodoVerdeMarcador", "martingalaAjustadaVerdeMarcador")
+_SOLO_ALTA = ("plana60", "martingala60", "martingala60Ajustada")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
 
@@ -617,9 +626,13 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         if libres:
             linea = min(libres, key=lambda l: (l["libreDesde"], l["id"]))
         else:
-            linea = {"id": len(e["lineas"]) + 1, "proximo": UNIDAD, "libreDesde": t, "ocupada": False}
+            linea = {"id": len(e["lineas"]) + 1, "proximo": UNIDAD, "libreDesde": t, "ocupada": False,
+                     "perdida": 0.0}
             e["lineas"].append(linea)
         previsto = linea["proximo"]
+        if clave in _AJUSTADAS:
+            c = fila["cuotas"][sel]
+            previsto = UNIDAD + (linea["perdida"] / (c - 1) if c > 1 else 0.0)
     elif clave == "plana60":
         sel = fila["elegido"]
         previsto = UNIDAD if fila["probabilidades"][sel] >= CONFIANZA_ALTA else 0.0
@@ -662,8 +675,13 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         e["ganadas"] += 1 if gano else 0
         if r["linea"]:
             l = e["lineas"][r["linea"] - 1]
-            # una derrota duplica lo que la línea IBA a apostar, aunque la plata libre lo haya recortado
-            l.update(ocupada=False, libreDesde=t, proximo=UNIDAD if gano else r["_previsto"] * 2)
+            if clave in _AJUSTADAS:
+                # lo perdido en la línea: un acierto lo descuenta (entero si la apuesta no se recortó)
+                l["perdida"] = max(0.0, l["perdida"] - ganancia) if gano else l["perdida"] + r["monto"]
+                l.update(ocupada=False, libreDesde=t, proximo=UNIDAD)
+            else:
+                # una derrota duplica lo que la línea IBA a apostar, aunque la plata libre lo haya recortado
+                l.update(ocupada=False, libreDesde=t, proximo=UNIDAD if gano else r["_previsto"] * 2)
         r["ganancia"] = round(ganancia, 4)
         e["pico"] = max(e["pico"], e["banca"])
         if e["pico"] > 0:
@@ -737,9 +755,15 @@ def simular(apuestas: list[dict]) -> dict:
             "caidaMaxima": round(e["caida"], 4), "quebro": e["quebro"],
             # lo más que estuvo en juego a la vez y la apuesta más grande
             "exposicionMaxima": round(e["exposicion"], 2), "montoMaximo": round(e["montoMax"], 2),
-            "lineas": ({"abiertas": len(e["lineas"]),
-                        "perdiendo": sum(1 for l in e["lineas"] if l["proximo"] > UNIDAD),
-                        "proximoMayor": round(max((l["proximo"] for l in e["lineas"]), default=UNIDAD), 2)}
+            "lineas": (({"abiertas": len(e["lineas"]),
+                         "perdiendo": sum(1 for l in e["lineas"] if l.get("perdida", 0) > 0.005),
+                         "proximoMayor": UNIDAD,
+                         # la ajustada no tiene un «próximo» fijo (depende de la cuota): lo que lleva perdido
+                         "perdidaMayor": round(max((l.get("perdida", 0) for l in e["lineas"]), default=0.0), 2)}
+                        if clave in _AJUSTADAS else
+                        {"abiertas": len(e["lineas"]),
+                         "perdiendo": sum(1 for l in e["lineas"] if l["proximo"] > UNIDAD),
+                         "proximoMayor": round(max((l["proximo"] for l in e["lineas"]), default=UNIDAD), 2)})
                        if clave in _MARTINGALAS else None),
             # solo el método: cómo está hoy el freno de cada tramo
             "tramos": ([{"tramo": tr, **freno_tramo(e["tramos"].get(tr, ()))} for tr, _, _ in TRAMOS_CONFIANZA]
@@ -826,18 +850,40 @@ def huella_simulacion() -> tuple:
     return (tuple(tuple(f) for f in partes), fx, cu)
 
 
-def simulacion() -> dict:
-    """Arma las apuestas desde los partes y la base y las simula (con caché por huella)."""
+def simulacion(pagina: int | None = None, por_pagina: int | None = None) -> dict:
+    """Arma las apuestas desde los partes y la base y las simula (con caché por
+    huella). Con `por_pagina`, la lista de apuestas viene paginada (la más nueva
+    primero) y la gráfica sale de `linea` + `estrategias[].serie`: la cuenta es
+    la misma, solo se manda menos (13/11/2026, usuario: «esa página demora mucho
+    en cargarse, se cargan muchos partidos… poner # de páginas»)."""
     import time as _t
     if SIMULACION_TTL_S <= 0:
-        return _simulacion()
-    huella = huella_simulacion()
-    hit = _SIM_CACHE.get("v")
-    if hit and hit[0] == huella and _t.monotonic() - hit[1] < SIMULACION_TTL_S:
-        return hit[2]
-    out = _simulacion()
-    _SIM_CACHE["v"] = (huella, _t.monotonic(), out)
-    return out
+        out = _simulacion()
+    else:
+        huella = huella_simulacion()
+        hit = _SIM_CACHE.get("v")
+        if hit and hit[0] == huella and _t.monotonic() - hit[1] < SIMULACION_TTL_S:
+            out = hit[2]
+        else:
+            out = _simulacion()
+            _SIM_CACHE["v"] = (huella, _t.monotonic(), out)
+    return paginar(out, pagina, por_pagina) if por_pagina else out
+
+
+def paginar(out: dict, pagina: int | None, por_pagina: int) -> dict:
+    """Una página de `apuestas` (sin tocar la salida en caché) más `linea`: lo
+    mínimo de cada partido cerrado, en el orden de `estrategias[].serie`, para
+    la gráfica y su tooltip sin mandar las ~400 apuestas con sus 13 series."""
+    todas = out["apuestas"]
+    por_pagina = max(1, int(por_pagina))
+    paginas = max(1, math.ceil(len(todas) / por_pagina))
+    pagina = min(max(1, int(pagina or 1)), paginas)
+    cerradas = [a for a in reversed(todas) if a["estado"] == "cerrada"]
+    return {**out, "apuestas": todas[(pagina - 1) * por_pagina: pagina * por_pagina],
+            "paginacion": {"pagina": pagina, "porPagina": por_pagina, "total": len(todas), "paginas": paginas},
+            "linea": [{"fixtureId": a["fixtureId"], "pitazo": a["pitazo"], "local": a["partido"]["local"],
+                       "visita": a["partido"]["visita"], "resultado": a["resultado"],
+                       "sad": (a.get("versiones") or {}).get("sad-analysis") or ""} for a in cerradas]}
 
 
 # EL MARCADOR MÁS PROBABLE de cada partido (13/11/2026): el del modelo de

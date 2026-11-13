@@ -15,18 +15,18 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingalaVerdeMarcador', string> = {
+const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaAjustadaVerdeMarcador', string> = {
   proporcional: 'var(--sim-proporcional)', metodoVerde: 'var(--sim-metodo-verde)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
   // el método con el marcador más probable (13/11/2026)
-  metodoMarcador: 'var(--sim-metodo-marcador)', metodoVerdeMarcador: 'var(--sim-metodo-verde-marcador)', martingalaVerdeMarcador: 'var(--sim-martingala-verde-marcador)',
+  metodoMarcador: 'var(--sim-metodo-marcador)', metodoVerdeMarcador: 'var(--sim-metodo-verde-marcador)', martingalaAjustadaVerdeMarcador: 'var(--sim-martingala-verde-marcador)', martingala60Ajustada: 'var(--sim-martingala60-ajustada)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoMarcador: 'Método ⚽', metodoVerdeMarcador: 'Método 🟢⚽', martingalaVerdeMarcador: 'Martin. 🟢⚽', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoMarcador: 'Método ⚽', metodoVerdeMarcador: 'Método 🟢⚽', martingalaAjustadaVerdeMarcador: 'Martin. 🟢⚽ aj.', martingala60Ajustada: 'Martin. 60 %+ aj.', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -49,9 +49,19 @@ const colorDe = (x: number | null) => (x == null || x === 0 ? 'var(--t2)' : x > 
 const tarjeta: React.CSSProperties = { background: 'var(--bg2)', border: '1px solid var(--line)', borderRadius: 12, padding: '13px 14px', minWidth: 0 }
 const rotulo: React.CSSProperties = { font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', textTransform: 'uppercase' }
 
+// LA LISTA DE APUESTAS PAGINADA (13/11/2026, usuario: «esa página demora mucho
+// en cargarse, se cargan muchos partidos… poner # de páginas»): el backend manda
+// una página y la gráfica sale de `linea` + `estrategias[].serie`
+const POR_PAGINA = 20
+
 export function Simulacion({ isMobile }: { isMobile: boolean }) {
-  const sim = useAsync<SimulacionApuesta>(() => getDataSource().simulacion(), 'simulacion')
+  const sim = useAsync<SimulacionApuesta>(() => getDataSource().simulacion(1, POR_PAGINA), 'simulacion')
   const [kelly, setKelly] = useState<Kelly>('kelly')
+  const [pagina, setPagina] = useState(1)
+  // la página 1 ya vino con la carga principal; las otras se piden al cambiar
+  const pag = useAsync<SimulacionApuesta | null>(
+    () => (pagina === 1 ? Promise.resolve(null) : getDataSource().simulacion(pagina, POR_PAGINA)), 'sim-pagina-' + pagina)
+  const lista = useRef<HTMLDivElement>(null)
 
   const pad = isMobile ? '16px 14px 40px' : '22px 26px 48px'
   if (sim.loading && !sim.data) return <div style={{ padding: pad, font: '500 12px var(--sans)', color: 'var(--t3)' }}>Simulando…</div>
@@ -73,9 +83,20 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
     ...(['metodoMarcador', 'metodoVerdeMarcador'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
     { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
     { clave: 'martingala60', color: COLOR.martingala60 },
-    ...(d.estrategias.some((e) => e.clave === 'martingalaVerdeMarcador') ? [{ clave: 'martingalaVerdeMarcador' as EstrategiaClave, color: COLOR.martingalaVerdeMarcador }] : []),
+    // las martingalas ajustadas a la cuota (13/11/2026): recuperan con cualquier cuota
+    ...(['martingala60Ajustada', 'martingalaAjustadaVerdeMarcador'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
   ]
-  const cerradas = [...d.apuestas].reverse().filter((a) => a.estado === 'cerrada')
+  // la gráfica: lo mínimo de cada cerrada (`linea`) y la banca de cada serie; sin
+  // `linea` (respuesta sin paginar) se arma de las apuestas, como antes
+  const linea = d.linea ?? [...d.apuestas].reverse().filter((a) => a.estado === 'cerrada').map((a) => ({
+    fixtureId: a.fixtureId, pitazo: a.pitazo, local: a.partido.local, visita: a.partido.visita,
+    resultado: a.resultado as Resultado1x2, sad: a.versiones['sad-analysis'] ?? '' }))
+  const paginacion = d.paginacion
+  const deLaPagina = pagina === 1 ? d.apuestas : pag.data?.apuestas ?? null
+  const irA = (p: number) => {
+    setPagina(p)
+    lista.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <div style={{ padding: pad, maxWidth: 1080 }}>
@@ -105,8 +126,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
 
       <div style={{ ...tarjeta, marginBottom: 12 }}>
         <div style={{ ...rotulo, marginBottom: 8 }}>Evolución de la banca · partido a partido</div>
-        {cerradas.length ? (
-          <GraficaBanca cerradas={cerradas} series={visibles.map((v) => ({ ...v, nombre: est(v.clave).nombre }))} inicial={d.bancaInicial} />
+        {linea.length ? (
+          <GraficaBanca linea={linea} series={visibles.map((v) => ({ ...v, nombre: est(v.clave).nombre, serie: est(v.clave).serie }))} inicial={d.bancaInicial} />
         ) : (
           <div style={{ padding: '26px 8px', textAlign: 'center', font: '500 12px var(--sans)', color: 'var(--t3)' }}>
             Todavía no hay partidos cerrados desde el inicio de la simulación: la curva aparece con el primer resultado.
@@ -124,15 +145,26 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
 
       {d.alertaConfianza && <TablaAlerta r={d.alertaConfianza} isMobile={isMobile} />}
 
-      <div style={{ ...rotulo, margin: '18px 0 8px' }}>Apuestas · la más nueva primero</div>
-      {d.apuestas.length ? (
+      <div ref={lista} style={{ ...rotulo, margin: '18px 0 8px', scrollMarginTop: 12 }}>
+        Apuestas · la más nueva primero{paginacion ? ` · ${paginacion.total} en total` : ''}
+      </div>
+      {paginacion && paginacion.paginas > 1 && <Paginador pagina={pagina} paginas={paginacion.paginas} irA={irA} />}
+      {pag.error && pagina !== 1 ? (
+        <div style={{ ...tarjeta, font: '500 12px var(--sans)', color: 'var(--down)' }}>No se pudo leer la página {pagina}: {pag.error}</div>
+      ) : !deLaPagina ? (
+        <div style={{ ...tarjeta, font: '500 12px var(--sans)', color: 'var(--t3)' }}>Cargando la página {pagina}…</div>
+      ) : deLaPagina.length ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {d.apuestas.map((a) => <FilaApuesta key={a.fixtureId} a={a} visibles={visibles} />)}
+          {deLaPagina.map((a) => <FilaApuesta key={a.fixtureId} a={a} visibles={visibles} />)}
         </div>
       ) : (
         <div style={{ ...tarjeta, textAlign: 'center', font: '500 12px var(--sans)', color: 'var(--t3)' }}>
           Sin partes con 1X2 y cuotas desde el inicio de la simulación.
         </div>
+      )}
+
+      {paginacion && paginacion.paginas > 1 && deLaPagina && deLaPagina.length > 0 && (
+        <div style={{ marginTop: 10 }}><Paginador pagina={pagina} paginas={paginacion.paginas} irA={irA} /></div>
       )}
 
       {d.excluidos.length > 0 && (
@@ -185,7 +217,9 @@ function TarjetaEstrategia({ e, color }: { e: EstrategiaSimulada; color: string 
       {e.lineas && e.lineas.abiertas > 0 && e.quebro == null && (
         <div style={{ marginTop: 6, font: '500 10.5px var(--sans)', color: 'var(--t2)' }}>
           {e.lineas.abiertas} línea{e.lineas.abiertas === 1 ? '' : 's'} abierta{e.lineas.abiertas === 1 ? '' : 's'}
-          {e.lineas.perdiendo > 0
+          {e.lineas.perdiendo > 0 && e.lineas.perdidaMayor != null
+            ? ` · ${e.lineas.perdiendo} viene${e.lineas.perdiendo === 1 ? '' : 'n'} de perder (la más cargada lleva ${num(e.lineas.perdidaMayor)} u perdidas; la próxima apuesta las recupera según la cuota)`
+            : e.lineas.perdiendo > 0
             ? ` · ${e.lineas.perdiendo} viene${e.lineas.perdiendo === 1 ? '' : 'n'} de perder (la más cargada va por ${num(e.lineas.proximoMayor)} u)`
             : ' · todas en 1 u'}
         </div>
@@ -220,8 +254,34 @@ function FrenoTramos({ tramos }: { tramos: FrenoTramo[] }) {
   )
 }
 
-function GraficaBanca({ cerradas, series, inicial }: {
-  cerradas: ApuestaSimulada[]; series: { clave: EstrategiaClave; color: string; nombre: string }[]; inicial: number
+type PuntoLinea = NonNullable<SimulacionApuesta['linea']>[number]
+
+/** Los números de página: 1 … p−1 p p+1 … N, con anterior y siguiente. */
+function Paginador({ pagina, paginas, irA }: { pagina: number; paginas: number; irA: (p: number) => void }) {
+  const nums = [...new Set([1, pagina - 1, pagina, pagina + 1, paginas])].filter((p) => p >= 1 && p <= paginas).sort((a, b) => a - b)
+  const boton = (activo: boolean): React.CSSProperties => ({
+    minWidth: 30, height: 30, padding: '0 8px', borderRadius: 8, cursor: activo ? 'default' : 'pointer',
+    border: `1px solid ${activo ? 'var(--accent)' : 'var(--line)'}`, background: activo ? 'var(--bg3)' : 'var(--bg2)',
+    color: activo ? 'var(--t1)' : 'var(--t2)', font: '700 11px var(--mono)', fontVariantNumeric: 'tabular-nums',
+  })
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center', marginBottom: 8 }}>
+      <button disabled={pagina === 1} onClick={() => irA(pagina - 1)} style={{ ...boton(false), opacity: pagina === 1 ? 0.4 : 1 }} aria-label="Página anterior">‹</button>
+      {nums.map((p, i) => (
+        <span key={p} style={{ display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+          {i > 0 && p - nums[i - 1] > 1 && <span style={{ color: 'var(--t3)', font: '600 11px var(--mono)' }}>…</span>}
+          <button onClick={() => p !== pagina && irA(p)} style={boton(p === pagina)} aria-current={p === pagina ? 'page' : undefined}>{p}</button>
+        </span>
+      ))}
+      <button disabled={pagina === paginas} onClick={() => irA(pagina + 1)} style={{ ...boton(false), opacity: pagina === paginas ? 0.4 : 1 }} aria-label="Página siguiente">›</button>
+    </div>
+  )
+}
+
+function GraficaBanca({ linea, series, inicial }: {
+  linea: PuntoLinea[]
+  series: { clave: EstrategiaClave; color: string; nombre: string; serie: EstrategiaSimulada['serie'] }[]
+  inicial: number
 }) {
   const caja = useRef<HTMLDivElement>(null)
   const [ancho, setAncho] = useState(600)
@@ -236,8 +296,9 @@ function GraficaBanca({ cerradas, series, inicial }: {
 
   const H = 220
   const m = { t: 10, r: 12, b: 22, l: 44 }
-  const n = cerradas.length
-  const valores = series.map((s) => [inicial, ...cerradas.map((a) => a.porEstrategia[s.clave]?.banca ?? inicial)])
+  const n = linea.length
+  // la banca de cada serie tras cada cerrada: `serie` empieza en la banca inicial
+  const valores = series.map((s) => Array.from({ length: n + 1 }, (_, i) => s.serie[i]?.banca ?? s.serie[s.serie.length - 1]?.banca ?? inicial))
   const todos = valores.flat()
   let lo = Math.min(...todos, inicial)
   let hi = Math.max(...todos, inicial)
@@ -253,7 +314,7 @@ function GraficaBanca({ cerradas, series, inicial }: {
     const i = Math.round(((e.clientX - r.left - m.l) / (ancho - m.l - m.r)) * n)
     setHover(Math.max(0, Math.min(n, i)))
   }
-  const a = hover != null && hover > 0 ? cerradas[hover - 1] : null
+  const a = hover != null && hover > 0 ? linea[hover - 1] : null
 
   return (
     <div ref={caja} style={{ position: 'relative' }}>
@@ -295,9 +356,9 @@ function GraficaBanca({ cerradas, series, inicial }: {
           pointerEvents: 'none', maxWidth: 230, font: '500 10.5px var(--sans)', color: 'var(--t2)',
         }}>
           <div style={{ font: '700 11px var(--sans)', color: 'var(--t1)', marginBottom: 4 }}>
-            {a ? `${a.partido.local} – ${a.partido.visita}` : 'Banca inicial'}
+            {a ? `${a.local} – ${a.visita}` : 'Banca inicial'}
           </div>
-          {a && <div style={{ marginBottom: 4 }}>{fecha(a.pitazo)} · salió {a.resultado ? RES[a.resultado] : '—'} · sad {a.versiones['sad-analysis'] || '—'}</div>}
+          {a && <div style={{ marginBottom: 4 }}>{fecha(a.pitazo)} · salió {a.resultado ? RES[a.resultado] : '—'} · sad {a.sad || '—'}</div>}
           {series.map((s, si) => (
             <div key={s.clave} style={{ display: 'flex', alignItems: 'center', gap: 6, fontVariantNumeric: 'tabular-nums' }}>
               <span style={{ width: 8, height: 2, background: s.color }} />
@@ -687,8 +748,8 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
-                    : ['proporcional', 'metodoVerde', 'metodoMarcador', 'metodoVerdeMarcador', 'martingalaVerdeMarcador'].includes(v.clave) ? `no apuesta: ${r.motivo}`
-                    : v.clave === 'plana60' || v.clave === 'martingala60' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
+                    : ['proporcional', 'metodoVerde', 'metodoMarcador', 'metodoVerdeMarcador', 'martingalaAjustadaVerdeMarcador'].includes(v.clave) ? `no apuesta: ${r.motivo}`
+                    : v.clave === 'plana60' || v.clave === 'martingala60' || v.clave === 'martingala60Ajustada' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>
               )}

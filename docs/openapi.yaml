@@ -1376,7 +1376,7 @@ paths:
       summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
       description: >
         Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
-        partes, con doce series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), el método solo cuando el marcador más probable del modelo de goles va con el elegido (`metodoMarcador`, 13/11/2026), lo mismo con el semáforo en verde (`metodoVerdeMarcador`) y la martingala con el semáforo en verde Y el marcador alineado (`martingalaVerdeMarcador`), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
+        partes, con trece series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), el método solo cuando el marcador más probable del modelo de goles va con el elegido (`metodoMarcador`, 13/11/2026), lo mismo con el semáforo en verde (`metodoVerdeMarcador`) y las martingalas AJUSTADAS A LA CUOTA (tras perder apuestan 1 + lo perdido en la línea / (cuota − 1): recuperan con cualquier cuota) con el elegido a 60 %+ (`martingala60Ajustada`) y con el semáforo en verde Y el marcador alineado (`martingalaAjustadaVerdeMarcador`), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
         derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
@@ -1386,7 +1386,13 @@ paths:
         cuota es la media de las casas en la última captura prepartido (con su margen). Cada
         apuesta trae la versión de cada skill que estaba en la cuenta al depositar (la del 1X2 es
         `sad-analysis`). Se recalcula al leer. No es una recomendación de apuesta. Lectura
-        (token web); no abierto a Cowork.
+        (token web); no abierto a Cowork. Con `porPagina` (13/11/2026, usuario: «esa página demora mucho en
+        cargarse»), `apuestas` trae solo esa página (la más nueva primero), con `paginacion`, y `linea` trae lo
+        mínimo de cada partido cerrado para la gráfica (en el orden de `estrategias[].serie`). Sin `porPagina`,
+        todo como siempre. La respuesta va comprimida (gzip) si el cliente lo acepta.
+      parameters:
+        - { name: pagina, in: query, schema: { type: integer, minimum: 1 }, description: '1 = la más nueva; fuera de rango, la última' }
+        - { name: porPagina, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
       responses:
         '200':
           description: OK
@@ -2015,6 +2021,26 @@ components:
     SimulacionApuesta:
       type: object
       properties:
+        paginacion:
+          type: object
+          description: 'solo con `porPagina`'
+          properties:
+            pagina: { type: integer }
+            porPagina: { type: integer }
+            total: { type: integer, description: 'todas las apuestas (cerradas y por jugarse)' }
+            paginas: { type: integer }
+        linea:
+          type: array
+          description: 'solo con `porPagina`: cada partido cerrado, del más viejo al más nuevo (el orden de `estrategias[].serie` sin su primer punto, la banca inicial)'
+          items:
+            type: object
+            properties:
+              fixtureId: { type: integer }
+              pitazo: { type: string }
+              local: { type: string }
+              visita: { type: string }
+              resultado: { type: string, enum: [local, empate, visita] }
+              sad: { type: string, description: 'versión de sad-analysis del parte' }
         desde: { type: string, description: 'UTC; 00:00 de Lima del 28/10/2026' }
         bancaInicial: { type: number }
         unidad: { type: number }
@@ -2027,7 +2053,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [proporcional, metodoVerde, metodoMarcador, metodoVerdeMarcador, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingalaVerdeMarcador] }
+              clave: { type: string, enum: [proporcional, metodoVerde, metodoMarcador, metodoVerdeMarcador, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaAjustadaVerdeMarcador] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -2048,6 +2074,7 @@ components:
                   abiertas: { type: integer }
                   perdiendo: { type: integer }
                   proximoMayor: { type: number }
+                  perdidaMayor: { type: number, description: 'solo las martingalas ajustadas a la cuota: lo que lleva perdido la línea más cargada (su próxima apuesta depende de la cuota)' }
               tramos:
                 type: array
                 nullable: true

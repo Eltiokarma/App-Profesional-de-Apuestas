@@ -235,9 +235,15 @@ fijo por escalones de **alineados** nuevos cerrados
 Tres series en papel (`GET /analisis/simulacion`, tabla «Marcador más
 probable · con el elegido»): **`metodoMarcador`** (el método, solo con el
 marcador alineado), **`metodoVerdeMarcador`** (además con el semáforo en verde)
-y **`martingalaVerdeMarcador`** (la martingala por líneas, solo con el semáforo
-en verde Y el marcador alineado; el usuario la pidió y el mismo 13/11 la cambió
-de «solo el marcador» a 🟢⚽). La rutina de los lunes lo reporta en la sección
+y **`martingalaAjustadaVerdeMarcador`** (la martingala AJUSTADA A LA CUOTA con el
+semáforo en verde Y el marcador alineado). La martingala clásica duplica y solo
+recupera con cuota 2,00+: con favoritos (1,40-1,60) la 🟢⚽ clásica ganó 76 de
+112 (67,9 %) y quedó en −0,8 %. La ajustada, tras perder, apuesta
+**1 + lo perdido en la línea / (cuota − 1)**: recupera todo y gana lo de 1 u
+con cualquier cuota, a cambio de apuestas que crecen más rápido. Decisión del
+usuario el 13/11: «agrega la martingala ajustada a la cuota tanto a Martin 60 %
+y al Método 🟢⚽, borra martingala Método 🟢⚽ sin ajuste» (también existe
+**`martingala60Ajustada`**, al lado de la clásica de 60 %+). La rutina de los lunes lo reporta en la sección
 «Marcador» de `python -m backend.contacto`. Este marcador lo ve también el
 analista (va en `golesAcotados` del parte): no es una señal que él pueda
 pintar, porque sale de la base.
