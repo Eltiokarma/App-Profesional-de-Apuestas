@@ -195,7 +195,8 @@ export interface SadDataSource {
   /** Las ligas que analizamos normalmente (13/11/2026): con parte en los últimos `dias`. */
   ligasAnalizadas(dias?: number): Promise<LigasAnalizadasDTO>
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana, Kelly y martingala. */
-  simulacion(): Promise<SimulacionApuesta>
+  /** con `porPagina`, `apuestas` paginada y `linea` para la gráfica (13/11/2026) */
+  simulacion(pagina?: number, porPagina?: number): Promise<SimulacionApuesta>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones(params?: LeccionesParams): Promise<InventarioLecciones>
   /** Cuarentena por criterio (docs/APRENDIZAJE.md): la pone el usuario, con motivo. */
@@ -963,8 +964,20 @@ class MockDataSource implements SadDataSource {
     return { dias, ligas: [{ ligaId: LIGA_NUM.laliga, partes: 41, ultima: MOCK_NOW.slice(0, 10) }, { ligaId: LIGA_NUM.premier, partes: 37, ultima: MOCK_NOW.slice(0, 10) }] }
   }
 
-  async simulacion(): Promise<SimulacionApuesta> {
-    return SIMULACION_DEMO
+  async simulacion(pagina?: number, porPagina?: number): Promise<SimulacionApuesta> {
+    if (!porPagina) return SIMULACION_DEMO
+    // la misma página que arma el backend (`simulacion.paginar`)
+    const todas = SIMULACION_DEMO.apuestas
+    const paginas = Math.max(1, Math.ceil(todas.length / porPagina))
+    const p = Math.min(Math.max(1, pagina ?? 1), paginas)
+    const cerradas = [...todas].reverse().filter((a) => a.estado === 'cerrada')
+    return {
+      ...SIMULACION_DEMO,
+      apuestas: todas.slice((p - 1) * porPagina, p * porPagina),
+      paginacion: { pagina: p, porPagina, total: todas.length, paginas },
+      linea: cerradas.map((a) => ({ fixtureId: a.fixtureId, pitazo: a.pitazo, local: a.partido.local, visita: a.partido.visita,
+        resultado: a.resultado!, sad: a.versiones['sad-analysis'] ?? '' })),
+    }
   }
 
   async lecciones(params?: LeccionesParams): Promise<InventarioLecciones> {
@@ -1356,7 +1369,7 @@ class HttpDataSource implements SadDataSource {
     return Object.fromEntries(Object.entries(r.partes).map(([k, v]) => [Number(k), v]))
   }
   ligasAnalizadas = (dias?: number) => SadApi.ligasAnalizadas(dias)
-  simulacion = () => SadApi.simulacion()
+  simulacion = (pagina?: number, porPagina?: number) => SadApi.simulacion(pagina, porPagina)
   lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
   cuarentena = (fixtureId: number, motivo: string, ensena = false) => SadApi.cuarentena(fixtureId, motivo, ensena)
   quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)

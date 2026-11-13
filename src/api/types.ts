@@ -2749,7 +2749,7 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingalaVerdeMarcador'
+export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaAjustadaVerdeMarcador'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
@@ -2787,7 +2787,8 @@ export interface EstrategiaSimulada {
   /** la apuesta más grande */
   montoMaximo: number
   /** solo martingala: líneas abiertas, cuántas vienen de perder y el próximo monto más alto */
-  lineas: { abiertas: number; perdiendo: number; proximoMayor: number } | null
+  /** solo martingalas; `perdidaMayor` solo en las ajustadas a la cuota (lo que lleva perdido la línea más cargada) */
+  lineas: { abiertas: number; perdiendo: number; proximoMayor: number; perdidaMayor?: number } | null
   /** solo el método (proporcional y metodoVerde): el freno de cada tramo de confianza ahora */
   tramos: FrenoTramo[] | null
   serie: { fixtureId: number | null; pitazo: string | null; banca: number }[]
@@ -2990,6 +2991,10 @@ export interface ResumenAlerta {
 }
 
 export interface SimulacionApuesta {
+  /** solo con `porPagina` (13/11/2026): la página de `apuestas` */
+  paginacion?: { pagina: number; porPagina: number; total: number; paginas: number }
+  /** solo con `porPagina`: lo mínimo de cada cerrada para la gráfica, en el orden de `estrategias[].serie` */
+  linea?: { fixtureId: number; pitazo: string; local: string; visita: string; resultado: Resultado1x2; sad: string }[]
   desde: string
   bancaInicial: number
   unidad: number

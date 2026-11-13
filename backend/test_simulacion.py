@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las doce estrategias (con el método, en verde y con el marcador)", len(out["estrategias"]) == 12, out.keys())
+check("simulacion() responde con las trece estrategias (con el método, en verde, con el marcador y las martingalas ajustadas)", len(out["estrategias"]) == 13, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -484,20 +484,38 @@ check("metodoMarcador apuesta SOLO con el marcador alineado (1, 2 y 4), no con 1
 check("metodoVerdeMarcador pide además el verde (1 y 2, no el 4 en amarillo)",
       _em["metodoVerdeMarcador"]["apuestas"] == 2
       and _fm[4]["porEstrategia"]["metodoVerdeMarcador"]["motivo"] == "semáforo no está en verde")
-_m1, _m2 = _fm[1]["porEstrategia"]["martingalaVerdeMarcador"], _fm[2]["porEstrategia"]["martingalaVerdeMarcador"]
-check("martingalaVerdeMarcador: pierde 1 u en el 1 y duplica a 2 u en el 2, con la misma línea",
-      _m1["monto"] == 1.0 and _m1["ganancia"] == -1.0 and _m2["monto"] == 2.0 and _m2["linea"] == _m1["linea"]
-      and _em["martingalaVerdeMarcador"]["lineas"] is not None, (_m1, _m2))
-check("…y no toca la línea con el marcador 1-1 (el 3 no apuesta) ni sin marcador",
-      _fm[3]["porEstrategia"]["martingalaVerdeMarcador"]["monto"] == 0
-      and _fm[5]["porEstrategia"]["martingalaVerdeMarcador"]["monto"] == 0)
-# 🟢⚽ (13/11/2026, usuario: «reemplazala por la del marcador alineado 🟢⚽»): el 4
-# tiene el marcador alineado pero el semáforo en amarillo, y la martingala no apuesta
-check("martingalaVerdeMarcador pide además el verde: no apuesta el 4 (alineado en amarillo) → 2 apuestas",
-      _em["martingalaVerdeMarcador"]["apuestas"] == 2
-      and _fm[4]["porEstrategia"]["martingalaVerdeMarcador"]["motivo"] == "semáforo no está en verde"
-      and _em["martingalaVerdeMarcador"]["nombre"] == "Martingala en verde con el marcador",
-      _fm[4]["porEstrategia"]["martingalaVerdeMarcador"])
+# LA MARTINGALA AJUSTADA A LA CUOTA (13/11/2026, usuario): tras perder apuesta
+# 1 + lo perdido / (cuota − 1). Cuota 1,80: pierde 1 en el 1 → en el 2 apuesta
+# 1 + 1/0,8 = 2,25, gana 1,80 y la línea queda +0,80 (lo de 1 u), sin pérdida
+_m1, _m2 = (_fm[1]["porEstrategia"]["martingalaAjustadaVerdeMarcador"],
+            _fm[2]["porEstrategia"]["martingalaAjustadaVerdeMarcador"])
+_ea = _em["martingalaAjustadaVerdeMarcador"]
+check("martingala 🟢⚽ ajustada: pierde 1 u y después apuesta 2,25 (recupera y gana lo de 1 u), misma línea",
+      _m1["monto"] == 1.0 and _m1["ganancia"] == -1.0 and _m2["monto"] == 2.25 and _m2["ganancia"] == 1.8
+      and _m2["linea"] == _m1["linea"] and _ea["banca"] == 100.8
+      and _ea["lineas"]["perdiendo"] == 0 and _ea["lineas"]["perdidaMayor"] == 0, (_m1, _m2, _ea["lineas"]))
+check("…pide el verde y el marcador: no apuesta el 3 (1-1), el 4 (amarillo) ni el 5 (sin marcador)",
+      _ea["apuestas"] == 2 and _fm[4]["porEstrategia"]["martingalaAjustadaVerdeMarcador"]["motivo"] == "semáforo no está en verde"
+      and _fm[3]["porEstrategia"]["martingalaAjustadaVerdeMarcador"]["monto"] == 0
+      and _fm[5]["porEstrategia"]["martingalaAjustadaVerdeMarcador"]["monto"] == 0)
+check("la 🟢⚽ clásica (sin ajuste) ya no existe, por decisión del usuario",
+      "martingalaVerdeMarcador" not in _em and "martingalaMarcador" not in _em)
+# la 60 %+ ajustada: dos derrotas seguidas con cuota 1,50 y después un acierto
+def _ap60(fid, pit, res):
+    a = _apm(fid, pit, res, None)
+    a["probabilidades"] = {"local": 65, "empate": 20, "visita": 15}
+    a["cuotas"] = {"local": 1.5, "empate": 4.0, "visita": 6.0}
+    return a
+_o60 = sim.simular([_ap60(21, "2026-11-14 15:00:00", "visita"), _ap60(22, "2026-11-14 20:00:00", "empate"),
+                    _ap60(23, "2026-11-15 15:00:00", "local")])
+_f60 = {a["fixtureId"]: a["porEstrategia"]["martingala60Ajustada"] for a in _o60["apuestas"]}
+_e60 = {e["clave"]: e for e in _o60["estrategias"]}
+check("martingala 60 %+ ajustada: 1 → 1 + 1/0,5 = 3 → 1 + 4/0,5 = 9, y el acierto deja la línea en +0,5",
+      [_f60[k]["monto"] for k in (21, 22, 23)] == [1.0, 3.0, 9.0] and _f60[23]["ganancia"] == 4.5
+      and _e60["martingala60Ajustada"]["banca"] == 100.5, _f60)
+check("…mientras la clásica de 60 %+ (1, 2, 4) cierra en −1 con la misma secuencia",
+      [a["porEstrategia"]["martingala60"]["monto"] for a in sorted(_o60["apuestas"], key=lambda x: x["fixtureId"])]
+      == [1.0, 2.0, 4.0] and _e60["martingala60"]["banca"] == 99.0)
 check("el método con el marcador lleva el freno por tramo, como el método",
       _em["metodoMarcador"]["tramos"] is not None and _em["metodoVerdeMarcador"]["tramos"] is not None)
 _rm = _om["marcador"]
@@ -529,6 +547,17 @@ check("escalón 60: 75 % contra 50 % con el IC entero encima → CONFIRMADO", _c
 _c = _crit_m(60, 37, 200, 100)
 check("escalón 60: +11,7 pts pero el IC toca el 50 % → sin contacto", _c["estado"] == "sin_contacto", _c)
 check("el criterio está fijado (30 · 60, 10 pts)", sim.MARCADOR_ESCALONES == (30, 60) and sim.MARCADOR_SEPARACION == 0.10)
+
+# LA PÁGINA (13/11/2026, usuario: «esa página demora mucho en cargarse»): la
+# misma cuenta, solo se manda menos; `linea` va en el orden de `serie`
+_pg = sim.paginar(_om, 2, 2)
+check("paginar: 5 apuestas de 2 en 2 → 3 páginas, la 2.ª trae 2, y la salida en caché no se toca",
+      _pg["paginacion"] == {"pagina": 2, "porPagina": 2, "total": 5, "paginas": 3} and len(_pg["apuestas"]) == 2
+      and _pg["apuestas"] == _om["apuestas"][2:4] and len(_om["apuestas"]) == 5 and "linea" not in _om, _pg["paginacion"])
+check("…fuera de rango da la última, y `linea` = las cerradas en el orden de estrategias[].serie",
+      sim.paginar(_om, 99, 2)["paginacion"]["pagina"] == 3
+      and [x["fixtureId"] for x in _pg["linea"]] == [p["fixtureId"] for p in _em["proporcional"]["serie"][1:]]
+      and all(set(x) == {"fixtureId", "pitazo", "local", "visita", "resultado", "sad"} for x in _pg["linea"]), _pg["linea"])
 
 # el marcador sale del modelo de goles, con la historia anterior (cacheado por partido)
 import backend.analisis.goles as _gm  # noqa: E402

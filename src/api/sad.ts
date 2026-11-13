@@ -180,7 +180,8 @@ export const SadApi = {
   ligasAnalizadas: (dias?: number) => apiGet<LigasAnalizadasDTO>('/analisis/ligas-analizadas' + qs({ dias })),
 
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026 (plana, Kelly, martingala). */
-  simulacion: () => apiGet<SimulacionApuesta>('/analisis/simulacion', { timeoutMs: 60_000 }),
+  simulacion: (pagina?: number, porPagina?: number) =>
+    apiGet<SimulacionApuesta>('/analisis/simulacion' + qs({ pagina, porPagina }), { timeoutMs: 60_000 }),
 
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones: (params?: LeccionesParams) =>

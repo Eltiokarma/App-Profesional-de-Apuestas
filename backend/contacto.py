@@ -211,7 +211,7 @@ def informe_marcador(out: dict) -> str:
             for nom, k in (("alineado", "alineado"), ("resto", "resto"), ("verde y alineado", "verdeAlineado"))))
     lineas.append(f"  → {s['criterio']['texto']}")
     for clave, nombre in (("metodoMarcador", "método con el marcador"), ("metodoVerdeMarcador", "método en verde con el marcador"),
-                          ("martingalaVerdeMarcador", "martingala en verde con el marcador")):
+                          ("martingalaAjustadaVerdeMarcador", "martingala 🟢⚽ ajustada")):
         e = next((x for x in out.get("estrategias") or [] if x["clave"] == clave), None)
         if e:
             lineas.append(f"  {nombre}: banca {e['banca']:.2f} en {e['apuestas']} apuestas "

@@ -198,6 +198,14 @@ async def rate_limiter(request: Request, call_next):
     return await call_next(request)
 
 
+# GZIP (13/11/2026, usuario: «esa página demora mucho en cargarse»): la
+# Simulación mandaba ~1 MB de JSON por lectura, Aprendizaje y los partes también
+# pasan de cientos de KB, y nada iba comprimido. El JSON se comprime ~10 veces;
+# el navegador y urllib/httpx lo descomprimen solos. No hay respuestas en
+# streaming que bufferizar. Va antes de CORS: CORS sigue siendo la capa de afuera.
+from fastapi.middleware.gzip import GZipMiddleware  # noqa: E402
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 # CORS se registra el último para que envuelva a auth y rate limit (los 401/429
 # también deben llevar cabeceras CORS). Sin SAD_CORS_ORIGINS solo se permiten
 # los orígenes de desarrollo local; en despliegue, fijar el dominio real.
@@ -2846,12 +2854,14 @@ def analisis_ligas_analizadas(dias: int = Query(default=30, ge=1, le=180)):
 
 
 @app.get(API + "/analisis/simulacion")
-def analisis_simulacion():
+def analisis_simulacion(pagina: int | None = Query(default=None, ge=1),
+                        porPagina: int | None = Query(default=None, ge=1, le=200,
+                                                      description="con él, `apuestas` viene paginada y llega `linea`")):
     """Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana
     (control), Kelly (entero, ½ y ¼) y martingala, cada apuesta con la versión
     de los skills con la que se escribió el parte. Se recalcula al leer."""
     from backend.analisis import simulacion
-    return simulacion.simulacion()
+    return simulacion.simulacion(pagina, porPagina)
 
 
 @app.get(API + "/analisis/cowork/espina/calibracion")
