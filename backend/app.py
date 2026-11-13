@@ -438,6 +438,12 @@ def _calentar_loop() -> None:
         try:
             from backend.analisis import lecciones
             lecciones.calentar()
+            # LA SIMULACIÓN TAMBIÉN (13/11/2026): con las series del marcador
+            # calcula los goles acotados de cada parte (una vez por proceso y
+            # partido); después de un deploy eso no lo paga el primer pedido.
+            # Con la huella igual, es de milisegundos.
+            from backend.analisis import simulacion
+            simulacion.simulacion()
         except Exception as e:  # noqa: BLE001 — calentar es un atajo: si falla, la pantalla calcula al leer como siempre
             print(f"[calentar] falló: {e}", flush=True)
         time.sleep(CALENTAR_S)

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenSemaforo, SimulacionApuesta, TrasFallos } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenMarcador, ResumenSemaforo, SimulacionApuesta, TrasFallos } from '../api/types'
 import { SemaforoChip } from '../components/SemaforoChip'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
@@ -15,16 +15,18 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'proporcional' | 'metodoVerde' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60', string> = {
+const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingalaMarcador', string> = {
   proporcional: 'var(--sim-proporcional)', metodoVerde: 'var(--sim-metodo-verde)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
+  // el método con el marcador más probable (13/11/2026)
+  metodoMarcador: 'var(--sim-metodo-marcador)', metodoVerdeMarcador: 'var(--sim-metodo-verde-marcador)', martingalaMarcador: 'var(--sim-martingala-marcador)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoMarcador: 'Método ⚽', metodoVerdeMarcador: 'Método 🟢⚽', martingalaMarcador: 'Martin. ⚽', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -67,8 +69,11 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
     { clave: 'proporcional', color: COLOR.proporcional },
     // el método solo en verde (11/11/2026): en papel, para medir el semáforo
     ...(d.estrategias.some((e) => e.clave === 'metodoVerde') ? [{ clave: 'metodoVerde' as EstrategiaClave, color: COLOR.metodoVerde }] : []),
+    // el método con el marcador más probable (13/11/2026): en papel, para medir el marcador
+    ...(['metodoMarcador', 'metodoVerdeMarcador'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
     { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
     { clave: 'martingala60', color: COLOR.martingala60 },
+    ...(d.estrategias.some((e) => e.clave === 'martingalaMarcador') ? [{ clave: 'martingalaMarcador' as EstrategiaClave, color: COLOR.martingalaMarcador }] : []),
   ]
   const cerradas = [...d.apuestas].reverse().filter((a) => a.estado === 'cerrada')
 
@@ -115,6 +120,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
 
       {d.semaforo && <TablaSemaforo r={d.semaforo} isMobile={isMobile} />}
 
+      {d.marcador && <TablaMarcador r={d.marcador} isMobile={isMobile} />}
+
       {d.alertaConfianza && <TablaAlerta r={d.alertaConfianza} isMobile={isMobile} />}
 
       <div style={{ ...rotulo, margin: '18px 0 8px' }}>Apuestas · la más nueva primero</div>
@@ -144,7 +151,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
       )}
 
       <div style={{ marginTop: 16, font: '500 11px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-        {d.estrategias.filter((e) => ['proporcional', 'metodoVerde', 'plana', 'plana60', kelly, 'martingala', 'martingala60'].includes(e.clave)).map((e) => (
+        {d.estrategias.filter((e) => visibles.some((v) => v.clave === e.clave)).map((e) => (
           <div key={e.clave}><b style={{ color: 'var(--t2)' }}>{e.nombre}</b>: {e.descripcion}.</div>
         ))}
         <div style={{ marginTop: 6 }}>{d.nota}.</div>
@@ -442,6 +449,76 @@ function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean 
   )
 }
 
+// EL MARCADOR MÁS PROBABLE CON EL ELEGIDO (13/11/2026, usuario: «no era medir
+// contra la cuota, era medir si nuestro win rate mejoraba»): alineados contra el
+// resto, con el criterio por escalones fijado antes de los partidos nuevos
+function TablaMarcador({ r, isMobile }: { r: ResumenMarcador; isMobile: boolean }) {
+  const tasa = (x: number | null | undefined) => (x == null ? '—' : `${num(100 * x, 1)} %`)
+  const ic = (i: [number, number] | null) => (i ? `${num(100 * i[0], 0)}-${num(100 * i[1], 0)} %` : '—')
+  const celda: React.CSSProperties = { padding: '5px 6px', textAlign: 'right' }
+  const c = r.criterio
+  const est = ESTADO_SEMAFORO[c.estado] ?? ESTADO_SEMAFORO.en_observacion
+  const bloques: [string, ResumenMarcador['nuevo']][] = [[`desde el ${fecha(r.desde).split(' ').slice(0, 2).join(' ')} (cuenta)`, r.nuevo], ['todo lo simulado', r.todo]]
+  const filas: [string, keyof ResumenMarcador['nuevo']][] = [['⚽ con el elegido', 'alineado'], ['1-1, 0-0 o contrario', 'resto'], ['🟢⚽ verde y con el elegido', 'verdeAlineado'], ['sin marcador', 'sinMarcador']]
+  return (
+    <div style={{ ...tarjeta, marginTop: 12 }}>
+      <div style={{ ...rotulo, marginBottom: 4 }}>Marcador más probable · con el elegido</div>
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
+        El más probable del modelo de goles (el de la lista de Partidos), con la historia anterior al partido: el mismo al minuto 0.
+        Se juzga el win rate del elegido, no la cuota. Por escalones de partidos con el marcador alineado ({c.escalones.join(' · ')}):
+        en {c.escalones.slice(0, -1).join(' y ')}, prometedor si ganan {num(100 * c.separacionMinima, 0)}+ pts más que el resto; en {c.nMinimo},
+        confirmado con esos puntos y el intervalo de los alineados entero por encima. En cualquier escalón, no se sostiene si no ganan más.
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg3)', font: '700 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          {c.escalon ? `escalón ${c.escalon}` : `antes del escalón ${c.escalones[0]}`}
+        </span>
+        <span style={{ padding: '3px 9px', borderRadius: 6, background: est.fondo, font: '700 10.5px var(--mono)', color: est.color, letterSpacing: '.3px' }}>
+          {est.etiqueta}
+        </span>
+        <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
+          {c.n} alineados{c.proximoEscalon ? ` · faltan ${c.faltan} para el ${c.proximoEscalon}` : ''}
+        </span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          <thead>
+            <tr style={{ color: 'var(--t3)' }}>
+              <th style={{ ...celda, textAlign: 'left', fontWeight: 600 }}></th>
+              <th style={{ ...celda, fontWeight: 600 }}>casos</th>
+              <th style={{ ...celda, fontWeight: 600 }}>win rate</th>
+              <th style={{ ...celda, fontWeight: 600 }}>IC 95 %</th>
+              <th style={{ ...celda, fontWeight: 600 }}>pedía</th>
+              <th style={{ ...celda, fontWeight: 600 }}>1 u plano</th>
+            </tr>
+          </thead>
+          {bloques.map(([titulo, g]) => (
+            <tbody key={titulo}>
+              <tr><td colSpan={6} style={{ ...celda, textAlign: 'left', paddingTop: 9, font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px' }}>{titulo.toUpperCase()}</td></tr>
+              {filas.map(([nombre, k]) => {
+                const x: GrupoSemaforo = g[k]
+                return (
+                  <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
+                    <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: 700, fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>{nombre}</td>
+                    <td style={celda}>{x.n}</td>
+                    <td style={{ ...celda, color: 'var(--t1)', fontWeight: 700 }}>{tasa(x.tasa)}</td>
+                    <td style={celda}>{ic(x.intervalo)}</td>
+                    <td style={celda}>{tasa(x.pide)}</td>
+                    <td style={{ ...celda, color: colorDe(x.roiPlano) }}>{pct(x.roiPlano)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          ))}
+        </table>
+      </div>
+      <div style={{ marginTop: 8, font: '600 11px var(--sans)', color: est.color, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+        {c.texto}
+      </div>
+    </div>
+  )
+}
+
 // EN QUIÉN DESCONFIAR (10/11/2026, usuario): la alerta no cambia el elegido;
 // esto mide, hacia adelante, si con alerta acertamos menos que sin ella
 function TablaAlerta({ r, isMobile }: { r: ResumenAlerta; isMobile: boolean }) {
@@ -550,6 +627,12 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
             ⚠ desconfiar
           </span>
         )}
+        {a.marcador && (
+          <span title={`Marcador más probable del modelo de goles: ${a.marcador.masProbable} (${num(100 * a.marcador.prob, 0)} %) · ${a.marcador.alineado ? 'va con el elegido' : 'no va con el elegido'}`}
+            style={{ padding: '1px 6px', borderRadius: 5, font: '700 9.5px var(--mono)', fontVariantNumeric: 'tabular-nums', border: `1px solid ${a.marcador.alineado ? 'var(--sim-metodo-marcador)' : 'var(--line)'}`, color: a.marcador.alineado ? 'var(--sim-metodo-marcador)' : 'var(--t3)' }}>
+            ⚽ {a.marcador.masProbable}
+          </span>
+        )}
         <span style={{
           marginLeft: 'auto', padding: '2px 8px', borderRadius: 6, font: '700 10px var(--sans)',
           background: !cerrada ? 'var(--bg3)' : acierto ? 'var(--up-soft)' : 'var(--down-soft)',
@@ -604,7 +687,7 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
-                    : v.clave === 'proporcional' || v.clave === 'metodoVerde' ? `no apuesta: ${r.motivo}`
+                    : ['proporcional', 'metodoVerde', 'metodoMarcador', 'metodoVerdeMarcador', 'martingalaMarcador'].includes(v.clave) ? `no apuesta: ${r.motivo}`
                     : v.clave === 'plana60' || v.clave === 'martingala60' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>

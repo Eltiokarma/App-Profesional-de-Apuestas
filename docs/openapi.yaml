@@ -1376,7 +1376,7 @@ paths:
       summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
       description: >
         Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
-        partes, con nueve series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
+        partes, con doce series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), el método solo cuando el marcador más probable del modelo de goles va con el elegido (`metodoMarcador`, 13/11/2026), lo mismo con el semáforo en verde (`metodoVerdeMarcador`) y su martingala (`martingalaMarcador`), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
         derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
@@ -1998,6 +1998,13 @@ components:
         pide: { type: number, nullable: true, description: 'media de 1/cuota del elegido, 0-1' }
         ventaja: { type: number, nullable: true, description: 'tasa − pide' }
         roiPlano: { type: number, nullable: true, description: '1 u al elegido: ganancia / apostado' }
+    GruposMarcador:
+      type: object
+      properties:
+        alineado: { $ref: '#/components/schemas/GrupoSemaforo' }
+        resto: { $ref: '#/components/schemas/GrupoSemaforo' }
+        sinMarcador: { $ref: '#/components/schemas/GrupoSemaforo' }
+        verdeAlineado: { $ref: '#/components/schemas/GrupoSemaforo' }
     GruposSemaforo:
       type: object
       properties:
@@ -2020,7 +2027,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [proporcional, metodoVerde, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60] }
+              clave: { type: string, enum: [proporcional, metodoVerde, metodoMarcador, metodoVerdeMarcador, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingalaMarcador] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -2044,7 +2051,7 @@ components:
               tramos:
                 type: array
                 nullable: true
-                description: 'solo el método (proporcional y metodoVerde): el freno de cada tramo de confianza AHORA, sobre sus últimos 50 partidos cerrados (con o sin apuesta)'
+                description: 'solo el método (proporcional, metodoVerde, metodoMarcador y metodoVerdeMarcador): el freno de cada tramo de confianza AHORA, sobre sus últimos 50 partidos cerrados (con o sin apuesta)'
                 items:
                   type: object
                   properties:
@@ -2144,6 +2151,48 @@ components:
                 estado: { type: string, enum: [en_observacion, prometedor, no_se_sostiene, confirmado, sin_contacto] }
                 texto: { type: string }
             nota: { type: string }
+        marcador:
+          type: object
+          description: >
+            EL MARCADOR MÁS PROBABLE CON EL ELEGIDO (13/11/2026, usuario: «medir si nuestro win rate mejoraba»).
+            El más probable del modelo de goles (`GolesAcotados.masProbables[0]`, con la historia anterior al
+            partido: el mismo al minuto 0). Alineados contra el resto (1-1, 0-0 o contrario) y sin marcador, en
+            todo lo simulado y en lo NUEVO desde `desde`, que es lo único que cuenta para el criterio POR
+            ESCALONES DE ALINEADOS (fijado antes de los partidos nuevos): en 30, `prometedor` si los alineados
+            ganan 10+ pts más; en 60, `confirmado` con 10+ pts y el límite INFERIOR del IC de los alineados por
+            encima del win rate del resto (si no, `sin_contacto`); en cualquier escalón, `no_se_sostiene` si no
+            ganan más. Se juzga el win rate; la cuota viaja como información.
+          properties:
+            desde: { type: string, description: 'UTC; 00:00 de Lima del 14/11/2026' }
+            todo: { $ref: '#/components/schemas/GruposMarcador' }
+            nuevo: { $ref: '#/components/schemas/GruposMarcador' }
+            criterio:
+              type: object
+              properties:
+                escalon: { type: integer, enum: [0, 30, 60] }
+                proximoEscalon: { type: integer, nullable: true }
+                escalones: { type: array, items: { type: integer } }
+                faltan: { type: integer }
+                n: { type: integer, description: 'alineados nuevos cerrados' }
+                alineados:
+                  type: object
+                  properties:
+                    n: { type: integer }
+                    tasa: { type: number, nullable: true }
+                    intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 %, 0-1' }
+                resto:
+                  type: object
+                  properties:
+                    n: { type: integer }
+                    tasa: { type: number, nullable: true }
+                separacion: { type: number, nullable: true, description: '0-1: win rate de los alineados − el del resto' }
+                nMinimo: { type: integer }
+                separacionMinima: { type: number }
+                alineadosEncima: { type: boolean, description: 'el límite inferior del IC de los alineados, por encima del win rate del resto' }
+                cumple: { type: boolean, description: 'true solo con `confirmado`' }
+                estado: { type: string, enum: [en_observacion, prometedor, no_se_sostiene, confirmado, sin_contacto] }
+                texto: { type: string }
+            nota: { type: string }
         alertaConfianza:
           type: object
           description: >
@@ -2221,6 +2270,15 @@ components:
                         codigo: { type: string, enum: [SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO] }
                         detalle: { type: string }
               semaforo: { $ref: '#/components/schemas/SemaforoElegido' }
+              marcador:
+                type: object
+                nullable: true
+                description: 'el marcador más probable del modelo de goles contra el elegido (13/11/2026); null sin modelo o sin historia'
+                properties:
+                  masProbable: { type: string, description: '«1-0»' }
+                  prob: { type: number, description: '0-1' }
+                  signo: { type: string, enum: [local, empate, visita] }
+                  alineado: { type: boolean, description: 'el signo del marcador es el elegido' }
               kelly:
                 type: object
                 properties:

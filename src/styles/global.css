@@ -33,6 +33,9 @@
   --sim-martingala60: #c98500;
   --sim-proporcional: #e0559f;
   --sim-metodo-verde: #7cbf3c;
+  --sim-metodo-marcador: #2bb3c0;
+  --sim-metodo-verde-marcador: #8a6fd1;
+  --sim-martingala-marcador: #d1475b;
   /* grid de las gráficas: la línea base acercada un 20% al texto para que
      las guías se lean sin robar protagonismo a las series */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
@@ -67,6 +70,9 @@
   --sim-martingala60: #b07400;
   --sim-proporcional: #c2307e;
   --sim-metodo-verde: #4c8a17;
+  --sim-metodo-marcador: #0f8794;
+  --sim-metodo-verde-marcador: #6a4fb8;
+  --sim-martingala-marcador: #b5283e;
   /* se redeclara aquí: var() dentro de una custom property se resuelve donde
      se define, no donde se usa — sin esto el grid claro heredaría el oscuro */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);

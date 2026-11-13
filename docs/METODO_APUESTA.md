@@ -196,6 +196,51 @@ escribiendo la espina a favor de su elegido y la señal moriría. Viaja solo en 
 y en `/analisis/semaforo` (el chip de la web), que el token de Cowork no abre;
 `backend/test_semaforo.py` lo verifica.
 
+## El marcador más probable con el elegido (13/11/2026)
+
+El usuario: «si el marcador más probable se alinea con lo que dice el parte…
+lo más probable es que gane»; y después: «la filosofía no era medir contra la
+cuota, era medir si nuestro win rate mejoraba». Es el marcador más probable
+del **modelo de goles** (`goles.acotar_fixture`, `masProbables[0]`, el de la
+lista de Partidos), no el que declara el analista (decisión del usuario el
+13/11: «el calculado»). Sale de la historia ANTERIOR al partido, así que al
+minuto 0 es el mismo que en cualquier lectura. **Alineado** = su signo es el
+elegido (1-0 o 2-1 con el local elegido, 0-1 con la visita).
+
+Medido el 13/11 sobre 748 partes con veredicto (14/09-13/11, sin copas
+nacionales, elegido local o visita):
+
+- win rate **66,7 %** con el marcador alineado (n 210) contra **52,3 %** con
+  1-1/0-0 (n 533); 67 % contra 51 % hasta el 31/10 y 66 % contra 56 % desde
+  el 01/11. Los tres más probables con el elegido: **83 %** (n 53).
+- Dentro del verde del semáforo separa otros 10 pts: verde y alineado 66 %
+  (n 187), verde con 1-1 56 % (n 392), no-verde con 1-1 38 % (n 65).
+- Contra la cuota no separa (el alineado aparece con favoritos claros: la
+  casa pedía 60 % contra 48 %), y apostar solo a los alineados dio ROI plano
+  +3,8 % contra +5,2 % de todos. Se juzga el win rate; la banca de las series
+  dice lo otro.
+
+Se encontró en esos datos: **se mide hacia adelante** desde los partidos del
+**14/11/2026** (00:00 de Lima, `simulacion.MARCADOR_DESDE`) con un criterio
+fijo por escalones de **alineados** nuevos cerrados
+(`simulacion.criterio_marcador`):
+
+| escalón | estado |
+|---|---|
+| antes de 30 | `en_observacion` |
+| cualquiera | `no_se_sostiene` si los alineados no ganan más que el resto |
+| **30** | `prometedor` con **10+ pts** de win rate sobre el resto |
+| **60** | `confirmado` con 10+ pts y el límite **inferior** del IC de los alineados por encima del resto; si no, `sin_contacto` |
+
+Tres series en papel (`GET /analisis/simulacion`, tabla «Marcador más
+probable · con el elegido»): **`metodoMarcador`** (el método, solo con el
+marcador alineado), **`metodoVerdeMarcador`** (además con el semáforo en verde)
+y **`martingalaMarcador`** (la martingala por líneas, solo con el marcador
+alineado: pedido del usuario). La rutina de los lunes lo reporta en la sección
+«Marcador» de `python -m backend.contacto`. Este marcador lo ve también el
+analista (va en `golesAcotados` del parte): no es una señal que él pueda
+pintar, porque sale de la base.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

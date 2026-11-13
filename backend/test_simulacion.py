@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las nueve estrategias (con el método y el método en verde)", len(out["estrategias"]) == 9, out.keys())
+check("simulacion() responde con las doce estrategias (con el método, en verde y con el marcador)", len(out["estrategias"]) == 12, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -454,6 +454,97 @@ check("parte: sin cuotas, la casa queda en null pero el bloque sale",
 from backend.analisis import parte as _pt  # noqa: E402
 check("DESCONFIAR es calculada (se descarta del depósito) y `desconfianza` es eco",
       "DESCONFIAR" in _pt._ALERTAS_CALCULADAS and "desconfianza" in _pt._ECO_PARTE)
+
+# ── EL MÉTODO CON EL MARCADOR (13/11/2026, usuario: «si el marcador más
+# probable se alinea con el elegido… lo más probable es que gane»; y «también
+# voy a querer un martingala a este método») ─────────────────────────────────
+def _apm(fid, pit, res, mp, verde=True):
+    p = {"local": 55, "empate": 25, "visita": 20}
+    sg = {"1-0": "local", "2-1": "local", "1-1": "empate", "0-1": "visita"}.get(mp)
+    return {"fixtureId": fid, "pitazo": pit, "partido": {"local": "A", "visita": "B", "liga": "L"},
+            "depositadoEn": pit, "versiones": {}, "versionPrompt": "", "probabilidades": p,
+            "cuotas": {"local": 1.8, "empate": 3.6, "visita": 4.5}, "mercado": {"local": 54, "empate": 26, "visita": 20},
+            "resultado": res,
+            "semaforo": {"estado": "confirma" if verde else "duda", "motivos": []},
+            "marcador": ({"masProbable": mp, "prob": 0.12, "signo": sg, "alineado": sg == "local"} if mp else None)}
+_om = sim.simular([_apm(1, "2026-11-14 15:00:00", "visita", "1-0"),
+                   _apm(2, "2026-11-14 20:00:00", "local", "1-0"),
+                   _apm(3, "2026-11-15 15:00:00", "local", "1-1"),
+                   _apm(4, "2026-11-15 20:00:00", "local", "2-1", verde=False),
+                   _apm(5, "2026-11-16 15:00:00", "local", None)])
+_em = {e["clave"]: e for e in _om["estrategias"]}
+_fm = {a["fixtureId"]: a for a in _om["apuestas"]}
+check("marcador: las tres series nuevas existen (método, verde + marcador, martingala)",
+      all(c in _em for c in sim._CON_MARCADOR))
+check("metodoMarcador apuesta SOLO con el marcador alineado (1, 2 y 4), no con 1-1 ni sin marcador",
+      _em["metodoMarcador"]["apuestas"] == 3
+      and _fm[3]["porEstrategia"]["metodoMarcador"]["motivo"] == "el marcador más probable (1-1) no va con el elegido"
+      and _fm[5]["porEstrategia"]["metodoMarcador"]["motivo"] == "sin marcador del modelo de goles",
+      [_fm[k]["porEstrategia"]["metodoMarcador"] for k in (3, 5)])
+check("metodoVerdeMarcador pide además el verde (1 y 2, no el 4 en amarillo)",
+      _em["metodoVerdeMarcador"]["apuestas"] == 2
+      and _fm[4]["porEstrategia"]["metodoVerdeMarcador"]["motivo"] == "semáforo no está en verde")
+_m1, _m2 = _fm[1]["porEstrategia"]["martingalaMarcador"], _fm[2]["porEstrategia"]["martingalaMarcador"]
+check("martingalaMarcador: pierde 1 u en el 1 y duplica a 2 u en el 2, con la misma línea",
+      _m1["monto"] == 1.0 and _m1["ganancia"] == -1.0 and _m2["monto"] == 2.0 and _m2["linea"] == _m1["linea"]
+      and _em["martingalaMarcador"]["lineas"] is not None, (_m1, _m2))
+check("…y no toca la línea con el marcador 1-1 (el 3 no apuesta) ni sin marcador",
+      _fm[3]["porEstrategia"]["martingalaMarcador"]["monto"] == 0
+      and _fm[5]["porEstrategia"]["martingalaMarcador"]["monto"] == 0 and _em["martingalaMarcador"]["apuestas"] == 3)
+check("el método con el marcador lleva el freno por tramo, como el método",
+      _em["metodoMarcador"]["tramos"] is not None and _em["metodoVerdeMarcador"]["tramos"] is not None)
+_rm = _om["marcador"]
+check("el resumen separa alineados, resto y sin marcador, en todo y en lo nuevo",
+      (_rm["nuevo"]["alineado"]["n"], _rm["nuevo"]["resto"]["n"], _rm["nuevo"]["sinMarcador"]["n"]) == (3, 1, 1)
+      and _rm["nuevo"]["verdeAlineado"]["n"] == 2 and _rm["desde"] == sim.MARCADOR_DESDE == "2026-11-14 05:00:00", _rm)
+_viejo = sim.simular([_apm(9, "2026-11-12 15:00:00", "local", "1-0")])["marcador"]
+check("lo anterior al 14/11 entra en «todo» pero NO en el criterio",
+      _viejo["todo"]["alineado"]["n"] == 1 and _viejo["nuevo"]["alineado"]["n"] == 0
+      and _viejo["criterio"]["estado"] == "en_observacion" and _viejo["criterio"]["faltan"] == 30)
+
+
+def _crit_m(al, al_ac, resto, resto_ac):
+    g = lambda n, k: sim._grupo_semaforo([{"resultado": "local" if i < k else "visita", "elegido": "local",  # noqa: E731
+                                           "cuotas": {"local": 1.8}} for i in range(n)])
+    return sim.criterio_marcador(g(al, al_ac), g(resto, resto_ac))
+_c = _crit_m(29, 25, 100, 50)
+check("criterio marcador: con 29 alineados, en observación aunque separe", _c["estado"] == "en_observacion"
+      and _c["faltan"] == 1, _c)
+_c = _crit_m(30, 20, 100, 50)
+check("escalón 30: 66,7 % contra 50 % (+16,7) → PROMETEDOR", _c["estado"] == "prometedor" and _c["escalon"] == 30, _c)
+_c = _crit_m(30, 16, 100, 50)
+check("escalón 30: +3,3 pts → en observación", _c["estado"] == "en_observacion", _c)
+_c = _crit_m(30, 14, 100, 50)
+check("escalón 30: los alineados ganan menos → NO SE SOSTIENE", _c["estado"] == "no_se_sostiene", _c)
+_c = _crit_m(60, 45, 200, 100)
+check("escalón 60: 75 % contra 50 % con el IC entero encima → CONFIRMADO", _c["estado"] == "confirmado"
+      and _c["cumple"] and _c["alineadosEncima"], _c)
+_c = _crit_m(60, 37, 200, 100)
+check("escalón 60: +11,7 pts pero el IC toca el 50 % → sin contacto", _c["estado"] == "sin_contacto", _c)
+check("el criterio está fijado (30 · 60, 10 pts)", sim.MARCADOR_ESCALONES == (30, 60) and sim.MARCADOR_SEPARACION == 0.10)
+
+# el marcador sale del modelo de goles, con la historia anterior (cacheado por partido)
+import backend.analisis.goles as _gm  # noqa: E402
+_ac, sim._MARCADOR = _gm._acotar_fixture, {}
+_gm._acotar_fixture = lambda fx: {"masProbables": [{"marcador": "0-1", "prob": 0.11}]}  # noqa: E731
+try:
+    _mk = sim.marcador_de({"id": 77}, "visita")
+    _mk2 = sim.marcador_de({"id": 77}, "local")
+finally:
+    _gm._acotar_fixture = _ac
+check("marcador_de: el más probable del modelo de goles, alineado con la visita y no con el local",
+      _mk == {"masProbable": "0-1", "prob": 0.11, "signo": "visita", "alineado": True} and _mk2["alineado"] is False, _mk)
+sim._MARCADOR = {77: None}
+check("…y sin modelo o sin historia, None (no se inventa)", sim.marcador_de({"id": 77}, "local") is None)
+
+# el informe de los lunes (contacto) trae la sección «Marcador» con el del GET del parte
+from backend import contacto as _ct  # noqa: E402
+_pm = {"lecturaSad": {"golesAcotados": {"masProbables": [{"marcador": "2-1", "prob": 0.1}]}}}
+check("contacto._marcador lee lecturaSad.golesAcotados del GET del parte",
+      _ct._marcador(_pm, {"local": 50, "empate": 27, "visita": 23})["alineado"] is True
+      and _ct._marcador({}, {"local": 50, "empate": 27, "visita": 23}) is None)
+check("y el informe lo dice", "Marcador · cuenta desde 2026-11-14" in _ct.informe_marcador(_om)
+      and _om["marcador"]["criterio"]["texto"] in _ct.informe_marcador(_om))
 
 print("\nTODO OK" if not fallas else f"\n{fallas} FALLA(S)")
 sys.exit(1 if fallas else 0)

@@ -132,6 +132,19 @@ ESTRATEGIAS = (
     ("metodoVerde", "Método solo en verde",
      f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando el "
      "semáforo del elegido está en verde: la espina del elegido lo acompaña y la del rival no dice que siga"),
+    # EL MÉTODO CON EL MARCADOR (13/11/2026, usuario: «si el marcador más
+    # probable se alinea con el elegido… lo más probable es que gane»). El
+    # marcador más probable del modelo de goles (goles.acotar_fixture, el de la
+    # lista de Partidos): sale de la historia ANTERIOR al partido, así que es el
+    # mismo al minuto 0 que en cualquier lectura. Medido el 13/11 en 748 partes
+    # (14/09-13/11): el elegido ganó 66,7 % con el marcador alineado (n 210) y
+    # 52,3 % con 1-1/0-0 (n 533). El criterio cuenta desde `MARCADOR_DESDE`.
+    ("metodoMarcador", "Método con el marcador",
+     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando el "
+     "marcador más probable del modelo de goles va con el elegido (1-0 o 2-1 para el local, 0-1 para la visita)"),
+    ("metodoVerdeMarcador", "Método en verde con el marcador",
+     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno) solo con el semáforo en verde Y el "
+     "marcador más probable con el elegido"),
     ("plana", "Apuesta plana (control)",
      f"{UNIDAD:g} unidad a nuestro elegido en cada partido"),
     # CONTROL DE CONFIANZA (29/10/2026, usuario): el tramo de 60 %+ es el que
@@ -150,10 +163,16 @@ ESTRATEGIAS = (
     # solo con los partidos donde el elegido tiene 60 %+
     ("martingala60", f"Martingala {CONFIANZA_ALTA:g} %+",
      f"la misma martingala por líneas, solo cuando nuestro elegido tiene {CONFIANZA_ALTA:g} % o más"),
+    # la martingala del método con el marcador (13/11/2026, usuario: «también
+    # voy a querer un martingala a este método»)
+    ("martingalaMarcador", "Martingala con el marcador",
+     "la misma martingala por líneas, solo cuando el marcador más probable va con el elegido"),
 )
-_MARTINGALAS = ("martingala", "martingala60")
-# las dos series con el freno por tramo (anotan todo partido cerrado del tramo)
-_CON_FRENO = ("proporcional", "metodoVerde")
+_MARTINGALAS = ("martingala", "martingala60", "martingalaMarcador")
+# las series con el freno por tramo (anotan todo partido cerrado del tramo)
+_CON_FRENO = ("proporcional", "metodoVerde", "metodoMarcador", "metodoVerdeMarcador")
+# las que apuestan solo con el marcador más probable alineado con el elegido
+_CON_MARCADOR = ("metodoMarcador", "metodoVerdeMarcador", "martingalaMarcador")
 _SOLO_ALTA = ("plana60", "martingala60")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
@@ -322,6 +341,87 @@ def criterio_semaforo(v: dict, nv: dict) -> dict:
     }
 
 
+# EL CRITERIO DEL MARCADOR (13/11/2026, usuario: «no era medir contra la cuota,
+# era medir si nuestro win rate mejoraba»). Fijado ANTES de los partidos nuevos
+# y, como el del semáforo, NO se mueve. Cuenta desde `MARCADOR_DESDE` (00:00 de
+# Lima del 14/11: la regla salió de los partes hasta el 13/11). Se juzga el
+# WIN RATE del elegido con el marcador más probable alineado contra el resto
+# (1-1, 0-0 o contrario). n = alineados nuevos cerrados (~28 % de los partes),
+# IC = Wilson 95 % de su acierto, con los escalones del semáforo:
+#   - n < 30: en observación.
+#   - en cualquier escalón: `no_se_sostiene` si los alineados ganan lo mismo
+#     o menos que el resto.
+#   - escalón 30: `prometedor` con 10+ pts sobre el resto; si no, en observación.
+#   - escalón 60: `confirmado` con 10+ pts y el límite INFERIOR del IC de los
+#     alineados por encima del win rate del resto; si no, `sin_contacto`.
+# La cuota viaja como información (`pide`, `roiPlano`): no decide.
+MARCADOR_DESDE = "2026-11-14 05:00:00"
+MARCADOR_ESCALONES = (30, 60)
+MARCADOR_SEPARACION = 0.10
+
+
+def criterio_marcador(al: dict, resto: dict) -> dict:
+    """El estado del criterio con los alineados (`al`) y el resto NUEVOS, cada
+    uno como lo arma `_grupo_semaforo`."""
+    n = al["n"]
+    escalon = max((e for e in MARCADOR_ESCALONES if n >= e), default=0)
+    proximo = next((e for e in MARCADOR_ESCALONES if n < e), None)
+    ta, tr, ic = al["tasa"], resto["tasa"], al["intervalo"]
+    sep = None if ta is None or tr is None else ta - tr
+    encima = ic is not None and tr is not None and ic[0] > tr
+    if escalon == 0:
+        estado = "en_observacion"
+    elif sep is None or sep <= 0:
+        estado = "no_se_sostiene"
+    elif escalon < MARCADOR_ESCALONES[-1]:
+        estado = "prometedor" if sep >= MARCADOR_SEPARACION - 1e-9 else "en_observacion"
+    else:
+        estado = "confirmado" if sep >= MARCADOR_SEPARACION - 1e-9 and encima else "sin_contacto"
+    pct = lambda x: f"{100 * x:.1f} %"  # noqa: E731
+    cifras = (f"el elegido gana {pct(ta)} con el marcador alineado ({n}, IC {100 * ic[0]:.0f}-{100 * ic[1]:.0f} %)"
+              f" y {pct(tr)} con el resto ({resto['n']}): {100 * sep:+.1f} pts" if sep is not None else "")
+    sigue = f" · faltan {proximo - n} alineados para el escalón {proximo}" if proximo else ""
+    textos = {
+        "confirmado": f"CONFIRMADO en el escalón {escalon}: {cifras}, {100 * MARCADOR_SEPARACION:.0f}+ pts con el "
+                      "intervalo de los alineados entero por encima del resto: el marcador separa",
+        "no_se_sostiene": f"NO SE SOSTIENE en el escalón {escalon}: " + (
+            f"{cifras}; con el marcador alineado no se gana más" if cifras else "sin partidos con que comparar"),
+        "prometedor": f"PROMETEDOR en el escalón {escalon}: {cifras}{sigue}",
+        "sin_contacto": f"sin contacto en el escalón {escalon}: {cifras}; pide {100 * MARCADOR_SEPARACION:.0f}+ pts "
+                        "con el intervalo de los alineados entero por encima del resto",
+    }
+    texto = textos.get(estado) or (f"en observación{f' (escalón {escalon})' if escalon else ''}: {n} alineados "
+                                   "nuevos" + (f", {cifras}" if cifras else "") + sigue)
+    return {"escalon": escalon, "proximoEscalon": proximo, "escalones": list(MARCADOR_ESCALONES),
+            "faltan": (proximo - n) if proximo else 0, "n": n,
+            "alineados": {"n": n, "tasa": ta, "intervalo": ic}, "resto": {"n": resto["n"], "tasa": tr},
+            "separacion": None if sep is None else round(sep, 4),
+            "nMinimo": MARCADOR_ESCALONES[-1], "separacionMinima": MARCADOR_SEPARACION,
+            "alineadosEncima": encima, "cumple": estado == "confirmado", "estado": estado, "texto": texto}
+
+
+def resumen_marcador(cerradas: list[dict]) -> dict:
+    """Alineados contra el resto (y sin marcador), en todo lo simulado y en lo
+    NUEVO (desde `MARCADOR_DESDE`), que es lo único que cuenta para el criterio."""
+    def al(f):
+        return (f.get("marcador") or {}).get("alineado")
+
+    def grupos(fs):
+        con = [f for f in fs if f.get("marcador")]
+        return {"alineado": _grupo_semaforo([f for f in con if al(f)]),
+                "resto": _grupo_semaforo([f for f in con if not al(f)]),
+                "sinMarcador": _grupo_semaforo([f for f in fs if not f.get("marcador")]),
+                "verdeAlineado": _grupo_semaforo([f for f in con if al(f) and
+                                                  (f.get("semaforo") or {}).get("estado") == "confirma"])}
+    desde = _utc(MARCADOR_DESDE)
+    nuevas = [f for f in cerradas if (_utc(f["pitazo"]) or desde) >= desde]
+    todo, nuevo = grupos(cerradas), grupos(nuevas)
+    return {"desde": MARCADOR_DESDE, "todo": todo, "nuevo": nuevo,
+            "criterio": criterio_marcador(nuevo["alineado"], nuevo["resto"]),
+            "nota": ("el marcador más probable del modelo de goles (el de la lista de Partidos), con la historia "
+                     "anterior al partido: el mismo al minuto 0. Se juzga el win rate; la cuota es información")}
+
+
 def resumen_semaforo(cerradas: list[dict]) -> dict:
     """Verdes, amarillos, rojos y sin dato: el acierto del elegido (con lo que
     pedía la cuota y la plana a 1 u como información), en todo lo simulado y
@@ -474,6 +574,17 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,
             "motivo": {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
                 estado, "semáforo sin dato")}
+        return
+    if clave == "metodoVerdeMarcador" and (fila.get("semaforo") or {}).get("estado") != "confirma":
+        fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
+                                        "linea": None, "motivo": "semáforo no está en verde"}
+        return
+    if clave in _CON_MARCADOR and not (fila.get("marcador") or {}).get("alineado"):
+        m = fila.get("marcador") or {}
+        fila["porEstrategia"][clave] = {
+            "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,
+            "motivo": (f"el marcador más probable ({m['masProbable']}) no va con el elegido" if m.get("masProbable")
+                       else "sin marcador del modelo de goles")}
         return
     if clave in _CON_FRENO:
         sel = fila["elegido"]
@@ -664,6 +775,8 @@ def simular(apuestas: list[dict]) -> dict:
         "alertaConfianza": resumen_alerta(cerradas),
         # el semáforo del elegido (11/11/2026): verdes contra amarillos y su criterio fijo
         "semaforo": resumen_semaforo(cerradas),
+        # el marcador más probable con el elegido (13/11/2026): alineados contra el resto y su criterio
+        "marcador": resumen_marcador(cerradas),
         # lo más nuevo arriba en la pantalla
         "apuestas": list(reversed(filas)),
     }
@@ -721,6 +834,32 @@ def simulacion() -> dict:
     out = _simulacion()
     _SIM_CACHE["v"] = (huella, _t.monotonic(), out)
     return out
+
+
+# EL MARCADOR MÁS PROBABLE de cada partido (13/11/2026): el del modelo de
+# goles con la historia ANTERIOR al pitazo, así que al minuto 0 es el mismo que
+# en cualquier lectura. Se calcula una vez por proceso y por partido.
+_MARCADOR: dict[int, dict | None] = {}
+
+
+def marcador_de(fx, elegido: str) -> dict | None:
+    """{masProbable, prob, signo, alineado} o None sin modelo o sin historia."""
+    if not fx:
+        return None
+    if fx["id"] not in _MARCADOR:
+        try:
+            from backend.analisis import goles
+            # sin la marca de la ventana (`goles._ventana`): no cambia el marcador y cuesta
+            g = goles._acotar_fixture(dict(fx))
+            mp = (g.get("masProbables") or [None])[0] if not g.get("sinDato") else None
+            _MARCADOR[fx["id"]] = {"masProbable": mp["marcador"], "prob": mp["prob"]} if mp else None
+        except Exception:  # noqa: BLE001 — sin goles acotados la apuesta va «sin marcador»: las series del marcador no apuestan
+            _MARCADOR[fx["id"]] = None
+    m = _MARCADOR[fx["id"]]
+    if not m:
+        return None
+    signo = _sem.signo_marcador(m["masProbable"])
+    return {**m, "signo": signo, "alineado": signo == elegido}
 
 
 # la burbuja del elegido «al día del partido» no cambia una vez fijada: se
@@ -824,6 +963,8 @@ def _simulacion() -> dict:
             "mercado": mercado_pct,
             "resultado": reales.get(fid),
             "alerta": alerta,
+            # el marcador más probable del modelo de goles contra el elegido (13/11/2026)
+            "marcador": marcador_de(r, _elegido(_normalizar(probs))),
             # el semáforo del elegido con el mercado SIN redondear (11/11/2026)
             "semaforo": _sem.del_parte(parte, m["prob"]),
         })

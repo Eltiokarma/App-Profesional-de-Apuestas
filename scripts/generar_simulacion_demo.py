@@ -48,9 +48,23 @@ APUESTAS = [
     (900011, "2026-11-12 20:00:00", "Napoli", "Roma", "Serie A", "2026-11-12 10:30:00",
      (47.0, 28.0, 25.0), (2.05, 3.35, 3.9), (46.4, 28.4, 24.4), None, "1-0", ("positiva", "negativa")),
 ]
+# el marcador más probable del modelo de goles de cada partido (13/11/2026): el
+# que decide las series «con el marcador» (alineado con el elegido o no)
+MAS_PROBABLE = {900001: ("1-1", 0.121), 900002: ("1-0", 0.118), 900003: ("1-1", 0.124), 900004: ("1-0", 0.115),
+                900005: ("2-1", 0.102), 900006: ("1-1", 0.119), 900007: ("2-1", 0.104), 900008: ("2-0", 0.112),
+                900009: ("1-1", 0.13), 900011: ("1-1", 0.122), 900012: ("1-0", 0.117), 900013: ("1-1", 0.126)}
 EXCLUIDOS = [{"fixtureId": 900010, "pitazo": "2026-10-28 23:00:00",
               "partido": {"local": "Villarreal", "visita": "Real Betis", "liga": "LaLiga"},
               "motivo": "sin las tres cuotas del 1X2 capturadas"}]
+
+
+def _marcador(fid: int, probs: dict) -> dict | None:
+    mp = MAS_PROBABLE.get(fid)
+    if not mp:
+        return None
+    signo = sem.signo_marcador(mp[0])
+    return {"masProbable": mp[0], "prob": mp[1], "signo": signo,
+            "alineado": signo == sim._elegido(sim._normalizar(probs))}
 
 
 def armar() -> list[dict]:
@@ -64,6 +78,7 @@ def armar() -> list[dict]:
             "versionPrompt": "v2.5", "probabilidades": probs, "cuotas": dict(zip(sim.CLAVES, c)),
             "mercado": mercado, "resultado": res,
             "semaforo": sem.semaforo(probs, {"a": ea, "b": eb}, mercado, marcador),
+            "marcador": _marcador(fid, probs),
         })
     return out
 
