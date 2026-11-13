@@ -2209,6 +2209,16 @@ export interface VeredictoPendienteDTO {
   partido: string
   marcador: string
   jugadoEn: string
+  ligaId?: number | null
+  /** La ronda de la API («Regular Season - 19», «Round of 16», …). */
+  ronda?: string
+  /** El 1X2 declarado contra el marcador; `acerto` null sin 1X2 declarado. */
+  unXDos?: { declarado: 'local' | 'empate' | 'visita' | null; acerto: boolean | null; probabilidad: number }
+  /** Por qué el partido es importante; '' si no lo es. */
+  importante?: string
+  /** Si el veredicto lleva la crónica de prensa (backend/analisis/prensa.py). */
+  prensa?: boolean
+  prensaMotivo?: string
 }
 
 /** La marca al costado de cada partido: ¿ya pasó el análisis de Cowork?

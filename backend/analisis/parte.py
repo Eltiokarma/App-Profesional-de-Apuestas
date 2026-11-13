@@ -5781,6 +5781,7 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
         r["id"]: r for r in saddb.query(
             "sad",
             f"SELECT f.id, f.date, f.status_short AS estado, f.elapsed, "
+            f"f.league_id, f.league_round, "
             f"COALESCE(f.fulltime_home, f.goals_home) AS gl, "
             f"COALESCE(f.fulltime_away, f.goals_away) AS gv FROM fixtures f "
             f"WHERE f.id IN ({','.join('?' * len(ids))})",
@@ -5829,12 +5830,48 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
         sobre["pendientes"].append({
             "fixtureId": fid, "fecha": f["fecha"], "partido": partido,
             "marcador": parcial, "jugadoEn": m["date"],
+            "ligaId": m["league_id"], "ronda": m["league_round"] or "",
+            "_gl": m["gl"], "_gv": m["gv"],
         })
 
+    _marcar_prensa(sobre["pendientes"])
     if not sobre["pendientes"]:
         sobre["nota"] = (f"ningún caso listo para cerrar: hay {len(filas)} parte(s) sin "
                          f"veredicto y ninguno pasa el filtro. Mirá `noListados`.")
     return sobre
+
+
+def _marcar_prensa(pendientes: list[dict]) -> None:
+    """Qué veredictos llevan la crónica de la prensa (`backend/analisis/prensa.py`).
+
+    El 1X2 se compara acá con el marcador, igual que en el objetivo del
+    veredicto: el parte se lee solo para los listados (≤ `limite`)."""
+    if not pendientes:
+        return
+    from backend.analisis import escala, prensa
+    from backend.analisis.veredicto import declarado_1x2
+    ids = [p["fixtureId"] for p in pendientes]
+    with _conectar() as con:
+        partes = {r["fixture_id"]: r["parte_json"] for r in con.execute(
+            f"SELECT fixture_id, parte_json FROM parte_cowork "
+            f"WHERE fixture_id IN ({','.join('?' * len(ids))})", tuple(ids))}
+    copas = escala.copas_nacionales(ids)
+    selecciones = escala.torneos_selecciones()
+    for p in pendientes:
+        gl, gv = p.pop("_gl"), p.pop("_gv")
+        try:
+            pron = (json.loads(partes.get(p["fixtureId"]) or "{}").get("pronostico") or {})
+        except ValueError:
+            pron = {}
+        reparto = pron.get("probabilidades")
+        declarado, top = declarado_1x2(reparto if isinstance(reparto, dict) else None)
+        real = "local" if gl > gv else ("visita" if gv > gl else "empate")
+        p["unXDos"] = {"declarado": declarado or None,
+                       "acerto": (declarado == real) if declarado else None,
+                       "probabilidad": top}
+        p["importante"] = prensa.importancia(p["ligaId"], p["ronda"], selecciones=selecciones,
+                                             copa_nacional=p["fixtureId"] in copas)
+    prensa.marcar(pendientes)
 
 
 def ficha_crecio(previo: dict, nuevo: dict) -> bool:

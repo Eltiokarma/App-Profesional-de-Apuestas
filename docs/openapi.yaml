@@ -5195,6 +5195,23 @@ components:
         partido: { type: string }
         marcador: { type: string, description: 'a 90 minutos, de nuestra ingesta' }
         jugadoEn: { type: string }
+        ligaId: { type: integer, nullable: true }
+        ronda: { type: string, description: 'la ronda de la API («Regular Season - 19», «Round of 16», …)' }
+        unXDos:
+          type: object
+          description: 'el 1X2 declarado contra el marcador; acerto null sin 1X2 declarado'
+          properties:
+            declarado: { type: string, nullable: true, enum: [local, empate, visita, null] }
+            acerto: { type: boolean, nullable: true }
+            probabilidad: { type: number }
+        importante: { type: string, description: 'por qué el partido es importante (selecciones, eliminatoria internacional, fase decisiva, final de copa); "" si no lo es' }
+        prensa:
+          type: boolean
+          description: >
+            si el veredicto lleva el reporte de la crónica de prensa en `notas`
+            (backend/analisis/prensa.py, 13/11/2026): los importantes siempre, y hasta el 50 %
+            de los partidos de ese día los que el 1X2 perdió, el más confiado primero
+        prensaMotivo: { type: string }
     LadoVeredicto:
       type: object
       properties:

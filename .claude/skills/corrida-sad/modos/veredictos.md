@@ -7,6 +7,15 @@
    más viejos primero; 45 desde el 27/10/2026: con 30 la cola llegó a 40
    vencidos tras un fin de semana; si el disparo trae otro `limite`, manda ese). Si no hay, decilo en una
    línea y terminá.
+   Cada pendiente trae `prensa` (bool) y `prensaMotivo`: los elige el
+   backend (`backend/analisis/prensa.py`, 13/11/2026) —los IMPORTANTES siempre
+   (selecciones oficiales, eliminatorias de Champions/Europa
+   League/Conference/Libertadores/Sudamericana y la última fecha de la fase de
+   liga de la Champions, fases decisivas de las ligas, finales de copa) y,
+   hasta el 50 % de los partidos de cada día, los que el 1X2 PERDIÓ, el más
+   confiado primero—. No lo cambies a ojo: copialo al encargo de cada
+   subagente como «prensa: sí (<prensaMotivo>)» o «prensa: no». El veredicto
+   corre horas después del partido justamente para que la crónica ya esté.
 2. Un subagente por partido, en paralelo y **en tandas de a 8 como mucho**
    (incidencia 1353, como en partes: el veredicto es idempotente, así que un
    POST con 502 se verifica con GET y se reintenta), con este encargo:
@@ -83,23 +92,21 @@
 > con `reventonCalculado`, es la recalibración de los puntos (REVENTON
 > §13.2): la prosa dice lo que la tarjeta mostraba ese día.
 >
-> **Partidos UEFA: el reporte de la prensa** (13/11/2026, pedido del
-> usuario). Si el `ligaId` de `GET $B/fixtures/{id}` es una competición
-> UEFA (clubes: 2 Champions, 3 Europa League, 848 Conference; selecciones:
-> 5 Nations League, 4 Eurocopa, 960 clasificación a la Euro, 32 eliminatorias
-> UEFA al Mundial), DESPUÉS de leer lo calculado buscá la crónica del partido
-> en internet (WebSearch, cargala con ToolSearch `select:WebSearch,WebFetch`;
-> 2-3 búsquedas: crónica, figuras y DT/conferencia) y escribí en `notas` del
-> veredicto el reporte: «Prensa (fuente, fecha): …» con las ocasiones claras
-> y su minuto, los goles y cómo nacieron, el plan de cada DT, lesiones o
-> cambios forzados, la expulsión que cambió el partido y lo que dijeron los
+> **El reporte de la prensa, SOLO si el orquestador te lo marcó** (13/11/2026,
+> usuario). Si tu encargo dice «prensa: sí (<motivo>)», DESPUÉS de leer lo
+> calculado buscá la crónica del partido en internet (WebSearch, cargala con
+> ToolSearch `select:WebSearch,WebFetch`; 2-3 búsquedas: crónica, figuras y
+> DT/conferencia, en la prensa del país de cada equipo) y escribí en `notas`
+> del veredicto el reporte: «Prensa (medio, fecha): …» con las ocasiones
+> claras y su minuto, los goles y cómo nacieron, el plan de cada DT, lesiones
+> o cambios forzados, la expulsión que cambió el partido y lo que dijeron los
 > DT; al final la lista de fuentes (medio y URL). Lo que la prensa PRUEBA
 > entra donde corresponde (el `porque` de un corte, el `que` del escenario,
 > una lección con su skill) con la fuente en la frase; lo que solo opina no
 > es lección. Los números no se reemplazan: si la prensa da otro xG o
 > posesión que la ficha, manda la ficha y la diferencia se anota en `notas`.
 > Sin crónica encontrada, `notas` lo dice («Prensa: sin crónica») y seguís.
-> Las otras ligas, como siempre: sin búsqueda.
+> Con «prensa: no», NO busques en internet.
 >
 > `seleccion`: `ciega` si el partido salió de la agenda; `modoEvaluacion`:
 > `PRE` si terminó. Con duda entre ciega y post_resultado, es post_resultado.
