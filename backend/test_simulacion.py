@@ -484,13 +484,20 @@ check("metodoMarcador apuesta SOLO con el marcador alineado (1, 2 y 4), no con 1
 check("metodoVerdeMarcador pide además el verde (1 y 2, no el 4 en amarillo)",
       _em["metodoVerdeMarcador"]["apuestas"] == 2
       and _fm[4]["porEstrategia"]["metodoVerdeMarcador"]["motivo"] == "semáforo no está en verde")
-_m1, _m2 = _fm[1]["porEstrategia"]["martingalaMarcador"], _fm[2]["porEstrategia"]["martingalaMarcador"]
-check("martingalaMarcador: pierde 1 u en el 1 y duplica a 2 u en el 2, con la misma línea",
+_m1, _m2 = _fm[1]["porEstrategia"]["martingalaVerdeMarcador"], _fm[2]["porEstrategia"]["martingalaVerdeMarcador"]
+check("martingalaVerdeMarcador: pierde 1 u en el 1 y duplica a 2 u en el 2, con la misma línea",
       _m1["monto"] == 1.0 and _m1["ganancia"] == -1.0 and _m2["monto"] == 2.0 and _m2["linea"] == _m1["linea"]
-      and _em["martingalaMarcador"]["lineas"] is not None, (_m1, _m2))
+      and _em["martingalaVerdeMarcador"]["lineas"] is not None, (_m1, _m2))
 check("…y no toca la línea con el marcador 1-1 (el 3 no apuesta) ni sin marcador",
-      _fm[3]["porEstrategia"]["martingalaMarcador"]["monto"] == 0
-      and _fm[5]["porEstrategia"]["martingalaMarcador"]["monto"] == 0 and _em["martingalaMarcador"]["apuestas"] == 3)
+      _fm[3]["porEstrategia"]["martingalaVerdeMarcador"]["monto"] == 0
+      and _fm[5]["porEstrategia"]["martingalaVerdeMarcador"]["monto"] == 0)
+# 🟢⚽ (13/11/2026, usuario: «reemplazala por la del marcador alineado 🟢⚽»): el 4
+# tiene el marcador alineado pero el semáforo en amarillo, y la martingala no apuesta
+check("martingalaVerdeMarcador pide además el verde: no apuesta el 4 (alineado en amarillo) → 2 apuestas",
+      _em["martingalaVerdeMarcador"]["apuestas"] == 2
+      and _fm[4]["porEstrategia"]["martingalaVerdeMarcador"]["motivo"] == "semáforo no está en verde"
+      and _em["martingalaVerdeMarcador"]["nombre"] == "Martingala en verde con el marcador",
+      _fm[4]["porEstrategia"]["martingalaVerdeMarcador"])
 check("el método con el marcador lleva el freno por tramo, como el método",
       _em["metodoMarcador"]["tramos"] is not None and _em["metodoVerdeMarcador"]["tramos"] is not None)
 _rm = _om["marcador"]

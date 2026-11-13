@@ -235,8 +235,9 @@ fijo por escalones de **alineados** nuevos cerrados
 Tres series en papel (`GET /analisis/simulacion`, tabla «Marcador más
 probable · con el elegido»): **`metodoMarcador`** (el método, solo con el
 marcador alineado), **`metodoVerdeMarcador`** (además con el semáforo en verde)
-y **`martingalaMarcador`** (la martingala por líneas, solo con el marcador
-alineado: pedido del usuario). La rutina de los lunes lo reporta en la sección
+y **`martingalaVerdeMarcador`** (la martingala por líneas, solo con el semáforo
+en verde Y el marcador alineado; el usuario la pidió y el mismo 13/11 la cambió
+de «solo el marcador» a 🟢⚽). La rutina de los lunes lo reporta en la sección
 «Marcador» de `python -m backend.contacto`. Este marcador lo ve también el
 analista (va en `golesAcotados` del parte): no es una señal que él pueda
 pintar, porque sale de la base.
