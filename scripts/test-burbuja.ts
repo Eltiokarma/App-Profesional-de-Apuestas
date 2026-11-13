@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { analizarBurbujas, espinaTarjeta, extremoDe, type ContextoBurbuja, type FilaK } from '../src/lib/burbuja'
+import { analizarBurbujas, espinaTarjeta, extremoDe, PUNTOS_PROPIO, tramoPropio, type ContextoBurbuja, type FilaK } from '../src/lib/burbuja'
 import type { HistorialSignoDTO, ReventonDTO } from '../src/api/types'
 
 let failed = 0
@@ -53,7 +53,7 @@ check('historial −: n=2, K pico media 8 sin moda, nivel rival media 1.25', hn.
 const a = t.actual!
 check('burbuja abierta: + · K 22.1 · 6 partidos · aplica al próximo', eq([a.signo, a.k, a.partidos, a.aplicaAlProximo], ['+', 22.1, 6, true]), a)
 check('posición: percentil 100 en K y en racha, K = 2.95× la mediana', eq(t.posicion, { percentilK: 100, percentilRacha: 100, kSobreMediana: 2.95 }), t.posicion)
-check('rival próximo (2.6) mucho más fuerte que la mediana (2.0) → tramo muy fuerte', eq(t.rival, { nivelProximo: 2.6, medianaReventon: 2, distancia: 0.6, enZona: true, tramo: 'muy fuerte', aFavor: -0.2, favorito: 'no' }), t.rival)
+check('rival próximo (2.6) mucho más fuerte que la mediana (2.0) → tramo muy fuerte', eq(t.rival, { nivelProximo: 2.6, medianaReventon: 2, distancia: 0.6, enZona: true, tramo: 'muy fuerte', aFavor: -0.2, favorito: 'no', nivelPropio: 2.4, propio: 'no' }), t.rival)
 const rg = t.riesgo!
 check('riesgo MUY ALTO con 3 puntos (racha +1, rival muy fuerte +2) y 3 motivos', rg.nivel === 'muy alto' && rg.puntos === 3 && rg.motivos.length === 3, rg)
 check('la K se describe pero no puntúa', rg.motivos.some((m) => m.includes('la K no puntúa') && m.includes('22.1')), rg.motivos)
@@ -183,6 +183,12 @@ const cm = analizar(filas.map((f, i) => (i >= filas.length - 6 ? { ...f, condici
 check('racha de 6 toda de local y el próximo de visita → contramano (+1): 4, MUY ALTO', cm.familias.total.actual!.contramano === true && cm.familias.total.riesgo!.puntos === 4 && cm.familias.total.riesgo!.motivos.some((m) => m.includes('otra condición') && m.includes('visita')), cm.familias.total.riesgo)
 const borde = analizar(filas, { proximo: { ...ctx.proximo!, nivelRival: 1.85 } })
 check('tolerancia 0.15: rival 1.85 en zona (+0) y favorito por 0.55 (−1): 0, MEDIO', borde.familias.total.rival!.tramo === 'zona' && borde.familias.total.riesgo!.puntos === 0 && borde.familias.total.riesgo!.nivel === 'medio', borde.familias.total.riesgo)
+// el nivel propio (REVENTON §18, 13/11/2026): grande ≥ 3 aguanta su racha + (−1), chico < 2 menos (+1)
+const grande = analizar(filas, { nivel: 3.2, proximo: { ...ctx.proximo!, nivelRival: 3.4 } }).familias.total
+check('nivel propio 3.2 con racha + → grande, A FAVOR (−1): muy fuerte +2, racha +1 → 2, ALTO', grande.rival!.propio === 'a favor' && grande.rival!.nivelPropio === 3.2 && grande.rival!.favorito === 'no' && grande.riesgo!.puntos === 2 && grande.riesgo!.nivel === 'alto' && grande.riesgo!.motivos.includes('equipo grande (nivel 3.2 ≥ 3): aguanta una racha positiva (-1)'), grande.riesgo)
+const chico = analizar(filas, { nivel: 1.8, proximo: { ...ctx.proximo!, nivelRival: 2.6 } }).familias.total
+check('nivel propio 1.8 con racha + → chico, EN CONTRA (+1): 4, MUY ALTO', chico.rival!.propio === 'en contra' && chico.riesgo!.puntos === 4 && chico.riesgo!.nivel === 'muy alto' && chico.riesgo!.motivos.includes('equipo chico (nivel 1.8 < 2): sostiene menos una racha positiva (+1)'), chico.riesgo)
+check('tramoPropio: la racha − al revés y sin nivel no suma', eq([tramoPropio(1.5, '-'), tramoPropio(3.5, '-'), tramoPropio(2.5, '+'), tramoPropio(null, '+')], ['a favor', 'en contra', 'no', 'no']) && eq(PUNTOS_PROPIO, { no: 0, 'a favor': -1, 'en contra': 1 }))
 const fuerte = analizar(filas, { proximo: { ...ctx.proximo!, nivelRival: 2.3 } })
 check('rival 2.3 (+0.3) → tramo fuerte (+1 → 2, ALTO)', fuerte.familias.total.rival!.tramo === 'fuerte' && fuerte.familias.total.riesgo!.puntos === 2 && fuerte.familias.total.riesgo!.nivel === 'alto', fuerte.familias.total.riesgo)
 

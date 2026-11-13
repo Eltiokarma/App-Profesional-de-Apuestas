@@ -30,8 +30,10 @@ Reglas (las mismas en los dos lados):
   fuga (§13.2 del doc, 14/10/2026): la K no puntúa (no adelanta el
   reventón), la racha ≥ mediana suma 1, el rival frente a la mediana con la
   que suele reventar suma 0 · 1 · 2 según esté en zona, más fuerte o mucho
-  más fuerte (`PUNTOS_RIVAL`), la contramano suma 1 y el favorito resta
-  1 · 3. Cada punto con su motivo.
+  más fuerte (`PUNTOS_RIVAL`), la contramano suma 1, el favorito resta
+  1 · 3 y el nivel propio (§18, 13/11/2026) resta 1 a favor de la racha
+  (grande con racha +, chico con racha −) o suma 1 en contra. Cada punto con
+  su motivo.
   Confianza aparte: la muestra de reventones y la estabilidad (DT, ventana,
   bajas) la suben o la bajan, nunca el riesgo.
 """
@@ -70,6 +72,29 @@ PUNTOS_RACHA = 1               # racha ≥ mediana de partidos (coef 0.25 limpio
 PUNTOS_CONTRAMANO = 1           # coef 0.207 (no depende del nivel del rival: igual con y sin fuga)
 PUNTOS_FAVOR = {"no": 0, "favorito": -1, "muy favorito": -3}   # coef limpio −0.371 / −0.709
 FAVORITO, MUY_FAVORITO = 0.5, 1.0
+# EL NIVEL PROPIO (13/11/2026, REVENTON §18; usuario: «es más probable que un
+# equipo de Cajamarca pierda su burbuja perdiendo antes que Barcelona pierda un
+# partido en casa»). El nivel del equipo ANTES del partido, aparte de la
+# diferencia con el rival (eso ya lo mide el favorito): la racha + de un grande
+# (≥ NIVEL_GRANDE) aguanta más y la de un chico (< NIVEL_CHICO) menos; la racha
+# − al revés. Los puntos salen de `backtest_burbuja --calibrar`.
+NIVEL_GRANDE, NIVEL_CHICO = 3.0, 2.0
+# coef −0.20 / +0.31 en las historias de 445 equipos (151.132 observaciones),
+# igual antes y después del 09/04/2025; AUC 0.627 → 0.633 en las dos mitades
+PUNTOS_PROPIO = {"no": 0, "a favor": -1, "en contra": 1}
+
+
+def tramo_propio(nivel_equipo, signo: str) -> str:
+    """«a favor» de que la racha siga (grande con racha +, chico con racha −),
+    «en contra» (chico con racha +, grande con racha −) o «no» (en el medio, o
+    sin nivel)."""
+    if nivel_equipo is None:
+        return "no"
+    nv = float(nivel_equipo)
+    grande, chico = nv >= NIVEL_GRANDE, nv < NIVEL_CHICO
+    if signo == "+":
+        return "a favor" if grande else "en contra" if chico else "no"
+    return "a favor" if chico else "en contra" if grande else "no"
 
 # muestra de reventones que sostiene una guía
 MUESTRA_BAJA = 3
@@ -679,6 +704,18 @@ def _analizar_familia(filas: list[dict], familia: str, proximo: dict | None, est
                            if signo == "+" else
                            f"el rival es {'mucho ' if mucho else ''}más fuerte: {abs(g)} de nivel sobre el equipo")
                 motivos.append(f"{quien_f}, a favor de que la racha siga" + (f" ({pf:+d})" if pf else ""))
+            # EL NIVEL PROPIO (REVENTON §18): el grande aguanta su racha +, el chico la −
+            tp = tramo_propio(nivel_equipo, signo)
+            out["rival"]["nivelPropio"] = _r2(float(nivel_equipo))
+            out["rival"]["propio"] = tp
+            pp = PUNTOS_PROPIO[tp]
+            puntos += pp
+            if tp != "no":
+                grande = float(nivel_equipo) >= NIVEL_GRANDE
+                que = (f"equipo grande (nivel {_r2(float(nivel_equipo))} ≥ {NIVEL_GRANDE:g})" if grande else
+                       f"equipo chico (nivel {_r2(float(nivel_equipo))} < {NIVEL_CHICO:g})")
+                motivos.append(f"{que}: {'aguanta' if tp == 'a favor' else 'sostiene menos'} una racha "
+                               f"{'positiva' if signo == '+' else 'negativa'}" + (f" ({pp:+d})" if pp else ""))
         # la racha hecha en la condición CONTRARIA a la del próximo partido
         racha = [f for f in filas if familia == "total" or f["condicion"] == ("Local" if familia == "local" else "Visita")]
         racha = racha[-ep["partidos"]:]

@@ -807,6 +807,10 @@ export interface FamiliaBurbujaDTO {
     /** Diferencia de nivel A FAVOR de que la racha siga (favorito con racha +, débil con racha −). REVENTON §12. */
     aFavor?: number
     favorito?: 'no' | 'favorito' | 'muy favorito'
+    /** El nivel del equipo ANTES del partido y su tramo en la dirección de la racha (REVENTON §18, 13/11/2026):
+     *  a favor = grande (≥ 3) con racha + o chico (< 2) con racha − (−1) · en contra = al revés (+1). */
+    nivelPropio?: number
+    propio?: 'no' | 'a favor' | 'en contra'
     /** false con escala distinta (22/10/2026): el tramo compara bases distintas; los puntos no cambian. */
     escalaComparable?: boolean
     notaEscala?: string
