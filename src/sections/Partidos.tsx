@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
-import { fixtureNum, loadMarcasCowork, loadSemaforos, refrescarLiga } from '../services/appdata'
+import { fixtureNum, loadListaPartidos, loadMarcasCowork, loadSemaforos, refrescarLiga } from '../services/appdata'
 import { COLOR_TRAMO, SEL_CORTA, SEL_LARGA } from '../lib/confianza'
-import type { MarcaCoworkDTO, SemaforoElegido } from '../api/types'
+import type { LecturaListaPartido, MarcaCoworkDTO, SemaforoElegido } from '../api/types'
 import { SemaforoChip } from '../components/SemaforoChip'
+import { DesconfiarChip, MarcadoresProbables } from '../components/LecturaListaChips'
 import type { Match, MatchStatus } from '../data/types'
 import { LatidoCowork } from '../components/LatidoCowork'
 import { RevisorDiario } from '../components/RevisorDiario'
@@ -88,6 +89,11 @@ function MarcaCowork({ marca, isMobile }: { marca?: MarcaCoworkDTO; isMobile: bo
  *  vistazo los mejores). Color por tramo —verde 60+ · azul 50-59 · ámbar
  *  40-49 · gris <40—, el mismo de la tabla de Aprendizaje, donde se ve cuánto
  *  acierta cada tramo; con el partido terminado lleva ✓/✗. */
+// el hueco de la izquierda (confianza · semáforo · desconfiar, y debajo los
+// marcadores más probables) y su espejo a la derecha (la marca): con el mismo
+// ancho el marcador queda en el centro exacto de la tarjeta
+const HUECO = 236
+
 function ConfianzaChip({ marca, corta }: { marca?: MarcaCoworkDTO; corta: boolean }) {
   const c = marca?.confianza
   if (!c) return null
@@ -158,6 +164,15 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     if (!idsDia) { setSemaforos({}); return }
     let vivo = true
     loadSemaforos(idsDia.split(',')).then((r) => { if (vivo) setSemaforos(r) }).catch(() => { /* el semáforo no rompe la lista */ })
+    return () => { vivo = false }
+  }, [idsDia])
+  // DESCONFIAR y los marcadores más probables (13/11/2026): al costado del
+  // semáforo; llega aparte porque tarda más (burbuja y goles por partido)
+  const [lecturas, setLecturas] = useState<Record<number, LecturaListaPartido>>({})
+  useEffect(() => {
+    if (!idsDia) { setLecturas({}); return }
+    let vivo = true
+    loadListaPartidos(idsDia.split(',')).then((r) => { if (vivo) setLecturas(r) }).catch(() => { /* la lectura no rompe la lista */ })
     return () => { vivo = false }
   }, [idsDia])
 
@@ -369,9 +384,13 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                     {/* espejo del hueco de la marca (a la derecha): así el marcador
                         queda en el centro exacto de la tarjeta, como antes */}
                     {!isMobile && (
-                      <span style={{ width: 158, flexShrink: 0, display: 'flex' }}>
-                        <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta={false} />
-                        {marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} />}
+                      <span style={{ width: HUECO, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta={false} />
+                          {marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} />}
+                          {marcas[fixtureNum(m.id)]?.confianza && <DesconfiarChip l={lecturas[fixtureNum(m.id)]} />}
+                        </span>
+                        <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={3} />
                       </span>
                     )}
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: isMobile ? 6 : 10 }}>
@@ -387,7 +406,13 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                         {live ? m.min : fin ? 'FIN' : 'PROX'}
                       </span>
                       {isMobile && <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta />}
-                      {isMobile && marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} corta />}
+                      {isMobile && marcas[fixtureNum(m.id)]?.confianza && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <SemaforoChip s={semaforos[fixtureNum(m.id)]} corta />
+                          <DesconfiarChip l={lecturas[fixtureNum(m.id)]} corta />
+                        </span>
+                      )}
+                      {isMobile && <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={2} corta />}
                     </span>
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
                       <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
@@ -399,7 +424,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                     {isMobile
                       ? <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile />
                       : (
-                        <span style={{ width: 158, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                        <span style={{ width: HUECO, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
                           <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile={false} />
                         </span>
                       )}

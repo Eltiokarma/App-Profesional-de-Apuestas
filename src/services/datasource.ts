@@ -47,6 +47,7 @@ import type {
   LeccionesParams,
   SimulacionApuesta,
   SemaforoElegido,
+  LecturaListaPartido,
   SeparacionLigaDTO,
   RevisionSkillDTO,
   DerrotasFavoritoDTO,
@@ -188,6 +189,8 @@ export interface SadDataSource {
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
   /** El semáforo del elegido (11/11/2026): calculado, para el usuario; el analista no lo ve. */
   semaforo(fixtureIds: number[]): Promise<Record<number, SemaforoElegido>>
+  /** La lectura de la tarjeta en Partidos (13/11/2026): DESCONFIAR y los marcadores más probables. */
+  listaPartidos(fixtureIds: number[]): Promise<Record<number, LecturaListaPartido>>
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana, Kelly y martingala. */
   simulacion(): Promise<SimulacionApuesta>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
@@ -929,6 +932,26 @@ class MockDataSource implements SadDataSource {
   }
 
 
+  async listaPartidos(fixtureIds: number[]): Promise<Record<number, LecturaListaPartido>> {
+    // de muestra, estable por partido: uno de cada tres con DESCONFIAR (alternando
+    // los dos motivos) y tres marcadores que suman lo que da un Poisson típico
+    const out: Record<number, LecturaListaPartido> = {}
+    const MARC = [['1-1', 0.118], ['1-0', 0.109], ['2-1', 0.091], ['0-0', 0.083], ['0-1', 0.078], ['2-0', 0.074]] as const
+    for (const fid of fixtureIds) {
+      if (!MATCHES.some((x) => FIXTURE_NUM(x.id) === fid)) continue
+      const activa = fid % 3 === 0
+      const motivo = fid % 2 === 0
+        ? { codigo: 'SOBRE-LA-CASA' as const, detalle: 'le damos 61.0 % al elegido y la casa 57.4 % (+3.6 pts)' }
+        : { codigo: 'BURBUJA-DE-UN-PARTIDO' as const, detalle: 'la racha del elegido es de un solo partido con riesgo alto' }
+      const ini = fid % 3
+      out[fid] = {
+        desconfiar: { activa, motivos: activa ? [motivo] : [], elegido: 'local', lectura: activa ? 'la visita no gana: local o empate' : null },
+        marcadores: { masProbables: MARC.slice(ini, ini + 3).map(([marcador, prob]) => ({ marcador, prob })), porVentana: fid % 5 === 0 },
+      }
+    }
+    return out
+  }
+
   async simulacion(): Promise<SimulacionApuesta> {
     return SIMULACION_DEMO
   }
@@ -1314,6 +1337,11 @@ class HttpDataSource implements SadDataSource {
   semaforo = async (fixtureIds: number[]) => {
     if (!fixtureIds.length) return {}
     const r = await SadApi.semaforo(fixtureIds)
+    return Object.fromEntries(Object.entries(r.partes).map(([k, v]) => [Number(k), v]))
+  }
+  listaPartidos = async (fixtureIds: number[]) => {
+    if (!fixtureIds.length) return {}
+    const r = await SadApi.listaPartidos(fixtureIds)
     return Object.fromEntries(Object.entries(r.partes).map(([k, v]) => [Number(k), v]))
   }
   simulacion = () => SadApi.simulacion()

@@ -2819,6 +2819,17 @@ def analisis_semaforo(ids: str = Query(..., max_length=4000, description="fixtur
     return {"partes": {str(k): v for k, v in semaforo.de_partidos(lista).items()}}
 
 
+@app.get(API + "/analisis/lista-partidos")
+def analisis_lista_partidos(ids: str = Query(..., max_length=4000, description="fixtures separados por coma")):
+    """La lectura de la tarjeta en Partidos (13/11/2026): la alerta DESCONFIAR
+    del elegido (la misma regla que el parte y la Simulación) y los tres
+    marcadores más probables del modelo de goles. Solo los partidos con parte.
+    Nace denegado para Cowork: no lo necesita (la alerta ya va en su parte)."""
+    from backend.analisis import lista_partidos
+    lista = [int(x) for x in ids.replace(" ", "").split(",") if x.isdigit()]
+    return {"partes": {str(k): v for k, v in lista_partidos.de_partidos(lista).items()}}
+
+
 @app.get(API + "/analisis/simulacion")
 def analisis_simulacion():
     """Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana
