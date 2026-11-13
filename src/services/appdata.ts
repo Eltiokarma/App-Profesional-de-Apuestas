@@ -2,7 +2,7 @@
 // estas funciones (que hablan el contrato de docs/openapi.yaml vía
 // getDataSource()); en modo mock los datos salen del motor local y son
 // idénticos a los de antes, en modo http salen del backend real.
-import type { BurbujasEquipoDTO, LecturaListaPartido, MarcaCoworkDTO, SemaforoElegido } from '../api/types'
+import type { BurbujasEquipoDTO, LecturaListaPartido, LigasAnalizadasDTO, MarcaCoworkDTO, SemaforoElegido } from '../api/types'
 import type {
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
@@ -162,6 +162,11 @@ export async function loadSemaforos(matchIds: string[]): Promise<Record<number, 
 /** La lectura de la tarjeta en Partidos (13/11/2026): fixtureId → DESCONFIAR + marcadores más probables. */
 export async function loadListaPartidos(matchIds: string[]): Promise<Record<number, LecturaListaPartido>> {
   return getDataSource().listaPartidos(matchIds.map(fixtureNum))
+}
+
+/** Las ligas que analizamos normalmente (13/11/2026): ids con parte en los últimos `dias`. */
+export async function loadLigasAnalizadas(dias?: number): Promise<LigasAnalizadasDTO> {
+  return getDataSource().ligasAnalizadas(dias)
 }
 
 /** ¿Cuáles de estos partidos ya tienen parte de Cowork? fixtureId → marca. */

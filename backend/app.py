@@ -2830,6 +2830,15 @@ def analisis_lista_partidos(ids: str = Query(..., max_length=4000, description="
     return {"partes": {str(k): v for k, v in lista_partidos.de_partidos(lista).items()}}
 
 
+@app.get(API + "/analisis/ligas-analizadas")
+def analisis_ligas_analizadas(dias: int = Query(default=30, ge=1, le=180)):
+    """Las ligas que analizamos normalmente (13/11/2026): las que tuvieron al
+    menos un parte en los últimos `dias`. La lista de Partidos las pone arriba
+    y manda las demás a un desplegable minimizado. Medido, no declarado."""
+    from backend.analisis import lista_partidos
+    return lista_partidos.ligas_analizadas(dias)
+
+
 @app.get(API + "/analisis/simulacion")
 def analisis_simulacion():
     """Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana

@@ -110,3 +110,45 @@ def de_partidos(ids) -> dict[int, dict]:
             desc = None
         out[f["fixture_id"]] = {"desconfiar": desc, "marcadores": _marcadores(fx)}
     return out
+
+
+# ── LAS LIGAS QUE ANALIZAMOS (13/11/2026, usuario: «que las ligas que no
+# analicemos siempre estén minimizadas… agrupadas en otra lista desplegable…
+# arriba solo las que normalmente analizamos. Para no scrollear tanto»).
+# «Normalmente» se mide, no se declara: las ligas con al menos un parte en
+# los últimos `DIAS_ANALIZADAS` días. Así entran solas las de la agenda que de
+# verdad se analizan (padrón, internacionales, selecciones) y una liga que se
+# deja de analizar baja sola al desplegable. La web suma las del día que ya
+# tienen parte, aunque sean nuevas.
+DIAS_ANALIZADAS = 30
+ANALIZADAS_TTL_S = 600
+_ANALIZADAS: dict[int, tuple[float, dict]] = {}
+
+
+def ligas_analizadas(dias: int = DIAS_ANALIZADAS) -> dict:
+    """{dias, ligas: [{ligaId, partes, ultima}]}, de más a menos partes."""
+    hit = _ANALIZADAS.get(dias)
+    if hit and time.monotonic() - hit[0] < ANALIZADAS_TTL_S:
+        return hit[1]
+    from datetime import datetime, timedelta, timezone
+
+    from backend import db as saddb
+    from backend.analisis.parte import _conectar
+    desde = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime("%Y-%m-%d")
+    with _conectar() as con:
+        filas = con.execute("SELECT fixture_id, fecha FROM parte_cowork WHERE fecha >= ?", (desde,)).fetchall()
+    fecha = {f["fixture_id"]: str(f["fecha"] or "")[:10] for f in filas}
+    cuenta: dict[int, dict] = {}
+    ids = list(fecha)
+    for i in range(0, len(ids), 500):
+        lote = ids[i:i + 500]
+        for r in saddb.query("sad", f"SELECT id, league_id FROM fixtures WHERE id IN ({','.join('?' * len(lote))})",
+                             tuple(lote)):
+            if r["league_id"] is None:
+                continue
+            c = cuenta.setdefault(r["league_id"], {"ligaId": r["league_id"], "partes": 0, "ultima": ""})
+            c["partes"] += 1
+            c["ultima"] = max(c["ultima"], fecha[r["id"]])
+    out = {"dias": dias, "ligas": sorted(cuenta.values(), key=lambda c: (-c["partes"], c["ligaId"]))}
+    _ANALIZADAS[dias] = (time.monotonic(), out)
+    return out

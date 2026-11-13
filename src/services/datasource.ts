@@ -48,6 +48,7 @@ import type {
   SimulacionApuesta,
   SemaforoElegido,
   LecturaListaPartido,
+  LigasAnalizadasDTO,
   SeparacionLigaDTO,
   RevisionSkillDTO,
   DerrotasFavoritoDTO,
@@ -191,6 +192,8 @@ export interface SadDataSource {
   semaforo(fixtureIds: number[]): Promise<Record<number, SemaforoElegido>>
   /** La lectura de la tarjeta en Partidos (13/11/2026): DESCONFIAR y los marcadores más probables. */
   listaPartidos(fixtureIds: number[]): Promise<Record<number, LecturaListaPartido>>
+  /** Las ligas que analizamos normalmente (13/11/2026): con parte en los últimos `dias`. */
+  ligasAnalizadas(dias?: number): Promise<LigasAnalizadasDTO>
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana, Kelly y martingala. */
   simulacion(): Promise<SimulacionApuesta>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
@@ -896,7 +899,9 @@ class MockDataSource implements SadDataSource {
     const partes: MarcasCoworkDTO['partes'] = {}
     for (const fid of fixtureIds) {
       const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fid)
-      if (!m) continue
+      // la Serie A de la demo no se analiza: va al desplegable de «Ligas que no
+      // analizamos» (ligasAnalizadas), como una liga fuera de la agenda
+      if (!m || m.lk === 'seriea') continue
       const fin = m.status === 'fin'
       // confianza de muestra, estable por partido: recorre los cuatro tramos
       const prob = 34 + (fid % 34)
@@ -950,6 +955,12 @@ class MockDataSource implements SadDataSource {
       }
     }
     return out
+  }
+
+  async ligasAnalizadas(dias = 30): Promise<LigasAnalizadasDTO> {
+    // la demo analiza LaLiga y la Premier; la Serie A queda en el desplegable
+    // de las que no, para que se vea cómo se agrupan
+    return { dias, ligas: [{ ligaId: LIGA_NUM.laliga, partes: 41, ultima: MOCK_NOW.slice(0, 10) }, { ligaId: LIGA_NUM.premier, partes: 37, ultima: MOCK_NOW.slice(0, 10) }] }
   }
 
   async simulacion(): Promise<SimulacionApuesta> {
@@ -1344,6 +1355,7 @@ class HttpDataSource implements SadDataSource {
     const r = await SadApi.listaPartidos(fixtureIds)
     return Object.fromEntries(Object.entries(r.partes).map(([k, v]) => [Number(k), v]))
   }
+  ligasAnalizadas = (dias?: number) => SadApi.ligasAnalizadas(dias)
   simulacion = () => SadApi.simulacion()
   lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
   cuarentena = (fixtureId: number, motivo: string, ensena = false) => SadApi.cuarentena(fixtureId, motivo, ensena)

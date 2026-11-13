@@ -1432,6 +1432,32 @@ paths:
                 type: object
                 properties:
                   partes: { type: object, additionalProperties: { $ref: '#/components/schemas/LecturaListaPartido' } }
+  /analisis/ligas-analizadas:
+    get:
+      summary: Las ligas que analizamos normalmente (web; NO abierto a Cowork)
+      description: >
+        13/11/2026, usuario: «que las ligas que no analicemos siempre estén minimizadas… agrupadas en otra lista
+        desplegable… arriba solo las que normalmente analizamos». Medido, no declarado: las ligas con al menos un
+        parte en los últimos `dias`. La web suma las del día que ya tienen parte.
+      parameters:
+        - { name: dias, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 180 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dias: { type: integer }
+                  ligas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ligaId: { type: integer }
+                        partes: { type: integer, description: 'partes de esa liga en la ventana' }
+                        ultima: { type: string, description: 'fecha (YYYY-MM-DD) del último parte' }
   /analisis/cowork/espina/calibracion:
     get:
       summary: La espina de la tarjeta medida contra los veredictos ciegos

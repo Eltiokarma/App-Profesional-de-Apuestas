@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import { TEAMS } from '../data'
-import { fixtureNum, loadListaPartidos, loadMarcasCowork, loadSemaforos, refrescarLiga } from '../services/appdata'
+import { fixtureNum, loadLigasAnalizadas, loadListaPartidos, loadMarcasCowork, loadSemaforos, refrescarLiga } from '../services/appdata'
 import { COLOR_TRAMO, SEL_CORTA, SEL_LARGA } from '../lib/confianza'
 import type { LecturaListaPartido, MarcaCoworkDTO, SemaforoElegido } from '../api/types'
 import { SemaforoChip } from '../components/SemaforoChip'
@@ -115,6 +115,10 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
   // favoritas (ancladas arriba) y minimizadas, por id de liga (o nombre si no hay id)
   const [favoritas, setFavoritas] = useState<string[]>(() => leerLS('sad-ligas-fav'))
   const [minimizadas, setMinimizadas] = useState<string[]>(() => leerLS('sad-ligas-min'))
+  // las ligas abiertas DENTRO del desplegable de las que no analizamos (ahí todas
+  // arrancan minimizadas)
+  const [expandidas, setExpandidas] = useState<string[]>(() => leerLS('sad-ligas-exp'))
+  const [restoAbierto, setRestoAbierto] = useState(false)
   const alternar = (lista: string[], setLista: (v: string[]) => void, claveLS: string, k: string) => {
     const nueva = lista.includes(k) ? lista.filter((x) => x !== k) : [...lista, k]
     setLista(nueva)
@@ -166,6 +170,16 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     loadSemaforos(idsDia.split(',')).then((r) => { if (vivo) setSemaforos(r) }).catch(() => { /* el semáforo no rompe la lista */ })
     return () => { vivo = false }
   }, [idsDia])
+  // LAS LIGAS QUE ANALIZAMOS (13/11/2026, usuario: «arriba solo las que
+  // normalmente analizamos… para no scrollear»): las que tuvieron parte en los
+  // últimos 30 días, más las del día que ya tienen uno. Sin la respuesta
+  // (cargando o error) no se esconde nada: todo va arriba, como antes.
+  const [analizadas, setAnalizadas] = useState<Set<number> | null>(null)
+  useEffect(() => {
+    let vivo = true
+    loadLigasAnalizadas().then((r) => { if (vivo) setAnalizadas(new Set(r.ligas.map((l) => l.ligaId))) }).catch(() => { /* sin la lista, todas arriba */ })
+    return () => { vivo = false }
+  }, [])
   // DESCONFIAR y los marcadores más probables (13/11/2026): al costado del
   // semáforo; llega aparte porque tarda más (burbuja y goles por partido)
   const [lecturas, setLecturas] = useState<Record<number, LecturaListaPartido>>({})
@@ -202,6 +216,17 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
   // favoritas ancladas arriba (orden estable dentro de cada bloque)
   const claveDe = (g: (typeof grupos)[number]) => (g.ligaId != null ? 'id:' + g.ligaId : 'nm:' + g.comp)
   const ordenados = [...grupos].sort((a, b) => Number(favoritas.includes(claveDe(b))) - Number(favoritas.includes(claveDe(a))))
+  // arriba: las favoritas, las ligas que analizamos y la que ya tenga parte hoy;
+  // el resto, al desplegable. Sin la lista de analizadas, todo arriba.
+  const esPrincipal = (g: (typeof grupos)[number]) =>
+    !analizadas || favoritas.includes(claveDe(g)) || (g.ligaId != null && analizadas.has(g.ligaId))
+    || g.rows.some((m) => marcas[fixtureNum(m.id)])
+  const principales = ordenados.filter(esPrincipal)
+  const resto = ordenados.filter((g) => !esPrincipal(g))
+  const nResto = resto.reduce((n, g) => n + g.rows.length, 0)
+  const nRestoVivo = resto.reduce((n, g) => n + g.rows.filter((m) => m.status === 'live').length, 0)
+  // buscando un equipo, el desplegable se abre solo: el partido puede estar ahí
+  const verResto = restoAbierto || t.length > 0
 
   const chips: { k: Filtro; label: string }[] = [
     { k: 'todos', label: 'Todos' },
@@ -210,6 +235,146 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
     { k: 'fin', label: 'Pasados' },
   ]
   const nLive = matches.filter((m) => m.status === 'live').length
+
+  // una liga de la lista: la misma tarjeta arriba y en el desplegable. En el
+  // desplegable (`resto`) arranca MINIMIZADA y lo que se recuerda es cuál se
+  // abrió (sad-ligas-exp), al revés que arriba (sad-ligas-min)
+  const pintarGrupo = (grp: (typeof grupos)[number], resto: boolean) => {
+      const k = claveDe(grp)
+      const fav = favoritas.includes(k)
+      const min = resto ? !expandidas.includes(k) && !t : minimizadas.includes(k)
+      return (
+      <section key={grp.ligaId ?? grp.comp} style={{ marginBottom: min ? 8 : 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px 8px' }}>
+          <span style={{ width: 5, height: 15, borderRadius: 2, background: fav ? 'var(--mark)' : 'var(--accent)' }}></span>
+          {/* el botón del nombre abarca SOLO el nombre (antes con flex:1 se
+              tragaba todo el hueco de la fila y un click al aire te metía
+              a la página de la liga); el hueco pasa a minimizar/expandir */}
+          {grp.ligaId != null ? (
+            <button className="sad-hover" onClick={() => store.openLiga(grp.ligaId!)} title={`Ver información de ${grp.comp}`} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 0, cursor: 'pointer', padding: '3px 7px', margin: '-3px -7px', borderRadius: 7, textAlign: 'left', flex: '0 1 auto', minWidth: 0 }}>
+              {grp.img && <img src={grp.img} alt="" width={16} height={12} style={{ objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />}
+              <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
+            </button>
+          ) : (
+            <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: '0 1 auto', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
+          )}
+          <button
+            onClick={() => (resto ? alternar(expandidas, setExpandidas, 'sad-ligas-exp', k) : alternar(minimizadas, setMinimizadas, 'sad-ligas-min', k))}
+            title={min ? 'Expandir liga' : 'Minimizar liga'}
+            style={{ flex: 1, minWidth: 0, height: 26, background: 'transparent', border: 0, cursor: 'pointer', padding: 0 }}
+          ></button>
+          <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{grp.rows.length}</span>
+          {/* refresco forzado del marcador de la liga (lo atiende el
+              próximo ciclo en vivo; con el plan muerto, la clave de
+              emergencia) — solo con backend real */}
+          {esHttp && grp.ligaId != null && (
+            <button
+              onClick={() => pedirRefresco(grp.ligaId!)}
+              title={MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido']?.title
+                ?? 'Forzar la actualización del marcador de esta liga (la atiende el próximo ciclo en vivo, ~1 minuto)'}
+              disabled={!!refrescos[grp.ligaId!]}
+              style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: refrescos[grp.ligaId!] ? 'default' : 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
+            >
+              {refrescos[grp.ligaId!]
+                ? <span style={{ font: '700 12px var(--mono)', color: MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido'].color }}>{MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido'].txt}</span>
+                : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg>}
+            </button>
+          )}
+          {/* anclar arriba (favorita) — táctil: 30px de zona de toque */}
+          <button
+            onClick={() => alternar(favoritas, setFavoritas, 'sad-ligas-fav', k)}
+            title={fav ? 'Quitar de favoritas' : 'Anclar arriba'}
+            style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={fav ? 'var(--mark)' : 'none'} stroke={fav ? 'var(--mark)' : 'var(--t3)'} strokeWidth="1.8"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17.2 6.5 19.9l1.1-6.1L3.1 9.4l6.1-.8z" /></svg>
+          </button>
+          {/* minimizar / expandir la liga */}
+          <button
+            onClick={() => (resto ? alternar(expandidas, setExpandidas, 'sad-ligas-exp', k) : alternar(minimizadas, setMinimizadas, 'sad-ligas-min', k))}
+            title={min ? 'Expandir liga' : 'Minimizar liga'}
+            style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: min ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+        </div>
+        {!min && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {grp.rows.map((m) => {
+            const H = TEAMS[m.home]
+            const A = TEAMS[m.away]
+            // en teléfono el nombre va a DOS líneas en vez de cortarse en
+            // «Arse…»: a 360 px cada lado tiene ~65 px y ningún nombre entra
+            const nombreEq: React.CSSProperties = isMobile
+              // break-word y no anywhere: «anywhere» deja que flex encoja el nombre
+              // por debajo de la palabra más larga y partía «Tottenha·m» con sitio de sobra
+              ? { font: '600 11.5px var(--sans)', color: 'var(--t1)', lineHeight: 1.15, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflowWrap: 'break-word' }
+              : { font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+            const live = m.status === 'live'
+            const fin = m.status === 'fin'
+            const activo = store.s.matchId === m.id
+            return (
+              <button
+                key={m.id}
+                onClick={store.selectMatch(m)}
+                style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, width: '100%', padding: isMobile ? '12px 12px' : '13px 16px', borderRadius: 13, cursor: 'pointer', textAlign: 'left', background: activo ? 'var(--accent-soft)' : 'var(--bg2)', border: `1px solid ${activo ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}` }}
+              >
+                {/* espejo del hueco de la marca (a la derecha): así el marcador
+                    queda en el centro exacto de la tarjeta, como antes */}
+                {!isMobile && (
+                  <span style={{ width: HUECO, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta={false} />
+                      {marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} />}
+                      {marcas[fixtureNum(m.id)]?.confianza && <DesconfiarChip l={lecturas[fixtureNum(m.id)]} />}
+                    </span>
+                    <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={3} />
+                  </span>
+                )}
+                <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: isMobile ? 6 : 10 }}>
+                  <span style={{ ...nombreEq, textAlign: 'right' }}>{H?.name ?? m.home}</span>
+                  <TeamBadge logo={H?.logo} short={H?.short ?? '?'} color={H?.color ?? 'var(--bg3)'} fg={H?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
+                </span>
+                <span style={{ width: isMobile ? 58 : 74, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                  <span style={{ font: `700 ${isMobile ? 15 : 16}px var(--mono)`, color: m.status === 'sched' ? 'var(--t2)' : 'var(--t1)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                    {m.status === 'sched' ? m.min : m.score}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, font: '700 9px var(--mono)', color: live ? 'var(--down)' : fin ? 'var(--t3)' : 'var(--accent)', letterSpacing: '.3px' }}>
+                    {live && <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>}
+                    {live ? m.min : fin ? 'FIN' : 'PROX'}
+                  </span>
+                  {isMobile && <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta />}
+                  {isMobile && marcas[fixtureNum(m.id)]?.confianza && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <SemaforoChip s={semaforos[fixtureNum(m.id)]} corta />
+                      <DesconfiarChip l={lecturas[fixtureNum(m.id)]} corta />
+                    </span>
+                  )}
+                  {isMobile && <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={2} corta />}
+                </span>
+                <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
+                  <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
+                  <span style={nombreEq}>{A?.name ?? m.away}</span>
+                </span>
+                {/* hueco FIJO para la marca, tenga o no: si solo existiera en las
+                    filas con parte, el marcador y los nombres se correrían entre
+                    una fila y la siguiente */}
+                {isMobile
+                  ? <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile />
+                  : (
+                    <span style={{ width: HUECO, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                      <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile={false} />
+                    </span>
+                  )}
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
+              </button>
+            )
+          })}
+        </div>
+        )}
+      </section>
+      )
+  }
+
 
   return (
     <div>
@@ -301,142 +466,24 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
         </div>
       )}
 
-      {!loading &&
-        ordenados.map((grp) => {
-          const k = claveDe(grp)
-          const fav = favoritas.includes(k)
-          const min = minimizadas.includes(k)
-          return (
-          <section key={grp.ligaId ?? grp.comp} style={{ marginBottom: min ? 8 : 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 2px 8px' }}>
-              <span style={{ width: 5, height: 15, borderRadius: 2, background: fav ? 'var(--mark)' : 'var(--accent)' }}></span>
-              {/* el botón del nombre abarca SOLO el nombre (antes con flex:1 se
-                  tragaba todo el hueco de la fila y un click al aire te metía
-                  a la página de la liga); el hueco pasa a minimizar/expandir */}
-              {grp.ligaId != null ? (
-                <button className="sad-hover" onClick={() => store.openLiga(grp.ligaId!)} title={`Ver información de ${grp.comp}`} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 0, cursor: 'pointer', padding: '3px 7px', margin: '-3px -7px', borderRadius: 7, textAlign: 'left', flex: '0 1 auto', minWidth: 0 }}>
-                  {grp.img && <img src={grp.img} alt="" width={16} height={12} style={{ objectFit: 'cover', borderRadius: 2, flexShrink: 0 }} />}
-                  <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
-                </button>
-              ) : (
-                <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)', flex: '0 1 auto', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{grp.comp}</span>
-              )}
-              <button
-                onClick={() => alternar(minimizadas, setMinimizadas, 'sad-ligas-min', k)}
-                title={min ? 'Expandir liga' : 'Minimizar liga'}
-                style={{ flex: 1, minWidth: 0, height: 26, background: 'transparent', border: 0, cursor: 'pointer', padding: 0 }}
-              ></button>
-              <span style={{ font: '600 10px var(--mono)', color: 'var(--t3)' }}>{grp.rows.length}</span>
-              {/* refresco forzado del marcador de la liga (lo atiende el
-                  próximo ciclo en vivo; con el plan muerto, la clave de
-                  emergencia) — solo con backend real */}
-              {esHttp && grp.ligaId != null && (
-                <button
-                  onClick={() => pedirRefresco(grp.ligaId!)}
-                  title={MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido']?.title
-                    ?? 'Forzar la actualización del marcador de esta liga (la atiende el próximo ciclo en vivo, ~1 minuto)'}
-                  disabled={!!refrescos[grp.ligaId!]}
-                  style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: refrescos[grp.ligaId!] ? 'default' : 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
-                >
-                  {refrescos[grp.ligaId!]
-                    ? <span style={{ font: '700 12px var(--mono)', color: MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido'].color }}>{MARCA_REFRESCO[refrescos[grp.ligaId!] as 'pedido'].txt}</span>
-                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></svg>}
-                </button>
-              )}
-              {/* anclar arriba (favorita) — táctil: 30px de zona de toque */}
-              <button
-                onClick={() => alternar(favoritas, setFavoritas, 'sad-ligas-fav', k)}
-                title={fav ? 'Quitar de favoritas' : 'Anclar arriba'}
-                style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill={fav ? 'var(--mark)' : 'none'} stroke={fav ? 'var(--mark)' : 'var(--t3)'} strokeWidth="1.8"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17.2 6.5 19.9l1.1-6.1L3.1 9.4l6.1-.8z" /></svg>
-              </button>
-              {/* minimizar / expandir la liga */}
-              <button
-                onClick={() => alternar(minimizadas, setMinimizadas, 'sad-ligas-min', k)}
-                title={min ? 'Expandir liga' : 'Minimizar liga'}
-                style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, cursor: 'pointer', padding: 0, borderRadius: 7, flexShrink: 0 }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: min ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}><path d="M6 9l6 6 6-6" /></svg>
-              </button>
-            </div>
-            {!min && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {grp.rows.map((m) => {
-                const H = TEAMS[m.home]
-                const A = TEAMS[m.away]
-                // en teléfono el nombre va a DOS líneas en vez de cortarse en
-                // «Arse…»: a 360 px cada lado tiene ~65 px y ningún nombre entra
-                const nombreEq: React.CSSProperties = isMobile
-                  // break-word y no anywhere: «anywhere» deja que flex encoja el nombre
-                  // por debajo de la palabra más larga y partía «Tottenha·m» con sitio de sobra
-                  ? { font: '600 11.5px var(--sans)', color: 'var(--t1)', lineHeight: 1.15, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflowWrap: 'break-word' }
-                  : { font: '600 13px var(--sans)', color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
-                const live = m.status === 'live'
-                const fin = m.status === 'fin'
-                const activo = store.s.matchId === m.id
-                return (
-                  <button
-                    key={m.id}
-                    onClick={store.selectMatch(m)}
-                    style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12, width: '100%', padding: isMobile ? '12px 12px' : '13px 16px', borderRadius: 13, cursor: 'pointer', textAlign: 'left', background: activo ? 'var(--accent-soft)' : 'var(--bg2)', border: `1px solid ${activo ? 'color-mix(in oklch,var(--accent),transparent 55%)' : 'var(--line)'}` }}
-                  >
-                    {/* espejo del hueco de la marca (a la derecha): así el marcador
-                        queda en el centro exacto de la tarjeta, como antes */}
-                    {!isMobile && (
-                      <span style={{ width: HUECO, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta={false} />
-                          {marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} />}
-                          {marcas[fixtureNum(m.id)]?.confianza && <DesconfiarChip l={lecturas[fixtureNum(m.id)]} />}
-                        </span>
-                        <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={3} />
-                      </span>
-                    )}
-                    <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: isMobile ? 6 : 10 }}>
-                      <span style={{ ...nombreEq, textAlign: 'right' }}>{H?.name ?? m.home}</span>
-                      <TeamBadge logo={H?.logo} short={H?.short ?? '?'} color={H?.color ?? 'var(--bg3)'} fg={H?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
-                    </span>
-                    <span style={{ width: isMobile ? 58 : 74, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                      <span style={{ font: `700 ${isMobile ? 15 : 16}px var(--mono)`, color: m.status === 'sched' ? 'var(--t2)' : 'var(--t1)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                        {m.status === 'sched' ? m.min : m.score}
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, font: '700 9px var(--mono)', color: live ? 'var(--down)' : fin ? 'var(--t3)' : 'var(--accent)', letterSpacing: '.3px' }}>
-                        {live && <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--down)', animation: 'sadpulse 1.1s infinite' }}></span>}
-                        {live ? m.min : fin ? 'FIN' : 'PROX'}
-                      </span>
-                      {isMobile && <ConfianzaChip marca={marcas[fixtureNum(m.id)]} corta />}
-                      {isMobile && marcas[fixtureNum(m.id)]?.confianza && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <SemaforoChip s={semaforos[fixtureNum(m.id)]} corta />
-                          <DesconfiarChip l={lecturas[fixtureNum(m.id)]} corta />
-                        </span>
-                      )}
-                      {isMobile && <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={2} corta />}
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
-                      <TeamBadge logo={A?.logo} short={A?.short ?? '?'} color={A?.color ?? 'var(--bg3)'} fg={A?.fg ?? 'var(--t2)'} size={isMobile ? 24 : 28} />
-                      <span style={nombreEq}>{A?.name ?? m.away}</span>
-                    </span>
-                    {/* hueco FIJO para la marca, tenga o no: si solo existiera en las
-                        filas con parte, el marcador y los nombres se correrían entre
-                        una fila y la siguiente */}
-                    {isMobile
-                      ? <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile />
-                      : (
-                        <span style={{ width: HUECO, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
-                          <MarcaCowork marca={marcas[fixtureNum(m.id)]} isMobile={false} />
-                        </span>
-                      )}
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 6l6 6-6 6" /></svg>
-                  </button>
-                )
-              })}
-            </div>
-            )}
-          </section>
-          )
-        })}
+      {!loading && principales.map((grp) => pintarGrupo(grp, false))}
+      {!loading && resto.length > 0 && (
+        <section style={{ marginBottom: 16 }}>
+          <button
+            onClick={() => setRestoAbierto(!verResto)}
+            title={verResto ? 'Ocultar las ligas que no analizamos' : 'Ver las ligas que no analizamos'}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 12px', borderRadius: 11, background: 'var(--bg2)', border: '1px dashed var(--line)', cursor: 'pointer', textAlign: 'left', marginBottom: verResto ? 12 : 0 }}
+          >
+            <span style={{ font: '700 12px var(--sans)', color: 'var(--t2)', flex: 1, minWidth: 0 }}>
+              Ligas que no analizamos
+              <span style={{ font: '600 10.5px var(--mono)', color: 'var(--t3)' }}> · {resto.length} {resto.length === 1 ? 'liga' : 'ligas'} · {nResto} {nResto === 1 ? 'partido' : 'partidos'}</span>
+              {nRestoVivo > 0 && <span style={{ font: '600 10.5px var(--mono)', color: 'var(--down)' }}> · {nRestoVivo} en vivo</span>}
+            </span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: verResto ? 'none' : 'rotate(-90deg)', transition: 'transform .15s' }}><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+          {verResto && resto.map((grp) => pintarGrupo(grp, true))}
+        </section>
+      )}
       {!loading && !error && visibles.length === 0 && (
         <div style={{ font: '500 12.5px var(--sans)', color: 'var(--t3)', padding: 24, textAlign: 'center' }}>
           {matches.length === 0 ? 'Sin partidos este día.' : 'Sin partidos para este filtro.'}

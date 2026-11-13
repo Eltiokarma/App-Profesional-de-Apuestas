@@ -90,6 +90,24 @@ def main():
     check("sin ids válidos, vacío y sin error",
           c.get(f"{A}/analisis/lista-partidos", params={"ids": "a,b"}).json() == {"partes": {}})
 
+    # ── las ligas que analizamos: las que tuvieron parte en los últimos días ──
+    liga = dbmod.query_one("sad", "SELECT league_id FROM fixtures WHERE id=?", (fid,))["league_id"]
+    from backend.analisis.parte import _conectar
+    with _conectar() as con:   # el parte de la demo, con fecha de hoy (cuenta en la ventana)
+        con.execute("UPDATE parte_cowork SET fecha=date('now') WHERE fixture_id=?", (fid,))
+    lp._ANALIZADAS.clear()
+    la = c.get(f"{A}/analisis/ligas-analizadas").json()
+    fila = next((x for x in la["ligas"] if x["ligaId"] == liga), None)
+    check("GET /analisis/ligas-analizadas trae la liga del parte, con cuántos y el último",
+          la["dias"] == lp.DIAS_ANALIZADAS and fila and fila["partes"] >= 1 and fila["ultima"], la)
+    otras = {r["league_id"] for r in dbmod.query("sad", "SELECT DISTINCT league_id FROM fixtures")} - {liga}
+    check("…y no trae ligas sin parte", not ({x["ligaId"] for x in la["ligas"]} & otras), la)
+    with _conectar() as con:   # un parte viejo no cuenta como «normalmente»
+        con.execute("UPDATE parte_cowork SET fecha='2020-01-01' WHERE fixture_id=?", (fid,))
+    lp._ANALIZADAS.clear()
+    check("un parte de hace más de 30 días ya no cuenta",
+          not any(x["ligaId"] == liga for x in c.get(f"{A}/analisis/ligas-analizadas").json()["ligas"]))
+
     appmod.API_TOKEN, appmod.TOKEN_COWORK, appmod.TOKEN_WEB = "maestra-prueba", "cowork-prueba", "web-prueba"
     try:
         check("el token de Cowork no lo abre (nace denegado)",

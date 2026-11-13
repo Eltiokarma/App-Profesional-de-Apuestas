@@ -1,5 +1,5 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
-import type { BurbujasEquipoDTO, LecturaListaPartido, SemaforoElegido, SimulacionApuesta } from './types'
+import type { BurbujasEquipoDTO, LecturaListaPartido, LigasAnalizadasDTO, SemaforoElegido, SimulacionApuesta } from './types'
 import { apiDelete, apiGet, apiPost, qs } from './client'
 import type {
   CausaIncidencia,
@@ -175,6 +175,9 @@ export const SadApi = {
   /** La lectura de la tarjeta en Partidos: DESCONFIAR y los marcadores más probables (13/11/2026). */
   listaPartidos: (fixtureIds: number[]) =>
     apiGet<{ partes: Record<string, LecturaListaPartido> }>('/analisis/lista-partidos' + qs({ ids: fixtureIds.join(',') }), { timeoutMs: 60_000 }),
+
+  /** Las ligas que analizamos normalmente (con parte en los últimos `dias`). */
+  ligasAnalizadas: (dias?: number) => apiGet<LigasAnalizadasDTO>('/analisis/ligas-analizadas' + qs({ dias })),
 
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026 (plana, Kelly, martingala). */
   simulacion: () => apiGet<SimulacionApuesta>('/analisis/simulacion', { timeoutMs: 60_000 }),
