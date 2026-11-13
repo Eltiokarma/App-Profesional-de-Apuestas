@@ -560,3 +560,35 @@ períodos (1.229 partidos, 54,6 % contra 52,4 %) el intervalo todavía roza lo
 que pide la cuota (z ≈ 1,5). Lo que corresponde, como con el semáforo
 (`docs/METODO_APUESTA.md`), es **fijar la regla hoy y medirla hacia
 adelante** con escalones. Queda propuesto, sin decidir.
+
+### 10.1 ¿Elegir nosotros el margen? El hándicap con las burbujas combinadas (13/11/2026)
+
+Pregunta del usuario: combinando la K de puntos con las burbujas de victorias
+y derrotas, ¿se puede decidir un margen de puntos y apostar a ese hándicap?
+Se mide x = margen del elegido (favorito sin DESCONFIAR) + su línea, es decir,
+cuánto le sobró o le faltó para cubrir. Se compara P(x > t) con lo que da una
+normal(0, 14) centrada en la línea, que es como se precian las líneas
+alternativas (ESPN no las trae).
+
+- **En todos los grupos la media de x queda cerca de 0** (−1,3 a +1,3) y
+  **cambia de signo entre períodos**: victorias o derrotas por cada riesgo, el
+  balance de puntos de la casa −2 a +2, y las combinaciones. La línea de la
+  casa ya es el centro: con las burbujas no aparece un margen que la casa no
+  haya puesto.
+- **Un margen más «seguro»** (que el favorito no pierda por más de 6) se
+  cumple en el 67-72 % de los casos, que es justo lo que pide su precio.
+  Sube el win rate, no la plata.
+- **Lo único que se repite es un FRENO:** con la burbuja de victorias en riesgo
+  **muy alto**, el favorito cubre el 47 % en los dos períodos (media −1,3
+  puntos; n 294 y 154). Es la misma idea de la alerta DESCONFIAR, pero para
+  el hándicap.
+
+**Lectura:** el hándicap no es donde la burbuja paga. Combinando todo, el
+camino queda así:
+- **ganador:** el favorito sin DESCONFIAR (§9.1);
+- **hándicap:** solo frena, no con victorias en riesgo muy alto;
+- **puntos:** MÁS con presión 4 en la vara de la casa (§10), a medir hacia
+  adelante.
+
+Para medir de verdad líneas alternativas harían falta sus cuotas reales (una
+API paga).
