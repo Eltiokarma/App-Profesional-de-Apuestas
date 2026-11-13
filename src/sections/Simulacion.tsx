@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenMarcador, ResumenSemaforo, SimulacionApuesta, TrasFallos } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenMarcador, ResumenMedio, ResumenSemaforo, SimulacionApuesta, TrasFallos } from '../api/types'
 import { SemaforoChip } from '../components/SemaforoChip'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
@@ -15,18 +15,18 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaAjustadaVerdeMarcador', string> = {
+const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingala60Ajustada', string> = {
   proporcional: 'var(--sim-proporcional)', metodoVerde: 'var(--sim-metodo-verde)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
-  // el método con el marcador más probable (13/11/2026)
-  metodoMarcador: 'var(--sim-metodo-marcador)', metodoVerdeMarcador: 'var(--sim-metodo-verde-marcador)', martingalaAjustadaVerdeMarcador: 'var(--sim-martingala-verde-marcador)', martingala60Ajustada: 'var(--sim-martingala60-ajustada)',
+  // el método fuera del medio (13/11/2026) y la martingala de 60 %+ ajustada a la cuota
+  metodoFueraMedio: 'var(--sim-metodo-marcador)', martingala60Ajustada: 'var(--sim-martingala60-ajustada)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoMarcador: 'Método ⚽', metodoVerdeMarcador: 'Método 🟢⚽', martingalaAjustadaVerdeMarcador: 'Martin. 🟢⚽ aj.', martingala60Ajustada: 'Martin. 60 %+ aj.', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -79,12 +79,12 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
     { clave: 'proporcional', color: COLOR.proporcional },
     // el método solo en verde (11/11/2026): en papel, para medir el semáforo
     ...(d.estrategias.some((e) => e.clave === 'metodoVerde') ? [{ clave: 'metodoVerde' as EstrategiaClave, color: COLOR.metodoVerde }] : []),
-    // el método con el marcador más probable (13/11/2026): en papel, para medir el marcador
-    ...(['metodoMarcador', 'metodoVerdeMarcador'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
+    // el método fuera del medio (13/11/2026): en papel, sin el 45-60 % de la casa
+    ...(d.estrategias.some((e) => e.clave === 'metodoFueraMedio') ? [{ clave: 'metodoFueraMedio' as EstrategiaClave, color: COLOR.metodoFueraMedio }] : []),
     { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
     { clave: 'martingala60', color: COLOR.martingala60 },
-    // las martingalas ajustadas a la cuota (13/11/2026): recuperan con cualquier cuota
-    ...(['martingala60Ajustada', 'martingalaAjustadaVerdeMarcador'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
+    // la martingala de 60 %+ ajustada a la cuota (13/11/2026): recupera con cualquier cuota
+    ...(d.estrategias.some((e) => e.clave === 'martingala60Ajustada') ? [{ clave: 'martingala60Ajustada' as EstrategiaClave, color: COLOR.martingala60Ajustada }] : []),
   ]
   // la gráfica: lo mínimo de cada cerrada (`linea`) y la banca de cada serie; sin
   // `linea` (respuesta sin paginar) se arma de las apuestas, como antes
@@ -140,6 +140,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
       {d.trasFallos && d.trasFallos.base.n > 0 && <TablaTrasFallos t={d.trasFallos} isMobile={isMobile} />}
 
       {d.semaforo && <TablaSemaforo r={d.semaforo} isMobile={isMobile} />}
+
+      {d.medio && <TablaMedio r={d.medio} isMobile={isMobile} />}
 
       {d.marcador && <TablaMarcador r={d.marcador} isMobile={isMobile} />}
 
@@ -510,6 +512,77 @@ function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean 
   )
 }
 
+// LAS PUNTAS CONTRA EL MEDIO (13/11/2026, usuario: «siento que hay una forma
+// correcta de apostar»): según lo que la casa le da al elegido, dónde le sacamos
+// algo a la cuota. Acá sí se mira la ventaja contra la cuota
+function TablaMedio({ r, isMobile }: { r: ResumenMedio; isMobile: boolean }) {
+  const tasa = (x: number | null | undefined) => (x == null ? '—' : `${num(100 * x, 1)} %`)
+  const celda: React.CSSProperties = { padding: '5px 6px', textAlign: 'right' }
+  const c = r.criterio
+  const est = ESTADO_SEMAFORO[c.estado] ?? ESTADO_SEMAFORO.en_observacion
+  const [lo, hi] = r.medio
+  const bloques: [string, ResumenMedio['nuevo']][] = [[`desde el ${fecha(r.desde).split(' ').slice(0, 2).join(' ')} (cuenta)`, r.nuevo], ['todo lo simulado', r.todo]]
+  const filas: [string, keyof ResumenMedio['nuevo']][] = [[`punta baja · casa < ${num(lo, 0)} %`, 'puntaBaja'], [`medio · casa ${num(lo, 0)}-${num(hi, 0)} %`, 'medio'], [`punta alta · casa ${num(hi, 0)} %+`, 'puntaAlta'], ['las dos puntas', 'puntas']]
+  return (
+    <div style={{ ...tarjeta, marginTop: 12 }}>
+      <div style={{ ...rotulo, marginBottom: 4 }}>Las puntas contra el medio · lo que la casa le da al elegido</div>
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
+        La plata no sale del win rate solo: sale de la ventaja, lo que acertamos por encima de lo que pide la cuota. Medido el 13/11,
+        la ventaja está en las dos puntas (el favorito claro y el partido donde la casa no cree en nuestro elegido) y en el medio no hay.
+        Por escalones de partidos nuevos del medio ({c.escalones.join(' · ')}): en {c.escalones.slice(0, -1).join(' y ')}, prometedor si
+        las puntas le sacan {num(100 * c.separacionMinima, 0)}+ pts de ventaja al medio; en {c.nMinimo}, confirmado con esos puntos y la plana
+        de las puntas en positivo y sobre la del medio.
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg3)', font: '700 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          {c.escalon ? `escalón ${c.escalon}` : `antes del escalón ${c.escalones[0]}`}
+        </span>
+        <span style={{ padding: '3px 9px', borderRadius: 6, background: est.fondo, font: '700 10.5px var(--mono)', color: est.color, letterSpacing: '.3px' }}>
+          {est.etiqueta}
+        </span>
+        <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
+          {c.n} del medio{c.proximoEscalon ? ` · faltan ${c.faltan} para el ${c.proximoEscalon}` : ''}
+        </span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          <thead>
+            <tr style={{ color: 'var(--t3)' }}>
+              <th style={{ ...celda, textAlign: 'left', fontWeight: 600 }}></th>
+              <th style={{ ...celda, fontWeight: 600 }}>casos</th>
+              <th style={{ ...celda, fontWeight: 600 }}>acierta</th>
+              <th style={{ ...celda, fontWeight: 600 }}>pedía</th>
+              <th style={{ ...celda, fontWeight: 600 }}>ventaja</th>
+              <th style={{ ...celda, fontWeight: 600 }}>1 u plano</th>
+            </tr>
+          </thead>
+          {bloques.map(([titulo, g]) => (
+            <tbody key={titulo}>
+              <tr><td colSpan={6} style={{ ...celda, textAlign: 'left', paddingTop: 9, font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px' }}>{titulo.toUpperCase()}</td></tr>
+              {filas.map(([nombre, k]) => {
+                const x: GrupoSemaforo = g[k]
+                return (
+                  <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
+                    <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: 700, fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>{nombre}</td>
+                    <td style={celda}>{x.n}</td>
+                    <td style={celda}>{tasa(x.tasa)}</td>
+                    <td style={celda}>{tasa(x.pide)}</td>
+                    <td style={{ ...celda, color: colorDe(x.ventaja), fontWeight: 700 }}>{x.ventaja == null ? '—' : `${signo(100 * x.ventaja, 1)} pts`}</td>
+                    <td style={{ ...celda, color: colorDe(x.roiPlano), fontWeight: 700 }}>{pct(x.roiPlano)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          ))}
+        </table>
+      </div>
+      <div style={{ marginTop: 8, font: '600 11px var(--sans)', color: est.color, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+        {c.texto}
+      </div>
+    </div>
+  )
+}
+
 // EL MARCADOR MÁS PROBABLE CON EL ELEGIDO (13/11/2026, usuario: «no era medir
 // contra la cuota, era medir si nuestro win rate mejoraba»): alineados contra el
 // resto, con el criterio por escalones fijado antes de los partidos nuevos
@@ -748,7 +821,7 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
-                    : ['proporcional', 'metodoVerde', 'metodoMarcador', 'metodoVerdeMarcador', 'martingalaAjustadaVerdeMarcador'].includes(v.clave) ? `no apuesta: ${r.motivo}`
+                    : ['proporcional', 'metodoVerde', 'metodoFueraMedio'].includes(v.clave) ? `no apuesta: ${r.motivo}`
                     : v.clave === 'plana60' || v.clave === 'martingala60' || v.clave === 'martingala60Ajustada' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>

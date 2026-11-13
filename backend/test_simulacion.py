@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las trece estrategias (con el método, en verde, con el marcador y las martingalas ajustadas)", len(out["estrategias"]) == 13, out.keys())
+check("simulacion() responde con las once estrategias (con el método, en verde, fuera del medio y la martingala ajustada)", len(out["estrategias"]) == 11, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -474,32 +474,11 @@ _om = sim.simular([_apm(1, "2026-11-14 15:00:00", "visita", "1-0"),
                    _apm(5, "2026-11-16 15:00:00", "local", None)])
 _em = {e["clave"]: e for e in _om["estrategias"]}
 _fm = {a["fixtureId"]: a for a in _om["apuestas"]}
-check("marcador: las tres series nuevas existen (método, verde + marcador, martingala)",
-      all(c in _em for c in sim._CON_MARCADOR))
-check("metodoMarcador apuesta SOLO con el marcador alineado (1, 2 y 4), no con 1-1 ni sin marcador",
-      _em["metodoMarcador"]["apuestas"] == 3
-      and _fm[3]["porEstrategia"]["metodoMarcador"]["motivo"] == "el marcador más probable (1-1) no va con el elegido"
-      and _fm[5]["porEstrategia"]["metodoMarcador"]["motivo"] == "sin marcador del modelo de goles",
-      [_fm[k]["porEstrategia"]["metodoMarcador"] for k in (3, 5)])
-check("metodoVerdeMarcador pide además el verde (1 y 2, no el 4 en amarillo)",
-      _em["metodoVerdeMarcador"]["apuestas"] == 2
-      and _fm[4]["porEstrategia"]["metodoVerdeMarcador"]["motivo"] == "semáforo no está en verde")
-# LA MARTINGALA AJUSTADA A LA CUOTA (13/11/2026, usuario): tras perder apuesta
-# 1 + lo perdido / (cuota − 1). Cuota 1,80: pierde 1 en el 1 → en el 2 apuesta
-# 1 + 1/0,8 = 2,25, gana 1,80 y la línea queda +0,80 (lo de 1 u), sin pérdida
-_m1, _m2 = (_fm[1]["porEstrategia"]["martingalaAjustadaVerdeMarcador"],
-            _fm[2]["porEstrategia"]["martingalaAjustadaVerdeMarcador"])
-_ea = _em["martingalaAjustadaVerdeMarcador"]
-check("martingala 🟢⚽ ajustada: pierde 1 u y después apuesta 2,25 (recupera y gana lo de 1 u), misma línea",
-      _m1["monto"] == 1.0 and _m1["ganancia"] == -1.0 and _m2["monto"] == 2.25 and _m2["ganancia"] == 1.8
-      and _m2["linea"] == _m1["linea"] and _ea["banca"] == 100.8
-      and _ea["lineas"]["perdiendo"] == 0 and _ea["lineas"]["perdidaMayor"] == 0, (_m1, _m2, _ea["lineas"]))
-check("…pide el verde y el marcador: no apuesta el 3 (1-1), el 4 (amarillo) ni el 5 (sin marcador)",
-      _ea["apuestas"] == 2 and _fm[4]["porEstrategia"]["martingalaAjustadaVerdeMarcador"]["motivo"] == "semáforo no está en verde"
-      and _fm[3]["porEstrategia"]["martingalaAjustadaVerdeMarcador"]["monto"] == 0
-      and _fm[5]["porEstrategia"]["martingalaAjustadaVerdeMarcador"]["monto"] == 0)
-check("la 🟢⚽ clásica (sin ajuste) ya no existe, por decisión del usuario",
-      "martingalaVerdeMarcador" not in _em and "martingalaMarcador" not in _em)
+check("las series del marcador se quitaron (usuario, 13/11): ni método ⚽, ni 🟢⚽, ni su martingala",
+      not ({"metodoMarcador", "metodoVerdeMarcador", "martingalaAjustadaVerdeMarcador", "martingalaVerdeMarcador"}
+           & set(_em)), sorted(_em))
+check("…pero cada apuesta sigue trayendo su marcador (la tabla de win rate sigue)",
+      _fm[1]["marcador"]["alineado"] is True and _fm[3]["marcador"]["alineado"] is False and _fm[5]["marcador"] is None)
 # la 60 %+ ajustada: dos derrotas seguidas con cuota 1,50 y después un acierto
 def _ap60(fid, pit, res):
     a = _apm(fid, pit, res, None)
@@ -516,8 +495,55 @@ check("martingala 60 %+ ajustada: 1 → 1 + 1/0,5 = 3 → 1 + 4/0,5 = 9, y el ac
 check("…mientras la clásica de 60 %+ (1, 2, 4) cierra en −1 con la misma secuencia",
       [a["porEstrategia"]["martingala60"]["monto"] for a in sorted(_o60["apuestas"], key=lambda x: x["fixtureId"])]
       == [1.0, 2.0, 4.0] and _e60["martingala60"]["banca"] == 99.0)
-check("el método con el marcador lleva el freno por tramo, como el método",
-      _em["metodoMarcador"]["tramos"] is not None and _em["metodoVerdeMarcador"]["tramos"] is not None)
+# ── EL MÉTODO FUERA DEL MEDIO (13/11/2026, usuario) ─────────────────────────
+def _apf(fid, pit, res, mercado_local):
+    a = _apm(fid, pit, res, None)
+    a["mercado"] = {"local": mercado_local, "empate": 25, "visita": 75 - mercado_local}
+    return a
+_of = sim.simular([_apf(31, "2026-11-14 15:00:00", "local", 38), _apf(32, "2026-11-14 20:00:00", "visita", 45),
+                   _apf(33, "2026-11-15 15:00:00", "local", 59.9), _apf(34, "2026-11-15 20:00:00", "local", 60),
+                   _apf(35, "2026-11-16 15:00:00", "visita", 72)])
+_ef = {e["clave"]: e for e in _of["estrategias"]}
+_ff = {a["fixtureId"]: a for a in _of["apuestas"]}
+check("metodoFueraMedio: no apuesta con la casa en 45-60 % (45 y 59,9 sí son medio; 38, 60 y 72 no)",
+      _ef["metodoFueraMedio"]["apuestas"] == 3 and [_ff[k]["enElMedio"] for k in (31, 32, 33, 34, 35)]
+      == [False, True, True, False, False]
+      and _ff[32]["porEstrategia"]["metodoFueraMedio"]["motivo"] == "la casa le da 45 % al elegido: en el medio (45-60 %)",
+      _ff[32]["porEstrategia"]["metodoFueraMedio"])
+check("…con el 1 % de la banca y el freno por tramo, como el método",
+      _ff[31]["porEstrategia"]["metodoFueraMedio"]["monto"] == 1.0 and _ef["metodoFueraMedio"]["tramos"] is not None)
+_rf = _of["medio"]
+check("el resumen separa punta baja, medio y punta alta, y cuenta desde el 14/11",
+      (_rf["nuevo"]["puntaBaja"]["n"], _rf["nuevo"]["medio"]["n"], _rf["nuevo"]["puntaAlta"]["n"],
+       _rf["nuevo"]["puntas"]["n"]) == (1, 2, 2, 3) and _rf["desde"] == sim.MEDIO_DESDE == "2026-11-14 05:00:00"
+      and _rf["medio"] == [45.0, 60.0], _rf["nuevo"])
+_sinm = {k: v for k, v in _apf(36, "2026-11-14 15:00:00", "local", 50).items() if k != "mercado"}
+check("sin `mercado` de quien llama, sale de las cuotas sin margen (1,8 · 3,6 · 4,5 → 52,6 %: medio)",
+      sim.simular([_sinm])["apuestas"][0]["enElMedio"] is True)
+
+
+def _crit_f(n_p, ac_p, n_m, ac_m, cuota=2.0):
+    g = lambda n, k: sim._grupo_semaforo([{"resultado": "local" if i < k else "visita", "elegido": "local",  # noqa: E731
+                                           "cuotas": {"local": cuota}} for i in range(n)])
+    return sim.criterio_medio(g(n_p, ac_p), g(n_m, ac_m))
+_c = _crit_f(100, 60, 29, 10)
+check("criterio medio: con 29 partidos del medio, en observación", _c["estado"] == "en_observacion" and _c["faltan"] == 1, _c)
+_c = _crit_f(100, 58, 30, 15)
+check("escalón 30: puntas +8 pts y medio 0 → PROMETEDOR", _c["estado"] == "prometedor", _c)
+_c = _crit_f(100, 52, 30, 15)
+check("escalón 30: +2 pts → en observación", _c["estado"] == "en_observacion", _c)
+_c = _crit_f(100, 50, 30, 17)
+check("escalón 30: el medio rinde más → NO SE SOSTIENE", _c["estado"] == "no_se_sostiene", _c)
+_c = _crit_f(100, 58, 60, 30)
+check("escalón 60: +8 pts y la plana de las puntas en positivo → CONFIRMADO", _c["estado"] == "confirmado" and _c["cumple"], _c)
+_c = _crit_f(100, 49, 60, 26)
+check("escalón 60: separa pero la plana de las puntas pierde → sin contacto", _c["estado"] == "sin_contacto", _c)
+check("el criterio está fijado (medio 45-60 %, 30 · 60, 5 pts)",
+      sim.MEDIO == (45.0, 60.0) and sim.MEDIO_ESCALONES == (30, 60) and sim.MEDIO_SEPARACION == 0.05)
+from backend import contacto as _ctf  # noqa: E402
+check("el informe de los lunes trae «Fuera del medio» con el criterio",
+      "Fuera del medio · cuenta desde 2026-11-14" in _ctf.informe_medio(_of)
+      and _rf["criterio"]["texto"] in _ctf.informe_medio(_of))
 _rm = _om["marcador"]
 check("el resumen separa alineados, resto y sin marcador, en todo y en lo nuevo",
       (_rm["nuevo"]["alineado"]["n"], _rm["nuevo"]["resto"]["n"], _rm["nuevo"]["sinMarcador"]["n"]) == (3, 1, 1)
