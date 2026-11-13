@@ -2307,6 +2307,16 @@ def main():
           pend[:2])
     check("un partido sin jugar NO aparece como pendiente",
           all(x["fixtureId"] != sin_ficha for x in pend), pend[:2])
+    # LA CRÓNICA DE PRENSA LA ELIGE EL BACKEND (13/11/2026): el 1X2 contra el
+    # marcador y la ronda vienen calculados; el agente no decide a quién buscar
+    yo = next((x for x in pend if x["fixtureId"] == pasado["id"]), {})
+    check("el pendiente trae el 1X2 contra el marcador (acertado: apuntaba al real)",
+          (yo.get("unXDos") or {}).get("acerto") is True and (yo.get("unXDos") or {}).get("declarado") == real, yo)
+    check("y si lleva la crónica de prensa, con su motivo",
+          isinstance(yo.get("prensa"), bool) and yo.get("prensaMotivo") and "ronda" in yo and "importante" in yo, yo)
+    check("al menos la mitad de los pendientes de cada día lleva prensa",
+          all(sum(1 for x in pend if x["fecha"] == d and x["prensa"]) * 2
+              >= sum(1 for x in pend if x["fecha"] == d) for d in {x["fecha"] for x in pend}), pend[:4])
 
     # LO OBJETIVO ANTES DEL VEREDICTO: el GET del veredicto da 404 hasta el
     # primer POST y quien lo escribe necesita saber qué escenario se jugó

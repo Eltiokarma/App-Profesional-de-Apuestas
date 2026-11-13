@@ -43,6 +43,7 @@ python -m backend.test_semaforo   # el semáforo del elegido por las ESPINAS (13
 python -m backend.test_lista_partidos # la lista de Partidos: DESCONFIAR con la regla del parte, los 3 marcadores más probables y las ligas que analizamos (con parte en 30 días; el resto al desplegable) (13/11/2026)
 python -m backend.contacto        # criterio de contacto (acierto tras 3 fallos seguidos) desde la API con el token de Cowork; lo corre la rutina del lunes (docs/METODO_APUESTA.md)
 python -m backend.test_velocidad   # Aprendizaje y Simulación con caché: mismos números que sin caché, y solo se rehace lo que cambió (10/11/2026)
+python -m backend.test_prensa    # qué veredictos llevan la crónica de prensa: importantes siempre + hasta el 50 % del día con los perdidos primero (13/11/2026)
 python -m backend.test_modo_fallo # modo de fallo del veredicto (Jev): etiqueta para el dossier, no toca población ni métricas
 python -m backend.backtest_burbuja --padron --calibrar # backtest del reventón en las ligas importantes: tasa por riesgo, lift por señal, regla del nivel, por liga, y la logística que propone los puntos (--horizonte/--liga/--muestra/--json; en el servidor: GET /analisis/burbujas/backtest?calibrar=true, maestro)
 python -m backend.test_backtest_burbuja # anti-fuga y conteos del backtest, sobre la demo
