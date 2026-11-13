@@ -83,6 +83,24 @@
 > con `reventonCalculado`, es la recalibración de los puntos (REVENTON
 > §13.2): la prosa dice lo que la tarjeta mostraba ese día.
 >
+> **Partidos UEFA: el reporte de la prensa** (13/11/2026, pedido del
+> usuario). Si el `ligaId` de `GET $B/fixtures/{id}` es una competición
+> UEFA (clubes: 2 Champions, 3 Europa League, 848 Conference; selecciones:
+> 5 Nations League, 4 Eurocopa, 960 clasificación a la Euro, 32 eliminatorias
+> UEFA al Mundial), DESPUÉS de leer lo calculado buscá la crónica del partido
+> en internet (WebSearch, cargala con ToolSearch `select:WebSearch,WebFetch`;
+> 2-3 búsquedas: crónica, figuras y DT/conferencia) y escribí en `notas` del
+> veredicto el reporte: «Prensa (fuente, fecha): …» con las ocasiones claras
+> y su minuto, los goles y cómo nacieron, el plan de cada DT, lesiones o
+> cambios forzados, la expulsión que cambió el partido y lo que dijeron los
+> DT; al final la lista de fuentes (medio y URL). Lo que la prensa PRUEBA
+> entra donde corresponde (el `porque` de un corte, el `que` del escenario,
+> una lección con su skill) con la fuente en la frase; lo que solo opina no
+> es lección. Los números no se reemplazan: si la prensa da otro xG o
+> posesión que la ficha, manda la ficha y la diferencia se anota en `notas`.
+> Sin crónica encontrada, `notas` lo dice («Prensa: sin crónica») y seguís.
+> Las otras ligas, como siempre: sin búsqueda.
+>
 > `seleccion`: `ciega` si el partido salió de la agenda; `modoEvaluacion`:
 > `PRE` si terminó. Con duda entre ciega y post_resultado, es post_resultado.
 > `POST $B/analisis/cowork/{id}/veredicto` y leé `rechazos`. Respuesta final:
