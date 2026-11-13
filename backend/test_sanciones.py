@@ -611,6 +611,16 @@ check("1332: local de 1,66 a 1,08 en 24 h es salto del mercado; un movimiento ch
 check("1332: el chequeo mercado-salto existe y se deposita (no es informativo)",
       "mercado-salto" in escaneo.CHEQUEOS and not escaneo.CHEQUEOS["mercado-salto"].get("informativo"))
 
+# 1398 (13/11/2026): el partido del homónimo a pocas horas no es un choque. Un
+# Nacional de Colombia 21 h antes del 76 (Copa Perú, ajeno): sin la regla, choque
+from backend.analisis import parte as _pt1398  # noqa: E402
+partido_ajeno._cache.clear()
+_f1398 = {"id": 999, "date": "2099-11-13 23:00:00", "status_short": "NS", "home_team_id": ONC, "away_team_id": NAC,
+          "home_name": "Once Caldas", "away_name": "Atletico Nacional"}
+_ch1398 = _pt1398._choques([_f1398])
+check("1398: el partido de la Copa Perú del homónimo (21 h después) no es un choque de Nacional",
+      76 in partido_ajeno.ajenos_del_equipo(NAC) and NAC not in (_ch1398.get(999) or {}), _ch1398)
+
 # 1371, los lectores (al final: las columnas de goles cambian la forma de la tabla)
 for _col in ("goals_home", "goals_away", "fulltime_home", "fulltime_away", "venue_city"):
     con.execute(f"ALTER TABLE fixtures ADD COLUMN {_col}")
