@@ -2832,6 +2832,22 @@ export interface TrasFallos {
   }
 }
 
+/** LA LECTURA DE LA TARJETA EN PARTIDOS (13/11/2026, GET /analisis/lista-partidos): la alerta
+ *  DESCONFIAR con la regla del parte y los tres marcadores más probables del modelo de goles. */
+export interface LecturaListaPartido {
+  /** null sin 1X2 completo en el parte */
+  desconfiar: (AlertaConfianza & { elegido: Resultado1x2; lectura: string | null }) | null
+  /** null sin modelo de goles o sin historia suficiente */
+  marcadores: { masProbables: { marcador: string; prob: number }[]; porVentana: boolean } | null
+}
+
+/** Las ligas que analizamos normalmente (13/11/2026, GET /analisis/ligas-analizadas):
+ *  las que tuvieron parte en los últimos `dias`. */
+export interface LigasAnalizadasDTO {
+  dias: number
+  ligas: { ligaId: number; partes: number; ultima: string }[]
+}
+
 /** EL SEMÁFORO DEL ELEGIDO (11/11/2026, backend/analisis/semaforo.py). Calculado,
  *  nunca declarado, y fuera de la vista del analista (el token de Cowork no lo lee).
  *  `confirma` 🟢 = nuestro 1X2 a ≤ `umbral` pts de la casa en los tres y el marcador

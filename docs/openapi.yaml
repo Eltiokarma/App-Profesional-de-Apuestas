@@ -1412,6 +1412,52 @@ paths:
                 type: object
                 properties:
                   partes: { type: object, additionalProperties: { $ref: '#/components/schemas/SemaforoElegido' } }
+  /analisis/lista-partidos:
+    get:
+      summary: La lectura de la tarjeta en Partidos (DESCONFIAR y los marcadores más probables; web, NO abierto a Cowork)
+      description: >
+        13/11/2026, usuario: «tendría que estar al costado del semáforo… se deberían ver los dos marcadores más
+        probables, tres si nos da el tamaño». Por partido con parte: `desconfiar`, la alerta del elegido con la MISMA
+        regla que la tira del parte y la Simulación (SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO; no mueve el 1X2), y
+        `marcadores`, los tres más probables del modelo de goles (`GolesAcotados.masProbables`, REVENTON §17: lectura
+        del marcador, no señal de apuesta). Solo vienen los partidos con parte.
+      parameters:
+        - { name: ids, in: query, required: true, schema: { type: string }, description: 'fixtures separados por coma (hasta 300)' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  partes: { type: object, additionalProperties: { $ref: '#/components/schemas/LecturaListaPartido' } }
+  /analisis/ligas-analizadas:
+    get:
+      summary: Las ligas que analizamos normalmente (web; NO abierto a Cowork)
+      description: >
+        13/11/2026, usuario: «que las ligas que no analicemos siempre estén minimizadas… agrupadas en otra lista
+        desplegable… arriba solo las que normalmente analizamos». Medido, no declarado: las ligas con al menos un
+        parte en los últimos `dias`. La web suma las del día que ya tienen parte.
+      parameters:
+        - { name: dias, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 180 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dias: { type: integer }
+                  ligas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ligaId: { type: integer }
+                        partes: { type: integer, description: 'partes de esa liga en la ventana' }
+                        ultima: { type: string, description: 'fecha (YYYY-MM-DD) del último parte' }
   /analisis/cowork/espina/calibracion:
     get:
       summary: La espina de la tarjeta medida contra los veredictos ciegos
@@ -1893,6 +1939,25 @@ components:
             aciertos: { type: integer }
             tasa: { type: number }
             pide: { type: number, description: 'la casa sin margen, 0-1' }
+    LecturaListaPartido:
+      type: object
+      properties:
+        desconfiar:
+          type: object
+          nullable: true
+          description: 'null sin 1X2 completo en el parte'
+          properties:
+            activa: { type: boolean }
+            motivos: { type: array, items: { type: object, properties: { codigo: { type: string, enum: [SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO] }, detalle: { type: string } } } }
+            elegido: { type: string, enum: [local, empate, visita] }
+            lectura: { type: string, nullable: true, description: 'con alerta: «X no gana: Y o empate»' }
+        marcadores:
+          type: object
+          nullable: true
+          description: 'null sin modelo de goles o sin historia suficiente (no se inventa)'
+          properties:
+            masProbables: { type: array, maxItems: 3, items: { type: object, properties: { marcador: { type: string }, prob: { type: number } } } }
+            porVentana: { type: boolean, description: 'el nivel que entra a los goles sale de una ventana poco fiable (igual que fiabilidadMu)' }
     SemaforoElegido:
       type: object
       description: >

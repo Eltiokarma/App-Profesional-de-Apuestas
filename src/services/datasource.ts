@@ -47,6 +47,8 @@ import type {
   LeccionesParams,
   SimulacionApuesta,
   SemaforoElegido,
+  LecturaListaPartido,
+  LigasAnalizadasDTO,
   SeparacionLigaDTO,
   RevisionSkillDTO,
   DerrotasFavoritoDTO,
@@ -188,6 +190,10 @@ export interface SadDataSource {
   resolverXi(fixtureId: number, body: { a?: XiLadoDTO; b?: XiLadoDTO; desdeFicha?: boolean }): Promise<ParteCoworkDTO>
   /** El semáforo del elegido (11/11/2026): calculado, para el usuario; el analista no lo ve. */
   semaforo(fixtureIds: number[]): Promise<Record<number, SemaforoElegido>>
+  /** La lectura de la tarjeta en Partidos (13/11/2026): DESCONFIAR y los marcadores más probables. */
+  listaPartidos(fixtureIds: number[]): Promise<Record<number, LecturaListaPartido>>
+  /** Las ligas que analizamos normalmente (13/11/2026): con parte en los últimos `dias`. */
+  ligasAnalizadas(dias?: number): Promise<LigasAnalizadasDTO>
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana, Kelly y martingala. */
   simulacion(): Promise<SimulacionApuesta>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
@@ -893,7 +899,9 @@ class MockDataSource implements SadDataSource {
     const partes: MarcasCoworkDTO['partes'] = {}
     for (const fid of fixtureIds) {
       const m = MATCHES.find((x) => FIXTURE_NUM(x.id) === fid)
-      if (!m) continue
+      // la Serie A de la demo no se analiza: va al desplegable de «Ligas que no
+      // analizamos» (ligasAnalizadas), como una liga fuera de la agenda
+      if (!m || m.lk === 'seriea') continue
       const fin = m.status === 'fin'
       // confianza de muestra, estable por partido: recorre los cuatro tramos
       const prob = 34 + (fid % 34)
@@ -928,6 +936,32 @@ class MockDataSource implements SadDataSource {
     return out
   }
 
+
+  async listaPartidos(fixtureIds: number[]): Promise<Record<number, LecturaListaPartido>> {
+    // de muestra, estable por partido: uno de cada tres con DESCONFIAR (alternando
+    // los dos motivos) y tres marcadores que suman lo que da un Poisson típico
+    const out: Record<number, LecturaListaPartido> = {}
+    const MARC = [['1-1', 0.118], ['1-0', 0.109], ['2-1', 0.091], ['0-0', 0.083], ['0-1', 0.078], ['2-0', 0.074]] as const
+    for (const fid of fixtureIds) {
+      if (!MATCHES.some((x) => FIXTURE_NUM(x.id) === fid)) continue
+      const activa = fid % 3 === 0
+      const motivo = fid % 2 === 0
+        ? { codigo: 'SOBRE-LA-CASA' as const, detalle: 'le damos 61.0 % al elegido y la casa 57.4 % (+3.6 pts)' }
+        : { codigo: 'BURBUJA-DE-UN-PARTIDO' as const, detalle: 'la racha del elegido es de un solo partido con riesgo alto' }
+      const ini = fid % 3
+      out[fid] = {
+        desconfiar: { activa, motivos: activa ? [motivo] : [], elegido: 'local', lectura: activa ? 'la visita no gana: local o empate' : null },
+        marcadores: { masProbables: MARC.slice(ini, ini + 3).map(([marcador, prob]) => ({ marcador, prob })), porVentana: fid % 5 === 0 },
+      }
+    }
+    return out
+  }
+
+  async ligasAnalizadas(dias = 30): Promise<LigasAnalizadasDTO> {
+    // la demo analiza LaLiga y la Premier; la Serie A queda en el desplegable
+    // de las que no, para que se vea cómo se agrupan
+    return { dias, ligas: [{ ligaId: LIGA_NUM.laliga, partes: 41, ultima: MOCK_NOW.slice(0, 10) }, { ligaId: LIGA_NUM.premier, partes: 37, ultima: MOCK_NOW.slice(0, 10) }] }
+  }
 
   async simulacion(): Promise<SimulacionApuesta> {
     return SIMULACION_DEMO
@@ -1316,6 +1350,12 @@ class HttpDataSource implements SadDataSource {
     const r = await SadApi.semaforo(fixtureIds)
     return Object.fromEntries(Object.entries(r.partes).map(([k, v]) => [Number(k), v]))
   }
+  listaPartidos = async (fixtureIds: number[]) => {
+    if (!fixtureIds.length) return {}
+    const r = await SadApi.listaPartidos(fixtureIds)
+    return Object.fromEntries(Object.entries(r.partes).map(([k, v]) => [Number(k), v]))
+  }
+  ligasAnalizadas = (dias?: number) => SadApi.ligasAnalizadas(dias)
   simulacion = () => SadApi.simulacion()
   lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
   cuarentena = (fixtureId: number, motivo: string, ensena = false) => SadApi.cuarentena(fixtureId, motivo, ensena)
