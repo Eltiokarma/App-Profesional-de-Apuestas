@@ -5458,12 +5458,39 @@ def main():
         {"player_id": 5, "team_id": 2287, "equipo": "Pumas", "ultima": "2026-10-26 20:00:00"},
         {"player_id": 5, "team_id": 16, "equipo": "Otro", "ultima": "2026-08-01 20:00:00"},
         {"player_id": 6, "team_id": 2279, "equipo": "Tigres", "ultima": "2026-10-20 20:00:00"}]
+    # Pumas es un club (1395): la consulta de selección no pasa por el falso de arriba
+    import backend.analisis.escala as _esc931
+    _es931 = _esc931.es_seleccion
+    _esc931.es_seleccion = lambda tid: False  # noqa: E731
     try:
         _o931 = _f1m931.juegan_en_otro(2287, [36088, 5, 6], "2026-10-31")
     finally:
-        _f1m931.saddb.query = _q931
+        _f1m931.saddb.query, _esc931.es_seleccion = _q931, _es931
     check("931: «G. Martínez» con su última hoja en Tigres después de la última en Pumas → juega en otro club",
           set(_o931) == {36088} and _o931[36088]["equipo"] == "Tigres", _o931)
+    # 1395 (13/11/2026): para una SELECCIÓN la hoja del club no es «otro equipo»
+    import backend.analisis.escala as _esc1395
+    _es1395 = _esc1395.es_seleccion
+    _q1395 = _f1m931.saddb.query
+    _esc1395.es_seleccion = lambda tid: tid == 9001   # noqa: E731
+    _f1m931.saddb.query = lambda base, sql, params=(): [  # noqa: E731
+        {"player_id": 77, "team_id": 9001, "equipo": "Andorra", "ultima": "2026-10-14 18:00:00"},
+        {"player_id": 77, "team_id": 9002, "equipo": "Córdoba", "ultima": "2026-11-08 18:00:00"}]
+    try:
+        _o1395 = _f1m931.juegan_en_otro(9001, [77], "2026-11-13")
+    finally:
+        _esc1395.es_seleccion, _f1m931.saddb.query = _es1395, _q1395
+    check("1395: en una selección el convocado con su club después NO va a jueganEnOtroEquipo",
+          _o1395 == {}, _o1395)
+    import backend.db as _db1395
+    _q1395b = _esc1395.saddb.query
+    _esc1395.saddb.query = lambda base, sql, params=(): [{"1": 1}] if 9001 in params else []  # noqa: E731
+    try:
+        _sel_si, _sel_no = _esc1395.es_seleccion(9001), _esc1395.es_seleccion(2287)
+    finally:
+        _esc1395.saddb.query = _q1395b
+    check("1395: es_seleccion = juega algún torneo de TORNEOS_SELECCIONES (la lista única)",
+          _sel_si and not _sel_no and _db1395 is not None)
     _b2, _ = _dedup(_bz, {}, lambda a, b: True, lambda a, b: True)
     check("673: si estuvieron en la misma hoja son dos personas", len(_b2) == 2, _b2)
     _b3, _ = _dedup(_bz, {}, _nunca, lambda a, b: False)

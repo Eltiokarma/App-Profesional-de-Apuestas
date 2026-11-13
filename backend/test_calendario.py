@@ -168,6 +168,12 @@ def main():
     for copa in (11, 13, 2, 3, 848, 130, 930):
         check(f"en la copa {copa} no se etiqueta ascenso",
               not calendario._es_ascendido(ASCENDIDO, copa, TEMP), copa)
+    # 1396 (13/11/2026): un torneo de selecciones tampoco tiene ascenso (la
+    # Nations League marcaba «recién ascendidas» a casi todas)
+    from backend.analisis.escala import torneos_selecciones
+    for sel in (5, 1, 32):
+        check(f"1396: en el torneo de selecciones {sel} no se etiqueta ascenso",
+              sel in torneos_selecciones() and not calendario._es_ascendido(ASCENDIDO, sel, TEMP), sel)
     check("y sin evidencia de haber jugado en OTRA liga tampoco se etiqueta",
           not calendario._es_ascendido(9999, LIGA, TEMP), "equipo sin histórico")
 

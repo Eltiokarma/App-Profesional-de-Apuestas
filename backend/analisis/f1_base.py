@@ -1082,6 +1082,15 @@ def juegan_en_otro(team_id: int, ids: list[int], antes: str = "9999") -> dict[in
     ids = [i for i in ids if i and i > 0]
     if not ids:
         return {}
+    # EN UNA SELECCIÓN, JUGAR EN UN CLUB NO ES ESTAR EN OTRO EQUIPO (13/11/2026,
+    # incidencia 1395: en los 10 partidos de la Nations League la tabla F1
+    # mandaba a `jueganEnOtroEquipo` a casi todos los convocados —Iker Álvarez
+    # «en Córdoba» para Andorra— porque su última hoja es la de su club). La
+    # hoja de un internacional casi siempre es la del club: para una selección
+    # esta regla no dice nada.
+    from backend.analisis.escala import es_seleccion
+    if es_seleccion(team_id):
+        return {}
     try:
         filas = saddb.query(
             "sad", f"""SELECT x.player_id, x.team_id, t.name AS equipo, MAX(f.date) AS ultima

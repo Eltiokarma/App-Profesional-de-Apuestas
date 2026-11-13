@@ -299,3 +299,15 @@ Tres lugares donde vive una guardia:
   - **Las etiquetas del calendario, con la misma vara** (10/11/2026, incidencia 1362, Real Jaén «EN CRISIS» por tres copas perdidas con equipos de categoría superior entre 2023 y 2025 y un amistoso): las derrotas de EN CRISIS son las de `calendario.CRISIS_VENTANA_DIAS`, sin amistosos (`ventana_nivel.es_amistoso`) ni copas perdidas con un rival de categoría superior (`escala.relacion`). Test en `backend/test_calendario.py`.
   - **El plantel que la base no ve** (08/11/2026, incidencia 1332, Santa Fe–Pasto: 20 canteranos por un paro, solo la cuota se enteró): el chequeo `mercado-salto` del escaneo (se deposita) marca un 1X2 del mercado que se movió más de 25 puntos en 24 h; el hecho se busca en prensa.
 - **Si vuelve:** mirar `ventanaNivel` antes de creerle a una divergencia grande entre el motor y el mercado. Y la causa de un número del motor se mide (`/predicciones` trae μ, nivel y `unXDos.d`) antes de escribirla.
+
+### 16. Una regla de clubes aplicada a una selección
+
+- **Síntoma:** en un torneo de selecciones la app trata a la selección como un club: los convocados «juegan en otro equipo» (su club), las selecciones salen «recién ascendidas».
+- **Casos:** 1395 (tabla F1 de los 10 partidos de la Nations League: Iker Álvarez «en Córdoba» para Andorra) y 1396 (`RECIEN_ASCENDIDO` a casi todas las selecciones de la Nations League 2026-27), 13/11/2026.
+- **Causa:** la base no marca qué equipo es una selección y el nombre contra el país falla («Faroe Islands» contra «Faroe-Islands»).
+- **Guardia:**
+  - **Una lista:** es selección quien juega algún torneo de `extractor.TORNEOS_SELECCIONES` (`escala.es_seleccion`); un torneo de selecciones es `escala.torneos_selecciones()`.
+  - `f1_base.juegan_en_otro` devuelve vacío para una selección; `calendario._es_ascendido` no etiqueta ascenso en un torneo de selecciones. Tests en `backend/test_cowork.py` y `backend/test_calendario.py`.
+  - `backend/test_arquitectura.py` (5-quinquies) verifica que las dos reglas consulten la lista.
+- **Si vuelve:** la regla nueva que mira el club o la categoría consulta `escala.es_seleccion` antes, y se suma a la guardia de arquitectura.
+

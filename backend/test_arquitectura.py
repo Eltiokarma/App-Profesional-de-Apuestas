@@ -211,6 +211,17 @@ for _rel in ("backend/analisis/parte.py", "backend/analisis/escaneo.py"):
 check("contrato: cada «hora» de pitazo cortada de la fecha UTC viaja con hora_lima al lado",
       not _horas_sin_lima, _horas_sin_lima)
 
+# 5-quinquies · una regla pensada para CLUBES mira antes si el equipo es una
+# selección (FALLAS.md clase 16; 1395 y 1396: en la Nations League la tabla F1
+# mandaba a los convocados «a otro equipo» por su club y el calendario daba
+# «recién ascendidas» a casi todas). Quién es selección sale de UNA lista:
+# `escala.torneos_selecciones` / `escala.es_seleccion`.
+_club_sin_sel = [r for r, fn in (("backend/analisis/f1_base.py", "es_seleccion"),
+                                 ("backend/calendario.py", "torneos_selecciones"))
+                 if fn not in leer(r)]
+check("selecciones: juegan_en_otro y _es_ascendido saltan a las selecciones con la lista única de escala",
+      not _club_sin_sel, _club_sin_sel)
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)
