@@ -209,7 +209,11 @@ def observar_equipo(team_id: int, horizonte: int, min_prefijo: int = MIN_PREFIJO
             g_fav = (None if nv_eq is None else
                      (nv_eq - nv_rival) if act["signo"] == "+" else (nv_rival - nv_eq))
             contramano = bool(racha) and contra * 3 >= 2 * len(racha)
+            # EL NIVEL PROPIO (13/11/2026, usuario: «es más probable que un equipo de
+            # Cajamarca pierda su burbuja perdiendo antes que Barcelona pierda en casa»):
+            # el nivel del equipo ANTES del partido, aparte de la diferencia con el rival
             obs.append({
+                "nivelEquipo": None if nv_eq is None else round(nv_eq, 3),
                 "contramano": contramano,
                 "contramanoCopa": contramano and contramano_con_copa_ajena(racha, fila["condicion"]),
                 "gFavor": None if g_fav is None else round(g_fav, 3),
@@ -444,11 +448,13 @@ def correr(equipos: list[int], horizonte: int, min_prefijo: int = MIN_PREFIJO,
 
 SENALES = ["kGeMediana", "kGeMax", "rachaGeMediana", "rachaGeMax", "rivalZona", "rivalFuerte", "rivalMuyFuerte",
            # 14/10/2026: las dos que el backtest de las lecciones encontró por encima del riesgo
-           "contramano", "favorito", "muyFavorito"]
+           "contramano", "favorito", "muyFavorito",
+           # 13/11/2026: el nivel propio en la dirección de la racha (REVENTON §18)
+           "propioAFavor", "propioEnContra"]
 FAVORITO, MUY_FAVORITO = 0.5, 1.0   # diferencia de nivel a favor de que la racha siga
 # las que PROTEGEN (coeficiente negativo) pueden restar puntos: la del favorito
 # baja la tasa 20 puntos dentro de cada nivel de riesgo
-PUEDEN_RESTAR = {"favorito", "muyFavorito"}
+PUEDEN_RESTAR = {"favorito", "muyFavorito", "propioAFavor"}
 RIVAL_FUERTE = 0.45           # distancia a la mediana desde la que el rival es «muy fuerte»
 PASO_PUNTO = 0.25             # un punto por cada 0.25 de log-odds (≈ 6 % de tasa cerca del 50 %)
 RIDGE = 1e-3
@@ -466,6 +472,8 @@ def _senales_de(o: dict) -> tuple[int, ...] | None:
         int(bool(o.get("contramano"))),
         int(o.get("gFavor") is not None and FAVORITO <= o["gFavor"] < MUY_FAVORITO),
         int(o.get("gFavor") is not None and o["gFavor"] >= MUY_FAVORITO),
+        int(burbuja.tramo_propio(o.get("nivelEquipo"), o["signo"]) == "a favor"),
+        int(burbuja.tramo_propio(o.get("nivelEquipo"), o["signo"]) == "en contra"),
     )
 
 

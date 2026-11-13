@@ -114,7 +114,7 @@ def main():
           t["posicion"] == {"percentilK": 100, "percentilRacha": 100, "kSobreMediana": 2.95}, t["posicion"])
     check("rival próximo (2.6) mucho más fuerte que la mediana de reventón (2.0, distancia +0.6) → tramo muy fuerte",
           t["rival"] == {"nivelProximo": 2.6, "medianaReventon": 2.0, "distancia": 0.6, "enZona": True, "tramo": "muy fuerte",
-                         "aFavor": -0.2, "favorito": "no"}, t["rival"])
+                         "aFavor": -0.2, "favorito": "no", "nivelPropio": 2.4, "propio": "no"}, t["rival"])
     rg = t["riesgo"]
     check("riesgo MUY ALTO con 3 puntos (racha ≥ mediana +1, rival muy fuerte +2; la K no puntúa) y 3 motivos",
           rg["nivel"] == "muy alto" and rg["puntos"] == 3 and len(rg["motivos"]) == 3, rg)
@@ -301,6 +301,21 @@ def main():
     check("tolerancia 0.15: rival 1.85 sigue en zona (+0), y el equipo es favorito por 0.55 (−1): 0, MEDIO",
           borde["familias"]["total"]["rival"]["tramo"] == "zona" and borde["familias"]["total"]["riesgo"]["puntos"] == 0
           and borde["familias"]["total"]["riesgo"]["nivel"] == "medio", borde["familias"]["total"]["riesgo"])
+    # EL NIVEL PROPIO (REVENTON §18, 13/11/2026): grande ≥ 3 aguanta su racha + (−1), chico < 2 menos (+1)
+    grande = analizar(filas, ctx, nivel=3.2, proximo={**ctx["proximo"], "nivelRival": 3.4})
+    gr = grande["familias"]["total"]
+    check("nivel propio 3.2 con racha + → grande, A FAVOR (−1); rival 3.4: muy fuerte (+2) y racha (+1) → 2, ALTO",
+          gr["rival"]["propio"] == "a favor" and gr["rival"]["nivelPropio"] == 3.2 and gr["rival"]["favorito"] == "no"
+          and gr["riesgo"]["puntos"] == 2 and gr["riesgo"]["nivel"] == "alto"
+          and "equipo grande (nivel 3.2 ≥ 3): aguanta una racha positiva (-1)" in gr["riesgo"]["motivos"], gr["riesgo"])
+    chico = analizar(filas, ctx, nivel=1.8, proximo={**ctx["proximo"], "nivelRival": 2.6})
+    ch = chico["familias"]["total"]
+    check("nivel propio 1.8 con racha + → chico, EN CONTRA (+1): 3 + 1 = 4, MUY ALTO",
+          ch["rival"]["propio"] == "en contra" and ch["riesgo"]["puntos"] == 4 and ch["riesgo"]["nivel"] == "muy alto"
+          and "equipo chico (nivel 1.8 < 2): sostiene menos una racha positiva (+1)" in ch["riesgo"]["motivos"], ch["riesgo"])
+    check("tramo_propio: la racha − al revés (chico a favor, grande en contra) y sin nivel no suma",
+          (b.tramo_propio(1.5, "-"), b.tramo_propio(3.5, "-"), b.tramo_propio(2.5, "+"), b.tramo_propio(None, "+"))
+          == ("a favor", "en contra", "no", "no") and b.PUNTOS_PROPIO == {"no": 0, "a favor": -1, "en contra": 1})
     fuerte = analizar(filas, ctx, proximo={**ctx["proximo"], "nivelRival": 2.3})
     check("rival 2.3 (distancia +0.3) → tramo fuerte (+1 → 2, ALTO)",
           fuerte["familias"]["total"]["rival"]["tramo"] == "fuerte" and fuerte["familias"]["total"]["riesgo"]["puntos"] == 2

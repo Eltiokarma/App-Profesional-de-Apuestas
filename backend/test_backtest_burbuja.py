@@ -54,7 +54,8 @@ def main():
     prox = {"fixtureId": o["fixtureId"], "fecha": filas[i]["fecha"], "rivalId": filas[i]["rivalId"],
             "rival": filas[i]["rivalNombre"], "condicion": "L" if filas[i]["condicion"] == "Local" else "V",
             "nivelRival": float(filas[i]["nivelRival"])}
-    fam = burbuja._analizar_familia(prefijo, "total", prox, est)
+    # con el nivel del equipo de ANTES del partido, como lo arma el backtest (favorito y nivel propio)
+    fam = burbuja._analizar_familia(prefijo, "total", prox, est, nivel_equipo=o["nivelEquipo"])
     check("sin fuga: la guía de la observación es la del prefijo (mismos puntos y nivel)",
           fam["riesgo"]["puntos"] == o["puntos"] and fam["riesgo"]["nivel"] == o["nivel"], (fam["riesgo"], o))
     check("el resultado observado es el del partido siguiente, no del prefijo",
@@ -177,7 +178,7 @@ def main():
     celdas = {}
     for k in (0, 1):
         for j in (0, 1):
-            patron = (k, 0, j, 0, 0, 0, 0, 0, 0, 0)
+            patron = (k, 0, j) + (0,) * (len(bt.SENALES) - 3)
             n = 1000
             p = 0.3 + 0.4 * j          # solo la 3ª señal (rachaGeMediana) sube la tasa
             celdas[patron] = [n, int(n * p)]

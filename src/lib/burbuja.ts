@@ -51,6 +51,18 @@ export const PUNTOS_CONTRAMANO = 1
 export const PUNTOS_FAVOR: Record<'no' | 'favorito' | 'muy favorito', number> = { no: 0, favorito: -1, 'muy favorito': -3 }
 export const FAVORITO = 0.5
 export const MUY_FAVORITO = 1.0
+/** El nivel propio (espejo de burbuja.py, REVENTON §18, 13/11/2026): el grande aguanta su racha +, el chico la −. */
+export const NIVEL_GRANDE = 3.0
+export const NIVEL_CHICO = 2.0
+export const PUNTOS_PROPIO: Record<TramoPropio, number> = { no: 0, 'a favor': -1, 'en contra': 1 }
+export type TramoPropio = 'no' | 'a favor' | 'en contra'
+export function tramoPropio(nivelEquipo: number | null | undefined, signo: '+' | '-'): TramoPropio {
+  if (nivelEquipo == null) return 'no'
+  const grande = nivelEquipo >= NIVEL_GRANDE
+  const chico = nivelEquipo < NIVEL_CHICO
+  if (signo === '+') return grande ? 'a favor' : chico ? 'en contra' : 'no'
+  return chico ? 'a favor' : grande ? 'en contra' : 'no'
+}
 export type TramoRival = 'lejos' | 'zona' | 'fuerte' | 'muy fuerte'
 export const MUESTRA_BAJA = 3
 export const MUESTRA_ALTA = 6
@@ -445,6 +457,17 @@ function analizarFamilia(filas: FilaK[], familia: FamiliaBurbuja, proximo: Proxi
           ? `el equipo es ${mucho ? 'muy ' : ''}favorito: ${Math.abs(g)} de nivel sobre el rival`
           : `el rival es ${mucho ? 'mucho ' : ''}más fuerte: ${Math.abs(g)} de nivel sobre el equipo`
         motivos.push(`${quienF}, a favor de que la racha siga` + (pf ? ` (${pf > 0 ? '+' : ''}${pf})` : ''))
+      }
+      // el nivel propio (REVENTON §18): el grande aguanta su racha +, el chico la −
+      const tp = tramoPropio(nivelEquipo, signo)
+      out.rival.nivelPropio = r2(nivelEquipo)
+      out.rival.propio = tp
+      const pp = PUNTOS_PROPIO[tp]
+      puntos += pp
+      if (tp !== 'no') {
+        const grande = nivelEquipo >= NIVEL_GRANDE
+        const que = grande ? `equipo grande (nivel ${r2(nivelEquipo)} ≥ ${NIVEL_GRANDE})` : `equipo chico (nivel ${r2(nivelEquipo)} < ${NIVEL_CHICO})`
+        motivos.push(`${que}: ${tp === 'a favor' ? 'aguanta' : 'sostiene menos'} una racha ${signo === '+' ? 'positiva' : 'negativa'}` + (pp ? ` (${pp > 0 ? '+' : ''}${pp})` : ''))
       }
     }
     // la racha hecha en la condición CONTRARIA a la del próximo partido

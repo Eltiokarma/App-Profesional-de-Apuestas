@@ -1233,3 +1233,77 @@ goles por equipo y partido):**
   marcador del empate anterior un 1,6 % MÁS que el azar (10.003 contra 9.845),
   no menos —esperable en series largas con épocas de más o menos goles—. La
   intuición de que «empata con marcador diferente» no se sostiene.
+
+## 18. El nivel propio (13/11/2026)
+
+Pedido del usuario: «es más probable que un equipo de Cajamarca pierda su
+burbuja perdiendo antes que Barcelona pierda un partido en casa; separarlo
+por niveles puede ayudarnos a ver comportamientos de burbujas». Hasta acá el
+riesgo miraba al rival (su distancia a la mediana con la que el equipo suele
+reventar, §5) y la DIFERENCIA de nivel (el favorito, §12.2), pero no el nivel
+del equipo mismo.
+
+**Cómo se midió.** Sin la base a mano, como en §16.2: las historias de 445
+equipos (`/constantes` y `/niveles`, más los `/niveles` de 2.189 rivales para
+el nivel de ANTES del partido) bajadas con el token de Cowork, 0 requests de
+API-Football, y pasadas por el MISMO `backtest_burbuja.observar_equipo` con
+las funciones de la base cambiadas por las de los archivos. 151.132
+observaciones de las tres familias (2019-2026). Los 445 equipos vienen sobre
+todo de las ligas importantes: hay pocos chicos con racha + y pocos grandes
+con racha −.
+
+**Lo que hace la racha por nivel propio** (familia total, partido siguiente;
+sigue · empate · se da vuelta, en %):
+
+| nivel | racha + (n) | sigue | empate | pierde | racha − (n) | sigue | empate | gana |
+|---|---|---|---|---|---|---|---|---|
+| < 1,5 | 419 | 29 | 27 | 44 | 3.306 | 45 | 25 | 30 |
+| 1,5-2 | 2.753 | 29 | 28 | 43 | 7.963 | 39 | 27 | 34 |
+| 2-2,5 | 8.351 | 36 | 27 | 37 | 10.478 | 34 | 26 | 40 |
+| 2,5-3 | 12.652 | 41 | 27 | 32 | 7.448 | 30 | 26 | 44 |
+| 3-3,5 | 11.269 | 48 | 25 | 27 | 3.163 | 24 | 24 | 51 |
+| ≥ 3,5 | 7.399 | 56 | 23 | 21 | 737 | 21 | 21 | 58 |
+
+La racha + de un grande aguanta el doble que la de un chico, y la − al revés.
+El EMPATE casi no se mueve con el nivel (21-28 %): lo que cambia es seguir o
+darse vuelta. Con el mismo riesgo «muy alto», la racha + de 1,5-2 se cortaba
+79 % y la de ≥ 3,5, 63 %: el riesgo no veía el nivel propio.
+
+**La señal** (`burbuja.tramo_propio`, espejo `tramoPropio`): «a favor» de que
+la racha siga = grande (≥ `NIVEL_GRANDE` 3,0) con racha + o chico (<
+`NIVEL_CHICO` 2,0) con racha −; «en contra» = al revés; en el medio, nada.
+`backtest_burbuja --calibrar` con las dos señales nuevas junto a las de
+siempre:
+
+| | n | propioAFavor | propioEnContra | AUC logit |
+|---|---|---|---|---|
+| todo | 151.132 | −0,200 | +0,306 | 0,635 |
+| hasta el 08/04/2025 | 105.402 | −0,201 | +0,306 | 0,639 |
+| desde el 09/04/2025 | 45.730 | −0,193 | +0,302 | 0,628 |
+
+Estables en las dos mitades → **−1 y +1 punto** (un punto cada 0,25). Los
+DEMÁS puntos NO se tocaron: esta muestra no es el padrón (la zona del rival
+y el muy favorito salían algo distintos, y eso se recalibra solo con el
+padrón entero). Riesgo de hoy contra riesgo con el nivel propio, mismos
+cortes:
+
+| | AUC hoy | AUC con propio | «muy alto» hoy | con propio |
+|---|---|---|---|---|
+| todo | 0,627 | 0,633 | 72,7 % (29.290) | 75,1 % (25.268) |
+| hasta el 08/04/2025 | 0,631 | 0,637 | 73,1 % | 75,4 % |
+| desde el 09/04/2025 | 0,617 | 0,623 | 71,7 % | 74,5 % |
+
+Mejora chica y en las dos mitades. Donde más se nota es en los grandes: su
+«muy alto» pasa de 68,3 % a 77,6 %. La «cara de empate» no aparece en ningún
+nivel (la combinación burbuja grande + rival parejo + goles vivos no separa
+en las dos mitades) y la casa no subestima los empates en ninguno.
+
+**Aplicado** en `burbuja.py` (`PUNTOS_PROPIO`, `rival.nivelPropio` y
+`rival.propio`, con su motivo) y en `src/lib/burbuja.ts`, con casos en los dos
+tests dorados (grande con racha +: −1; chico con racha +: +1; la racha − al
+revés). `TASA_BACKTEST` y `MOVIMIENTO_BACKTEST` quedan como estaban (son del
+padrón): la próxima corrida del padrón con la llave maestra
+(`GET /analisis/burbujas/backtest?padron=true&calibrar=true`) los confirma o
+los rehace, junto con estos dos puntos. Lo que asomó y NO se aplicó: la racha
++ de los equipos ≥ 3 siguió 6-8 pts más de lo que pagaba la casa (~800
+partidos, un año de cuotas): para medir con más cuotas.

@@ -1190,6 +1190,18 @@ conversación se pierde en la siguiente.
    el color (si lo viera, escribiría la espina a favor de su elegido).
    Pendiente del usuario: si el prompt le pide al analista que no elija
    contra su propia espina (cambia la población que se mide).
+33. **El nivel propio entra al riesgo del reventón** (13/11/2026, usuario:
+   «es más probable que un equipo de Cajamarca pierda su burbuja perdiendo
+   antes que Barcelona pierda un partido en casa»; «sumá el nivel propio al
+   riesgo con backtest»). Medido sobre 151.132 observaciones de 445 equipos
+   bajadas con el token de Cowork (REVENTON §18): coef −0,20 a favor (grande
+   ≥ 3 con racha +, chico < 2 con racha −) y +0,31 en contra, iguales en las
+   dos mitades → −1 / +1 punto; AUC 0,627 → 0,633. Los demás puntos no se
+   tocaron. Pendiente: correr el padrón entero con la llave maestra
+   (`/analisis/burbujas/backtest?padron=true&calibrar=true`) para confirmar
+   estos puntos y rehacer `TASA_BACKTEST`/`MOVIMIENTO_BACKTEST`. Estudiado
+   el mismo día y descartado: la «cara de empate» (burbuja grande + rival
+   parejo + goles vivos) no separa en ningún nivel.
 
 ## Siguientes pasos (en orden)
 

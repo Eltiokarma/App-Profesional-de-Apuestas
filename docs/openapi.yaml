@@ -3223,6 +3223,8 @@ components:
             notaEscala: { type: string }
             aFavor: { type: number, description: 'diferencia de nivel A FAVOR de que la racha siga (favorito con racha +, débil con racha −; REVENTON §12)' }
             favorito: { type: string, enum: ['no', favorito, muy favorito] }
+            nivelPropio: { type: number, description: 'el nivel del equipo ANTES del partido (REVENTON §18, 13/11/2026)' }
+            propio: { type: string, enum: ['no', a favor, en contra], description: 'el nivel propio en la dirección de la racha: a favor = grande (≥ 3) con racha + o chico (< 2) con racha − (−1 punto); en contra = chico con racha + o grande con racha − (+1)' }
             nivelConAmistosos:
               type: object
               description: >
