@@ -283,6 +283,14 @@ function Paginador({ pagina, paginas, irA }: { pagina: number; paginas: number; 
   )
 }
 
+// LA GRÁFICA NAVEGABLE (13/11/2026, usuario: «hay que hacer que este gráfico sea
+// más navegable, está muy apretado»): cada serie se prende o apaga desde la
+// leyenda (se recuerda en este navegador), pasar por su nombre la resalta, el
+// rango elige los últimos partidos y el eje Y se ajusta a lo que se ve
+type Rango = 'todo' | 100 | 50
+const RANGOS: [Rango, string][] = [['todo', 'todo'], [100, 'últimos 100'], [50, 'últimos 50']]
+const LS_OCULTAS = 'sad-sim-ocultas'
+
 function GraficaBanca({ linea, series, inicial }: {
   linea: PuntoLinea[]
   series: { clave: EstrategiaClave; color: string; nombre: string; serie: EstrategiaSimulada['serie'] }[]
@@ -291,6 +299,21 @@ function GraficaBanca({ linea, series, inicial }: {
   const caja = useRef<HTMLDivElement>(null)
   const [ancho, setAncho] = useState(600)
   const [hover, setHover] = useState<number | null>(null)
+  const [foco, setFoco] = useState<string | null>(null)
+  const [rango, setRango] = useState<Rango>('todo')
+  const [ocultas, setOcultas] = useState<string[]>(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(LS_OCULTAS) ?? '[]')
+      return Array.isArray(v) ? v.map(String) : []
+    } catch {
+      return []
+    }
+  })
+  const guardar = (v: string[]) => {
+    setOcultas(v)
+    try { localStorage.setItem(LS_OCULTAS, JSON.stringify(v)) } catch { /* modo privado: la elección dura la visita */ }
+  }
+  const alternar = (c: string) => guardar(ocultas.includes(c) ? ocultas.filter((x) => x !== c) : [...ocultas, c])
   useEffect(() => {
     const el = caja.current
     if (!el) return
@@ -299,36 +322,65 @@ function GraficaBanca({ linea, series, inicial }: {
     return () => ro.disconnect()
   }, [])
 
-  const H = 220
+  const H = ancho < 520 ? 260 : 320
   const m = { t: 10, r: 12, b: 22, l: 44 }
   const n = linea.length
+  const desde = rango === 'todo' ? 0 : Math.max(0, n - rango)
+  const tramo = Math.max(1, n - desde)
   // la banca de cada serie tras cada cerrada: `serie` empieza en la banca inicial
   const valores = series.map((s) => Array.from({ length: n + 1 }, (_, i) => s.serie[i]?.banca ?? s.serie[s.serie.length - 1]?.banca ?? inicial))
-  const todos = valores.flat()
-  let lo = Math.min(...todos, inicial)
-  let hi = Math.max(...todos, inicial)
+  const vis = series.map((s, si) => ({ s, si })).filter(({ s }) => !ocultas.includes(s.clave))
+  // el eje Y con lo que se ve: las series prendidas en el rango elegido
+  const enRango = vis.flatMap(({ si }) => valores[si].slice(desde))
+  let lo = Math.min(...(enRango.length ? enRango : [inicial]), desde === 0 ? inicial : Infinity)
+  let hi = Math.max(...(enRango.length ? enRango : [inicial]), desde === 0 ? inicial : -Infinity)
   if (hi - lo < 4) { lo -= 2; hi += 2 }
   const margen = (hi - lo) * 0.08
   lo -= margen; hi += margen
-  const x = (i: number) => m.l + (n ? (i / n) * (ancho - m.l - m.r) : 0)
+  const x = (i: number) => m.l + ((i - desde) / tramo) * (ancho - m.l - m.r)
   const y = (v: number) => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b)
-  const ticks = [lo + margen, inicial, hi - margen].filter((v, i, arr) => arr.findIndex((w) => Math.abs(w - v) < (hi - lo) * 0.08) === i)
+  const ticks = [lo + margen, (lo + hi) / 2, hi - margen, ...(inicial > lo && inicial < hi ? [inicial] : [])]
+    .filter((v, i, arr) => arr.findIndex((w) => Math.abs(w - v) < (hi - lo) * 0.08) === i)
 
   const mover = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
-    const i = Math.round(((e.clientX - r.left - m.l) / (ancho - m.l - m.r)) * n)
-    setHover(Math.max(0, Math.min(n, i)))
+    const i = desde + Math.round(((e.clientX - r.left - m.l) / (ancho - m.l - m.r)) * tramo)
+    setHover(Math.max(desde, Math.min(n, i)))
   }
-  const a = hover != null && hover > 0 ? linea[hover - 1] : null
+  const h = hover != null && hover >= desde ? hover : null
+  const a = h != null && h > 0 ? linea[h - 1] : null
+  // en el tooltip, de la banca más alta a la más baja
+  const orden = h != null ? [...vis].sort((p, q) => valores[q.si][h] - valores[p.si][h]) : []
+  const chip: React.CSSProperties = { padding: '3px 8px', borderRadius: 7, border: '1px solid var(--line)', background: 'transparent', cursor: 'pointer', font: '600 10px var(--sans)', color: 'var(--t2)' }
 
   return (
     <div ref={caja} style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
-        {series.map((s) => (
-          <span key={s.clave} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, font: '600 10.5px var(--sans)', color: 'var(--t2)' }}>
-            <span style={{ width: 14, height: 2, borderRadius: 1, background: s.color }} />{s.nombre}
-          </span>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+        {RANGOS.map(([r, et]) => (
+          <button key={String(r)} onClick={() => { setRango(r); setHover(null) }}
+            style={{ ...chip, ...(rango === r ? { borderColor: 'var(--accent)', background: 'var(--bg3)', color: 'var(--t1)' } : {}) }}>
+            {et}
+          </button>
         ))}
+        <span style={{ flex: 1 }} />
+        <button onClick={() => guardar([])} style={chip}>mostrar todas</button>
+        <button onClick={() => guardar(series.map((s) => s.clave))} style={chip}>ocultar todas</button>
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+        {series.map((s) => {
+          const off = ocultas.includes(s.clave)
+          return (
+            <button key={s.clave} onClick={() => alternar(s.clave)}
+              onPointerEnter={() => !off && setFoco(s.clave)} onPointerLeave={() => setFoco(null)}
+              title={off ? 'Mostrar esta serie' : 'Ocultar esta serie'} aria-pressed={!off}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 8px', borderRadius: 7, cursor: 'pointer',
+                border: `1px solid ${off ? 'var(--line)' : 'color-mix(in oklch, ' + s.color + ', transparent 55%)'}`,
+                background: off ? 'transparent' : 'var(--bg2)', opacity: off ? 0.45 : 1,
+                font: '600 10.5px var(--sans)', color: off ? 'var(--t3)' : 'var(--t2)', textDecoration: off ? 'line-through' : 'none' }}>
+              <span style={{ width: 14, height: 3, borderRadius: 1, background: s.color }} />{s.nombre}
+            </button>
+          )
+        })}
       </div>
       <svg width={ancho} height={H} style={{ display: 'block', touchAction: 'pan-y' }}
         onPointerMove={mover} onPointerDown={mover} onPointerLeave={() => setHover(null)}>
@@ -339,36 +391,42 @@ function GraficaBanca({ linea, series, inicial }: {
             <text x={m.l - 6} y={y(v) + 3.5} textAnchor="end" style={{ fill: 'var(--t3)', font: '500 10px var(--mono)' }}>{num(v, 0)}</text>
           </g>
         ))}
-        <text x={m.l} y={H - 6} style={{ fill: 'var(--t3)', font: '500 10px var(--mono)' }}>inicio</text>
+        <text x={m.l} y={H - 6} style={{ fill: 'var(--t3)', font: '500 10px var(--mono)' }}>{desde === 0 ? 'inicio' : `partido ${desde}`}</text>
         <text x={ancho - m.r} y={H - 6} textAnchor="end" style={{ fill: 'var(--t3)', font: '500 10px var(--mono)' }}>{n} partido{n === 1 ? '' : 's'}</text>
-        {series.map((s, si) => (
-          <polyline key={s.clave} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"
-            points={valores[si].map((v, i) => `${x(i)},${y(v)}`).join(' ')} />
+        {vis.map(({ s, si }) => (
+          <polyline key={s.clave} fill="none" stroke={s.color} strokeLinejoin="round" strokeLinecap="round"
+            strokeWidth={foco === s.clave ? 3 : 2} opacity={foco && foco !== s.clave ? 0.18 : 1}
+            points={valores[si].slice(desde).map((v, i) => `${x(desde + i)},${y(v)}`).join(' ')} />
         ))}
-        {hover != null && (
+        {h != null && (
           <g>
-            <line x1={x(hover)} x2={x(hover)} y1={m.t} y2={H - m.b} stroke="var(--t3)" strokeWidth={1} />
-            {series.map((s, si) => (
-              <circle key={s.clave} cx={x(hover)} cy={y(valores[si][hover])} r={4.5} fill={s.color} stroke="var(--bg2)" strokeWidth={2} />
+            <line x1={x(h)} x2={x(h)} y1={m.t} y2={H - m.b} stroke="var(--t3)" strokeWidth={1} />
+            {vis.map(({ s, si }) => (
+              <circle key={s.clave} cx={x(h)} cy={y(valores[si][h])} r={4.5} fill={s.color} stroke="var(--bg2)" strokeWidth={2} />
             ))}
           </g>
         )}
       </svg>
-      {hover != null && (
+      {!vis.length && (
+        <div style={{ position: 'absolute', left: 0, right: 0, top: '55%', textAlign: 'center', font: '500 12px var(--sans)', color: 'var(--t3)' }}>
+          Todas las series están ocultas: tocá una en la leyenda para verla.
+        </div>
+      )}
+      {h != null && vis.length > 0 && (
         <div style={{
-          position: 'absolute', top: 24, [x(hover) > ancho / 2 ? 'right' : 'left']: x(hover) > ancho / 2 ? ancho - x(hover) + 10 : x(hover) + 10,
+          position: 'absolute', top: 70, [x(h) > ancho / 2 ? 'right' : 'left']: x(h) > ancho / 2 ? ancho - x(h) + 10 : x(h) + 10,
           background: 'var(--bg1)', border: '1px solid var(--line2)', borderRadius: 9, padding: '8px 10px', boxShadow: 'var(--shadow)',
-          pointerEvents: 'none', maxWidth: 230, font: '500 10.5px var(--sans)', color: 'var(--t2)',
+          pointerEvents: 'none', maxWidth: 250, font: '500 10.5px var(--sans)', color: 'var(--t2)',
         }}>
           <div style={{ font: '700 11px var(--sans)', color: 'var(--t1)', marginBottom: 4 }}>
             {a ? `${a.local} – ${a.visita}` : 'Banca inicial'}
           </div>
           {a && <div style={{ marginBottom: 4 }}>{fecha(a.pitazo)} · salió {a.resultado ? RES[a.resultado] : '—'} · sad {a.sad || '—'}</div>}
-          {series.map((s, si) => (
+          {orden.map(({ s, si }) => (
             <div key={s.clave} style={{ display: 'flex', alignItems: 'center', gap: 6, fontVariantNumeric: 'tabular-nums' }}>
               <span style={{ width: 8, height: 2, background: s.color }} />
               <span style={{ flex: 1 }}>{s.nombre}</span>
-              <b style={{ color: 'var(--t1)', font: '700 10.5px var(--mono)' }}>{num(valores[si][hover])}</b>
+              <b style={{ color: 'var(--t1)', font: '700 10.5px var(--mono)' }}>{num(valores[si][h])}</b>
             </div>
           ))}
         </div>
