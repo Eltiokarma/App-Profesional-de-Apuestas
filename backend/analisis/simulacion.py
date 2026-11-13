@@ -128,6 +128,8 @@ MEDIO = (45.0, 60.0)
 MEDIO_DESDE = "2026-11-14 05:00:00"
 MEDIO_ESCALONES = (30, 60)
 MEDIO_SEPARACION = 0.05   # pts de ventaja (acierto − lo que pide la cuota) de las puntas sobre el medio
+# el tope de la martingala fuera del medio con tope: fracción de la banca
+TOPE_MARTINGALA = 0.25
 
 ESTRATEGIAS = (
     ("proporcional", "Proporcional con freno",
@@ -182,10 +184,28 @@ ESTRATEGIAS = (
     ("martingala60Ajustada", f"Martingala {CONFIANZA_ALTA:g} %+ ajustada",
      f"por líneas, solo con nuestro elegido a {CONFIANZA_ALTA:g} % o más; tras perder apuesta 1 + lo perdido en "
      "la línea / (cuota − 1): recupera todo y gana lo de 1 u, con cualquier cuota"),
+    # LA MARTINGALA AJUSTADA FUERA DEL MEDIO (13/11/2026, usuario: «las dos,
+    # ármalas en la simulación con tope»). Reconstruida sobre 231 cerradas
+    # fuera del medio (28/10-13/11, cuota de /cuotas): +105,6 u con 100 u
+    # (ROI +15,9 %), sin quebrar, pero con una apuesta de 75 u en la peor
+    # racha; en TODOS los partidos la misma ajustada quebraba con 200 u. Fuera
+    # del medio entra la punta de cuota alta, que recupera una racha con poco.
+    # La del tope no apuesta más de `TOPE_MARTINGALA` de la banca: si recorta,
+    # la línea recupera lo que puede y arrastra el resto.
+    ("martingalaFueraMedio", "Martingala fuera del medio ajustada",
+     f"la martingala ajustada a la cuota (1 + lo perdido en la línea / (cuota − 1)), sin apostar cuando la casa "
+     f"le da al elegido entre {MEDIO[0]:g} % y {MEDIO[1]:g} %"),
+    ("martingalaFueraMedioTope", "Martingala fuera del medio ajustada, con tope",
+     f"la misma, pero ninguna apuesta pasa del {100 * TOPE_MARTINGALA:g} % de la banca: si el tope recorta, la "
+     "línea recupera lo que puede y arrastra el resto"),
 )
-_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada")
+_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaFueraMedio", "martingalaFueraMedioTope")
 # las que, tras perder, apuestan lo que recupera según la cuota (no duplican)
-_AJUSTADAS = ("martingala60Ajustada",)
+_AJUSTADAS = ("martingala60Ajustada", "martingalaFueraMedio", "martingalaFueraMedioTope")
+# las que no apuestan en el medio (lo que la casa le da al elegido, 45-60 %)
+_FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "martingalaFueraMedioTope")
+# las que no apuestan más de TOPE_MARTINGALA de la banca
+_CON_TOPE = ("martingalaFueraMedioTope",)
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
 _CON_FRENO = ("proporcional", "metodoVerde", "metodoFueraMedio")
 _SOLO_ALTA = ("plana60", "martingala60", "martingala60Ajustada")
@@ -663,7 +683,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             "motivo": {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
                 estado, "semáforo sin dato")}
         return
-    if clave == "metodoFueraMedio" and fila.get("enElMedio"):
+    if clave in _FUERA_MEDIO and fila.get("enElMedio"):
         fila["porEstrategia"][clave] = {
             "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,
             "motivo": (f"la casa le da {fila['mercado'][fila['elegido']]:.0f} % al elegido: en el medio "
@@ -703,6 +723,9 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         if clave in _AJUSTADAS:
             c = fila["cuotas"][sel]
             previsto = UNIDAD + (linea["perdida"] / (c - 1) if c > 1 else 0.0)
+        if clave in _CON_TOPE:
+            # la banca de AHORA (lo cobrado), como el método
+            previsto = min(previsto, TOPE_MARTINGALA * e["banca"])
     elif clave == "plana60":
         sel = fila["elegido"]
         previsto = UNIDAD if fila["probabilidades"][sel] >= CONFIANZA_ALTA else 0.0

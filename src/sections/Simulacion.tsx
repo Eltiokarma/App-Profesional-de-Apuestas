@@ -15,18 +15,19 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingala60Ajustada', string> = {
+const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaFueraMedioTope', string> = {
   proporcional: 'var(--sim-proporcional)', metodoVerde: 'var(--sim-metodo-verde)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
   // el método fuera del medio (13/11/2026) y la martingala de 60 %+ ajustada a la cuota
   metodoFueraMedio: 'var(--sim-metodo-marcador)', martingala60Ajustada: 'var(--sim-martingala60-ajustada)',
+  martingalaFueraMedio: 'var(--sim-martingala-fuera-medio)', martingalaFueraMedioTope: 'var(--sim-martingala-fuera-medio-tope)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', martingalaFueraMedio: 'Martin. sin medio', martingalaFueraMedioTope: 'Martin. sin medio tope', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -85,6 +86,8 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
     { clave: 'martingala60', color: COLOR.martingala60 },
     // la martingala de 60 %+ ajustada a la cuota (13/11/2026): recupera con cualquier cuota
     ...(d.estrategias.some((e) => e.clave === 'martingala60Ajustada') ? [{ clave: 'martingala60Ajustada' as EstrategiaClave, color: COLOR.martingala60Ajustada }] : []),
+    // las martingalas ajustadas fuera del medio (13/11/2026), sin tope y con tope del 25 % de la banca
+    ...(['martingalaFueraMedio', 'martingalaFueraMedioTope'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
   ]
   // la gráfica: lo mínimo de cada cerrada (`linea`) y la banca de cada serie; sin
   // `linea` (respuesta sin paginar) se arma de las apuestas, como antes
@@ -821,7 +824,7 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
-                    : ['proporcional', 'metodoVerde', 'metodoFueraMedio'].includes(v.clave) ? `no apuesta: ${r.motivo}`
+                    : ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'martingalaFueraMedio', 'martingalaFueraMedioTope'].includes(v.clave) ? `no apuesta: ${r.motivo}`
                     : v.clave === 'plana60' || v.clave === 'martingala60' || v.clave === 'martingala60Ajustada' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>
