@@ -583,7 +583,17 @@ alternativas (ESPN no las trae).
   puntos; n 294 y 154). Es la misma idea de la alerta DESCONFIAR, pero para
   el hándicap.
 
-**Lectura:** el hándicap no es donde la burbuja paga. Combinando todo, el
+**Lectura con la vara del sistema (corrección del usuario, 13/11/2026: no se
+busca margen; se busca la SEÑAL de dónde apostar, por cuántas veces sale):**
+- **Señal de «aquí NO» en el hándicap:** favorito con burbuja de victorias en
+  riesgo muy alto. Cubre el 47 % en los dos períodos.
+- **Señal de «aquí SÍ» en el hándicap: no aparece ninguna firme.** Los grupos
+  rondan el 50 % ± 3 y cambian entre períodos. La más pareja es el balance de
+  puntos −2 (53 % y 53 %), pero es débil.
+
+Lo de abajo queda como historia de la medición anterior.
+
+**Lectura (anterior):** el hándicap no es donde la burbuja paga. Combinando todo, el
 camino queda así:
 - **ganador:** el favorito sin DESCONFIAR (§9.1);
 - **hándicap:** solo frena, no con victorias en riesgo muy alto;

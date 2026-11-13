@@ -115,6 +115,12 @@ se carga en cada paso de cada agente). Leé la sección del área en
 `docs/REGLAS.md` ANTES de tocar ese código, clasificar una incidencia de esa
 área o revisar un skill. Acá queda lo que hay que hacer.
 
+- **LA VARA DEL SISTEMA (usuario, 12-13/11/2026, repetido): NO buscamos margen
+  ni valor contra la casa.** La cuota está bien medida por la casa; que nos
+  confirme es bueno. Buscamos la SEÑAL de dónde apostar y dónde no (la burbuja
+  dice «desconfiá, aquí no»), y una señal se juzga por cuántas veces SALE lo
+  elegido (win rate) y si se repite en los períodos. Nunca juzgar una señal por
+  ROI, «ganarle a la línea» o valor (`docs/METODO_APUESTA.md`).
 - **Las `.db` jamás se commitean**. `backend/ingesta/` es la única capa que
   escribe datos (extractor → sad.db, pipeline → derivadas). La clave de
   API-Football vive en `.env`/env vars, jamás hardcodeada ni con prefijo VITE_.
