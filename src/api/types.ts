@@ -1547,11 +1547,12 @@ export interface AlertaParte {
   jev?: { pregunta: string; valor: unknown; confianza: number } | null
   /** Solo en DTP-REHACER ya jugado el partido: cuándo llegó el once que la
    *  dispara (tardio = después del último rehacer posible · sinRehacer = a
-   *  tiempo y nadie rehízo · conocido = ya estaba en el último depósito). */
+   *  tiempo y nadie rehízo · conocido = ya estaba en el último depósito ·
+   *  parteTardio = el parte se depositó por primera vez después del pitazo). */
   /** Solo en EFE-EMPATE-TECNICO: la brecha del EFE y qué la vuelve empate técnico. */
   brecha?: number
   motivos?: string[]
-  momento?: 'tardio' | 'sinRehacer' | 'conocido'
+  momento?: 'tardio' | 'sinRehacer' | 'conocido' | 'parteTardio'
   onceFinalEn?: string | null
   /** solo con `momento` por una corrección de formación después del pitazo (1133) */
   formacionCorregidaEn?: string

@@ -2070,14 +2070,21 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
                              "que no juega), y rehacer el bloque F, el DTP y el TDE con él disponible.",
                 "jugadores": hallados,
             })
-    # el DTP que nombra de banco a un titular de la hoja
-    textos = []
+    # el DTP que nombra de banco a un titular de la hoja. Primero las vías de gol
+    # PROPIAS de cada bloque y las ramas, después las del rival: la misma frase
+    # suele estar en el `foco` de un bloque y, en espejo, en el `rival` del
+    # otro, y `dtp` tiene que decir el bloque donde es propia (13/11/2026,
+    # incidencia 1393, Armenia–Chipre 1528959: «banco ofensivo de Chipre:
+    # Kakoullis, Pikis» salía con dtp "a" porque el `rival` de Armenia iba antes)
+    textos, espejo = [], []
     for b in (parte.get("dtp") or {}).get("bloques") or []:
         m2 = ((b.get("apertura") or {}).get("m2")) or {}
         vias = m2.get("viasGol") or {}
-        textos += [(b.get("equipo"), "viasGol", t) for k in ("foco", "rival") for t in vias.get(k) or []]
+        textos += [(b.get("equipo"), "viasGol", t) for t in vias.get("foco") or []]
+        espejo += [(b.get("equipo"), "viasGol", t) for t in vias.get("rival") or []]
         textos += [(b.get("equipo"), "veredictoRamas", (r or {}).get("razon") or "")
                    for r in (m2.get("veredictoRamas") or {}).values() if isinstance(r, dict)]
+    textos += espejo
     for lado in LADOS:
         tit = [j["nombre"] for j in (hoja.get(lado) or {}).get("titulares") or []]
         if not tit:
@@ -4703,7 +4710,8 @@ def disparo_entre(desde: datetime, hasta: datetime) -> bool:
     return False
 
 
-def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> list[dict]:
+def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None,
+                    creado_en: str | None = None) -> list[dict]:
     """CUÁNDO llegó el once que dispara DTP-REHACER, una vez jugado el partido
     (26/10/2026: 12 lecciones del DTP del 25/10 decían «sonó y no se rehízo» y
     la rutina había rehecho 18 partes; la API corrigió la formación en el
@@ -4721,14 +4729,28 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None) -> lis
     Sin NINGUNA versión del once capturada hasta el pitazo (llegó después, o
     nunca) también es `tardio`: no había once con que rehacer (30/10/2026,
     incidencia 847: las copas nacionales capturaban el once con la ficha).
+      · `parteTardio` — el parte se depositó por PRIMERA vez después del pitazo:
+        no hubo apertura antes del partido que rehacer, ni depósito previo con
+        que medir el once (13/11/2026, incidencia 1392, Türkiye–Bélgica 1528958
+        y Armenia–Chipre 1528959: depositados un minuto después del saque, la
+        alerta salía sin momento como si fueran partes anteriores a la regla).
     Antes del pitazo, sin la tabla de versiones o sin depósito previo sellado
     (partes anteriores a esta regla), la alerta sale como estaba."""
     if not alertas or not fx:
         return alertas
     try:
         est = saddb.query_one("sad", "SELECT status_short FROM fixtures WHERE id=?", (fx["id"],))
-        if (est and (est["status_short"] or "NS") in ("NS", "TBD", "PST")) or not deposito_previo:
+        if est and (est["status_short"] or "NS") in ("NS", "TBD", "PST"):
             return alertas
+        if not deposito_previo:
+            pit, cre = _utc(fx["date"]), _utc(creado_en)
+            if not (pit and cre and cre >= pit):
+                return alertas
+            texto = (f"el parte se depositó por primera vez a las {cre.strftime('%H:%M UTC')}, después del "
+                     f"pitazo ({pit.strftime('%H:%M UTC')}): no hubo apertura antes del partido que rehacer")
+            return [({**a, "momento": "parteTardio", "ultimoDepositoPrevio": None,
+                      "detalle": f"{a['detalle']} [{texto}]"} if a.get("codigo") == "DTP-REHACER" else a)
+                    for a in alertas]
         filas = _versiones_once(fx["id"])
     except Exception:  # noqa: BLE001 — sin la tabla (base vieja) no hay momento que decir
         return alertas
@@ -5059,7 +5081,7 @@ def dto(fixture_id: int) -> dict | None:
             oficial[lado] = {**oficial[lado], "formacionAlCerrar": xi[lado]["formacionAlCerrar"]}
     dtp_leido = _dtp.leer_dtp(parte.get("dtp") or {}, oficial)
     alertas.extend(momento_rehacer(_dtp.alertas_rehacer(dtp_leido, {"a": fila["equipo_a"], "b": fila["equipo_b"]}),
-                                   fx, fila["deposito_previo_en"]))
+                                   fx, fila["deposito_previo_en"], fila["creado_en"]))
     # las de coherencia se LEEN, no se rehacen (ver _ALERTAS_CAPTURADAS)
     coherencia = json.loads(fila["coherencia_json"]) if fila["coherencia_json"] else None
     alertas.extend(_coherencia.alertas_de(coherencia))

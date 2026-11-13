@@ -1460,7 +1460,9 @@ negritas, citas y tablas se pintan bien en la app.
         Ya jugado el partido, la alerta trae `momento` (26/10/2026): `tardio`
         (el once final llegó a < 15 min del pitazo: nadie podía rehacer, no es
         un aviso ignorado) · `sinRehacer` (llegó a tiempo y no se rehízo: falla
-        de la corrida) · `conocido` (ya estaba al depositar: lección del DTP).
+        de la corrida) · `conocido` (ya estaba al depositar: lección del DTP)
+        · `parteTardio` (el parte se depositó por primera vez después del
+        pitazo: falla de la corrida de partes, 1392).
         El XI de referencia va como LISTA de nombres, nunca como frase.
       - VÍAS DE GOL, cuatro líneas obligatorias en `viasGol`: lo aéreo por
         centro Y por pelota parada; el duelo aéreo con todos los que atacan

@@ -37,8 +37,11 @@
 > cargues como fallo del skill. `sinRehacer` = llegó a tiempo y nadie rehízo:
 > anotalo en «Roto o a mirar» (falla de la corrida de rehacer), no como
 > lección del DTP. `conocido` = el once ya estaba al depositar y la apertura
-> igual lo contradice: ahí sí es lección. Sin `momento` (partes viejos), decí
-> que no se sabe cuándo llegó el once.
+> igual lo contradice: ahí sí es lección. `parteTardio` = el parte se depositó
+> por primera vez después del pitazo (1392): no hubo apertura previa que
+> rehacer; va a «Roto o a mirar» (falla de la corrida de partes), no como
+> lección del DTP. Sin `momento` (partes viejos), decí que no se sabe cuándo
+> llegó el once.
 >
 > **Una regla no se cobra hacia atrás** (27/10/2026): una alerta con
 > `posteriorAlParte` (ESPINA-SIGUE-EN-EXTREMO, EFE-EMPATE-TECNICO en partes

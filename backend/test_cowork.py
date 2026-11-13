@@ -2777,6 +2777,16 @@ def main():
     check("1225 (Leipzig–City): titulares de la hoja nombrados de banco en viasGol y en una rama → alerta del lado",
           len(_a1225) == 1 and _a1225[0]["equipo"] == "b" and _a1225[0]["caso"] == "dtpBanco"
           and [x["nombre"] for x in _a1225[0]["titulares"]] == ["I. Ndiaye", "E. Anderson", "R. Cherki"], _a1225)
+    _h1393 = {"a": _hj([(1, "Z. Shaghoyan"), (2, "Spertsyan")], [(3, "Miranyan")]),
+              "b": _hj([(4, "I. Pikis"), (5, "Pittas")], [(6, "Kakoullis")])}
+    _f1393 = "banco ofensivo de Chipre: Kakoullis, Pikis (9 de recambio)"
+    _a1393 = _feh({"dtp": {"bloques": [
+        {"equipo": "a", "apertura": {"m2": {"viasGol": {"foco": ["banco: Shaghoyan"], "rival": [_f1393]}}}},
+        {"equipo": "b", "apertura": {"m2": {"viasGol": {"foco": [_f1393], "rival": ["banco: Shaghoyan"]}}}}]}},
+        _h1393, {"a": "Armenia", "b": "Cyprus"})
+    check("1393 (Armenia–Chipre): la frase en el `foco` de Chipre y en el `rival` de Armenia → `dtp` es el bloque donde es propia",
+          sorted((x["equipo"], x["titulares"][0]["nombre"], x["titulares"][0]["dtp"]) for x in _a1393)
+          == [("a", "Z. Shaghoyan", "a"), ("b", "I. Pikis", "b")], _a1393)
     _h_amb = {"a": _hj([(1, "E. Castillo"), (2, "V. Adamo")], [(3, "J. Castillo")])}
     _d_amb = lambda t: {"dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {"viasGol": {"foco": [t]}}}}]}}
     check("1225: con suplentes de verdad, un condicional («si arranca») o un apellido que es de otro de la hoja → nada",
@@ -4729,6 +4739,14 @@ def main():
     _m = _mom(_al, _fx480, "2026-10-25 15:13:00")
     check("once corregido a 10 min del pitazo, después del último depósito: `tardio`, no «ignorado»",
           _m[0].get("momento") == "tardio" and "once tardío" in _m[0]["detalle"] and _m[1] == _al[1], _m)
+    # 1392: el parte depositado por PRIMERA vez después del pitazo no tiene
+    # depósito previo: `parteTardio`, no la alerta muda de un parte viejo
+    _m1392 = _mom(_al, _fx480, None, "2026-10-25 16:16:00")
+    check("1392: parte depositado por primera vez después del pitazo → `parteTardio`; sin creado_en o antes del pitazo, sin momento",
+          _m1392[0].get("momento") == "parteTardio" and "después del pitazo" in _m1392[0]["detalle"]
+          and _m1392[1] == _al[1]
+          and "momento" not in _mom(_al, _fx480, None)[0]
+          and "momento" not in _mom(_al, _fx480, None, "2026-10-25 14:00:00")[0], _m1392)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("UPDATE alineaciones_versiones SET capturada_en='2026-10-25 15:40:00' "
                      "WHERE fixture_id=990480 AND formacion='4-3-1-2'")
