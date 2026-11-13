@@ -232,21 +232,57 @@ fijo por escalones de **alineados** nuevos cerrados
 | **30** | `prometedor` con **10+ pts** de win rate sobre el resto |
 | **60** | `confirmado` con 10+ pts y el límite **inferior** del IC de los alineados por encima del resto; si no, `sin_contacto` |
 
-Tres series en papel (`GET /analisis/simulacion`, tabla «Marcador más
-probable · con el elegido»): **`metodoMarcador`** (el método, solo con el
-marcador alineado), **`metodoVerdeMarcador`** (además con el semáforo en verde)
-y **`martingalaAjustadaVerdeMarcador`** (la martingala AJUSTADA A LA CUOTA con el
-semáforo en verde Y el marcador alineado). La martingala clásica duplica y solo
-recupera con cuota 2,00+: con favoritos (1,40-1,60) la 🟢⚽ clásica ganó 76 de
-112 (67,9 %) y quedó en −0,8 %. La ajustada, tras perder, apuesta
-**1 + lo perdido en la línea / (cuota − 1)**: recupera todo y gana lo de 1 u
-con cualquier cuota, a cambio de apuestas que crecen más rápido. Decisión del
-usuario el 13/11: «agrega la martingala ajustada a la cuota tanto a Martin 60 %
-y al Método 🟢⚽, borra martingala Método 🟢⚽ sin ajuste» (también existe
-**`martingala60Ajustada`**, al lado de la clásica de 60 %+). La rutina de los lunes lo reporta en la sección
+Se mide en la tabla «Marcador más probable · con el elegido» de
+`GET /analisis/simulacion`. Tuvo tres series en papel (`metodoMarcador`,
+`metodoVerdeMarcador` y una martingala 🟢⚽) que el usuario quitó el mismo 13/11:
+ver «Las puntas contra el medio». Queda **`martingala60Ajustada`**, la martingala
+de 60 %+ AJUSTADA A LA CUOTA: tras perder apuesta
+**1 + lo perdido en la línea / (cuota − 1)** (la clásica duplica y solo recupera
+con cuota 2,00+). La rutina de los lunes lo reporta en la sección
 «Marcador» de `python -m backend.contacto`. Este marcador lo ve también el
 analista (va en `golesAcotados` del parte): no es una señal que él pueda
 pintar, porque sale de la base.
+
+## Las puntas contra el medio (13/11/2026)
+
+El usuario: «siento que hay una forma correcta de apostar… por un lado un gran
+win rate, por otro buena ganancia con un bajo win rate». Las dos cosas son la
+misma: la plata sale de la **ventaja** (acierto − lo que pide la cuota), y la
+ventaja está en las dos PUNTAS de lo que la casa (sin margen) le da al elegido.
+Medido sobre 748 partes (14/09-13/11, elegido local o visita, 1 u plana):
+
+| la casa le daba | n | acierta | pedía | ventaja | plana |
+|---|---|---|---|---|---|
+| < 40 % | 156 | 43 % | 35 % | +8,4 | +21,1 % |
+| 40-50 % | 231 | 49 % | 45 % | +4,7 | +3,1 % |
+| 50-60 % | 176 | 53 % | 55 % | −1,5 | −8,6 % |
+| 60-70 % | 97 | 75 % | 64 % | +11,3 | +10,1 % |
+| 70 %+ | 88 | 85 % | 76 % | +9,0 | +5,0 % |
+
+Sin el medio (45-60 %): +11,5 % (n 465; +12,3 % hasta el 31/10 y +9,9 %
+después) contra +5,2 % de todos y −5,0 % del medio solo (n 283; −4,8 % y
+−5,4 %). El marcador alineado era la punta de los favoritos; por eso subía el
+win rate y no la plata. Pistas más débiles, sin serie: con la visita elegida
++14,6 % (n 231) contra +1,0 % con el local.
+
+Los cortes (45 y 60) salieron de esos datos: **se mide hacia adelante** desde
+el 14/11/2026 (`simulacion.MEDIO_DESDE`) con la serie en papel
+**`metodoFueraMedio`** (el método sin apostar en el medio) y un criterio fijo
+por escalones de partidos nuevos del MEDIO (`simulacion.criterio_medio`). Acá
+el criterio SÍ mira la cuota, porque el hallazgo es ese:
+
+| escalón | estado |
+|---|---|
+| antes de 30 | `en_observacion` |
+| cualquiera | `no_se_sostiene` si la ventaja del medio no es menor que la de las puntas |
+| **30** | `prometedor` si las puntas le sacan **5+ pts** de ventaja al medio |
+| **60** | `confirmado` con 5+ pts y la plana de las puntas en positivo y sobre la del medio; si no, `sin_contacto` |
+
+Tabla «Las puntas contra el medio» en la pantalla y sección «Fuera del medio»
+del informe de los lunes. El mismo 13/11 el usuario quitó de la Simulación las
+series del marcador (`metodoMarcador`, `metodoVerdeMarcador` y la martingala
+🟢⚽ ajustada, que con 100 u quebró en una racha: con cuotas de 1,45 la apuesta
+crece ×3,2 por derrota). La tabla de win rate del marcador y su criterio siguen.
 
 ## Qué falta
 

@@ -165,7 +165,7 @@ def informe(out: dict) -> str:
     if m:
         lineas.append(f"  martingala: banca {m['banca']:.2f}, caída máx. {100 * m['caidaMaxima']:.1f} %, "
                       f"apuesta máx. {m['montoMaximo']:.0f} u")
-    lineas += ["", informe_semaforo(out), "", informe_marcador(out)]
+    lineas += ["", informe_semaforo(out), "", informe_marcador(out), "", informe_medio(out)]
     return "\n".join(lineas)
 
 
@@ -210,12 +210,30 @@ def informe_marcador(out: dict) -> str:
             f"{nom} {g[k]['aciertos']} de {g[k]['n']} ({pct(g[k]['tasa'])})"
             for nom, k in (("alineado", "alineado"), ("resto", "resto"), ("verde y alineado", "verdeAlineado"))))
     lineas.append(f"  → {s['criterio']['texto']}")
-    for clave, nombre in (("metodoMarcador", "método con el marcador"), ("metodoVerdeMarcador", "método en verde con el marcador"),
-                          ("martingalaAjustadaVerdeMarcador", "martingala 🟢⚽ ajustada")):
-        e = next((x for x in out.get("estrategias") or [] if x["clave"] == clave), None)
-        if e:
-            lineas.append(f"  {nombre}: banca {e['banca']:.2f} en {e['apuestas']} apuestas "
-                          f"({e['ganadas']} ganadas), caída máx. {100 * e['caidaMaxima']:.1f} %")
+    return "\n".join(lineas)
+
+
+def informe_medio(out: dict) -> str:
+    """La sección «Fuera del medio» del informe de los lunes (13/11/2026)."""
+    s = out.get("medio")
+    if not s:
+        return "Fuera del medio · sin datos"
+    pct = lambda x: "—" if x is None else f"{100 * x:.1f} %"  # noqa: E731
+    pts = lambda x: "—" if x is None else f"{100 * x:+.1f} pts"  # noqa: E731
+    lineas = [f"Fuera del medio · cuenta desde {s['desde'][:10]} (medio = la casa le da al elegido "
+              f"{s['medio'][0]:g}-{s['medio'][1]:g} %)"]
+    for etiqueta, clave in (("nuevos", "nuevo"), ("todo lo simulado", "todo")):
+        g = s[clave]
+        lineas.append(f"  {etiqueta}:")
+        for nom, k in (("punta baja", "puntaBaja"), ("medio", "medio"), ("punta alta", "puntaAlta"), ("puntas", "puntas")):
+            x = g[k]
+            lineas.append(f"    {nom}: {x['aciertos']} de {x['n']} ({pct(x['tasa'])}) · pedía {pct(x['pide'])} · "
+                          f"{pts(x['ventaja'])} · plana {pct(x['roiPlano'])}")
+    lineas.append(f"  → {s['criterio']['texto']}")
+    e = next((x for x in out.get("estrategias") or [] if x["clave"] == "metodoFueraMedio"), None)
+    if e:
+        lineas.append(f"  método fuera del medio: banca {e['banca']:.2f} en {e['apuestas']} apuestas "
+                      f"({e['ganadas']} ganadas), caída máx. {100 * e['caidaMaxima']:.1f} %")
     return "\n".join(lineas)
 
 

@@ -122,6 +122,13 @@ SUBIDA_VERSION = {
     ("sad-analysis", "v4.5"): "2026-11-10 12:15:00",
 }
 
+# EL MEDIO: lo que la casa (sin margen) le da al elegido, en % [desde, hasta)
+MEDIO = (45.0, 60.0)
+# el criterio cuenta desde los partidos del 14/11/2026, 00:00 de Lima
+MEDIO_DESDE = "2026-11-14 05:00:00"
+MEDIO_ESCALONES = (30, 60)
+MEDIO_SEPARACION = 0.05   # pts de ventaja (acierto − lo que pide la cuota) de las puntas sobre el medio
+
 ESTRATEGIAS = (
     ("proporcional", "Proporcional con freno",
      f"{100 * PROPORCION:g} % de la banca a nuestro elegido; un tramo de confianza se pausa si en sus últimos "
@@ -132,19 +139,20 @@ ESTRATEGIAS = (
     ("metodoVerde", "Método solo en verde",
      f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando el "
      "semáforo del elegido está en verde: la espina del elegido lo acompaña y la del rival no dice que siga"),
-    # EL MÉTODO CON EL MARCADOR (13/11/2026, usuario: «si el marcador más
-    # probable se alinea con el elegido… lo más probable es que gane»). El
-    # marcador más probable del modelo de goles (goles.acotar_fixture, el de la
-    # lista de Partidos): sale de la historia ANTERIOR al partido, así que es el
-    # mismo al minuto 0 que en cualquier lectura. Medido el 13/11 en 748 partes
-    # (14/09-13/11): el elegido ganó 66,7 % con el marcador alineado (n 210) y
-    # 52,3 % con 1-1/0-0 (n 533). El criterio cuenta desde `MARCADOR_DESDE`.
-    ("metodoMarcador", "Método con el marcador",
-     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando el "
-     "marcador más probable del modelo de goles va con el elegido (1-0 o 2-1 para el local, 0-1 para la visita)"),
-    ("metodoVerdeMarcador", "Método en verde con el marcador",
-     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno) solo con el semáforo en verde Y el "
-     "marcador más probable con el elegido"),
+    # EL MÉTODO FUERA DEL MEDIO (13/11/2026, usuario: «siento que hay una forma
+    # correcta de apostar… por un lado un gran win rate, por otro buena ganancia
+    # con bajo win rate»). Medido en 748 partes (14/09-13/11): la ventaja sobre
+    # la cuota está en las dos PUNTAS de lo que la casa le da al elegido (< 40 %:
+    # +8,4 pts; 60-70 %: +11,3; 70 %+: +9,0) y en el medio no hay (50-60 %: −1,5).
+    # Sin el medio (45-60 %) la plana dio +11,5 % (n 465; +12,3 % y +9,9 % en las
+    # dos mitades) contra +5,2 % de todos y −5,0 % del medio solo (n 283). Los
+    # cortes salieron de esos datos: el criterio cuenta desde `MEDIO_DESDE`.
+    # Las series con el marcador (método ⚽, 🟢⚽ y su martingala) se quitaron el
+    # mismo día por decisión del usuario: el marcador alineado era la punta de
+    # los favoritos; su tabla de win rate sigue.
+    ("metodoFueraMedio", "Método fuera del medio",
+     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) sin apostar cuando la casa le da "
+     f"al elegido entre {MEDIO[0]:g} % y {MEDIO[1]:g} % (sin margen): ahí no le sacamos nada a la cuota"),
     ("plana", "Apuesta plana (control)",
      f"{UNIDAD:g} unidad a nuestro elegido en cada partido"),
     # CONTROL DE CONFIANZA (29/10/2026, usuario): el tramo de 60 %+ es el que
@@ -174,18 +182,12 @@ ESTRATEGIAS = (
     ("martingala60Ajustada", f"Martingala {CONFIANZA_ALTA:g} %+ ajustada",
      f"por líneas, solo con nuestro elegido a {CONFIANZA_ALTA:g} % o más; tras perder apuesta 1 + lo perdido en "
      "la línea / (cuota − 1): recupera todo y gana lo de 1 u, con cualquier cuota"),
-    ("martingalaAjustadaVerdeMarcador", "Martingala 🟢⚽ ajustada",
-     "la martingala ajustada a la cuota, solo con el semáforo en verde Y el marcador más probable con el elegido"),
 )
-_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaAjustadaVerdeMarcador")
+_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada")
 # las que, tras perder, apuestan lo que recupera según la cuota (no duplican)
-_AJUSTADAS = ("martingala60Ajustada", "martingalaAjustadaVerdeMarcador")
+_AJUSTADAS = ("martingala60Ajustada",)
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
-_CON_FRENO = ("proporcional", "metodoVerde", "metodoMarcador", "metodoVerdeMarcador")
-# las que apuestan solo con el marcador más probable alineado con el elegido
-_CON_MARCADOR = ("metodoMarcador", "metodoVerdeMarcador", "martingalaAjustadaVerdeMarcador")
-# …y las que además piden el semáforo en verde
-_VERDE_MARCADOR = ("metodoVerdeMarcador", "martingalaAjustadaVerdeMarcador")
+_CON_FRENO = ("proporcional", "metodoVerde", "metodoFueraMedio")
 _SOLO_ALTA = ("plana60", "martingala60", "martingala60Ajustada")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
@@ -435,6 +437,79 @@ def resumen_marcador(cerradas: list[dict]) -> dict:
                      "anterior al partido: el mismo al minuto 0. Se juzga el win rate; la cuota es información")}
 
 
+def en_el_medio(mercado_elegido: float | None) -> bool:
+    return mercado_elegido is not None and MEDIO[0] <= float(mercado_elegido) < MEDIO[1]
+
+
+def criterio_medio(puntas: dict, medio: dict) -> dict:
+    """EL CRITERIO DEL MEDIO (fijado el 13/11/2026, no se mueve). Acá lo que se
+    juzga SÍ es contra la cuota —la ventaja = acierto − lo que pedía—, porque
+    el hallazgo es ese: dónde le sacamos algo a la casa. n = partidos NUEVOS
+    cerrados del medio (el grupo chico, ~38 %):
+      - n < 30: en observación.
+      - en cualquier escalón: `no_se_sostiene` si la ventaja del medio es
+        igual o mayor que la de las puntas.
+      - escalón 30: `prometedor` si las puntas le sacan 5+ pts de ventaja al medio.
+      - escalón 60: `confirmado` con 5+ pts y la plana de las puntas en
+        positivo y por encima de la del medio; si no, `sin_contacto`."""
+    n = medio["n"]
+    escalon = max((e for e in MEDIO_ESCALONES if n >= e), default=0)
+    proximo = next((e for e in MEDIO_ESCALONES if n < e), None)
+    vp, vm = puntas["ventaja"], medio["ventaja"]
+    sep = None if vp is None or vm is None else vp - vm
+    rp, rm = puntas["roiPlano"], medio["roiPlano"]
+    plata = rp is not None and rm is not None and rp > 0 and rp > rm
+    if escalon == 0:
+        estado = "en_observacion"
+    elif sep is None or sep <= 0:
+        estado = "no_se_sostiene"
+    elif escalon < MEDIO_ESCALONES[-1]:
+        estado = "prometedor" if sep >= MEDIO_SEPARACION - 1e-9 else "en_observacion"
+    else:
+        estado = "confirmado" if sep >= MEDIO_SEPARACION - 1e-9 and plata else "sin_contacto"
+    pts = lambda x: f"{100 * x:+.1f} pts"  # noqa: E731
+    cifras = (f"la ventaja sobre la cuota es {pts(vp)} en las puntas ({puntas['n']}, plana {100 * rp:+.1f} %) y "
+              f"{pts(vm)} en el medio ({n}, plana {100 * rm:+.1f} %): {pts(sep)}" if sep is not None else "")
+    sigue = f" · faltan {proximo - n} partidos del medio para el escalón {proximo}" if proximo else ""
+    textos = {
+        "confirmado": f"CONFIRMADO en el escalón {escalon}: {cifras}; la plata está en las puntas",
+        "no_se_sostiene": f"NO SE SOSTIENE en el escalón {escalon}: " + (
+            f"{cifras}; el medio no rinde menos que las puntas" if cifras else "sin partidos con que comparar"),
+        "prometedor": f"PROMETEDOR en el escalón {escalon}: {cifras}{sigue}",
+        "sin_contacto": f"sin contacto en el escalón {escalon}: {cifras}; pide {100 * MEDIO_SEPARACION:.0f}+ pts "
+                        "y la plana de las puntas en positivo y sobre la del medio",
+    }
+    texto = textos.get(estado) or (f"en observación{f' (escalón {escalon})' if escalon else ''}: {n} partidos "
+                                   "nuevos del medio" + (f", {cifras}" if cifras else "") + sigue)
+    return {"escalon": escalon, "proximoEscalon": proximo, "escalones": list(MEDIO_ESCALONES),
+            "faltan": (proximo - n) if proximo else 0, "n": n,
+            "puntas": {"n": puntas["n"], "ventaja": vp, "roiPlano": rp},
+            "medio": {"n": n, "ventaja": vm, "roiPlano": rm},
+            "separacion": None if sep is None else round(sep, 4),
+            "nMinimo": MEDIO_ESCALONES[-1], "separacionMinima": MEDIO_SEPARACION,
+            "cumple": estado == "confirmado", "estado": estado, "texto": texto}
+
+
+def resumen_medio(cerradas: list[dict]) -> dict:
+    """Las puntas (baja: la casa le da < MEDIO[0]; alta: ≥ MEDIO[1]) contra el
+    medio, en todo lo simulado y en lo NUEVO (desde `MEDIO_DESDE`)."""
+    def pm(f):
+        return f["mercado"][f["elegido"]]
+
+    def grupos(fs):
+        return {"puntaBaja": _grupo_semaforo([f for f in fs if pm(f) < MEDIO[0]]),
+                "medio": _grupo_semaforo([f for f in fs if f.get("enElMedio")]),
+                "puntaAlta": _grupo_semaforo([f for f in fs if pm(f) >= MEDIO[1]]),
+                "puntas": _grupo_semaforo([f for f in fs if not f.get("enElMedio")])}
+    desde = _utc(MEDIO_DESDE)
+    nuevas = [f for f in cerradas if (_utc(f["pitazo"]) or desde) >= desde]
+    todo, nuevo = grupos(cerradas), grupos(nuevas)
+    return {"desde": MEDIO_DESDE, "medio": list(MEDIO), "todo": todo, "nuevo": nuevo,
+            "criterio": criterio_medio(nuevo["puntas"], nuevo["medio"]),
+            "nota": ("lo que la casa le da al elegido, sin margen. La ventaja es el acierto menos lo que pedía la "
+                     "cuota: acá el criterio SÍ mira la cuota, porque el hallazgo es dónde le sacamos algo")}
+
+
 def resumen_semaforo(cerradas: list[dict]) -> dict:
     """Verdes, amarillos, rojos y sin dato: el acierto del elegido (con lo que
     pedía la cuota y la plana a 1 u como información), en todo lo simulado y
@@ -588,16 +663,11 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             "motivo": {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
                 estado, "semáforo sin dato")}
         return
-    if clave in _VERDE_MARCADOR and (fila.get("semaforo") or {}).get("estado") != "confirma":
-        fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
-                                        "linea": None, "motivo": "semáforo no está en verde"}
-        return
-    if clave in _CON_MARCADOR and not (fila.get("marcador") or {}).get("alineado"):
-        m = fila.get("marcador") or {}
+    if clave == "metodoFueraMedio" and fila.get("enElMedio"):
         fila["porEstrategia"][clave] = {
             "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,
-            "motivo": (f"el marcador más probable ({m['masProbable']}) no va con el elegido" if m.get("masProbable")
-                       else "sin marcador del modelo de goles")}
+            "motivo": (f"la casa le da {fila['mercado'][fila['elegido']]:.0f} % al elegido: en el medio "
+                       f"({MEDIO[0]:g}-{MEDIO[1]:g} %)")}
         return
     if clave in _CON_FRENO:
         sel = fila["elegido"]
@@ -713,7 +783,13 @@ def simular(apuestas: list[dict]) -> dict:
         sel_k, f = _mejor_kelly(p, a["cuotas"])
         # sin semáforo armado por quien llama (una apuesta de prueba), sin dato
         sem = a.get("semaforo") or _sem.semaforo(a["probabilidades"], None)
+        # el mercado sin margen: de quien llama o, si no vino, de las cuotas
+        mer = a.get("mercado")
+        if not mer:
+            inv = {k: 1 / a["cuotas"][k] for k in CLAVES}
+            mer = {k: round(100 * inv[k] / sum(inv.values()), 1) for k in CLAVES}
         filas.append({**a, "semaforo": sem, "probabilidades": {k: round(100 * p[k], 1) for k in CLAVES},
+                      "mercado": mer, "enElMedio": en_el_medio(mer[_elegido(p)]),
                       "elegido": _elegido(p), "_f": f,
                       "kelly": {"seleccion": sel_k, "fraccion": round(f, 4),
                                 "valor": round(p[sel_k] * a["cuotas"][sel_k] - 1, 4)},
@@ -805,6 +881,8 @@ def simular(apuestas: list[dict]) -> dict:
         "semaforo": resumen_semaforo(cerradas),
         # el marcador más probable con el elegido (13/11/2026): alineados contra el resto y su criterio
         "marcador": resumen_marcador(cerradas),
+        # las puntas contra el medio de lo que la casa le da al elegido (13/11/2026)
+        "medio": resumen_medio(cerradas),
         # lo más nuevo arriba en la pantalla
         "apuestas": list(reversed(filas)),
     }

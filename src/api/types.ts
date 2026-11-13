@@ -2749,7 +2749,7 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaAjustadaVerdeMarcador'
+export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
@@ -2813,6 +2813,8 @@ export interface ApuestaSimulada {
   alerta?: AlertaConfianza | null
   /** el semáforo del elegido (11/11/2026) */
   semaforo?: SemaforoElegido
+  /** la casa (sin margen) le da al elegido entre 45 % y 60 % (13/11/2026) */
+  enElMedio?: boolean
   /** el marcador más probable del modelo de goles contra el elegido (13/11/2026); null sin modelo */
   marcador?: { masProbable: string; prob: number; signo: Resultado1x2 | null; alineado: boolean } | null
   porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
@@ -2933,6 +2935,33 @@ export interface ResumenSemaforo {
   nota: string
 }
 
+/** Las puntas contra el medio de lo que la casa le da al elegido (13/11/2026). */
+export interface GruposMedio { puntaBaja: GrupoSemaforo; medio: GrupoSemaforo; puntaAlta: GrupoSemaforo; puntas: GrupoSemaforo }
+export interface ResumenMedio {
+  desde: string
+  /** [desde, hasta) en % */
+  medio: [number, number]
+  todo: GruposMedio
+  nuevo: GruposMedio
+  /** por escalones de partidos nuevos del medio; acá SÍ se mira la cuota (ventaja = acierto − lo que pedía) */
+  criterio: {
+    escalon: 0 | 30 | 60
+    proximoEscalon: number | null
+    escalones: number[]
+    faltan: number
+    n: number
+    puntas: { n: number; ventaja: number | null; roiPlano: number | null }
+    medio: { n: number; ventaja: number | null; roiPlano: number | null }
+    separacion: number | null
+    nMinimo: number
+    separacionMinima: number
+    cumple: boolean
+    estado: 'en_observacion' | 'prometedor' | 'no_se_sostiene' | 'confirmado' | 'sin_contacto'
+    texto: string
+  }
+  nota: string
+}
+
 /** El marcador más probable con el elegido (13/11/2026): alineados contra el resto, por win rate. */
 export interface GruposMarcador { alineado: GrupoSemaforo; resto: GrupoSemaforo; sinMarcador: GrupoSemaforo; verdeAlineado: GrupoSemaforo }
 export interface ResumenMarcador {
@@ -3010,6 +3039,8 @@ export interface SimulacionApuesta {
   semaforo?: ResumenSemaforo
   /** el marcador más probable con el elegido (13/11/2026) */
   marcador?: ResumenMarcador
+  /** las puntas contra el medio (13/11/2026) */
+  medio?: ResumenMedio
   porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
   apuestas: ApuestaSimulada[]
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]
