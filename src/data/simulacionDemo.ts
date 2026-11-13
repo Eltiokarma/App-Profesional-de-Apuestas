@@ -1062,6 +1062,174 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.75
     }
    ]
+  },
+  {
+   "clave": "martingalaFueraMedio",
+   "nombre": "Martingala fuera del medio ajustada",
+   "descripcion": "la martingala ajustada a la cuota (1 + lo perdido en la línea / (cuota − 1)), sin apostar cuando la casa le da al elegido entre 45 % y 60 %",
+   "banca": 98.58,
+   "ganancia": -1.42,
+   "apostado": 3.62,
+   "apuestas": 3,
+   "ganadas": 1,
+   "roi": -0.3931,
+   "caidaMaxima": 0.0259,
+   "quebro": null,
+   "exposicionMaxima": 1.62,
+   "montoMaximo": 1.62,
+   "lineas": {
+    "abiertas": 1,
+    "perdiendo": 1,
+    "proximoMayor": 1.0,
+    "perdidaMayor": 2.62
+   },
+   "tramos": null,
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 101.2
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 101.2
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 100.2
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 98.58
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 98.58
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 98.58
+    }
+   ]
+  },
+  {
+   "clave": "martingalaFueraMedioTope",
+   "nombre": "Martingala fuera del medio ajustada, con tope",
+   "descripcion": "la misma, pero ninguna apuesta pasa del 25 % de la banca: si el tope recorta, la línea recupera lo que puede y arrastra el resto",
+   "banca": 98.58,
+   "ganancia": -1.42,
+   "apostado": 3.62,
+   "apuestas": 3,
+   "ganadas": 1,
+   "roi": -0.3931,
+   "caidaMaxima": 0.0259,
+   "quebro": null,
+   "exposicionMaxima": 1.62,
+   "montoMaximo": 1.62,
+   "lineas": {
+    "abiertas": 1,
+    "perdiendo": 1,
+    "proximoMayor": 1.0,
+    "perdidaMayor": 2.62
+   },
+   "tramos": null,
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 101.2
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 101.2
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 100.2
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 98.58
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 98.58
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 98.58
+    }
+   ]
   }
  ],
  "porVersion": [
@@ -1135,6 +1303,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "ganancia": -1.0,
      "apuestas": 1,
      "roi": -1.0
+    },
+    "martingalaFueraMedio": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
+    },
+    "martingalaFueraMedioTope": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
     }
    }
   },
@@ -1208,6 +1388,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "ganancia": 1.75,
      "apuestas": 1,
      "roi": 0.75
+    },
+    "martingalaFueraMedio": {
+     "apostado": 1.0,
+     "ganancia": 1.2,
+     "apuestas": 1,
+     "roi": 1.2
+    },
+    "martingalaFueraMedioTope": {
+     "apostado": 1.0,
+     "ganancia": 1.2,
+     "apuestas": 1,
+     "roi": 1.2
     }
    }
   },
@@ -1280,6 +1472,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apostado": 1.0,
      "ganancia": -1.0,
      "apuestas": 1,
+     "roi": -1.0
+    },
+    "martingalaFueraMedio": {
+     "apostado": 2.625,
+     "ganancia": -2.625,
+     "apuestas": 2,
+     "roi": -1.0
+    },
+    "martingalaFueraMedioTope": {
+     "apostado": 2.625,
+     "ganancia": -2.625,
+     "apuestas": 2,
      "roi": -1.0
     }
    }
@@ -1830,6 +2034,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.75,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.58,
+     "linea": null,
+     "motivo": "la casa le da 50 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.58,
+     "linea": null,
+     "motivo": "la casa le da 50 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -1981,6 +2201,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.75,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.58,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.58,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -2132,6 +2368,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": null,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -2292,6 +2544,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.75,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": "local",
+     "monto": 1.625,
+     "ganancia": -1.625,
+     "banca": 98.58,
+     "linea": 1,
+     "motivo": ""
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": "local",
+     "monto": 1.625,
+     "ganancia": -1.625,
+     "banca": 98.58,
+     "linea": 1,
+     "motivo": ""
     }
    }
   },
@@ -2441,6 +2709,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 1.0,
      "ganancia": -1.0,
      "banca": 99.75,
+     "linea": 1,
+     "motivo": ""
+    },
+    "martingalaFueraMedio": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 100.2,
+     "linea": 1,
+     "motivo": ""
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 100.2,
      "linea": 1,
      "motivo": ""
     }
@@ -2594,6 +2878,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.75,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 101.2,
+     "linea": null,
+     "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 101.2,
+     "linea": null,
+     "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -2754,6 +3054,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.75,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": 1.2,
+     "banca": 101.2,
+     "linea": 1,
+     "motivo": ""
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": 1.2,
+     "banca": 101.2,
+     "linea": 1,
+     "motivo": ""
     }
    }
   },
@@ -2905,6 +3221,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.75,
      "linea": 1,
      "motivo": ""
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -3061,6 +3393,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.0,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -3212,6 +3560,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.0,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 48 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 48 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -3368,6 +3732,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.0,
      "linea": 1,
      "motivo": ""
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 59 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 59 % al elegido: en el medio (45-60 %)"
     }
    }
   },
@@ -3519,6 +3899,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.0,
      "linea": null,
      "motivo": "bajo 60 %"
+    },
+    "martingalaFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 47 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaFueraMedioTope": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 47 % al elegido: en el medio (45-60 %)"
     }
    }
   }

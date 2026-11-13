@@ -278,6 +278,15 @@ el criterio SÍ mira la cuota, porque el hallazgo es ese:
 | **30** | `prometedor` si las puntas le sacan **5+ pts** de ventaja al medio |
 | **60** | `confirmado` con 5+ pts y la plana de las puntas en positivo y sobre la del medio; si no, `sin_contacto` |
 
+Con las mismas puntas corren dos martingalas AJUSTADAS A LA CUOTA (pedido del
+usuario, 13/11): **`martingalaFueraMedio`** y **`martingalaFueraMedioTope`**
+(ninguna apuesta pasa del 25 % de la banca, `simulacion.TOPE_MARTINGALA`; si el
+tope recorta, la línea arrastra lo que no recuperó). Reconstruida sobre 231
+cerradas fuera del medio (28/10-13/11): +105,6 u con 100 u (ROI +15,9 %), sin
+quebrar, pero con una apuesta de 75 u en la peor racha; la misma en TODOS los
+partidos quebraba con 200 u. Fuera del medio entra la punta de cuota alta, que
+recupera una racha con poco.
+
 Tabla «Las puntas contra el medio» en la pantalla y sección «Fuera del medio»
 del informe de los lunes. El mismo 13/11 el usuario quitó de la Simulación las
 series del marcador (`metodoMarcador`, `metodoVerdeMarcador` y la martingala

@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las once estrategias (con el método, en verde, fuera del medio y la martingala ajustada)", len(out["estrategias"]) == 11, out.keys())
+check("simulacion() responde con las trece estrategias (con el método, en verde, fuera del medio y las martingalas ajustadas)", len(out["estrategias"]) == 13, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -538,6 +538,30 @@ _c = _crit_f(100, 58, 60, 30)
 check("escalón 60: +8 pts y la plana de las puntas en positivo → CONFIRMADO", _c["estado"] == "confirmado" and _c["cumple"], _c)
 _c = _crit_f(100, 49, 60, 26)
 check("escalón 60: separa pero la plana de las puntas pierde → sin contacto", _c["estado"] == "sin_contacto", _c)
+# LAS MARTINGALAS FUERA DEL MEDIO (13/11/2026, usuario: «las dos, ármalas con tope»)
+check("martingalaFueraMedio y su tope no apuestan en el medio (el 32 y el 33)",
+      _ef["martingalaFueraMedio"]["apuestas"] == 3 and _ef["martingalaFueraMedioTope"]["apuestas"] == 3
+      and _ff[32]["porEstrategia"]["martingalaFueraMedio"]["motivo"].endswith("en el medio (45-60 %)"))
+# con cuota 1,10 y dos derrotas: sin tope 1 → 1 + 1/0,1 = 11; con tope (25 % de 99 = 24,75)
+# también 11. Tercera: sin tope 1 + 12/0,1 = 121 (recortada por la plata libre a 88);
+# con tope min(121, 25 % de 88) = 22: la línea arrastra lo que no recupera
+def _apt(fid, pit, res):
+    a = _apf(fid, pit, res, 80)
+    a["cuotas"] = {"local": 1.1, "empate": 8.0, "visita": 15.0}
+    return a
+_ot = sim.simular([_apt(41, "2026-11-14 15:00:00", "visita"), _apt(42, "2026-11-14 20:00:00", "visita"),
+                   _apt(43, "2026-11-15 15:00:00", "local")])
+_ft = {a["fixtureId"]: a["porEstrategia"] for a in _ot["apuestas"]}
+_et = {e["clave"]: e for e in _ot["estrategias"]}
+check("con tope: la apuesta no pasa del 25 % de la banca (22 de 88) y la línea arrastra lo que no recuperó",
+      [_ft[k]["martingalaFueraMedioTope"]["monto"] for k in (41, 42, 43)] == [1.0, 11.0, 22.0]
+      and _et["martingalaFueraMedioTope"]["lineas"]["perdidaMayor"] == round(12 - 2.2, 2)
+      and _et["martingalaFueraMedioTope"]["montoMaximo"] == 22.0, ([_ft[k]["martingalaFueraMedioTope"] for k in (41, 42, 43)],
+                                                                   _et["martingalaFueraMedioTope"]["lineas"]))
+check("…y sin tope apuesta todo lo libre (88 de las 121 que pedía): recupera 8,8 y le quedan 3,2",
+      [_ft[k]["martingalaFueraMedio"]["monto"] for k in (41, 42, 43)] == [1.0, 11.0, 88.0]
+      and _et["martingalaFueraMedio"]["lineas"]["perdidaMayor"] == 3.2, [_ft[k]["martingalaFueraMedio"] for k in (41, 42, 43)])
+check("el tope está fijado en el 25 % de la banca", sim.TOPE_MARTINGALA == 0.25)
 check("el criterio está fijado (medio 45-60 %, 30 · 60, 5 pts)",
       sim.MEDIO == (45.0, 60.0) and sim.MEDIO_ESCALONES == (30, 60) and sim.MEDIO_SEPARACION == 0.05)
 from backend import contacto as _ctf  # noqa: E402

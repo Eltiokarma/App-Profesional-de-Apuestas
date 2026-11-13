@@ -1376,7 +1376,7 @@ paths:
       summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
       description: >
         Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
-        partes, con once series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), el método sin apostar cuando la casa le da al elegido entre 45 % y 60 % (`metodoFueraMedio`, 13/11/2026: la ventaja sobre la cuota está en las puntas), la martingala de 60 %+ AJUSTADA A LA CUOTA (`martingala60Ajustada`: tras perder apuesta 1 + lo perdido en la línea / (cuota − 1)), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
+        partes, con trece series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), el método sin apostar cuando la casa le da al elegido entre 45 % y 60 % (`metodoFueraMedio`, 13/11/2026: la ventaja sobre la cuota está en las puntas), la martingala de 60 %+ AJUSTADA A LA CUOTA (`martingala60Ajustada`: tras perder apuesta 1 + lo perdido en la línea / (cuota − 1)), la misma martingala ajustada fuera del medio (`martingalaFueraMedio`) y con un tope del 25 % de la banca por apuesta (`martingalaFueraMedioTope`: si recorta, la línea arrastra lo que no recuperó), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
         derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
@@ -2060,7 +2060,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada] }
+              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaFueraMedio, martingalaFueraMedioTope] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
