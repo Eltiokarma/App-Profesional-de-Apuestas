@@ -15,18 +15,18 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingalaMarcador', string> = {
+const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoMarcador' | 'metodoVerdeMarcador' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingalaVerdeMarcador', string> = {
   proporcional: 'var(--sim-proporcional)', metodoVerde: 'var(--sim-metodo-verde)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
   // el método con el marcador más probable (13/11/2026)
-  metodoMarcador: 'var(--sim-metodo-marcador)', metodoVerdeMarcador: 'var(--sim-metodo-verde-marcador)', martingalaMarcador: 'var(--sim-martingala-marcador)',
+  metodoMarcador: 'var(--sim-metodo-marcador)', metodoVerdeMarcador: 'var(--sim-metodo-verde-marcador)', martingalaVerdeMarcador: 'var(--sim-martingala-verde-marcador)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoMarcador: 'Método ⚽', metodoVerdeMarcador: 'Método 🟢⚽', martingalaMarcador: 'Martin. ⚽', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoMarcador: 'Método ⚽', metodoVerdeMarcador: 'Método 🟢⚽', martingalaVerdeMarcador: 'Martin. 🟢⚽', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -73,7 +73,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
     ...(['metodoMarcador', 'metodoVerdeMarcador'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
     { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
     { clave: 'martingala60', color: COLOR.martingala60 },
-    ...(d.estrategias.some((e) => e.clave === 'martingalaMarcador') ? [{ clave: 'martingalaMarcador' as EstrategiaClave, color: COLOR.martingalaMarcador }] : []),
+    ...(d.estrategias.some((e) => e.clave === 'martingalaVerdeMarcador') ? [{ clave: 'martingalaVerdeMarcador' as EstrategiaClave, color: COLOR.martingalaVerdeMarcador }] : []),
   ]
   const cerradas = [...d.apuestas].reverse().filter((a) => a.estado === 'cerrada')
 
@@ -687,7 +687,7 @@ function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: E
                 <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                   {r.motivo === 'sin plata libre'
                     ? 'no apuesta: toda la banca está en juego en otros partidos'
-                    : ['proporcional', 'metodoVerde', 'metodoMarcador', 'metodoVerdeMarcador', 'martingalaMarcador'].includes(v.clave) ? `no apuesta: ${r.motivo}`
+                    : ['proporcional', 'metodoVerde', 'metodoMarcador', 'metodoVerdeMarcador', 'martingalaVerdeMarcador'].includes(v.clave) ? `no apuesta: ${r.motivo}`
                     : v.clave === 'plana60' || v.clave === 'martingala60' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                     : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                 </span>

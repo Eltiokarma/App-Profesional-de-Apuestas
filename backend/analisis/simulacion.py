@@ -164,15 +164,19 @@ ESTRATEGIAS = (
     ("martingala60", f"Martingala {CONFIANZA_ALTA:g} %+",
      f"la misma martingala por líneas, solo cuando nuestro elegido tiene {CONFIANZA_ALTA:g} % o más"),
     # la martingala del método con el marcador (13/11/2026, usuario: «también
-    # voy a querer un martingala a este método»)
-    ("martingalaMarcador", "Martingala con el marcador",
-     "la misma martingala por líneas, solo cuando el marcador más probable va con el elegido"),
+    # voy a querer un martingala a este método»; y el mismo día: «reemplazala
+    # por la del marcador alineado 🟢⚽, no solo por martingala ⚽»): con el
+    # semáforo en verde Y el marcador más probable con el elegido
+    ("martingalaVerdeMarcador", "Martingala en verde con el marcador",
+     "la misma martingala por líneas, solo con el semáforo en verde Y el marcador más probable con el elegido"),
 )
-_MARTINGALAS = ("martingala", "martingala60", "martingalaMarcador")
+_MARTINGALAS = ("martingala", "martingala60", "martingalaVerdeMarcador")
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
 _CON_FRENO = ("proporcional", "metodoVerde", "metodoMarcador", "metodoVerdeMarcador")
 # las que apuestan solo con el marcador más probable alineado con el elegido
-_CON_MARCADOR = ("metodoMarcador", "metodoVerdeMarcador", "martingalaMarcador")
+_CON_MARCADOR = ("metodoMarcador", "metodoVerdeMarcador", "martingalaVerdeMarcador")
+# …y las que además piden el semáforo en verde
+_VERDE_MARCADOR = ("metodoVerdeMarcador", "martingalaVerdeMarcador")
 _SOLO_ALTA = ("plana60", "martingala60")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
@@ -575,7 +579,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             "motivo": {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
                 estado, "semáforo sin dato")}
         return
-    if clave == "metodoVerdeMarcador" and (fila.get("semaforo") or {}).get("estado") != "confirma":
+    if clave in _VERDE_MARCADOR and (fila.get("semaforo") or {}).get("estado") != "confirma":
         fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
                                         "linea": None, "motivo": "semáforo no está en verde"}
         return
