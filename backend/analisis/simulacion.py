@@ -131,8 +131,7 @@ ESTRATEGIAS = (
     # semáforo del elegido está en verde (backend/analisis/semaforo.py). En papel
     ("metodoVerde", "Método solo en verde",
      f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando el "
-     f"semáforo del elegido está en verde: nuestro 1X2 a ≤ {_sem.UMBRAL_CASA:g} pts de la casa y el marcador "
-     "declarado con el elegido"),
+     "semáforo del elegido está en verde: la espina del elegido lo acompaña y la del rival no dice que siga"),
     ("plana", "Apuesta plana (control)",
      f"{UNIDAD:g} unidad a nuestro elegido en cada partido"),
     # CONTROL DE CONFIANZA (29/10/2026, usuario): el tramo de 60 %+ es el que
@@ -240,23 +239,25 @@ def resumen_alerta(cerradas: list[dict]) -> dict:
     }
 
 
-# EL CRITERIO DEL SEMÁFORO, POR ESCALONES (11/11/2026, usuario: «150 son
-# muchos, lo ponemos de forma progresiva»; fijado ANTES de que haya verdes
-# nuevos y, como el de contacto, NO se mueve). Cuenta desde los partidos del
-# 11/11/2026 (`semaforo.DESDE`). Con n verdes nuevos, acierto = tasa del
-# elegido, pide = media de 1/cuota, IC = Wilson 95 %:
-#   - n < 70: en observación (faltan hasta el próximo escalón).
-#   - escalón 70 y 110: `prometedor` si el límite INFERIOR del IC queda por
-#     encima de lo que pide; `no_se_sostiene` si acierto < pide; si no, en
-#     observación. Con 70 solo pasa si sigue tan fuerte como lo visto (+12 pts
-#     aprox.): si no sirve se sabe en una semana.
-#   - escalón 150: `confirmado` si acierto − pide ≥ 5 pts, el límite inferior
-#     por encima de lo que pide y los amarillos aciertan menos que los verdes
-#     (la regla original); si no, `sin_contacto`. `no_se_sostiene` sigue
-#     valiendo si acierto < pide.
-SEMAFORO_ESCALONES = (70, 110, 150)
+# EL CRITERIO DEL SEMÁFORO DE LAS ESPINAS (13/11/2026, usuario: el semáforo
+# dice dónde NO meter plata; «no por el value, no por el valor de la cuota»).
+# Fijado ANTES de que haya partidos nuevos y, como el de contacto, NO se mueve.
+# Cuenta desde los partidos del 13/11/2026 (`semaforo.DESDE`). Lo que se
+# juzga es si la DESCONFIANZA acierta: el elegido en no-verde (amarillo +
+# rojo) tiene que ganar MENOS que en verde. n = no-verdes nuevos cerrados
+# (son los raros: ~10 % de los partes), IC = Wilson 95 % de su acierto:
+#   - n < 30: en observación (faltan hasta el escalón 30).
+#   - en cualquier escalón: `no_se_sostiene` si los no-verdes aciertan lo
+#     mismo o más que los verdes (la desconfianza no separa).
+#   - escalón 30: `prometedor` si los verdes aciertan ≥ 10 pts más; si no,
+#     en observación.
+#   - escalón 60: `confirmado` si los verdes aciertan ≥ 10 pts más y el
+#     límite SUPERIOR del IC de los no-verdes queda por debajo del acierto de
+#     los verdes; si no, `sin_contacto`.
+# La cuota viaja como información (`pide`): no decide.
+SEMAFORO_ESCALONES = (30, 60)
 SEMAFORO_N = SEMAFORO_ESCALONES[-1]
-SEMAFORO_VENTAJA = 0.05
+SEMAFORO_SEPARACION = 0.10
 
 
 def _grupo_semaforo(fs: list[dict]) -> dict:
@@ -271,76 +272,83 @@ def _grupo_semaforo(fs: list[dict]) -> dict:
             "pide": round(pide, 4), "ventaja": round(ac / n - pide, 4), "roiPlano": round(gan / n, 4)}
 
 
-def criterio_semaforo(v: dict, a: dict) -> dict:
-    """El estado del criterio por escalones con los verdes (`v`) y amarillos
-    (`a`) NUEVOS, cada uno como lo arma `_grupo_semaforo`."""
-    n = v["n"]
+def criterio_semaforo(v: dict, nv: dict) -> dict:
+    """El estado del criterio por escalones con los verdes (`v`) y los
+    no-verdes —amarillos + rojos— (`nv`) NUEVOS, cada uno como lo arma
+    `_grupo_semaforo`."""
+    n = nv["n"]
     escalon = max((e for e in SEMAFORO_ESCALONES if n >= e), default=0)
     proximo = next((e for e in SEMAFORO_ESCALONES if n < e), None)
-    acierto, pide, ic = v["tasa"], v["pide"], v["intervalo"]
-    sobre = ic is not None and pide is not None and ic[0] > pide
-    debajo_de_la_cuota = acierto is not None and pide is not None and acierto < pide
-    amarillos_abajo = a["tasa"] is None or (acierto is not None and a["tasa"] < acierto)
-    ventaja = None if acierto is None or pide is None else acierto - pide
+    tv, tnv, ic = v["tasa"], nv["tasa"], nv["intervalo"]
+    sep = None if tv is None or tnv is None else tv - tnv
+    debajo = ic is not None and tv is not None and ic[1] < tv
     if escalon == 0:
         estado = "en_observacion"
-    elif debajo_de_la_cuota:
+    elif sep is None or sep <= 0:
         estado = "no_se_sostiene"
     elif escalon < SEMAFORO_N:
-        estado = "prometedor" if sobre else "en_observacion"
+        estado = "prometedor" if sep >= SEMAFORO_SEPARACION - 1e-9 else "en_observacion"
     else:
-        estado = ("confirmado" if ventaja is not None and ventaja >= SEMAFORO_VENTAJA - 1e-9 and sobre
-                  and amarillos_abajo else "sin_contacto")
+        estado = "confirmado" if sep >= SEMAFORO_SEPARACION - 1e-9 and debajo else "sin_contacto"
     pct = lambda x: f"{100 * x:.1f} %"  # noqa: E731
-    cifras = (f"el elegido acierta {pct(acierto)} contra {pct(pide)} que pedía la cuota ({100 * ventaja:+.1f} pts, "
-              f"IC {100 * ic[0]:.0f}-{100 * ic[1]:.0f} %)" if acierto is not None else "")
-    sigue = f" · faltan {proximo - n} para el escalón {proximo}" if proximo else ""
+    cifras = (f"el elegido gana {pct(tv)} en verde ({v['n']}) y {pct(tnv)} en amarillo o rojo ({n}, IC "
+              f"{100 * ic[0]:.0f}-{100 * ic[1]:.0f} %): {100 * sep:+.1f} pts"
+              if sep is not None else "")
+    sigue = f" · faltan {proximo - n} no-verdes para el escalón {proximo}" if proximo else ""
     if estado == "confirmado":
-        texto = (f"CONFIRMADO en el escalón {escalon}: con {n} verdes nuevos {cifras}, 5+ pts con el intervalo "
-                 "entero por encima y los amarillos por debajo: tomarlo en serio")
+        texto = (f"CONFIRMADO en el escalón {escalon}: {cifras}, {100 * SEMAFORO_SEPARACION:.0f}+ pts con el "
+                 "intervalo de los no-verdes entero por debajo: la desconfianza de las espinas separa")
     elif estado == "no_se_sostiene":
-        texto = f"NO SE SOSTIENE en el escalón {escalon}: con {n} verdes nuevos {cifras}, por debajo de su cuota"
+        texto = (f"NO SE SOSTIENE en el escalón {escalon}: "
+                 + (f"{cifras}; el amarillo y el rojo no aciertan menos que el verde" if cifras
+                    else "sin verdes con que comparar"))
     elif estado == "prometedor":
-        texto = (f"PROMETEDOR en el escalón {escalon}: con {n} verdes nuevos {cifras}, el intervalo entero por "
-                 f"encima de lo que pedía{sigue}")
+        texto = f"PROMETEDOR en el escalón {escalon}: {cifras}{sigue}"
     elif estado == "sin_contacto":
-        texto = (f"sin contacto en el escalón {escalon}: con {n} verdes nuevos {cifras}; pide +"
-                 f"{100 * SEMAFORO_VENTAJA:.0f} pts con el intervalo entero por encima y los amarillos abajo")
+        texto = (f"sin contacto en el escalón {escalon}: {cifras}; pide {100 * SEMAFORO_SEPARACION:.0f}+ pts con "
+                 "el intervalo de los no-verdes entero por debajo del verde")
     else:
-        texto = (f"en observación{f' (escalón {escalon})' if escalon else ''}: {n} verdes nuevos"
+        texto = (f"en observación{f' (escalón {escalon})' if escalon else ''}: {n} amarillos o rojos nuevos"
                  + (f", {cifras}" if cifras else "") + sigue)
     return {
         "escalon": escalon, "proximoEscalon": proximo, "escalones": list(SEMAFORO_ESCALONES),
         "faltan": (proximo - n) if proximo else 0, "n": n,
-        "acierto": acierto, "pide": pide, "intervalo": ic,
-        "amarillos": {"n": a["n"], "tasa": a["tasa"]},
-        "nMinimo": SEMAFORO_N, "ventajaMinima": SEMAFORO_VENTAJA,
-        "intervaloSobreLaCuota": sobre, "amarillosDebajo": amarillos_abajo,
+        "verdes": {"n": v["n"], "tasa": tv},
+        "noVerdes": {"n": n, "tasa": tnv, "intervalo": ic},
+        "separacion": None if sep is None else round(sep, 4),
+        "nMinimo": SEMAFORO_N, "separacionMinima": SEMAFORO_SEPARACION,
+        "noVerdesDebajo": debajo,
         "cumple": estado == "confirmado", "estado": estado, "texto": texto,
     }
 
 
 def resumen_semaforo(cerradas: list[dict]) -> dict:
-    """Verdes, amarillos y sin dato: el acierto del elegido contra lo que pedía
-    la cuota (1/cuota media) y la plana a 1 u, en todo lo simulado y en lo
-    NUEVO (desde `semaforo.DESDE`), que es lo único que cuenta para el criterio."""
+    """Verdes, amarillos, rojos y sin dato: el acierto del elegido (con lo que
+    pedía la cuota y la plana a 1 u como información), en todo lo simulado y
+    en lo NUEVO (desde `semaforo.DESDE`), que es lo único que cuenta para el
+    criterio."""
+    def est(f):
+        return (f.get("semaforo") or {}).get("estado")
+
     def por_estado(fs):
-        return {"verde": _grupo_semaforo([f for f in fs if (f.get("semaforo") or {}).get("estado") == "confirma"]),
-                "amarillo": _grupo_semaforo([f for f in fs if (f.get("semaforo") or {}).get("estado") == "duda"]),
-                "sinDato": _grupo_semaforo([f for f in fs if (f.get("semaforo") or {}).get("estado")
-                                            not in ("confirma", "duda")])}
+        return {"verde": _grupo_semaforo([f for f in fs if est(f) == "confirma"]),
+                "amarillo": _grupo_semaforo([f for f in fs if est(f) == "duda"]),
+                "rojo": _grupo_semaforo([f for f in fs if est(f) == "noApostar"]),
+                "sinDato": _grupo_semaforo([f for f in fs if est(f) not in ("confirma", "duda", "noApostar")])}
     desde = _utc(_sem.DESDE)
     nuevas = [f for f in cerradas if (_utc(f["pitazo"]) or desde) >= desde]
     todo, nuevo = por_estado(cerradas), por_estado(nuevas)
-    criterio = criterio_semaforo(nuevo["verde"], nuevo["amarillo"])
+    criterio = criterio_semaforo(nuevo["verde"],
+                                 _grupo_semaforo([f for f in nuevas if est(f) in ("duda", "noApostar")]))
     return {
-        "desde": _sem.DESDE, "umbral": _sem.UMBRAL_CASA,
+        "desde": _sem.DESDE, "regla": _sem.REGLA,
         "todo": todo, "nuevo": nuevo,
         "criterio": criterio,
-        "nota": ("verde = nuestro 1X2 a ≤ 2 pts de la casa (sin margen) en los tres resultados y el marcador declarado "
-                 "con el elegido; amarillo = falla una. Calculado, nunca declarado, y fuera de la vista del analista "
-                 "(no va al recibo ni a un endpoint del token de Cowork). El criterio cuenta solo los partidos desde "
-                 "el 11/11/2026"),
+        "nota": ("verde = la espina del elegido lo acompaña y la del rival no dice que siga; amarillo = la espina "
+                 "del elegido dice empate o la del rival dice que gana o empata; rojo = la espina del elegido dice "
+                 "que pierde (no apostar). Sale de las espinas del parte, no de la cuota. Calculado, nunca "
+                 "declarado, y fuera de la vista del analista (no va al recibo ni a un endpoint del token de "
+                 "Cowork). El criterio cuenta solo los partidos desde el 13/11/2026"),
     }
 
 
@@ -464,7 +472,8 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         estado = (fila.get("semaforo") or {}).get("estado") or "sinDato"
         fila["porEstrategia"][clave] = {
             "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,
-            "motivo": "semáforo en amarillo" if estado == "duda" else "semáforo sin dato"}
+            "motivo": {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
+                estado, "semáforo sin dato")}
         return
     if clave in _CON_FRENO:
         sel = fila["elegido"]
@@ -570,7 +579,7 @@ def simular(apuestas: list[dict]) -> dict:
         p = _normalizar(a["probabilidades"])
         sel_k, f = _mejor_kelly(p, a["cuotas"])
         # sin semáforo armado por quien llama (una apuesta de prueba), sin dato
-        sem = a.get("semaforo") or _sem.semaforo(a["probabilidades"], None, None)
+        sem = a.get("semaforo") or _sem.semaforo(a["probabilidades"], None)
         filas.append({**a, "semaforo": sem, "probabilidades": {k: round(100 * p[k], 1) for k in CLAVES},
                       "elegido": _elegido(p), "_f": f,
                       "kelly": {"seleccion": sel_k, "fraccion": round(f, 4),
@@ -680,7 +689,9 @@ def huella_simulacion() -> tuple:
             "SELECT fixture_id, version, creado_en, deposito_previo_en, cuarentena_json, json_valid(parte_json) AS ok, "
             "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.pronostico.probabilidades') END AS probs, "
             "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.version') END AS vparte, "
-            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.pronostico.marcador') END AS marcador "
+            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.pronostico.marcador') END AS marcador, "
+            # el semáforo sale de las espinas (13/11/2026): una espina re-declarada cambia la huella
+            "CASE WHEN json_valid(parte_json) THEN json_extract(parte_json, '$.lecturaSad.espina') END AS espinas "
             "FROM parte_cowork WHERE fecha >= ? ORDER BY fixture_id", (DESDE[:10],)).fetchall()
     ids = [f["fixture_id"] for f in partes]
     fx, cu = (), ()

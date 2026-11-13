@@ -908,21 +908,26 @@ class MockDataSource implements SadDataSource {
 
   async semaforo(fixtureIds: number[]): Promise<Record<number, SemaforoElegido>> {
     // de muestra, estable por partido (como las marcas): verde, amarillo por la
-    // casa, amarillo por el marcador y sin dato, en rotación
+    // espina del rival, rojo por la espina del elegido y sin dato, en rotación
     const out: Record<number, SemaforoElegido> = {}
     for (const fid of fixtureIds) {
       if (!MATCHES.some((x) => FIXTURE_NUM(x.id) === fid)) continue
       const caso = fid % 4
+      const espE = caso === 2 ? 'negativa' : caso === 3 ? null : 'positiva'
+      const espR = caso === 1 ? 'positiva' : caso === 3 ? null : 'negativa'
       out[fid] = {
-        estado: caso === 0 || caso === 1 ? 'confirma' : caso === 3 ? 'sinDato' : 'duda',
-        motivos: caso === 2
-          ? [{ codigo: 'LEJOS-DE-LA-CASA', detalle: 'en local le damos 58.0 % y la casa 52.4 % (+5.6 pts; el verde pide ≤ 2 en los tres)' }]
-          : caso === 3 ? [{ codigo: 'SIN-CUOTAS', detalle: 'sin las tres cuotas del 1X2 capturadas' }] : [],
-        elegido: 'local', distancia: caso === 3 ? null : caso === 2 ? 5.6 : 1.2, marcadorSigno: 'local', umbral: 2,
+        estado: caso === 0 ? 'confirma' : caso === 1 ? 'duda' : caso === 2 ? 'noApostar' : 'sinDato',
+        motivos: caso === 1
+          ? [{ codigo: 'ESPINA-RIVAL-SIGUE', detalle: 'la espina del rival dice positiva: que gana' }]
+          : caso === 2 ? [{ codigo: 'ESPINA-CONTRA-EL-ELEGIDO', detalle: 'la espina del elegido (local) dice que pierde: se lo eligió contra su propia lectura' }]
+          : caso === 3 ? [{ codigo: 'SIN-ESPINA', detalle: 'falta la espina del elegido (local) o es neutra: no se juzga' }] : [],
+        elegido: 'local', regla: 'espinas', espinaElegido: espE, espinaRival: espR, espinas: { a: espE, b: espR },
+        distancia: caso === 3 ? null : 1.2, marcadorSigno: 'local',
       }
     }
     return out
   }
+
 
   async simulacion(): Promise<SimulacionApuesta> {
     return SIMULACION_DEMO

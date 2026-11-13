@@ -39,7 +39,7 @@ python -m backend.test_burbuja   # reventón de burbuja: mismos vectores dorados
 python -m backend.test_jev       # adaptador de Jev (System One): sin clave corre simulado y no decide
 python -m backend.test_coherencia # guardrail semántico del parte (Jev): etiqueta la prosa, el código compara con el número
 python -m backend.test_simulacion # simulación de apuesta: plana (control), Kelly entero/½/¼ y martingala desde el 28/10/2026, con la versión de cada skill
-python -m backend.test_semaforo   # una marca de la pantalla de Simulación para el usuario (11/11/2026; la regla vive en docs/METODO_APUESTA.md y no entra al parte)
+python -m backend.test_semaforo   # el semáforo del elegido por las ESPINAS (13/11/2026; antes 11/11): dónde no meter plata, no la cuota; la regla vive en docs/METODO_APUESTA.md y no entra al parte
 python -m backend.contacto        # criterio de contacto (acierto tras 3 fallos seguidos) desde la API con el token de Cowork; lo corre la rutina del lunes (docs/METODO_APUESTA.md)
 python -m backend.test_velocidad   # Aprendizaje y Simulación con caché: mismos números que sin caché, y solo se rehace lo que cambió (10/11/2026)
 python -m backend.test_modo_fallo # modo de fallo del veredicto (Jev): etiqueta para el dossier, no toca población ni métricas

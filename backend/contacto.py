@@ -163,13 +163,15 @@ def informe_semaforo(out: dict) -> str:
     pct = lambda x: "—" if x is None else f"{100 * x:.1f} %"  # noqa: E731
     pts = lambda x: "—" if x is None else f"{100 * x:+.1f} pts"  # noqa: E731
     ic = lambda i: "—" if not i else f"{100 * i[0]:.0f}-{100 * i[1]:.0f} %"  # noqa: E731
-    lineas = [f"Semáforo · cuenta desde {s['desde'][:10]} (verde = a ≤ {s['umbral']:g} pts de la casa y el "
-              "marcador con el elegido)"]
+    lineas = [f"Semáforo · cuenta desde {s['desde'][:10]} (por las espinas: verde = la del elegido lo acompaña; "
+              "amarillo = dice empate o la del rival dice que sigue; rojo = la del elegido dice que pierde)"]
     for etiqueta, clave in (("nuevos", "nuevo"), ("todo lo simulado", "todo")):
         g = s[clave]
         lineas.append(f"  {etiqueta}:")
-        for nombre, k in (("verdes", "verde"), ("amarillos", "amarillo"), ("sin dato", "sinDato")):
-            x = g[k]
+        for nombre, k in (("verdes", "verde"), ("amarillos", "amarillo"), ("rojos", "rojo"), ("sin dato", "sinDato")):
+            x = g.get(k)
+            if not x:
+                continue
             lineas.append(f"    {nombre}: {x['aciertos']} de {x['n']} ({pct(x['tasa'])}, IC {ic(x['intervalo'])}) · "
                           f"la cuota pedía {pct(x['pide'])} · {pts(x['ventaja'])} · ROI plano {pct(x['roiPlano'])}")
     lineas.append(f"  → {s['criterio']['texto']}")

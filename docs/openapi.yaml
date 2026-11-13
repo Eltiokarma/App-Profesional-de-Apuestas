@@ -1896,22 +1896,33 @@ components:
     SemaforoElegido:
       type: object
       description: >
-        El semáforo del elegido (11/11/2026, backend/analisis/semaforo.py): `confirma` = nuestro 1X2 a ≤ `umbral`
-        pts de la casa (sin margen, última captura prepartido) en los tres resultados Y el marcador declarado con el
-        mismo signo que el elegido; `duda` = falla una (`motivos`); `sinDato` = sin cuotas, sin 1X2 o sin marcador.
+        El semáforo del elegido POR LAS ESPINAS (13/11/2026; antes 11/11/2026, backend/analisis/semaforo.py): dice
+        dónde NO meter plata, no si hay value en la cuota. Sale de `lecturaSad.espina` del parte: `confirma` = la
+        espina del elegido lo acompaña (positiva) y la del rival no dice que siga; `duda` = la espina del elegido
+        dice cero, o la del rival dice positiva o cero (`motivos`); `noApostar` = la espina del elegido dice
+        negativa (se lo eligió contra su propia lectura); `sinDato` = sin 1X2 o sin la espina del elegido (falta o
+        neutra). El elegido empate: verde con las dos espinas en cero. `distancia` y `marcadorSigno` son
+        información: no deciden.
       properties:
-        estado: { type: string, enum: [confirma, duda, sinDato] }
+        estado: { type: string, enum: [confirma, duda, noApostar, sinDato] }
         motivos:
           type: array
           items:
             type: object
             properties:
-              codigo: { type: string, enum: [LEJOS-DE-LA-CASA, MARCADOR-CONTRADICE, SIN-1X2, SIN-CUOTAS, SIN-MARCADOR] }
+              codigo: { type: string, enum: [ESPINA-CONTRA-EL-ELEGIDO, ESPINA-ELEGIDO-EMPATA, ESPINA-RIVAL-SIGUE, ESPINA-NO-EMPATA, SIN-ESPINA, SIN-1X2] }
               detalle: { type: string }
         elegido: { type: string, nullable: true, enum: [local, empate, visita, null] }
-        distancia: { type: number, nullable: true, description: 'la mayor diferencia |nuestro − casa| de los tres, en pts' }
-        marcadorSigno: { type: string, nullable: true, enum: [local, empate, visita, null] }
-        umbral: { type: number }
+        regla: { type: string, enum: [espinas] }
+        espinaElegido: { type: string, nullable: true, enum: [positiva, cero, negativa, null] }
+        espinaRival: { type: string, nullable: true, enum: [positiva, cero, negativa, null] }
+        espinas:
+          type: object
+          properties:
+            a: { type: string, nullable: true, enum: [positiva, cero, negativa, null] }
+            b: { type: string, nullable: true, enum: [positiva, cero, negativa, null] }
+        distancia: { type: number, nullable: true, description: 'información: la mayor diferencia |nuestro − casa| de los tres, en pts' }
+        marcadorSigno: { type: string, nullable: true, enum: [local, empate, visita, null], description: 'información' }
     GrupoSemaforo:
       type: object
       properties:
@@ -1927,6 +1938,7 @@ components:
       properties:
         verde: { $ref: '#/components/schemas/GrupoSemaforo' }
         amarillo: { $ref: '#/components/schemas/GrupoSemaforo' }
+        rojo: { $ref: '#/components/schemas/GrupoSemaforo' }
         sinDato: { $ref: '#/components/schemas/GrupoSemaforo' }
     SimulacionApuesta:
       type: object
@@ -2027,38 +2039,42 @@ components:
         semaforo:
           type: object
           description: >
-            EL SEMÁFORO DEL ELEGIDO (11/11/2026): verdes (`confirma`), amarillos (`duda`) y sin dato, con el acierto
-            del elegido contra lo que pedía la cuota y la plana a 1 u, en todo lo simulado (`todo`) y en lo NUEVO
-            desde `desde` (`nuevo`), que es lo único que cuenta para el criterio POR ESCALONES (11/11/2026,
-            fijado antes de que haya verdes nuevos): en 70 y 110 verdes, `prometedor` si el límite inferior del
-            IC queda sobre lo que pedía la cuota; en 150, `confirmado` con el elegido 5+ pts sobre lo que pedía,
-            el IC entero encima y los amarillos debajo (si no, `sin_contacto`); en cualquier escalón,
-            `no_se_sostiene` si acierta menos de lo que pedía (docs/METODO_APUESTA.md). Calculado; NUNCA se le muestra al analista ni al token de Cowork.
+            EL SEMÁFORO DEL ELEGIDO POR LAS ESPINAS (13/11/2026): verdes (`confirma`), amarillos (`duda`), rojos
+            (`noApostar`) y sin dato, con el acierto del elegido (y lo que pedía la cuota y la plana a 1 u, como
+            información), en todo lo simulado (`todo`) y en lo NUEVO desde `desde` (`nuevo`), que es lo único que
+            cuenta para el criterio POR ESCALONES DE NO-VERDES (fijado antes de que haya partidos nuevos): lo que se
+            juzga es si la desconfianza acierta. En 30 amarillos + rojos nuevos, `prometedor` si el verde acierta
+            10+ pts más; en 60, `confirmado` con 10+ pts y el IC de los no-verdes entero por debajo del acierto del
+            verde (si no, `sin_contacto`); en cualquier escalón, `no_se_sostiene` si los no-verdes aciertan lo mismo
+            o más (docs/METODO_APUESTA.md). Calculado; NUNCA se le muestra al analista ni al token de Cowork.
           properties:
-            desde: { type: string, description: 'UTC; 00:00 de Lima del 11/11/2026' }
-            umbral: { type: number, description: 'puntos de probabilidad sobre/bajo la casa (sin margen) en cada resultado' }
+            desde: { type: string, description: 'UTC; 00:00 de Lima del 13/11/2026' }
+            regla: { type: string, enum: [espinas] }
             todo: { $ref: '#/components/schemas/GruposSemaforo' }
             nuevo: { $ref: '#/components/schemas/GruposSemaforo' }
             criterio:
               type: object
               properties:
-                escalon: { type: integer, enum: [0, 70, 110, 150], description: 'el último escalón alcanzado por los verdes nuevos (0 = antes de 70)' }
-                proximoEscalon: { type: integer, nullable: true, description: 'null desde 150' }
+                escalon: { type: integer, enum: [0, 30, 60], description: 'el último escalón alcanzado por los amarillos + rojos nuevos (0 = antes de 30)' }
+                proximoEscalon: { type: integer, nullable: true, description: 'null desde 60' }
                 escalones: { type: array, items: { type: integer } }
-                faltan: { type: integer, description: 'verdes nuevos que faltan para el próximo escalón (0 desde 150)' }
-                n: { type: integer, description: 'verdes nuevos cerrados' }
-                acierto: { type: number, nullable: true, description: '0-1: tasa del elegido en verde' }
-                pide: { type: number, nullable: true, description: '0-1: media de 1/cuota del elegido en verde' }
-                intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 % del acierto, 0-1' }
-                amarillos:
+                faltan: { type: integer, description: 'no-verdes nuevos que faltan para el próximo escalón (0 desde 60)' }
+                n: { type: integer, description: 'amarillos + rojos nuevos cerrados' }
+                verdes:
                   type: object
                   properties:
                     n: { type: integer }
                     tasa: { type: number, nullable: true }
-                nMinimo: { type: integer, description: 'el escalón final (150)' }
-                ventajaMinima: { type: number, description: '0-1: lo que el elegido tiene que acertar sobre lo que pedía la cuota en el escalón final' }
-                intervaloSobreLaCuota: { type: boolean }
-                amarillosDebajo: { type: boolean }
+                noVerdes:
+                  type: object
+                  properties:
+                    n: { type: integer }
+                    tasa: { type: number, nullable: true }
+                    intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 %, 0-1' }
+                separacion: { type: number, nullable: true, description: '0-1: tasa del verde − tasa de los no-verdes' }
+                nMinimo: { type: integer, description: 'el escalón final (60)' }
+                separacionMinima: { type: number, description: '0-1: lo que el verde tiene que acertar sobre los no-verdes' }
+                noVerdesDebajo: { type: boolean, description: 'el límite superior del IC de los no-verdes, por debajo del acierto del verde' }
                 cumple: { type: boolean, description: 'true solo con `confirmado`' }
                 estado: { type: string, enum: [en_observacion, prometedor, no_se_sostiene, confirmado, sin_contacto] }
                 texto: { type: string }

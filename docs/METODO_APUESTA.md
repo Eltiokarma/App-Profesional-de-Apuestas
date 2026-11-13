@@ -113,70 +113,86 @@ simulación no está abierta a ese token) y reporta la tabla y el estado. El
 primer conteo, el 04/11: 9 casos tras 3 fallos desde el 28/10 (6 aciertos), a
 ~9 por semana: el criterio se puede decidir hacia febrero de 2027.
 
-## El semáforo del elegido (11/11/2026)
+## El semáforo del elegido, por las espinas (13/11/2026; antes 11/11/2026)
 
 El usuario: «me apoyaré de ese semáforo». No lee la prosa del parte: mira la
-etiqueta del elegido, y ahora esa etiqueta lleva un color CALCULADO
-(`backend/analisis/semaforo.py`; el parte no declara nada de esto):
+etiqueta del elegido, y esa etiqueta lleva un color CALCULADO
+(`backend/analisis/semaforo.py`; el parte no declara nada de esto). Desde el
+13/11/2026 el color dice **dónde NO meter plata**, no si hay value en la
+cuota (usuario, tras Italia 3-1 Francia en verde: «no encontramos value a la
+cuota; el semáforo dice: por más que la casa diga esto, estas otras cosas
+hacen que mejor no apostemos»). Sale de las **espinas** del parte
+(`lecturaSad.espina.{a,b}.lectura`, la lectura de las K que escribe el
+analista):
 
-- 🟢 **confirma**: nuestro 1X2 (`pronostico.probabilidades`, normalizado)
-  queda a **≤ 2,0 puntos** de la casa sin margen (la última captura
-  prepartido, la misma de `lecciones.cuotas_mercado`) en **los tres**
-  resultados, **y** el marcador declarado (`pronostico.marcador`, el primer
-  N-N) tiene el mismo signo que el elegido.
-- 🟡 **duda**: falla una (o las dos); `motivos` dice cuál
-  (`LEJOS-DE-LA-CASA` · `MARCADOR-CONTRADICE`).
-- ⚪ **sin dato**: sin las tres cuotas, sin el 1X2 o sin un marcador legible.
+- 🟢 **confirma**: la espina del elegido lo acompaña (positiva) y la del
+  rival no dice que siga (negativa o neutra).
+- 🟡 **duda**: la espina del elegido dice cero (empate), o la del rival dice
+  positiva o cero; `motivos` dice cuál (`ESPINA-ELEGIDO-EMPATA` ·
+  `ESPINA-RIVAL-SIGUE`).
+- 🔴 **noApostar**: la espina del elegido dice negativa
+  (`ESPINA-CONTRA-EL-ELEGIDO`): el analista leyó que su elegido pierde y lo
+  eligió igual.
+- ⚪ **sin dato**: sin el 1X2 o sin la espina del elegido (falta o es neutra).
+- El elegido **empate**: verde con las dos espinas en cero; si no, amarillo.
 
-Medido el 11/11 sobre los mismos 374 partes (15/09-01/11):
+La distancia a la casa y el signo del marcador viajan como información: no
+deciden.
 
-- Cuando nuestro 1X2 queda a ≤ 2 pts de la casa en los tres, el elegido ganó
-  **66,7 %** contra **53,7 %** que daba la cuota (n 177); cuando se aparta
-  más, rinde por debajo de su cuota (−2,5 a −5 pts).
-- Cuando el marcador declarado **contradice** al elegido (83 de 374), el
-  elegido acierta **39,8 %**. Apostando solo cuando el marcador lo acompaña:
-  **60,1 %** contra **55,6 %** (291 de 374), ROI **+4,3 %** contra +2,5 %;
-  desde el 28/10, 64,7 % contra 61,3 %.
+Medido el 13/11 sobre 721 partes acreditables (14/09-12/11, sin copas
+nacionales), en la conversación que lo pidió:
+
+- Con la espina del elegido positiva el elegido ganó **59 %** (n 601); con
+  cero, **44 %** (34); con negativa, **26 %** (19). Con la espina a favor el
+  elegido le sacaba ~7 pts al mercado; con la espina en contra quedaba ~5
+  pts por debajo.
+- Verde contra amarillo (la regla de arriba): **59 %** contra **43 %** (75
+  amarillos), +16 pts en los partidos hasta el 01/11 (donde se eligió) y +17
+  en los del 02/11 al 12/11 (donde se comprobó).
+- Lo que NO separa, medido el mismo día: la burbuja del elegido (de un
+  partido, riesgo alto o en récord: en récord gana MÁS) y la rotación del
+  once (no revienta burbujas más que su riesgo).
+
+La regla del 11/11 (≤ 2 pts de la casa en los tres resultados y el marcador
+con el elegido) quedó atrás: medía cercanía a la cuota, no desconfianza, y
+pintaba verde casi todo (verde 66 % contra amarillo 50 %, con el 57 % de los
+partidos en amarillo).
 
 Se encontró mirando esos mismos datos, así que **se mide hacia adelante con
 una regla fija** (como el criterio de contacto, no se mueve): cuenta desde
-los partidos del **11/11/2026** (00:00 de Lima, `semaforo.DESDE`).
+los partidos del **13/11/2026** (00:00 de Lima, `semaforo.DESDE`).
 
-### El criterio por escalones (11/11/2026)
+### El criterio por escalones de no-verdes (13/11/2026)
 
-El usuario, el mismo 11/11: «150 son muchos, lo ponemos de forma
-progresiva». La regla se fijó ese día, **antes de que hubiera un solo verde
-nuevo** (`simulacion.criterio_semaforo`). Con *n* verdes nuevos cerrados,
-`acierto` = la tasa del elegido en verde, `pide` = la media de 1/cuota del
-elegido en verde e IC = el intervalo de Wilson al 95 % del acierto:
+Lo que se juzga es si la desconfianza acierta: el elegido en amarillo o rojo
+tiene que ganar MENOS que en verde. Los no-verdes son los raros (~10 % de los
+partes), así que los escalones se cuentan con ellos
+(`simulacion.criterio_semaforo`). Con *n* amarillos + rojos nuevos cerrados e
+IC = el intervalo de Wilson al 95 % de su acierto:
 
 | escalón | estado |
 |---|---|
-| antes de 70 | `en_observacion` (con `faltan` hasta el 70), pase lo que pase |
-| **70** y **110** | `prometedor` si el límite **inferior** del IC queda por encima de `pide`; `no_se_sostiene` si `acierto` < `pide`; si no, `en_observacion` |
-| **150** | `confirmado` si `acierto` − `pide` ≥ **5 pts**, el límite inferior del IC por encima de `pide` y la tasa de los amarillos por debajo de la de los verdes (la regla original); `no_se_sostiene` si `acierto` < `pide`; si no, `sin_contacto` |
+| antes de 30 | `en_observacion` (con `faltan` hasta el 30), pase lo que pase |
+| cualquiera | `no_se_sostiene` si los no-verdes aciertan lo mismo o más que los verdes |
+| **30** | `prometedor` si el verde acierta **10+ pts** más; si no, `en_observacion` |
+| **60** | `confirmado` con 10+ pts y el límite **superior** del IC de los no-verdes por debajo del acierto del verde; si no, `sin_contacto` |
 
-Por qué así: **con 70 solo pasa si sigue tan fuerte como lo visto** (+12 pts
-aprox. sobre lo que pide la cuota, para que el límite inferior del IC quede
-encima con ese n); y si no sirve —acierta menos de lo que pide— **se sabe en
-una semana**, sin esperar a los 150. Los números de referencia, sobre datos
-YA vistos (por eso no cuentan): con el 1X2 a ≤ 2 pts de la casa el elegido
-ganó **66,7 %** contra **53,7 %** de su cuota (n 177). Solo `confirmado`
-(escalón 150) es tomarlo en serio; `prometedor` es una marca intermedia, no
-un permiso para cargar más.
+Solo `confirmado` es tomarlo en serio. La cuota va al lado como información
+(«pedía» y la plana a 1 u por color), nunca como criterio.
 
-El estado viaja con `escalon` (0 · 70 · 110 · 150), `proximoEscalon`,
-`faltan`, `acierto`, `pide`, `intervalo`, `n`, `amarillos` y un `texto` en
-español. La cuenta es `simulacion.resumen_semaforo` (campo
-`semaforo` de `GET /analisis/simulacion`, tabla «Semáforo del elegido» en la
-pantalla), con una serie en papel nueva, **`metodoVerde`**: el método (1 % de
-la banca y el mismo freno por tramo) apostando SOLO en verde. La rutina de
-los lunes la reporta en la sección «Semáforo» de `python -m backend.contacto`.
+El estado viaja con `escalon` (0 · 30 · 60), `proximoEscalon`, `faltan`,
+`verdes`, `noVerdes` (con su IC), `separacion` y un `texto` en español. La
+cuenta es `simulacion.resumen_semaforo` (campo `semaforo` de
+`GET /analisis/simulacion`, tabla «Semáforo del elegido · por las espinas»
+en la pantalla, con verde, amarillo, rojo y sin dato), con la serie en papel
+**`metodoVerde`**: el método (1 % de la banca y el mismo freno por tramo)
+apostando SOLO en verde. La rutina de los lunes la reporta en la sección
+«Semáforo» de `python -m backend.contacto`.
 
 **REGLA ANTI-GOODHART**: el semáforo NO se le muestra a Cowork ni al
 analista —ni en el recibo del depósito, ni en el prompt, ni en ningún
 endpoint que lea su token—. Si lo viera, aprendería a «pintarse de verde»
-pegándose a la casa y la señal moriría. Viaja solo en `/analisis/simulacion`
+escribiendo la espina a favor de su elegido y la señal moriría. Viaja solo en `/analisis/simulacion`
 y en `/analisis/semaforo` (el chip de la web), que el token de Cowork no abre;
 `backend/test_semaforo.py` lo verifica.
 

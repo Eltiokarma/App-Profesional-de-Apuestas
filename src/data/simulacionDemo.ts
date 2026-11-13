@@ -6,31 +6,34 @@ import type { SimulacionApuesta } from '../api/types'
 export const SIMULACION_DEMO: SimulacionApuesta = {
  "trasFallos": {
   "base": {
-   "n": 9,
-   "aciertos": 5,
-   "tasa": 0.5556,
+   "n": 11,
+   "aciertos": 6,
+   "tasa": 0.5455,
    "intervalo": [
-    0.2666,
-    0.8112
+    0.2801,
+    0.7873
    ]
   },
   "porK": [
    {
     "k": 1,
-    "n": 3,
-    "aciertos": 2,
-    "tasa": 0.6667,
+    "n": 4,
+    "aciertos": 3,
+    "tasa": 0.75,
     "intervalo": [
-     0.2077,
-     0.9385
+     0.3006,
+     0.9544
     ]
    },
    {
     "k": 2,
-    "n": 0,
-    "aciertos": 0,
-    "tasa": null,
-    "intervalo": null
+    "n": 1,
+    "aciertos": 1,
+    "tasa": 1.0,
+    "intervalo": [
+     0.2065,
+     1.0
+    ]
    },
    {
     "k": 3,
@@ -63,23 +66,23 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
  "desde": "2026-10-28 05:00:00",
  "bancaInicial": 100.0,
  "unidad": 1.0,
- "cerradas": 9,
+ "cerradas": 11,
  "pendientes": 1,
- "aciertos": 5,
+ "aciertos": 6,
  "estrategias": [
   {
    "clave": "proporcional",
    "nombre": "Proporcional con freno",
    "descripcion": "1 % de la banca a nuestro elegido; un tramo de confianza se pausa si en sus últimos 50 partidos acertó menos de lo que pedía la cuota, y vuelve cuando se recupera",
-   "banca": 100.65,
-   "ganancia": 0.65,
-   "apostado": 9.07,
-   "apuestas": 9,
-   "ganadas": 5,
-   "roi": 0.0718,
+   "banca": 100.75,
+   "ganancia": 0.75,
+   "apostado": 11.08,
+   "apuestas": 11,
+   "ganadas": 6,
+   "roi": 0.0678,
    "caidaMaxima": 0.0199,
    "quebro": null,
-   "exposicionMaxima": 2.0,
+   "exposicionMaxima": 3.02,
    "montoMaximo": 1.03,
    "lineas": null,
    "tramos": [
@@ -94,20 +97,20 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     {
      "tramo": "40-49",
-     "n": 2,
-     "aciertos": 2,
+     "n": 3,
+     "aciertos": 3,
      "tasa": 1.0,
-     "pide": 0.4712,
-     "z": 1.5,
+     "pide": 0.4728,
+     "z": 1.83,
      "pausado": false
     },
     {
      "tramo": "50-59",
-     "n": 3,
+     "n": 4,
      "aciertos": 2,
-     "tasa": 0.6667,
-     "pide": 0.5556,
-     "z": 0.39,
+     "tasa": 0.5,
+     "pide": 0.5449,
+     "z": -0.18,
      "pausado": false
     },
     {
@@ -170,23 +173,33 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
      "banca": 100.65
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 101.76
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 100.75
     }
    ]
   },
   {
    "clave": "metodoVerde",
    "nombre": "Método solo en verde",
-   "descripcion": "el método (1 % de la banca y el mismo freno por tramo) apostando solo cuando el semáforo del elegido está en verde: nuestro 1X2 a ≤ 2 pts de la casa y el marcador declarado con el elegido",
-   "banca": 99.71,
-   "ganancia": -0.29,
-   "apostado": 4.02,
-   "apuestas": 4,
-   "ganadas": 2,
-   "roi": -0.0715,
-   "caidaMaxima": 0.0132,
+   "descripcion": "el método (1 % de la banca y el mismo freno por tramo) apostando solo cuando el semáforo del elegido está en verde: la espina del elegido lo acompaña y la del rival no dice que siga",
+   "banca": 103.62,
+   "ganancia": 3.62,
+   "apostado": 6.12,
+   "apuestas": 6,
+   "ganadas": 5,
+   "roi": 0.5911,
+   "caidaMaxima": 0.01,
    "quebro": null,
-   "exposicionMaxima": 1.01,
-   "montoMaximo": 1.01,
+   "exposicionMaxima": 2.05,
+   "montoMaximo": 1.04,
    "lineas": null,
    "tramos": [
     {
@@ -200,20 +213,20 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     {
      "tramo": "40-49",
-     "n": 2,
-     "aciertos": 2,
+     "n": 3,
+     "aciertos": 3,
      "tasa": 1.0,
-     "pide": 0.4712,
-     "z": 1.5,
+     "pide": 0.4728,
+     "z": 1.83,
      "pausado": false
     },
     {
      "tramo": "50-59",
-     "n": 3,
+     "n": 4,
      "aciertos": 2,
-     "tasa": 0.6667,
-     "pide": 0.5556,
-     "z": 0.39,
+     "tasa": 0.5,
+     "pide": 0.5449,
+     "z": -0.18,
      "pausado": false
     },
     {
@@ -245,37 +258,47 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900003,
      "pitazo": "2026-10-28 19:45:00",
-     "banca": 101.05
+     "banca": 102.06
     },
     {
      "fixtureId": 900004,
      "pitazo": "2026-10-28 20:00:00",
-     "banca": 100.04
+     "banca": 102.06
     },
     {
      "fixtureId": 900005,
      "pitazo": "2026-10-29 19:30:00",
-     "banca": 100.04
+     "banca": 102.83
     },
     {
      "fixtureId": 900006,
      "pitazo": "2026-10-29 20:00:00",
-     "banca": 100.04
+     "banca": 102.83
     },
     {
      "fixtureId": 900007,
      "pitazo": "2026-11-11 19:00:00",
-     "banca": 100.72
+     "banca": 103.53
     },
     {
      "fixtureId": 900008,
      "pitazo": "2026-11-11 21:00:00",
-     "banca": 99.71
+     "banca": 102.49
     },
     {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
-     "banca": 99.71
+     "banca": 102.49
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 103.62
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 103.62
     }
    ]
   },
@@ -283,15 +306,15 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "clave": "plana",
    "nombre": "Apuesta plana (control)",
    "descripcion": "1 unidad a nuestro elegido en cada partido",
-   "banca": 100.68,
-   "ganancia": 0.68,
-   "apostado": 9.0,
-   "apuestas": 9,
-   "ganadas": 5,
-   "roi": 0.0756,
+   "banca": 100.78,
+   "ganancia": 0.78,
+   "apostado": 11.0,
+   "apuestas": 11,
+   "ganadas": 6,
+   "roi": 0.0709,
    "caidaMaxima": 0.0195,
    "quebro": null,
-   "exposicionMaxima": 2.0,
+   "exposicionMaxima": 3.0,
    "montoMaximo": 1.0,
    "lineas": null,
    "tramos": null,
@@ -345,6 +368,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
      "banca": 100.68
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 101.78
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 100.78
     }
    ]
   },
@@ -413,6 +446,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
+     "banca": 98.75
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 98.75
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
      "banca": 98.75
     }
    ]
@@ -483,6 +526,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
      "banca": 103.88
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 103.88
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 103.88
     }
    ]
   },
@@ -551,6 +604,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
+     "banca": 101.94
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 101.94
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
      "banca": 101.94
     }
    ]
@@ -621,6 +684,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
      "banca": 100.97
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 100.97
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 100.97
     }
    ]
   },
@@ -628,18 +701,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    "clave": "martingala",
    "nombre": "Martingala",
    "descripcion": "por líneas: cada línea va 1 unidad a nuestro elegido, se duplica tras perder y vuelve a 1 al ganar; con todas en juego se abre otra",
-   "banca": 103.28,
-   "ganancia": 3.28,
-   "apostado": 13.0,
-   "apuestas": 9,
-   "ganadas": 5,
-   "roi": 0.2523,
+   "banca": 104.48,
+   "ganancia": 4.48,
+   "apostado": 16.0,
+   "apuestas": 11,
+   "ganadas": 6,
+   "roi": 0.28,
    "caidaMaxima": 0.0198,
    "quebro": null,
    "exposicionMaxima": 5.0,
    "montoMaximo": 4.0,
    "lineas": {
-    "abiertas": 2,
+    "abiertas": 3,
     "perdiendo": 2,
     "proximoMayor": 2.0
    },
@@ -694,6 +767,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
      "banca": 103.28
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 105.48
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 104.48
     }
    ]
   },
@@ -766,6 +849,16 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
+     "banca": 99.5
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 99.5
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
      "banca": 99.5
     }
    ]
@@ -845,10 +938,10 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "roi": 0.4875
     },
     "metodoVerde": {
-     "apostado": 1.0105,
-     "ganancia": -1.0105,
-     "apuestas": 1,
-     "roi": -1.0
+     "apostado": 2.0311,
+     "ganancia": 1.7759,
+     "apuestas": 2,
+     "roi": 0.8744
     },
     "plana": {
      "apostado": 4.0,
@@ -896,26 +989,26 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   },
   {
    "version": "v4.5",
-   "partidos": 3,
-   "aciertos": 1,
+   "partidos": 5,
+   "aciertos": 2,
    "estrategias": {
     "proporcional": {
-     "apostado": 3.0636,
-     "ganancia": -1.35,
-     "apuestas": 3,
-     "roi": -0.4407
+     "apostado": 5.0766,
+     "ganancia": -1.2493,
+     "apuestas": 5,
+     "roi": -0.2461
     },
     "metodoVerde": {
-     "apostado": 2.0076,
-     "ganancia": -0.3269,
-     "apuestas": 2,
-     "roi": -0.1628
+     "apostado": 3.0885,
+     "ganancia": 0.7913,
+     "apuestas": 3,
+     "roi": 0.2562
     },
     "plana": {
-     "apostado": 3.0,
-     "ganancia": -1.32,
-     "apuestas": 3,
-     "roi": -0.44
+     "apostado": 5.0,
+     "ganancia": -1.22,
+     "apuestas": 5,
+     "roi": -0.244
     },
     "plana60": {
      "apostado": 1.0,
@@ -942,10 +1035,10 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "roi": -1.0
     },
     "martingala": {
-     "apostado": 3.0,
-     "ganancia": -1.32,
-     "apuestas": 3,
-     "roi": -0.44
+     "apostado": 6.0,
+     "ganancia": -0.12,
+     "apuestas": 5,
+     "roi": -0.02
     },
     "martingala60": {
      "apostado": 1.0,
@@ -982,32 +1075,44 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   "nota": "la alerta no cambia el elegido ni ninguna estrategia: se registra por apuesta desde el 10/11/2026 y se mide hacia adelante (docs/revisiones/ESTUDIO_ECHADOS_2026-11.md). Con 100+ partidos con alerta se decide si frena la carga del método"
  },
  "semaforo": {
-  "desde": "2026-11-11 05:00:00",
-  "umbral": 2.0,
+  "desde": "2026-11-13 05:00:00",
+  "regla": "espinas",
   "todo": {
    "verde": {
-    "n": 4,
-    "aciertos": 2,
-    "tasa": 0.5,
+    "n": 6,
+    "aciertos": 5,
+    "tasa": 0.8333,
     "intervalo": [
-     0.15,
-     0.85
+     0.4365,
+     0.9699
     ],
-    "pide": 0.5781,
-    "ventaja": -0.0781,
-    "roiPlano": -0.0675
+    "pide": 0.5481,
+    "ventaja": 0.2852,
+    "roiPlano": 0.5967
    },
    "amarillo": {
-    "n": 5,
-    "aciertos": 3,
-    "tasa": 0.6,
+    "n": 3,
+    "aciertos": 1,
+    "tasa": 0.3333,
     "intervalo": [
-     0.2307,
-     0.8824
+     0.0615,
+     0.7923
     ],
-    "pide": 0.5056,
-    "ventaja": 0.0944,
-    "roiPlano": 0.19
+    "pide": 0.5478,
+    "ventaja": -0.2144,
+    "roiPlano": -0.2667
+   },
+   "rojo": {
+    "n": 2,
+    "aciertos": 0,
+    "tasa": 0.0,
+    "intervalo": [
+     0.0,
+     0.6576
+    ],
+    "pide": 0.4487,
+    "ventaja": -0.4487,
+    "roiPlano": -1.0
    },
    "sinDato": {
     "n": 0,
@@ -1021,18 +1126,27 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   },
   "nuevo": {
    "verde": {
-    "n": 2,
+    "n": 1,
     "aciertos": 1,
-    "tasa": 0.5,
+    "tasa": 1.0,
     "intervalo": [
-     0.0945,
-     0.9055
+     0.2065,
+     1.0
     ],
-    "pide": 0.6266,
-    "ventaja": -0.1266,
-    "roiPlano": -0.16
+    "pide": 0.4762,
+    "ventaja": 0.5238,
+    "roiPlano": 1.1
    },
    "amarillo": {
+    "n": 0,
+    "aciertos": 0,
+    "tasa": null,
+    "intervalo": null,
+    "pide": null,
+    "ventaja": null,
+    "roiPlano": null
+   },
+   "rojo": {
     "n": 1,
     "aciertos": 0,
     "tasa": 0.0,
@@ -1040,8 +1154,8 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      0.0,
      0.7935
     ],
-    "pide": 0.3846,
-    "ventaja": -0.3846,
+    "pide": 0.5128,
+    "ventaja": -0.5128,
     "roiPlano": -1.0
    },
    "sinDato": {
@@ -1056,35 +1170,301 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   },
   "criterio": {
    "escalon": 0,
-   "proximoEscalon": 70,
+   "proximoEscalon": 30,
    "escalones": [
-    70,
-    110,
-    150
+    30,
+    60
    ],
-   "faltan": 68,
-   "n": 2,
-   "acierto": 0.5,
-   "pide": 0.6266,
-   "intervalo": [
-    0.0945,
-    0.9055
-   ],
-   "amarillos": {
+   "faltan": 29,
+   "n": 1,
+   "verdes": {
     "n": 1,
-    "tasa": 0.0
+    "tasa": 1.0
    },
-   "nMinimo": 150,
-   "ventajaMinima": 0.05,
-   "intervaloSobreLaCuota": false,
-   "amarillosDebajo": true,
+   "noVerdes": {
+    "n": 1,
+    "tasa": 0.0,
+    "intervalo": [
+     0.0,
+     0.7935
+    ]
+   },
+   "separacion": 1.0,
+   "nMinimo": 60,
+   "separacionMinima": 0.1,
+   "noVerdesDebajo": true,
    "cumple": false,
    "estado": "en_observacion",
-   "texto": "en observación: 2 verdes nuevos, el elegido acierta 50.0 % contra 62.7 % que pedía la cuota (-12.7 pts, IC 9-91 %) · faltan 68 para el escalón 70"
+   "texto": "en observación: 1 amarillos o rojos nuevos, el elegido gana 100.0 % en verde (1) y 0.0 % en amarillo o rojo (1, IC 0-79 %): +100.0 pts · faltan 29 no-verdes para el escalón 30"
   },
-  "nota": "verde = nuestro 1X2 a ≤ 2 pts de la casa (sin margen) en los tres resultados y el marcador declarado con el elegido; amarillo = falla una. Calculado, nunca declarado, y fuera de la vista del analista (no va al recibo ni a un endpoint del token de Cowork). El criterio cuenta solo los partidos desde el 11/11/2026"
+  "nota": "verde = la espina del elegido lo acompaña y la del rival no dice que siga; amarillo = la espina del elegido dice empate o la del rival dice que gana o empata; rojo = la espina del elegido dice que pierde (no apostar). Sale de las espinas del parte, no de la cuota. Calculado, nunca declarado, y fuera de la vista del analista (no va al recibo ni a un endpoint del token de Cowork). El criterio cuenta solo los partidos desde el 13/11/2026"
  },
  "apuestas": [
+  {
+   "fixtureId": 900013,
+   "pitazo": "2026-11-13 21:00:00",
+   "partido": {
+    "local": "Juventus",
+    "visita": "Lazio",
+    "liga": "Serie A"
+   },
+   "depositadoEn": "2026-11-13 12:30:00",
+   "versiones": {
+    "sad-analysis": "v4.5",
+    "efe-clasificador": "v1.10",
+    "teorema-del-echado": "v0.1.26",
+    "diagnostico-tactico": "v1.8"
+   },
+   "versionPrompt": "v2.5",
+   "probabilidades": {
+    "local": 50.0,
+    "empate": 28.0,
+    "visita": 22.0
+   },
+   "cuotas": {
+    "local": 1.95,
+    "empate": 3.4,
+    "visita": 4.2
+   },
+   "mercado": {
+    "local": 49.5,
+    "empate": 28.4,
+    "visita": 22.1
+   },
+   "resultado": "empate",
+   "semaforo": {
+    "estado": "noApostar",
+    "motivos": [
+     {
+      "codigo": "ESPINA-CONTRA-EL-ELEGIDO",
+      "detalle": "la espina del elegido (local) dice que pierde: se lo eligió contra su propia lectura"
+     },
+     {
+      "codigo": "ESPINA-RIVAL-SIGUE",
+      "detalle": "la espina del rival dice positiva: que gana"
+     }
+    ],
+    "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "negativa",
+    "espinaRival": "positiva",
+    "espinas": {
+     "a": "negativa",
+     "b": "positiva"
+    },
+    "distancia": 0.5,
+    "marcadorSigno": "local"
+   },
+   "elegido": "local",
+   "kelly": {
+    "seleccion": "empate",
+    "fraccion": -0.02,
+    "valor": -0.048
+   },
+   "estado": "cerrada",
+   "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0065,
+     "ganancia": -1.0065,
+     "banca": 100.75,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerde": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 103.62,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
+    "plana": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 100.78,
+     "linea": null,
+     "motivo": ""
+    },
+    "plana60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.75,
+     "linea": null,
+     "motivo": "bajo 60 %"
+    },
+    "kelly": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 103.88,
+     "linea": null,
+     "motivo": "sin ventaja"
+    },
+    "kellyMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 101.94,
+     "linea": null,
+     "motivo": "sin ventaja"
+    },
+    "kellyCuarto": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.97,
+     "linea": null,
+     "motivo": "sin ventaja"
+    },
+    "martingala": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 104.48,
+     "linea": 3,
+     "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.5,
+     "linea": null,
+     "motivo": "bajo 60 %"
+    }
+   }
+  },
+  {
+   "fixtureId": 900012,
+   "pitazo": "2026-11-13 19:45:00",
+   "partido": {
+    "local": "Benfica",
+    "visita": "Porto",
+    "liga": "Liga Portugal"
+   },
+   "depositadoEn": "2026-11-13 12:10:00",
+   "versiones": {
+    "sad-analysis": "v4.5",
+    "efe-clasificador": "v1.10",
+    "teorema-del-echado": "v0.1.26",
+    "diagnostico-tactico": "v1.8"
+   },
+   "versionPrompt": "v2.5",
+   "probabilidades": {
+    "local": 46.0,
+    "empate": 27.0,
+    "visita": 27.0
+   },
+   "cuotas": {
+    "local": 2.1,
+    "empate": 3.4,
+    "visita": 3.6
+   },
+   "mercado": {
+    "local": 45.6,
+    "empate": 28.2,
+    "visita": 26.2
+   },
+   "resultado": "local",
+   "semaforo": {
+    "estado": "confirma",
+    "motivos": [],
+    "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "negativa",
+    "espinas": {
+     "a": "positiva",
+     "b": "negativa"
+    },
+    "distancia": 1.2,
+    "marcadorSigno": "local"
+   },
+   "elegido": "local",
+   "kelly": {
+    "seleccion": "visita",
+    "fraccion": -0.0108,
+    "valor": -0.028
+   },
+   "estado": "cerrada",
+   "porEstrategia": {
+    "proporcional": {
+     "seleccion": "local",
+     "monto": 1.0065,
+     "ganancia": 1.1072,
+     "banca": 101.76,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerde": {
+     "seleccion": "local",
+     "monto": 1.0249,
+     "ganancia": 1.1274,
+     "banca": 103.62,
+     "linea": null,
+     "motivo": ""
+    },
+    "plana": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": 1.1,
+     "banca": 101.78,
+     "linea": null,
+     "motivo": ""
+    },
+    "plana60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.75,
+     "linea": null,
+     "motivo": "bajo 60 %"
+    },
+    "kelly": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 103.88,
+     "linea": null,
+     "motivo": "sin ventaja"
+    },
+    "kellyMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 101.94,
+     "linea": null,
+     "motivo": "sin ventaja"
+    },
+    "kellyCuarto": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.97,
+     "linea": null,
+     "motivo": "sin ventaja"
+    },
+    "martingala": {
+     "seleccion": "local",
+     "monto": 2.0,
+     "ganancia": 2.2,
+     "banca": 105.48,
+     "linea": 1,
+     "motivo": ""
+    },
+    "martingala60": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.5,
+     "linea": null,
+     "motivo": "bajo 60 %"
+    }
+   }
+  },
   {
    "fixtureId": 900011,
    "pitazo": "2026-11-12 20:00:00",
@@ -1121,9 +1501,15 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "estado": "confirma",
     "motivos": [],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "negativa",
+    "espinas": {
+     "a": "positiva",
+     "b": "negativa"
+    },
     "distancia": 0.6,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
@@ -1143,7 +1529,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     "metodoVerde": {
      "seleccion": "local",
-     "monto": 0.9971,
+     "monto": 1.0249,
      "ganancia": null,
      "banca": null,
      "linea": null,
@@ -1240,17 +1626,27 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "resultado": "visita",
    "semaforo": {
-    "estado": "duda",
+    "estado": "noApostar",
     "motivos": [
      {
-      "codigo": "LEJOS-DE-LA-CASA",
-      "detalle": "en local le damos 38.0 % y la casa 35.9 % (+2.1 pts; el verde pide ≤ 2 en los tres)"
+      "codigo": "ESPINA-CONTRA-EL-ELEGIDO",
+      "detalle": "la espina del elegido (local) dice que pierde: se lo eligió contra su propia lectura"
+     },
+     {
+      "codigo": "ESPINA-RIVAL-SIGUE",
+      "detalle": "la espina del rival dice positiva: que gana"
      }
     ],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "negativa",
+    "espinaRival": "positiva",
+    "espinas": {
+     "a": "negativa",
+     "b": "positiva"
+    },
     "distancia": 2.1,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
@@ -1272,9 +1668,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 99.71,
+     "banca": 102.49,
      "linea": null,
-     "motivo": "semáforo en amarillo"
+     "motivo": "semáforo en rojo: no apostar"
     },
     "plana": {
      "seleccion": "local",
@@ -1370,9 +1766,15 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "estado": "confirma",
     "motivos": [],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "negativa",
+    "espinas": {
+     "a": "positiva",
+     "b": "negativa"
+    },
     "distancia": 1.7,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
@@ -1392,9 +1794,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     "metodoVerde": {
      "seleccion": "local",
-     "monto": 1.0072,
-     "ganancia": -1.0072,
-     "banca": 99.71,
+     "monto": 1.0353,
+     "ganancia": -1.0353,
+     "banca": 102.49,
      "linea": null,
      "motivo": ""
     },
@@ -1492,9 +1894,15 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "estado": "confirma",
     "motivos": [],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "negativa",
+    "espinas": {
+     "a": "positiva",
+     "b": "negativa"
+    },
     "distancia": 0.9,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
@@ -1514,9 +1922,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     "metodoVerde": {
      "seleccion": "local",
-     "monto": 1.0004,
-     "ganancia": 0.6803,
-     "banca": 100.72,
+     "monto": 1.0283,
+     "ganancia": 0.6992,
+     "banca": 103.53,
      "linea": null,
      "motivo": ""
     },
@@ -1614,18 +2022,24 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "estado": "duda",
     "motivos": [
      {
-      "codigo": "LEJOS-DE-LA-CASA",
-      "detalle": "en visita le damos 34.0 % y la casa 30.1 % (+3.9 pts; el verde pide ≤ 2 en los tres)"
+      "codigo": "ESPINA-ELEGIDO-EMPATA",
+      "detalle": "la espina del elegido (local) dice empate, no que gane"
      },
      {
-      "codigo": "MARCADOR-CONTRADICE",
-      "detalle": "el marcador 2-2 dice empate y el elegido es local"
+      "codigo": "ESPINA-RIVAL-SIGUE",
+      "detalle": "la espina del rival dice positiva: que gana"
      }
     ],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "cero",
+    "espinaRival": "positiva",
+    "espinas": {
+     "a": "cero",
+     "b": "positiva"
+    },
     "distancia": 3.9,
-    "marcadorSigno": "empate",
-    "umbral": 2.0
+    "marcadorSigno": "empate"
    },
    "elegido": "local",
    "kelly": {
@@ -1647,7 +2061,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 100.04,
+     "banca": 102.83,
      "linea": null,
      "motivo": "semáforo en amarillo"
     },
@@ -1742,17 +2156,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "resultado": "local",
    "semaforo": {
-    "estado": "duda",
-    "motivos": [
-     {
-      "codigo": "LEJOS-DE-LA-CASA",
-      "detalle": "en local le damos 60.0 % y la casa 54.7 % (+5.3 pts; el verde pide ≤ 2 en los tres)"
-     }
-    ],
+    "estado": "confirma",
+    "motivos": [],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "negativa",
+    "espinas": {
+     "a": "positiva",
+     "b": "negativa"
+    },
     "distancia": 5.3,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
@@ -1771,12 +2186,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "motivo": ""
     },
     "metodoVerde": {
-     "seleccion": null,
-     "monto": 0.0,
-     "ganancia": 0.0,
-     "banca": 100.04,
+     "seleccion": "local",
+     "monto": 1.0206,
+     "ganancia": 0.7654,
+     "banca": 102.83,
      "linea": null,
-     "motivo": "semáforo en amarillo"
+     "motivo": ""
     },
     "plana": {
      "seleccion": "local",
@@ -1869,12 +2284,23 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "resultado": "visita",
    "semaforo": {
-    "estado": "confirma",
-    "motivos": [],
+    "estado": "duda",
+    "motivos": [
+     {
+      "codigo": "ESPINA-RIVAL-SIGUE",
+      "detalle": "la espina del rival dice positiva: que gana"
+     }
+    ],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "positiva",
+    "espinas": {
+     "a": "positiva",
+     "b": "positiva"
+    },
     "distancia": 1.2,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
@@ -1893,12 +2319,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "motivo": ""
     },
     "metodoVerde": {
-     "seleccion": "local",
-     "monto": 1.0105,
-     "ganancia": -1.0105,
-     "banca": 100.04,
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 102.06,
      "linea": null,
-     "motivo": ""
+     "motivo": "semáforo en amarillo"
     },
     "plana": {
      "seleccion": "local",
@@ -1991,21 +2417,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    },
    "resultado": "local",
    "semaforo": {
-    "estado": "duda",
-    "motivos": [
-     {
-      "codigo": "LEJOS-DE-LA-CASA",
-      "detalle": "en local le damos 52.0 % y la casa 48.3 % (+3.7 pts; el verde pide ≤ 2 en los tres)"
-     },
-     {
-      "codigo": "MARCADOR-CONTRADICE",
-      "detalle": "el marcador 1-1 dice empate y el elegido es local"
-     }
-    ],
+    "estado": "confirma",
+    "motivos": [],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "negativa",
+    "espinas": {
+     "a": "positiva",
+     "b": "negativa"
+    },
     "distancia": 3.7,
-    "marcadorSigno": "empate",
-    "umbral": 2.0
+    "marcadorSigno": "empate"
    },
    "elegido": "local",
    "kelly": {
@@ -2024,12 +2447,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "motivo": ""
     },
     "metodoVerde": {
-     "seleccion": null,
-     "monto": 0.0,
-     "ganancia": 0.0,
-     "banca": 101.05,
+     "seleccion": "local",
+     "monto": 1.0105,
+     "ganancia": 1.0105,
+     "banca": 102.06,
      "linea": null,
-     "motivo": "semáforo en amarillo"
+     "motivo": ""
     },
     "plana": {
      "seleccion": "local",
@@ -2125,14 +2548,20 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "estado": "duda",
     "motivos": [
      {
-      "codigo": "LEJOS-DE-LA-CASA",
-      "detalle": "en local le damos 62.0 % y la casa 59.0 % (+3.0 pts; el verde pide ≤ 2 en los tres)"
+      "codigo": "ESPINA-RIVAL-SIGUE",
+      "detalle": "la espina del rival dice cero: que no pierde"
      }
     ],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "cero",
+    "espinas": {
+     "a": "positiva",
+     "b": "cero"
+    },
     "distancia": 3.0,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
@@ -2252,9 +2681,15 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "estado": "confirma",
     "motivos": [],
     "elegido": "local",
+    "regla": "espinas",
+    "espinaElegido": "positiva",
+    "espinaRival": "negativa",
+    "espinas": {
+     "a": "positiva",
+     "b": "negativa"
+    },
     "distancia": 1.0,
-    "marcadorSigno": "local",
-    "umbral": 2.0
+    "marcadorSigno": "local"
    },
    "elegido": "local",
    "kelly": {
