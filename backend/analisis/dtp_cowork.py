@@ -1832,6 +1832,53 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
                     motivo.append(f"la apertura lo pone por la {banda} y el grid, por la {c['carril']}")
                 if motivo:
                     out.append({"jugador": c["nombre"], "rol": linea, "grid": c["grid"], "motivo": "; ".join(motivo)})
+    # LA CASILLA ESCRITA CONTRA LA DEL GRID (13/11/2026, incidencia 1391, Pasto–
+    # Junior 1549868: «Fabian Correa (4:1) por izquierda detrás de Muriel» y
+    # «Dilan Villareal (2:1)» en los duelos, y el grid oficial los dio en 2:1 y
+    # 3:1; sin palabra de rol, `_roles_declarados` no veía nada y rolesVsGrid
+    # salía vacío). Solo casa con las casillas de ESTE equipo: las del rival que
+    # nombran los duelos no se encuentran acá.
+    vistos = {r["jugador"] for r in out}
+    from backend.ficha_tactica import _carril
+    por_fila: dict[int, int] = {}
+    for f in filas:
+        por_fila[f] = por_fila.get(f, 0) + 1
+    m1 = (bloque.get("apertura") or {}).get("m1") or {}
+    m2 = (bloque.get("apertura") or {}).get("m2") or {}
+    textos = list(m1.get("rolesReasignados") or []) + [d.get("duelo") or "" for d in m2.get("duelosCarril") or []
+                                                        if isinstance(d, dict)]
+    for texto in textos:
+        for m in re.finditer(r"((?:[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’.-]*\s+){0,2}[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+)\s*\((\d):(\d)\)", texto):
+            nombre, fila_d, col_d = m.group(1), int(m.group(2)), int(m.group(3))
+            palabras = [w for w in _plano_num(nombre).split() if len(w) > 2]
+            if not palabras:
+                continue
+            cands = [c for c in casillas if palabras[-1] in _plano_num(c["nombre"]).split()
+                     and _identidad.casa(_identidad.tokens(c["nombre"]), _identidad.tokens(nombre))]
+            if len(cands) != 1 or cands[0]["nombre"] in vistos:
+                continue
+            c = cands[0]
+            fila_o = int(c["grid"].split(":")[0])
+            declarado = f"{fila_d}:{col_d}"
+            if declarado == c["grid"]:
+                continue
+            # la fila se numera con la formación: 4-2-3-1 tiene cinco y 4-3-3
+            # cuatro, y una API que solo re-etiqueta corre los números. Cuenta el
+            # cruce entre la defensa (o el arco) y el resto; medio contra ataque
+            # es frontera y no se afirma
+            cifras_d = _cifras_sistema(m1.get("sistema") or "")
+            n_d = len(cifras_d) + 1 if cifras_d else n
+            atras = lambda f: "GK" if f == 1 else "DEF" if f == 2 else ""
+            if atras(fila_d) != atras(fila_o):
+                motivo = f"la apertura lo pone en {declarado} y el grid oficial, en {c['grid']} (otra línea)"
+            elif fila_d == fila_o and n_d == n and fila_d in por_fila \
+                    and _carril(declarado, por_fila) != c.get("carril"):
+                motivo = (f"la apertura lo pone en {declarado} y el grid oficial, en {c['grid']} "
+                          f"(por la {c.get('carril')})")
+            else:
+                continue
+            vistos.add(c["nombre"])
+            out.append({"jugador": c["nombre"], "rol": texto[:140], "grid": c["grid"], "motivo": motivo})
     return out
 
 

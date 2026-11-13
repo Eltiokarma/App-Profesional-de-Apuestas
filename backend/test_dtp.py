@@ -296,6 +296,40 @@ def main():
         _dc646.ROLES_GRID_REHACE = True
     check("646: con la bandera apagada vuelve a la sombra (viaja, no pide rehacer)",
           not _r646b["rehacer"] and len(_r646b["rolesVsGrid"]) == 2, _r646b["motivos"])
+    # 1391 (Pasto–Junior 1549868): la casilla escrita entre paréntesis contra la del grid oficial
+    _cas1391 = [("M. Silveira", "1:1"), ("F. Correa", "2:1"), ("J. Pestaña", "2:2"), ("C. Pérez", "2:3"),
+                ("A. Schmalbach", "2:4"), ("D. Villareal", "3:1"), ("H. Rivera", "3:2"), ("G. Celis", "3:3"),
+                ("K. Pérez", "4:1"), ("L. Muriel", "4:2"), ("C. Barrios", "4:3")]
+    _por1391 = {1: 1, 2: 4, 3: 3, 4: 3}
+    from backend.ficha_tactica import _carril as _car1391
+    _of1391 = {"b": {"formacion": "4-3-3", "titulares": [n for n, _ in _cas1391], "defensores": 4,
+                     "casillas": [{"nombre": n, "grid": g, "carril": _car1391(g, _por1391)} for n, g in _cas1391]}}
+    _b1391 = {"equipo": "b", "apertura": {
+        "m1": {"sistema": "4-2-3-1", "xiReferencia": "", "rolesReasignados": [
+            "Harold Rivera (3:2) y Guillermo Celis (3:3) de doble pivote",
+            "Cristian Barrios (4:3) por derecha y Fabian Correa (4:1) por izquierda detrás de Luis Muriel"]},
+        "m2": {"duelosCarril": [
+            {"carril": "izquierda", "duelo": "Dilan Villareal (2:1) y Fabian Correa (4:1) contra Édgar García (2:4)"},
+            {"carril": "derecha", "duelo": "Andrés Schmalbach (2:4) contra Hervin Goyes (2:1)"}]}}}
+    _r1391 = {r["jugador"]: r["motivo"] for r in _dc646.roles_vs_grid(_b1391, _of1391["b"])}
+    check("1391: Correa escrito en 4:1 (salió lateral, 2:1) y Villareal en 2:1 (salió 3:1) salen en rolesVsGrid; "
+          "las casillas que cuadran (Rivera, Celis, Barrios, Schmalbach) y las del rival, no",
+          set(_r1391) == {"F. Correa", "D. Villareal"} and "otra línea" in _r1391["F. Correa"]
+          and "4:1" in _r1391["F. Correa"] and "3:1" in _r1391["D. Villareal"], _r1391)
+    _dc646.ROLES_GRID_REHACE = True
+    check("1391: con la bandera prendida, la casilla contradicha pide rehacer",
+          sum(m.startswith("rol:") for m in _reh(_b1391, _of1391)["motivos"]) == 2)
+    _of_cuadra = {"b": {**_of1391["b"], "casillas": [{"nombre": n, "grid": g, "carril": _car1391(g, _por1391)} for n, g in
+                  [("M. Silveira", "1:1"), ("J. Pestaña", "2:2"), ("D. Villareal", "2:1"), ("C. Pérez", "2:3"),
+                   ("A. Schmalbach", "2:4"), ("H. Rivera", "3:2"), ("G. Celis", "3:3"), ("F. Correa", "4:1"),
+                   ("K. Pérez", "3:1"), ("L. Muriel", "4:2"), ("C. Barrios", "4:3")]]}}
+    check("1391: con el grid que el parte escribió, nada", _dc646.roles_vs_grid(_b1391, _of_cuadra["b"]) == [])
+    # la API que solo re-etiqueta 4-2-3-1 → 4-3-3 corre los números de fila: el
+    # mediapunta escrito 4:2 que el grid da 3:2 (medio) no es otra línea
+    _b1391r = {"equipo": "b", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": "",
+                                                  "rolesReasignados": ["Harold Rivera (4:2) de enganche"]}}}
+    check("1391: medio contra ataque por una re-etiqueta de la formación es frontera: nada",
+          _dc646.roles_vs_grid(_b1391r, _of1391["b"]) == [])
     # 1348: «Lewis-Potter» (apellido compuesto que empieza como una pila) es «K. Lewis-Potter» del grid
     _cas1348 = [(n if n != "M. Tel" else "K. Lewis-Potter", g) for n, g in _cas]
     _of1348 = {"a": {**_of646["a"], "titulares": [n for n, _ in _cas1348],
