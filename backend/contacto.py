@@ -99,8 +99,22 @@ def armar(datos: dict) -> tuple[list[dict], list[dict]]:
             "mercado": {k: round(100 * inv[k] / tot, 1) for k in sim.CLAVES}, "resultado": resultado,
             # el semáforo del elegido (11/11/2026) con el 1X2 sin margen de /cuotas
             "semaforo": semaforo.del_parte(parte, {k: 100 * inv[k] / tot for k in sim.CLAVES}),
+            # el marcador más probable (13/11/2026): el que el GET del parte calcula con la historia anterior
+            "marcador": _marcador(parte, probs),
         })
     return apuestas, excluidos
+
+
+def _marcador(parte: dict, probs: dict) -> dict | None:
+    """El marcador más probable de `lecturaSad.golesAcotados` contra el elegido,
+    como lo arma `simulacion.marcador_de`."""
+    ga = (parte.get("lecturaSad") or {}).get("golesAcotados") or {}
+    mp = (ga.get("masProbables") or [None])[0] if not ga.get("sinDato") else None
+    p = sim._normalizar(probs)
+    if not mp or not p:
+        return None
+    signo = semaforo.signo_marcador(mp["marcador"])
+    return {"masProbable": mp["marcador"], "prob": mp["prob"], "signo": signo, "alineado": signo == sim._elegido(p)}
 
 
 def _get(base: str, token: str, ruta: str):
@@ -151,7 +165,7 @@ def informe(out: dict) -> str:
     if m:
         lineas.append(f"  martingala: banca {m['banca']:.2f}, caída máx. {100 * m['caidaMaxima']:.1f} %, "
                       f"apuesta máx. {m['montoMaximo']:.0f} u")
-    lineas += ["", informe_semaforo(out)]
+    lineas += ["", informe_semaforo(out), "", informe_marcador(out)]
     return "\n".join(lineas)
 
 
@@ -179,6 +193,29 @@ def informe_semaforo(out: dict) -> str:
     if mv:
         lineas.append(f"  método solo en verde: banca {mv['banca']:.2f} en {mv['apuestas']} apuestas, "
                       f"caída máx. {100 * mv['caidaMaxima']:.1f} %")
+    return "\n".join(lineas)
+
+
+def informe_marcador(out: dict) -> str:
+    """La sección «Marcador» del informe de los lunes (13/11/2026)."""
+    s = out.get("marcador")
+    if not s:
+        return "Marcador · sin datos"
+    pct = lambda x: "—" if x is None else f"{100 * x:.1f} %"  # noqa: E731
+    lineas = [f"Marcador · cuenta desde {s['desde'][:10]} (el más probable del modelo de goles con el elegido, "
+              "contra 1-1, 0-0 o contrario; se juzga el win rate)"]
+    for etiqueta, clave in (("nuevos", "nuevo"), ("todo lo simulado", "todo")):
+        g = s[clave]
+        lineas.append(f"  {etiqueta}: " + " · ".join(
+            f"{nom} {g[k]['aciertos']} de {g[k]['n']} ({pct(g[k]['tasa'])})"
+            for nom, k in (("alineado", "alineado"), ("resto", "resto"), ("verde y alineado", "verdeAlineado"))))
+    lineas.append(f"  → {s['criterio']['texto']}")
+    for clave, nombre in (("metodoMarcador", "método con el marcador"), ("metodoVerdeMarcador", "método en verde con el marcador"),
+                          ("martingalaMarcador", "martingala con el marcador")):
+        e = next((x for x in out.get("estrategias") or [] if x["clave"] == clave), None)
+        if e:
+            lineas.append(f"  {nombre}: banca {e['banca']:.2f} en {e['apuestas']} apuestas "
+                          f"({e['ganadas']} ganadas), caída máx. {100 * e['caidaMaxima']:.1f} %")
     return "\n".join(lineas)
 
 
