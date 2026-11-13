@@ -63,6 +63,23 @@ def torneos_selecciones() -> set[int]:
         return {1, 4, 5, 6, 7, 9, 10, 22, 29, 30, 31, 32, 33, 34, 37, 536, 960}
 
 
+def es_seleccion(team_id: int | None) -> bool:
+    """¿Es una SELECCIÓN? La base no lo marca (`teams` no tiene la columna) y el
+    nombre contra el país falla («Faroe Islands» contra «Faroe-Islands», «FYR
+    Macedonia»): es selección quien juega algún torneo de `TORNEOS_SELECCIONES`,
+    la lista única (13/11/2026, incidencias 1395 y 1396: la Nations League
+    trataba a las selecciones como clubes). Sin la base: no se afirma."""
+    if not team_id:
+        return False
+    ids = sorted(torneos_selecciones())
+    try:
+        return bool(saddb.query(
+            "sad", f"SELECT 1 FROM fixtures WHERE league_id IN ({','.join('?' * len(ids))}) "
+                   "AND (home_team_id=? OR away_team_id=?) LIMIT 1", (*ids, team_id, team_id)))
+    except Exception:  # noqa: BLE001 — sin la base no se afirma que sea selección: manda la regla de clubes
+        return False
+
+
 def es_copa(liga_id: int | None, nombre: str | None = None) -> bool:
     if liga_id in COPAS:
         return True

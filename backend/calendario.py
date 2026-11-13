@@ -288,8 +288,15 @@ def _es_ascendido(team_id: int, liga_id: int | None, temporada: int | None) -> b
     # ...y una copa que no está en la lista se reconoce por el nombre: Vecino
     # «RECIÉN ASCENDIDO» en la Taça de Portugal (incidencia 404)
     try:
-        from backend.analisis.escala import es_copa
+        from backend.analisis.escala import es_copa, torneos_selecciones
         if es_copa(liga_id):
+            return False
+        # NI UN TORNEO DE SELECCIONES (13/11/2026, incidencia 1396: en la
+        # Nations League 2026-27 casi todas salían «recién ascendidas» porque la
+        # temporada anterior jugaron la eliminatoria o amistosos, «otra liga»).
+        # Las ligas A/B/C/D de la Nations no son una categoría con línea base de
+        # K propia: R-KT.2 no aplica.
+        if liga_id in torneos_selecciones():
             return False
     except Exception:  # noqa: BLE001 — sin metadatos de la liga, manda la lista
         pass
