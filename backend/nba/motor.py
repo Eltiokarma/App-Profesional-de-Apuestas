@@ -122,8 +122,33 @@ def _vista_puntos(st: dict) -> dict:
     out = {"mediaAnota": None if m is None else m[0], "mediaRecibe": None if m is None else m[1]}
     for n in (*FAMILIAS_PUNTOS, *FAMILIAS_CASA):
         f = st["fam"][n]
-        out[n] = {"k": f["k"], "racha": f["racha"], "kPico": f["kPico"], "abierta": f["k"] > 0, **_base(f["reventones"])}
+        out[n] = {"k": f["k"], "racha": f["racha"], "kPico": f["kPico"], "abierta": f["k"] > 0, **_base(f["reventones"]),
+                  "estado": _estado_extremo(f), "recordReciente": _record_reciente(f)}
     return out
+
+
+def _record_reciente(f: dict) -> bool:
+    """🟡 como en burbujas.momentum: la burbuja abierta (3+ partidos) ya pasó la
+    K pico o la racha de sus ÚLTIMOS 20 reventones (el equipo de ahora)."""
+    rev = f["reventones"][-20:]
+    if f["k"] <= 0 or len(rev) < 3 or f["racha"] < 3:
+        return False
+    return f["k"] > max(r["kPico"] for r in rev) or f["racha"] > max(r["partidos"] for r in rev)
+
+
+def _estado_extremo(f: dict) -> str | None:
+    """Dónde está la burbuja ABIERTA frente a las de su familia que ya
+    reventaron, con la regla del fútbol (backend.analisis.burbuja._extremo,
+    importada): «extremo» = récord de K o de racha con 3+ partidos; «cerca» =
+    la K o la racha pasan el 90 % de sus reventones; «rango» = ninguna. None
+    sin burbuja abierta o sin base (menos de 3 reventones)."""
+    rev = f["reventones"]
+    if f["k"] <= 0 or len(rev) < 3:
+        return None
+    from backend.analisis.burbuja import _extremo
+    base = {"kPico": {"max": max(r["kPico"] for r in rev)}, "partidos": {"max": max(r["partidos"] for r in rev)}}
+    ex = _extremo(f["k"], f["racha"], base, len(rev), "+", de=rev)
+    return "extremo" if ex["activo"] else "cerca" if ex["cerca"] else "rango"
 
 
 def _previo(st: dict, rival: dict, local: bool, neutral: bool, fecha: str, temporada) -> dict:

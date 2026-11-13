@@ -602,3 +602,25 @@ camino queda así:
 
 Para medir de verdad líneas alternativas harían falta sus cuotas reales (una
 API paga).
+
+### 10.2 La K de puntos en su EXTREMO (13/11/2026)
+
+Pedido del usuario. Para cada familia de puntos (anota y recibe, contra su
+media y contra la casa) se mide el estado de la burbuja abierta con la regla
+del fútbol (`burbuja._extremo`, importada): **extremo** (récord con 3+
+partidos), **cerca** (pasa el 90 % de sus cortes) o **rango**. Se suma el
+**récord reciente** (pasa todo lo de sus últimos 20 cortes). La señal se juzga
+por cuántas veces SIGUE la racha de puntos en el partido siguiente, en los dos
+períodos.
+
+- **Cerca:** 48-54 %, igual que dentro del rango. Nada.
+- **Extremo:** 54-57 % en 2016-23 (la racha SIGUE más), pero 36-47 % en 2023-hoy
+  (se corta), con apenas 13-27 casos. Se contradice y la muestra reciente es
+  mínima.
+- **Récord reciente:** 46-55 %, sin dirección que se repita.
+- **El MÁS del partido con 2 o más burbujas de puntos de la casa en extremo o
+  cerca:** 53,8 % en 2016-23 y 49,0 % en 2023-hoy. Nada.
+
+**Lectura:** el extremo de la K de puntos no da señal, ni de «aquí sí» ni de
+«aquí no». La única señal de puntos sigue siendo la del §10 (presión 4 en la
+vara de la casa: sale el más 54,5 %).

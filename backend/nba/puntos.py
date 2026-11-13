@@ -92,6 +92,8 @@ def correr() -> dict:
     base = defaultdict(lambda: [0, 0])          # (periodo, familia) → [n, por encima]
     hand = defaultdict(_cuenta)                 # (periodo, balance) → cuenta
     tot = defaultdict(_cuenta)                  # (periodo, presión, lado) → cuenta
+    ext = defaultdict(lambda: [0, 0])          # (periodo, familia, estado) → [n, siguió]
+    ext_tot = defaultdict(lambda: [0, 0])      # (periodo, clave) → [n, salió el más]
     sin_ou = 0
     for p in ps:
         per = next((n for n, a, b in PERIODOS if a <= p["temporada"] <= b), None)
@@ -118,6 +120,24 @@ def correr() -> dict:
                     c = cont[(per, fam, _tramo(v[fam]["racha"]))]
                     c[0] += 1
                     c[1] += encima
+                    if v[fam]["estado"]:
+                        e = ext[(per, fam, v[fam]["estado"])]
+                        e[0] += 1
+                        e[1] += encima
+                    if v[fam]["recordReciente"]:
+                        e = ext[(per, fam, "récord reciente")]
+                        e[0] += 1
+                        e[1] += encima
+        t0 = totales(cu.get(p["id"], []))
+        if t0 is not None and p["ptsLocal"] + p["ptsVisita"] != t0["linea"]:
+            subio = 0
+            for lado in ("local", "visita"):
+                for fam in ("anotaCasa", "recibeCasa"):
+                    subio += f[lado]["puntos"][fam]["estado"] in ("extremo", "cerca")
+            for k in ("todos", f"{min(subio, 2)}{'+' if subio >= 2 else ''} en extremo/cerca"):
+                x = ext_tot[(per, k)]
+                x[0] += 1
+                x[1] += p["ptsLocal"] + p["ptsVisita"] > t0["linea"]
         c = consenso(cu.get(p["id"], []))
         if not c or c["pLocal"] in (None, 0.5):
             continue
@@ -165,6 +185,13 @@ def correr() -> dict:
                                                            if cont[(per, fam, t)][0] else None}
                                                        for t in ("1", "2", "3", "4-5", "6+")}}
                                     for fam in (*motor.FAMILIAS_PUNTOS, *motor.FAMILIAS_CASA)}
+        out.setdefault("extremo", {})[per] = {
+            fam: {est: {"n": ext[(per, fam, est)][0],
+                        "sigue": round(ext[(per, fam, est)][1] / ext[(per, fam, est)][0], 4) if ext[(per, fam, est)][0] else None}
+                  for est in ("rango", "cerca", "extremo", "récord reciente")}
+            for fam in (*motor.FAMILIAS_PUNTOS, *motor.FAMILIAS_CASA)}
+        out.setdefault("extremoTotales", {})[per] = {
+            k: {"n": v[0], "mas": round(v[1] / v[0], 4) if v[0] else None} for (pp, k), v in sorted(ext_tot.items()) if pp == per}
         out["handicap"][per] = {k: _fmt(v) for (pp, k), v in sorted(hand.items()) if pp == per}
         out["totales"][per] = {f"{k} · {lado}": _fmt(v) for (pp, k, lado), v in sorted(tot.items()) if pp == per}
     return out
@@ -178,6 +205,14 @@ def texto(r: dict) -> str:
         for fam, v in d.items():
             L.append(f"  {per:18s} {fam:10s} todos {v['base']:.1%} · con burbuja abierta de " + " · ".join(
                 f"{t}: {x['sigue']:.1%} ({x['n']})" for t, x in v["porRacha"].items() if x["n"]))
+    L += ["", "1-bis · LA K DE PUNTOS EN SU EXTREMO (regla del fútbol): ¿la racha de puntos sigue? (% que el siguiente queda arriba de su vara)"]
+    for per, d in r["extremo"].items():
+        for fam, v in d.items():
+            L.append(f"  {per:18s} {fam:10s} " + " · ".join(
+                f"{est}: {x['sigue']:.1%} ({x['n']})" for est, x in v.items() if x["n"]))
+    L.append("  y el MÁS del partido según cuántas burbujas de puntos de la casa (anota/recibe, de los dos) están en extremo o cerca:")
+    for per, d in r["extremoTotales"].items():
+        L.append(f"  {per:18s} " + " · ".join(f"{k}: sale el más {v['mas']:.1%} ({v['n']})" for k, v in d.items()))
     L += ["", "2 · HÁNDICAP DEL ELEGIDO (favorito sin DESCONFIAR) · balance = ataque − defensa de las burbujas de puntos"]
     for per, d in r["handicap"].items():
         L.append(f"  {per}")

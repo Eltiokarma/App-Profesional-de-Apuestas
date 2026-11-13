@@ -171,6 +171,15 @@ def main() -> int:
           pc[5021]["visita"]["puntos"]["recibeCasa"]["abierta"])
     check("puntos (vara de la casa): sin línea, la familia de la casa no se mueve",
           pc[5023]["local"]["puntos"]["anotaCasa"] == pc[5022]["local"]["puntos"]["anotaCasa"])
+    rev = [{"partidos": 2, "kPico": 3.0, "nivelRival": 2.5, "fecha": "2020-01-01"} for _ in range(10)]
+    check("puntos en su extremo: sin base (menos de 3 cortes) o cerrada no tiene estado",
+          motor._estado_extremo({"k": 5.0, "racha": 4, "reventones": rev[:2]}) is None
+          and motor._estado_extremo({"k": 0.0, "racha": 0, "reventones": rev}) is None)
+    check("puntos en su extremo: K y racha sobre su récord con 3+ partidos → extremo (regla del fútbol)",
+          motor._estado_extremo({"k": 5.0, "racha": 4, "reventones": rev}) == "extremo"
+          and motor._record_reciente({"k": 5.0, "racha": 4, "reventones": rev}))
+    check("puntos en su extremo: dentro de lo que ya aguantó → rango",
+          motor._estado_extremo({"k": 1.0, "racha": 1, "reventones": rev}) == "rango")
     from backend.nba import puntos as _pts
     t = _pts.totales([{"casa": "A", "overUnder": 220.5, "overCuota": -110, "underCuota": -110},
                       {"casa": "B", "overUnder": 221.5, "overCuota": -105, "underCuota": -115},
