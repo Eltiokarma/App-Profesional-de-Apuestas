@@ -1848,7 +1848,7 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
     textos = list(m1.get("rolesReasignados") or []) + [d.get("duelo") or "" for d in m2.get("duelosCarril") or []
                                                         if isinstance(d, dict)]
     for texto in textos:
-        for m in re.finditer(r"((?:[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’.-]*\s+){0,2}[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+)\s*\((\d):(\d)\)", texto):
+        for m in _RX_CASILLA.finditer(texto):
             nombre, fila_d, col_d = m.group(1), int(m.group(2)), int(m.group(3))
             palabras = [w for w in _plano_num(nombre).split() if len(w) > 2]
             if not palabras:
@@ -1861,6 +1861,21 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
             fila_o = int(c["grid"].split(":")[0])
             declarado = f"{fila_d}:{col_d}"
             if declarado == c["grid"]:
+                continue
+            # LA CASILLA DE OTRO DE LA FRASE (14/11/2026, incidencia 1411, Austria–
+            # Irlanda 1528976: «Idah de segundo punta junto a Parrott (4:1)»: el 4:1
+            # es el de Idah y se le cobraba a Parrott). Si la casilla escrita es
+            # justo la del grid de OTRO jugador de este equipo que la misma frase
+            # nombra SIN casilla propia escrita, la casilla es de ese: no hay
+            # contradicción que afirmar. Con su propia casilla al lado (1391:
+            # «Villareal (2:1) y Correa (4:1)»), cada uno responde por la suya
+            plano_texto = _plano_num(texto).split()
+            con_casilla = {w for mm in _RX_CASILLA.finditer(texto)
+                           for w in _plano_num(mm.group(1)).split() if len(w) > 2}
+            if any(o["grid"] == declarado and o["nombre"] != c["nombre"]
+                   and any(w in plano_texto and w not in con_casilla
+                           for w in _plano_num(o["nombre"]).split() if len(w) > 2)
+                   for o in casillas):
                 continue
             # la fila se numera con la formación: 4-2-3-1 tiene cinco y 4-3-3
             # cuatro, y una API que solo re-etiqueta corre los números. Cuenta el
@@ -1880,6 +1895,10 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
             vistos.add(c["nombre"])
             out.append({"jugador": c["nombre"], "rol": texto[:140], "grid": c["grid"], "motivo": motivo})
     return out
+
+
+# «Nombre Apellido (fila:columna)»: la casilla escrita al lado de un nombre (1391)
+_RX_CASILLA = re.compile(r"((?:[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’.-]*\s+){0,2}[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+)\s*\((\d):(\d)\)")
 
 
 def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
