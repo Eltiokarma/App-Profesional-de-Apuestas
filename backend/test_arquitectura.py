@@ -222,6 +222,20 @@ _club_sin_sel = [r for r, fn in (("backend/analisis/f1_base.py", "es_seleccion")
 check("selecciones: juegan_en_otro y _es_ascendido saltan a las selecciones con la lista única de escala",
       not _club_sin_sel, _club_sin_sel)
 
+# 5-sexies · lo que la app SUMA a una fila al leer vuelve en el eco del GET, y
+# el POST lo tiene que aceptar (FALLAS.md clase 5; 1404: `con_filas_del_once`
+# agregaba `delOnceOficial` y `agregadaPorLaApp` y el re-depósito los rechazaba
+# como «campo desconocido»). Cada clave del dict de la fila agregada está en
+# `_CLAVES_JUGADOR` o `_ECO_JUGADOR`.
+_src_parte = leer("backend/analisis/parte.py")
+_m_filas = re.search(r"def con_filas_del_once.*?extra = \[\{(.*?)\} for c in nuevos\]", _src_parte, re.S)
+_claves_filas = set(re.findall(r'"(\w+)":', _m_filas.group(1))) if _m_filas else set()
+_m_cj = re.search(r"_CLAVES_JUGADOR = \{(.*?)\}", _src_parte, re.S)
+_m_ej = re.search(r"_ECO_JUGADOR = \{(.*?)\}", _src_parte, re.S)
+_aceptadas = set(re.findall(r'"(\w+)"', (_m_cj.group(1) if _m_cj else "") + (_m_ej.group(1) if _m_ej else "")))
+check("eco: cada clave que con_filas_del_once agrega a una fila del plantel la acepta el POST",
+      bool(_claves_filas) and _claves_filas <= _aceptadas, sorted(_claves_filas - _aceptadas))
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)

@@ -2856,12 +2856,19 @@ def analisis_ligas_analizadas(dias: int = Query(default=30, ge=1, le=180)):
 @app.get(API + "/analisis/simulacion")
 def analisis_simulacion(pagina: int | None = Query(default=None, ge=1),
                         porPagina: int | None = Query(default=None, ge=1, le=200,
-                                                      description="con él, `apuestas` viene paginada y llega `linea`")):
-    """Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana
-    (control), Kelly (entero, ½ y ¼) y martingala, cada apuesta con la versión
-    de los skills con la que se escribió el parte. Se recalcula al leer."""
+                                                      description="tamaño de la página de apuestas"),
+                        q: str | None = Query(default=None, max_length=120),
+                        desde: date_t | None = None, hasta: date_t | None = None,
+                        soloApuestas: bool = False, soloResumen: bool = False,
+                        fixtureId: int | None = Query(default=None, ge=1)):
+    """Historial filtrable y resumen global sobre los 1X2 desde el 28/10/2026."""
+    if desde and hasta and desde > hasta:
+        raise HTTPException(status_code=422, detail="La fecha Desde debe ser anterior o igual a Hasta.")
+    if soloApuestas and soloResumen:
+        raise HTTPException(status_code=422, detail="Elige solo una vista de la simulación.")
     from backend.analisis import simulacion
-    return simulacion.simulacion(pagina, porPagina)
+    return simulacion.simulacion(pagina, porPagina, q=q, desde=desde, hasta=hasta,
+                                 solo_apuestas=soloApuestas, solo_resumen=soloResumen, fixture_id=fixtureId)
 
 
 @app.get(API + "/analisis/cowork/espina/calibracion")

@@ -60,8 +60,12 @@ from __future__ import annotations
 
 import json
 import math
+import re
+import time
+import unicodedata
 from collections import deque
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from threading import Lock
 
 from backend import db as saddb
 from backend.analisis import semaforo as _sem, veredicto as _vered
@@ -817,6 +821,22 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     e["serie"].append({"fixtureId": fila["fixtureId"], "pitazo": fila["pitazo"], "banca": round(e["banca"], 2)})
 
 
+def _fila_apuesta(a: dict) -> tuple[dict, float]:
+    p = _normalizar(a["probabilidades"])
+    sel_k, f = _mejor_kelly(p, a["cuotas"])
+    elegido = _elegido(p)
+    sem = a.get("semaforo") or _sem.semaforo(a["probabilidades"], None)
+    mer = a.get("mercado")
+    if not mer:
+        inv = {k: 1 / a["cuotas"][k] for k in CLAVES}
+        mer = {k: round(100 * inv[k] / sum(inv.values()), 1) for k in CLAVES}
+    return ({**a, "semaforo": sem, "probabilidades": {k: round(100 * p[k], 1) for k in CLAVES},
+             "mercado": mer, "enElMedio": en_el_medio(mer[elegido]), "elegido": elegido,
+             "kelly": {"seleccion": sel_k, "fraccion": round(f, 4),
+                       "valor": round(p[sel_k] * a["cuotas"][sel_k] - 1, 4)},
+             "estado": "cerrada" if a.get("resultado") else "pendiente", "porEstrategia": {}}, f)
+
+
 def simular(apuestas: list[dict]) -> dict:
     """El corazón, sin base: recibe las apuestas ya armadas
     ({fixtureId, pitazo, probabilidades (en %), cuotas, resultado | None, …})
@@ -827,21 +847,9 @@ def simular(apuestas: list[dict]) -> dict:
     orden = sorted(apuestas, key=lambda x: (x["pitazo"], x["fixtureId"]))
     filas, eventos = [], []
     for i, a in enumerate(orden):
-        p = _normalizar(a["probabilidades"])
-        sel_k, f = _mejor_kelly(p, a["cuotas"])
-        # sin semáforo armado por quien llama (una apuesta de prueba), sin dato
-        sem = a.get("semaforo") or _sem.semaforo(a["probabilidades"], None)
-        # el mercado sin margen: de quien llama o, si no vino, de las cuotas
-        mer = a.get("mercado")
-        if not mer:
-            inv = {k: 1 / a["cuotas"][k] for k in CLAVES}
-            mer = {k: round(100 * inv[k] / sum(inv.values()), 1) for k in CLAVES}
-        filas.append({**a, "semaforo": sem, "probabilidades": {k: round(100 * p[k], 1) for k in CLAVES},
-                      "mercado": mer, "enElMedio": en_el_medio(mer[_elegido(p)]),
-                      "elegido": _elegido(p), "_f": f,
-                      "kelly": {"seleccion": sel_k, "fraccion": round(f, 4),
-                                "valor": round(p[sel_k] * a["cuotas"][sel_k] - 1, 4)},
-                      "estado": "cerrada" if a.get("resultado") else "pendiente", "porEstrategia": {}})
+        fila, fraccion = _fila_apuesta(a)
+        fila["_f"] = fraccion
+        filas.append(fila)
         t0 = _utc(a["pitazo"])
         eventos.append((t0, 1, i))                       # 1 = apostar
         if a.get("resultado"):
@@ -947,6 +955,8 @@ def simular(apuestas: list[dict]) -> dict:
 # misma. `SAD_CACHE_SIMULACION_S` es la red de seguridad (una hora; 0 apaga).
 SIMULACION_TTL_S = float(__import__("os").environ.get("SAD_CACHE_SIMULACION_S", "3600") or "0")
 _SIM_CACHE: dict[str, tuple] = {}
+_SIM_LOCK = Lock()
+_LIMA = timezone(timedelta(hours=-5))
 
 
 def huella_simulacion() -> tuple:
@@ -976,40 +986,84 @@ def huella_simulacion() -> tuple:
     return (tuple(tuple(f) for f in partes), fx, cu)
 
 
-def simulacion(pagina: int | None = None, por_pagina: int | None = None) -> dict:
-    """Arma las apuestas desde los partes y la base y las simula (con caché por
-    huella). Con `por_pagina`, la lista de apuestas viene paginada (la más nueva
-    primero) y la gráfica sale de `linea` + `estrategias[].serie`: la cuenta es
-    la misma, solo se manda menos (13/11/2026, usuario: «esa página demora mucho
-    en cargarse, se cargan muchos partidos… poner # de páginas»)."""
-    import time as _t
+def _resultado_simulacion() -> dict:
     if SIMULACION_TTL_S <= 0:
-        out = _simulacion()
-    else:
+        return _simulacion()
+    # El calentamiento y las peticiones comparten el resultado de cada huella.
+    with _SIM_LOCK:
         huella = huella_simulacion()
         hit = _SIM_CACHE.get("v")
-        if hit and hit[0] == huella and _t.monotonic() - hit[1] < SIMULACION_TTL_S:
-            out = hit[2]
-        else:
-            out = _simulacion()
-            _SIM_CACHE["v"] = (huella, _t.monotonic(), out)
-    return paginar(out, pagina, por_pagina) if por_pagina else out
+        if hit and hit[0] == huella and time.monotonic() - hit[1] < SIMULACION_TTL_S:
+            return hit[2]
+        out = _simulacion()
+        _SIM_CACHE["v"] = (huella, time.monotonic(), out)
+        return out
 
 
-def paginar(out: dict, pagina: int | None, por_pagina: int) -> dict:
-    """Una página de `apuestas` (sin tocar la salida en caché) más `linea`: lo
-    mínimo de cada partido cerrado, en el orden de `estrategias[].serie`, para
-    la gráfica y su tooltip sin mandar las ~400 apuestas con sus 13 series."""
-    todas = out["apuestas"]
+def _sin_tildes(texto: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if not unicodedata.combining(c))
+
+
+def _filtrar(todas: list[dict], q: str | None, desde: date | None, hasta: date | None) -> list[dict]:
+    terminos = re.findall(r"[^\W_]+", _sin_tildes(q or ""))
+    if not (terminos or desde or hasta):
+        return todas
+    filtradas = []
+    for apuesta in todas:
+        if terminos:
+            partido = apuesta["partido"]
+            texto = _sin_tildes(" ".join(partido[c] for c in ("local", "visita", "liga")))
+            if not all(t in texto for t in terminos):
+                continue
+        if desde or hasta:
+            dia = _utc(apuesta["pitazo"]).astimezone(_LIMA).date()
+            if (desde and dia < desde) or (hasta and dia > hasta):
+                continue
+        filtradas.append(apuesta)
+    return filtradas
+
+
+def _pagina(todas: list[dict], pagina: int | None, por_pagina: int) -> dict:
     por_pagina = max(1, int(por_pagina))
     paginas = max(1, math.ceil(len(todas) / por_pagina))
     pagina = min(max(1, int(pagina or 1)), paginas)
-    cerradas = [a for a in reversed(todas) if a["estado"] == "cerrada"]
-    return {**out, "apuestas": todas[(pagina - 1) * por_pagina: pagina * por_pagina],
-            "paginacion": {"pagina": pagina, "porPagina": por_pagina, "total": len(todas), "paginas": paginas},
-            "linea": [{"fixtureId": a["fixtureId"], "pitazo": a["pitazo"], "local": a["partido"]["local"],
-                       "visita": a["partido"]["visita"], "resultado": a["resultado"],
-                       "sad": (a.get("versiones") or {}).get("sad-analysis") or ""} for a in cerradas]}
+    return {"apuestas": todas[(pagina - 1) * por_pagina: pagina * por_pagina],
+            "paginacion": {"pagina": pagina, "porPagina": por_pagina, "total": len(todas), "paginas": paginas}}
+
+
+def _linea(todas: list[dict]) -> list[dict]:
+    return [{"fixtureId": a["fixtureId"], "pitazo": a["pitazo"], "local": a["partido"]["local"],
+             "visita": a["partido"]["visita"], "resultado": a["resultado"],
+             "sad": (a.get("versiones") or {}).get("sad-analysis") or ""}
+            for a in reversed(todas) if a["estado"] == "cerrada"]
+
+
+def paginar(out: dict, pagina: int | None, por_pagina: int) -> dict:
+    return {**out, **_pagina(out["apuestas"], pagina, por_pagina), "linea": _linea(out["apuestas"])}
+
+
+def simulacion(pagina: int | None = None, por_pagina: int | None = None, *,
+               q: str | None = None, desde: date | None = None, hasta: date | None = None,
+               solo_apuestas: bool = False, solo_resumen: bool = False,
+               fixture_id: int | None = None) -> dict:
+    """El historial básico se arma sin calcular las series. El detalle usa la banca global."""
+    if solo_apuestas and fixture_id is None:
+        apuestas, _, _ = _insumos(q=q, desde=desde, hasta=hasta)
+        return _pagina([_fila_apuesta(a)[0] for a in reversed(sorted(
+            apuestas, key=lambda a: (a["pitazo"], a["fixtureId"])))], pagina, por_pagina or 20)
+    out = _resultado_simulacion()
+    if solo_resumen:
+        return {**{k: v for k, v in out.items() if k != "apuestas"}, "linea": _linea(out["apuestas"])}
+    todas = _filtrar(out["apuestas"], q, desde, hasta)
+    if solo_apuestas:
+        if fixture_id is not None:
+            todas = [a for a in todas if a["fixtureId"] == fixture_id]
+        return _pagina(todas, pagina, por_pagina or 20)
+    if por_pagina:
+        return {**out, **_pagina(todas, pagina, por_pagina), "linea": _linea(out["apuestas"])}
+    if todas is not out["apuestas"]:
+        return {**out, "apuestas": todas}
+    return out
 
 
 # EL MARCADOR MÁS PROBABLE de cada partido (13/11/2026): el del modelo de
@@ -1062,8 +1116,8 @@ def _burbuja_elegido(fx, elegido: str) -> dict | None:
     return _BURBUJA_ELEGIDO[clave]
 
 
-def _simulacion() -> dict:
-    """Arma las apuestas desde los partes y la base y las simula."""
+def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | None = None) -> tuple:
+    """El 1X2 y el resultado se leen sin pedir las historias del modelo de goles."""
     from backend.analisis.parte import _conectar
     with _conectar() as con:
         filas = con.execute(
@@ -1080,22 +1134,30 @@ def _simulacion() -> dict:
                 "JOIN teams at ON at.id=f.away_team_id LEFT JOIN leagues l ON l.id=f.league_id "
                 f"WHERE f.id IN ({','.join('?' * len(ids))})", tuple(ids)):
             fx[r["id"]] = r
+    inicio = _utc(DESDE)
+    candidatos = []
+    for r in fx.values():
+        pitazo = _utc(r["date"])
+        if pitazo and pitazo >= inicio:
+            candidatos.append({
+                "fixtureId": r["id"], "pitazo": pitazo.strftime("%Y-%m-%d %H:%M:%S"),
+                "partido": {"local": r["home_name"], "visita": r["away_name"], "liga": r["liga"] or ""},
+            })
+    candidatos = {p["fixtureId"]: p for p in _filtrar(candidatos, q, desde, hasta)}
+    ids = list(candidatos)
     reales = _vered.resultados(ids)
     mercados = cuotas_mercado(ids)
     copas = copas_nacionales(ids)
-    desde = _utc(DESDE)
     apuestas, excluidos = [], []
     for f in filas:
         fid = f["fixture_id"]
-        r = fx.get(fid)
-        pitazo = _utc(r["date"]) if r else None
-        if not r or not pitazo or pitazo < desde:
+        candidato = candidatos.get(fid)
+        if candidato is None:
             continue
-        partido = {"local": r["home_name"], "visita": r["away_name"], "liga": r["liga"] or ""}
+        r = fx[fid]
 
         def fuera(motivo: str):
-            excluidos.append({"fixtureId": fid, "pitazo": pitazo.strftime("%Y-%m-%d %H:%M:%S"),
-                              "partido": partido, "motivo": motivo})
+            excluidos.append({**candidato, "motivo": motivo})
 
         if (r["status_short"] or "") in ("PST", "CANC", "ABD"):
             fuera("partido aplazado, cancelado o suspendido")
@@ -1126,11 +1188,8 @@ def _simulacion() -> dict:
             continue
         momento = f["deposito_previo_en"]
         mercado_pct = {k: round(m["prob"][k], 1) for k in CLAVES}
-        alerta = None
-        if pitazo >= _utc(ALERTA_DESDE):
-            alerta = alerta_confianza(probs, mercado_pct, _burbuja_elegido(r, _elegido(_normalizar(probs))))
         apuestas.append({
-            "fixtureId": fid, "pitazo": pitazo.strftime("%Y-%m-%d %H:%M:%S"), "partido": partido,
+            **candidato,
             "depositadoEn": momento,
             "versiones": {s: version_al(s, momento) for s in SKILLS},
             "versionPrompt": f["version"] or parte.get("version") or "",
@@ -1138,12 +1197,22 @@ def _simulacion() -> dict:
             "cuotas": {k: round(m["cuota"][k], 3) for k in CLAVES},
             "mercado": mercado_pct,
             "resultado": reales.get(fid),
-            "alerta": alerta,
-            # el marcador más probable del modelo de goles contra el elegido (13/11/2026)
-            "marcador": marcador_de(r, _elegido(_normalizar(probs))),
             # el semáforo del elegido con el mercado SIN redondear (11/11/2026)
             "semaforo": _sem.del_parte(parte, m["prob"]),
         })
+    return apuestas, excluidos, fx
+
+
+def _simulacion() -> dict:
+    """Completa las señales costosas y simula la banca sobre toda la historia."""
+    apuestas, excluidos, fx = _insumos()
+    inicio_alerta = _utc(ALERTA_DESDE)
+    for a in apuestas:
+        r = fx[a["fixtureId"]]
+        elegido = _elegido(_normalizar(a["probabilidades"]))
+        a["alerta"] = (alerta_confianza(a["probabilidades"], a["mercado"], _burbuja_elegido(r, elegido))
+                       if _utc(a["pitazo"]) >= inicio_alerta else None)
+        a["marcador"] = marcador_de(r, elegido)
     out = simular(apuestas)
     out["excluidos"] = sorted(excluidos, key=lambda x: x["pitazo"], reverse=True)
     out["nota"] = ("simulación sobre los 1X2 declarados en los partes, desde los partidos del 28/10/2026 "

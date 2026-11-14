@@ -24,8 +24,11 @@ export interface RequestOpts {
 
 export async function apiGet<T>(path: string, opts: RequestOpts = {}): Promise<T> {
   const ctrl = new AbortController()
-  const timeout = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? 10_000)
-  opts.signal?.addEventListener('abort', () => ctrl.abort(), { once: true })
+  const limite = new ApiError(408, 'El servidor tardó demasiado en responder. Puedes reintentar.')
+  const timeout = setTimeout(() => ctrl.abort(limite), opts.timeoutMs ?? 10_000)
+  const cancelar = () => ctrl.abort(opts.signal?.reason)
+  if (opts.signal?.aborted) cancelar()
+  else opts.signal?.addEventListener('abort', cancelar, { once: true })
   try {
     const headers: Record<string, string> = { Accept: 'application/json' }
     if (token()) headers.Authorization = `Bearer ${token()}`
@@ -40,8 +43,12 @@ export async function apiGet<T>(path: string, opts: RequestOpts = {}): Promise<T
       throw new ApiError(res.status, `GET ${path} → ${res.status} ${res.statusText}`, body)
     }
     return (await res.json()) as T
+  } catch (error) {
+    if (ctrl.signal.reason === limite) throw limite
+    throw error
   } finally {
     clearTimeout(timeout)
+    opts.signal?.removeEventListener('abort', cancelar)
   }
 }
 

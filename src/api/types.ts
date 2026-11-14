@@ -1429,6 +1429,10 @@ export interface JugadorParte {
   motivo?: string
   /** true = entró a la tabla F1 desde `fuera`, para que su baja pese en el IP. */
   soloBaja?: boolean
+  /** solo lectura: titular del once oficial sin fila en la tabla (1068, 1400); eco en el POST. */
+  delOnceOficial?: boolean
+  /** solo lectura: la sumó la app al leer; si vuelve en el POST se descarta y se recalcula (1404). */
+  agregadaPorLaApp?: boolean
   /** dónde apareció en la hoja del partido, una vez resuelto el once. */
   hoja?: 'titular' | 'banca' | 'fuera' | 'duplicado'
   /** casó por la inicial de una primera pila que la tabla no escribe («O. Arias» = «Nahuel Arias», 1077). */
@@ -3044,6 +3048,24 @@ export interface SimulacionApuesta {
   porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
   apuestas: ApuestaSimulada[]
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]
+}
+
+export type SimulacionResumen = Omit<SimulacionApuesta, 'apuestas' | 'paginacion' | 'linea'> & {
+  linea: NonNullable<SimulacionApuesta['linea']>
+}
+
+export type SimulacionApuestasPagina = {
+  apuestas: ApuestaSimulada[]
+  paginacion: NonNullable<SimulacionApuesta['paginacion']>
+}
+
+export type SimulacionApuestasParams = {
+  pagina: number
+  porPagina: number
+  q?: string
+  desde?: string
+  hasta?: string
+  fixtureId?: number
 }
 
 /** Una fila de la ventaja por fuerza: cuánto NO gana con 1 o 2+ de ventaja al descanso (0-1). */

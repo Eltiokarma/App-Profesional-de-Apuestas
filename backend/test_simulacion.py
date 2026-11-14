@@ -378,6 +378,29 @@ check("y un 1X2 re-depositado (aunque no cambie la fecha de actualización)",
       _q(sim.simulacion()) == _q(_sin_cache()) and len(_llamadas) == 3, len(_llamadas))
 sim._simulacion = _orig_sim
 
+# El historial se puede buscar con la banca aún por calcular; el detalle
+# entrega la misma fila que habría enviado la proyección completa.
+from datetime import date as _date  # noqa: E402
+_esperada = sim.simulacion()["apuestas"][0]
+_consulta = " ".join([_esperada["partido"]["visita"], _esperada["partido"]["local"]]).upper()
+_dia = (sim._utc(_esperada["pitazo"]).astimezone(sim._LIMA)).date()
+_marca = sim.marcador_de
+_marcadores = []
+sim.marcador_de = lambda *args: (_marcadores.append(1), _marca(*args))[1]
+try:
+    _hist = sim.simulacion(solo_apuestas=True, q=_consulta, desde=_dia, hasta=_dia)
+finally:
+    sim.marcador_de = _marca
+check("historial: filtra ambos equipos y día de Lima sin calcular marcadores ni banca",
+      not _marcadores and set(_hist) == {"apuestas", "paginacion"}
+      and any(row["fixtureId"] == _esperada["fixtureId"] for row in _hist["apuestas"])
+      and all(not row["porEstrategia"] for row in _hist["apuestas"]), _hist["paginacion"])
+check("historial: día sin partidos devuelve una página vacía",
+      sim.simulacion(solo_apuestas=True, desde=_date(2026, 10, 27), hasta=_date(2026, 10, 27))["apuestas"] == [])
+_detalle = sim.simulacion(solo_apuestas=True, fixture_id=_esperada["fixtureId"])
+check("historial: el detalle conserva la apuesta calculada sobre toda la banca",
+      _detalle["apuestas"] == [_esperada])
+
 # el prefiltro de mercados en SQL no cambia ninguna cuota: lo mismo que filtrar todo en Python
 from backend.analisis import lecciones as _lec  # noqa: E402
 from backend import db as _saddb  # noqa: E402
