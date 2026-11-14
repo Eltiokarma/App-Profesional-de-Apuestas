@@ -4829,6 +4829,20 @@ def main():
           _m1350.get("momento") == "conocido" and _m1350.get("motivosTardios") == ["sistema: la apertura dice '4-4-2' y salió 5-4-1"]
           and "ya estaba en el once del último depósito" in _m1350["detalle"]
           and _m1350b.get("momento") == "tardio", (_m1350, _m1350b))
+    # 1403 (Eslovenia 1545654): el rol contra el grid corregido después del pitazo es tardío como el sistema
+    _m1403 = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
+                    "motivos": ["sistema: la apertura dice '4-4-2' y salió 5-3-2",
+                                "rol: Zaletel: la apertura lo pone en 2:4 y la ficha en 2:2"]}],
+                  _fx480, "2026-10-25 15:45:00")[0]
+    _m1403b = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
+                     "motivos": ["rol: Zaletel: la apertura lo pone en 2:4 y la ficha en 2:2",
+                                 "once: 3 titulares que no estaban en el XI de referencia"]}],
+                   _fx480, "2026-10-25 15:45:00")[0]
+    check("1403: con el grid corregido después del pitazo, sistema + rol sigue `tardio`; con otro motivo "
+          "(once) que ya estaba, `conocido` y el rol va en motivosTardios",
+          _m1403.get("momento") == "tardio" and _m1403b.get("momento") == "conocido"
+          and _m1403b.get("motivosTardios") == ["rol: Zaletel: la apertura lo pone en 2:4 y la ficha en 2:2"],
+          (_m1403, _m1403b))
     # 1189 (Mushuc Runa–Manta): el momento del lado b sale del once de b, no de
     # la corrección del once de a
     _once_b = [{"team": {"id": 990482}, "formation": "4-4-2", "coach": {"name": "DT2"},
