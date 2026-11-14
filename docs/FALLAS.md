@@ -226,6 +226,7 @@ Tres lugares donde vive una guardia:
 - **Síntoma:** el dato llega mal.
 - **Casos** (279 incidencias): dos fixtures del mismo partido, cuotas incoherentes (Marathonbet), mojibake en los nombres, el grid de la API equivocado, `/coachs` atrasado, alineaciones que no llegan (deuda 5).
 - **Guardia:**
+  - **El arquero de la hoja es arquero:** una casilla del grid fuera de la fila 1 no convierte en defensa a quien la API da con posición G (`f1_base._lineas_por_grid`, 1413: A. Martín Arias de Nacional entraba a la F1 como DEF). Test en `backend/test_cowork.py`.
   - `cuota_mercados.casas_dos_salidas_incoherentes`;
   - `cuota_mercados.historial_util`: el historial de cuotas es el de ESTE partido (21 días antes del pitazo, desde la primera captura con 3 casas) y una cuota ≤ 1,00 no es cuota (765, 779, 829);
   - `nombres.limpiar_nombre`;
