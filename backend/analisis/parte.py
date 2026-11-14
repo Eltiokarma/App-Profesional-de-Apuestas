@@ -6680,7 +6680,13 @@ def _choques(filas) -> dict[int, dict[int, str]]:
         return {}
     margen = timedelta(hours=HORAS_CHOQUE)
     desde = (datetime.strptime(min(fechas)[:19], "%Y-%m-%d %H:%M:%S") - margen).strftime("%Y-%m-%d %H:%M:%S")
-    hasta = (datetime.strptime(max(fechas)[:19], "%Y-%m-%d %H:%M:%S") + margen).strftime("%Y-%m-%d %H:%M:%S")
+    # EL TOPE LLEVA LOS MICROSEGUNDOS (14/11/2026, incidencia 1414, Alianza
+    # Atlético y Sporting Cristal): la base guarda «2026-11-15 21:00:00.000000» y
+    # el tope «2026-11-15 21:00:00» es MENOR como texto, así que el partido a 24 h
+    # justas del último de la ventana quedaba fuera de la consulta. Con la agenda
+    # filtrada a una liga (los cuatro de Perú a las 21:00) el conflicto salía vacío
+    # mientras predicciones/tde, que comparan fechas, lo marcaban.
+    hasta = (datetime.strptime(max(fechas)[:19], "%Y-%m-%d %H:%M:%S") + margen).strftime("%Y-%m-%d %H:%M:%S") + ".999999"
     marcas = ",".join("?" * len(equipos))
     otros = saddb.query(
         "sad",

@@ -83,7 +83,8 @@ def _partidos(team_id: int, desde: str, hasta: str) -> list[dict]:
               AND {_GH} IS NOT NULL AND {_GA} IS NOT NULL
               AND f.date >= ? AND f.date <= ?{ajeno}
             ORDER BY f.date ASC LIMIT ?""",
-        (team_id, team_id, desde, hasta + " 23:59:59", *p_ajeno, MAX_PARTIDOS),
+        # con los microsegundos de la base: «23:59:59.000000» > «23:59:59» (1414)
+        (team_id, team_id, desde, hasta + " 23:59:59.999999", *p_ajeno, MAX_PARTIDOS),
     )
 
 

@@ -620,6 +620,19 @@ _f1398 = {"id": 999, "date": "2099-11-13 23:00:00", "status_short": "NS", "home_
 _ch1398 = _pt1398._choques([_f1398])
 check("1398: el partido de la Copa Perú del homónimo (21 h después) no es un choque de Nacional",
       76 in partido_ajeno.ajenos_del_equipo(NAC) and NAC not in (_ch1398.get(999) or {}), _ch1398)
+# 1414 (14/11/2026, Alianza Atlético–Melgar 1549554): la base guarda la fecha con
+# microsegundos y el partido de la Copa de la Liga a 24 h JUSTAS quedaba fuera del
+# tope de la consulta; con la agenda filtrada a Perú el conflicto salía vacío
+con.execute("INSERT INTO fixtures VALUES (78, '2099-12-02 21:00:00.000000', 'NS', '', ?, 2026, 'Final', ?, ?)",
+            (COL, ONC, JPA))
+con.commit()
+_ch1414 = _pt1398._choques([{"id": 998, "date": "2099-12-01 21:00:00.000000", "status_short": "NS",
+                             "home_team_id": ONC, "away_team_id": NAC, "home_name": "Once Caldas",
+                             "away_name": "Atletico Nacional"}])
+con.execute("DELETE FROM fixtures WHERE id=78")
+con.commit()
+check("1414: el partido a 24 h justas con la fecha en microsegundos es choque aunque sea el último de la ventana",
+      "78" in (_ch1414.get(998) or {}).get(ONC, ""), _ch1414)
 
 # 1371, los lectores (al final: las columnas de goles cambian la forma de la tabla)
 for _col in ("goals_home", "goals_away", "fulltime_home", "fulltime_away", "venue_city"):
