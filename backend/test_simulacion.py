@@ -541,10 +541,10 @@ check("escalón 60: separa pero la plana de las puntas pierde → sin contacto",
 # FUERA DEL MEDIO, CÓMO SE PONE LA PLATA (14/11/2026, usuario: «estamos poniendo
 # mal la plata»): la martingala busca un TERCIO de la deuda por apuesta y la
 # proporcional pone el 3 % de la banca sin mirar lo que pasó antes
-check("martingalaFueraMedio y fueraMedio3 no apuestan en el medio (el 32 y el 33)",
-      _ef["martingalaFueraMedio"]["apuestas"] == 3 and _ef["fueraMedio3"]["apuestas"] == 3
+check("martingalaFueraMedio y mixtaFueraMedio no apuestan en el medio (el 32 y el 33)",
+      _ef["martingalaFueraMedio"]["apuestas"] == 3 and _ef["mixtaFueraMedio"]["apuestas"] == 3
       and _ff[32]["porEstrategia"]["martingalaFueraMedio"]["motivo"].endswith("en el medio (45-60 %)")
-      and _ff[32]["porEstrategia"]["fueraMedio3"]["motivo"].endswith("en el medio (45-60 %)"))
+      and _ff[32]["porEstrategia"]["mixtaFueraMedio"]["motivo"].endswith("en el medio (45-60 %)"))
 check("la del tope del 25 % salió", "martingalaFueraMedioTope" not in _ef and not hasattr(sim, "TOPE_MARTINGALA"))
 # con cuota 1,10 y dos derrotas: 1 → 1 + (1/3)/0,1 = 4,33 → 1 + (5,33/3)/0,1 = 18,78.
 # Antes (toda la deuda) eran 1 → 11 → 121 (88 por la plata libre): el tercio
@@ -562,12 +562,22 @@ check("recupera ⅓: 1 → 4,33 → 18,78 con cuota 1,10, y el acierto descuenta
       _m == [1.0, 4.3333, 18.7777]
       and _et["martingalaFueraMedio"]["lineas"]["perdidaMayor"] == round(_m[0] + _m[1] - _m[2] * 0.1, 2) == 3.46,
       (_m, _et["martingalaFueraMedio"]["lineas"]))
-_p = [_ft[k]["fueraMedio3"]["monto"] for k in (41, 42, 43)]
-check("fueraMedio3: el 3 % de la banca cobrada (100 → 97 → 94,09), gane o pierda antes",
-      _p == [3.0, 2.91, round(0.03 * 94.09, 4)] and _et["fueraMedio3"]["tramos"] is None
-      and _et["fueraMedio3"]["lineas"] is None, (_p, _et["fueraMedio3"]))
-check("las cifras fijadas: ⅓ de la deuda y 3 % de la banca",
-      sim.RECUPERA_FUERA_MEDIO == 1 / 3 and sim.PROPORCION_FUERA_MEDIO == 0.03)
+_p = [_ft[k]["mixtaFueraMedio"]["monto"] for k in (41, 42, 43)]
+check("mixtaFueraMedio con el favorito (cuota 1,10): el 3 % de la banca cobrada (100 → 97 → 94,09)",
+      _p == [3.0, 2.91, round(0.03 * 94.09, 4)] and _et["mixtaFueraMedio"]["tramos"] is None
+      and _et["mixtaFueraMedio"]["lineas"] is None, (_p, _et["mixtaFueraMedio"]))
+# con la sorpresa (cuota 2,50) apuesta lo que gana el 3 %: 3 / 1,5 = 2 u, y gana 3
+def _aps(fid, pit, res):
+    a = _apf(fid, pit, res, 30)
+    a["probabilidades"] = {"local": 45.0, "empate": 30.0, "visita": 25.0}
+    a["cuotas"] = {"local": 2.5, "empate": 3.2, "visita": 3.6}
+    a["mercado"] = {"local": 38.0, "empate": 31.0, "visita": 31.0}
+    return a
+_os = {e["clave"]: e for e in sim.simular([_aps(51, "2026-11-14 15:00:00", "local")])["estrategias"]}
+check("mixtaFueraMedio con la sorpresa (cuota 2,50): apuesta 2 u para ganar 3 (el 3 % de 100)",
+      _os["mixtaFueraMedio"]["apostado"] == 2.0 and _os["mixtaFueraMedio"]["banca"] == 103.0, _os["mixtaFueraMedio"])
+check("las cifras fijadas: ⅓ de la deuda y la mixta al 3 %",
+      sim.RECUPERA_FUERA_MEDIO == 1 / 3 and sim.MIXTA_FUERA_MEDIO == 0.03 and not hasattr(sim, "PROPORCION_FUERA_MEDIO"))
 check("el criterio está fijado (medio 45-60 %, 30 · 60, 5 pts)",
       sim.MEDIO == (45.0, 60.0) and sim.MEDIO_ESCALONES == (30, 60) and sim.MEDIO_SEPARACION == 0.05)
 from backend import contacto as _ctf  # noqa: E402

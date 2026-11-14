@@ -138,10 +138,23 @@ MEDIO_SEPARACION = 0.05   # pts de ventaja (acierto − lo que pide la cuota) de
 #   recupera 1/3         150,0 u · caída  7,9 % · apuesta máx  16 ·                             2,2 %
 #   proporcional al 3 %  199,1 u · caída 24,4 % · apuesta máx   7 ·                             2,1 %
 # (1/2 daba 160,1 · 8,4 % · 28 · 4,3 %; 1/4, 144,6 · 7,5 % · 12 · 1,8 %).
-# Se corren las dos: la del tercio y la proporcional; la del tope del 25 %
-# salió (no evitaba el pozo: recortaba la apuesta y la línea seguía cargada).
+# La del tope del 25 % salió (no evitaba el pozo: recortaba la apuesta y la
+# línea seguía cargada).
+# EL ORDEN DE LAS APUESTAS (14/11/2026, usuario: «el nuevo método tiene que ver
+# con tener cuidado con el orden de las apuestas»): con los mismos 240
+# partidos, barajando 1000 veces qué partido cae en qué horario (aciertos y
+# cuotas reales), la que recuperaba todo quebraba en el 10,7 % de los órdenes;
+# toda martingala depende del orden. La MIXTA no: en el favorito (cuota ≤ 2)
+# pone el X % de la banca y en la sorpresa lo que GANA ese X %, X / (cuota − 1).
+#   barajado: banca típica · 10 % peor · caída típica · 10 % peor · 1 % peor · bajo 100 u
+#   martingala ⅓ (1 u)   149 · 137 · 11,8 % · 23,4 % · 53,4 % · 0,9 %
+#   mixta 2 %            150 · 148 · 13,5 % · 19,2 % · 25,6 % · 0 %
+#   mixta 3 %            179 · 176 · 19,8 % · 27,8 % · 36,4 % · 0 %
+#   mixta 4 %            212 · 205 · 25,8 % · 35,8 % · 46,8 % · 0 %
+#   proporcional 3 %     198 · 191 · 25,8 % · 34,7 % · 46,8 % · 0 %
+# El usuario eligió la mixta al 3 %, al lado de la martingala ⅓ para comparar.
 RECUPERA_FUERA_MEDIO = 1 / 3       # la parte de la deuda de la línea que busca cada apuesta
-PROPORCION_FUERA_MEDIO = 0.03      # la proporcional fuera del medio: 3 % de la banca
+MIXTA_FUERA_MEDIO = 0.03           # la mixta fuera del medio: 3 % de la banca (o lo que gana el 3 %)
 
 ESTRATEGIAS = (
     ("proporcional", "Proporcional con freno",
@@ -203,15 +216,16 @@ ESTRATEGIAS = (
     ("martingalaFueraMedio", "Martingala fuera del medio, recupera ⅓",
      f"por líneas, sin apostar cuando la casa le da al elegido entre {MEDIO[0]:g} % y {MEDIO[1]:g} %; tras perder "
      "apuesta 1 + (lo perdido en la línea / 3) / (cuota − 1): cada acierto descuenta lo que gana de la deuda"),
-    ("fueraMedio3", f"Fuera del medio al {100 * PROPORCION_FUERA_MEDIO:g} %",
-     f"{100 * PROPORCION_FUERA_MEDIO:g} % de la banca a nuestro elegido, sin apostar cuando la casa le da entre "
-     f"{MEDIO[0]:g} % y {MEDIO[1]:g} % y sin freno: no mira lo que pasó antes, así que sube y baja con el control"),
+    ("mixtaFueraMedio", f"Mixta fuera del medio al {100 * MIXTA_FUERA_MEDIO:g} %",
+     f"al favorito (cuota hasta 2) el {100 * MIXTA_FUERA_MEDIO:g} % de la banca; a la sorpresa, lo que gana ese "
+     f"{100 * MIXTA_FUERA_MEDIO:g} %: {100 * MIXTA_FUERA_MEDIO:g} % / (cuota − 1). Sin apostar cuando la casa le da "
+     f"entre {MEDIO[0]:g} % y {MEDIO[1]:g} % y sin freno: no mira lo que pasó antes, así que no depende del orden"),
 )
 _MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaFueraMedio")
 # las que, tras perder, apuestan lo que recupera según la cuota (no duplican)
 _AJUSTADAS = ("martingala60Ajustada", "martingalaFueraMedio")
 # las que no apuestan en el medio (lo que la casa le da al elegido, 45-60 %)
-_FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "fueraMedio3")
+_FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "mixtaFueraMedio")
 # las ajustadas que buscan solo una parte de la deuda de la línea en cada apuesta
 _RECUPERA_PARTE = {"martingalaFueraMedio": RECUPERA_FUERA_MEDIO}
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
@@ -732,10 +746,11 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             c = fila["cuotas"][sel]
             parte = _RECUPERA_PARTE.get(clave, 1.0)
             previsto = UNIDAD + (parte * linea["perdida"] / (c - 1) if c > 1 else 0.0)
-    elif clave == "fueraMedio3":
+    elif clave == "mixtaFueraMedio":
         sel = fila["elegido"]
-        # la banca de AHORA (lo cobrado), como el método
-        previsto = PROPORCION_FUERA_MEDIO * e["banca"]
+        c = fila["cuotas"][sel]
+        # la banca de AHORA (lo cobrado), como el método; con cuota > 2, lo que gana el X %
+        previsto = MIXTA_FUERA_MEDIO * e["banca"] * (min(1.0, 1 / (c - 1)) if c > 1 else 0.0)
     elif clave == "plana60":
         sel = fila["elegido"]
         previsto = UNIDAD if fila["probabilidades"][sel] >= CONFIANZA_ALTA else 0.0
@@ -748,7 +763,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             motivo = "sin plata libre"
         elif clave in _SOLO_ALTA:
             motivo = f"bajo {CONFIANZA_ALTA:g} %"
-        elif clave in _CON_FRENO or clave == "fueraMedio3":
+        elif clave in _CON_FRENO or clave == "mixtaFueraMedio":
             motivo = "banca en cero"
         else:
             motivo = "sin ventaja"

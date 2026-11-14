@@ -1148,19 +1148,19 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    ]
   },
   {
-   "clave": "fueraMedio3",
-   "nombre": "Fuera del medio al 3 %",
-   "descripcion": "3 % de la banca a nuestro elegido, sin apostar cuando la casa le da entre 45 % y 60 % y sin freno: no mira lo que pasó antes, así que sube y baja con el control",
-   "banca": 97.48,
-   "ganancia": -2.52,
-   "apostado": 9.12,
+   "clave": "mixtaFueraMedio",
+   "nombre": "Mixta fuera del medio al 3 %",
+   "descripcion": "al favorito (cuota hasta 2) el 3 % de la banca; a la sorpresa, lo que gana ese 3 %: 3 % / (cuota − 1). Sin apostar cuando la casa le da entre 45 % y 60 % y sin freno: no mira lo que pasó antes, así que no depende del orden",
+   "banca": 98.04,
+   "ganancia": -1.96,
+   "apostado": 7.46,
    "apuestas": 3,
    "ganadas": 1,
-   "roi": -0.2765,
-   "caidaMaxima": 0.0591,
+   "roi": -0.2631,
+   "caidaMaxima": 0.0482,
    "quebro": null,
-   "exposicionMaxima": 3.11,
-   "montoMaximo": 3.11,
+   "exposicionMaxima": 3.09,
+   "montoMaximo": 3.09,
    "lineas": null,
    "tramos": null,
    "serie": [
@@ -1197,32 +1197,32 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900006,
      "pitazo": "2026-10-29 20:00:00",
-     "banca": 103.6
+     "banca": 103.0
     },
     {
      "fixtureId": 900007,
      "pitazo": "2026-11-11 19:00:00",
-     "banca": 103.6
+     "banca": 103.0
     },
     {
      "fixtureId": 900008,
      "pitazo": "2026-11-11 21:00:00",
-     "banca": 100.49
+     "banca": 99.91
     },
     {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
-     "banca": 97.48
+     "banca": 98.04
     },
     {
      "fixtureId": 900012,
      "pitazo": "2026-11-13 19:45:00",
-     "banca": 97.48
+     "banca": 98.04
     },
     {
      "fixtureId": 900013,
      "pitazo": "2026-11-13 21:00:00",
-     "banca": 97.48
+     "banca": 98.04
     }
    ]
   }
@@ -1305,7 +1305,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 0,
      "roi": null
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "apostado": 0.0,
      "ganancia": 0.0,
      "apuestas": 0,
@@ -1390,9 +1390,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 1,
      "roi": 1.2
     },
-    "fueraMedio3": {
-     "apostado": 3.0,
-     "ganancia": 3.6,
+    "mixtaFueraMedio": {
+     "apostado": 2.5,
+     "ganancia": 3.0,
      "apuestas": 1,
      "roi": 1.2
     }
@@ -1475,9 +1475,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 2,
      "roi": -1.0
     },
-    "fueraMedio3": {
-     "apostado": 6.1228,
-     "ganancia": -6.1228,
+    "mixtaFueraMedio": {
+     "apostado": 4.9633,
+     "ganancia": -4.9633,
      "apuestas": 2,
      "roi": -1.0
     }
@@ -2038,11 +2038,11 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 50 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 97.48,
+     "banca": 98.04,
      "linea": null,
      "motivo": "la casa le da 50 % al elegido: en el medio (45-60 %)"
     }
@@ -2205,11 +2205,11 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 97.48,
+     "banca": 98.04,
      "linea": null,
      "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     }
@@ -2372,7 +2372,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": null,
@@ -2548,11 +2548,11 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": 1,
      "motivo": ""
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": "local",
-     "monto": 3.0148,
-     "ganancia": -3.0148,
-     "banca": 97.48,
+     "monto": 1.8733,
+     "ganancia": -1.8733,
+     "banca": 98.04,
      "linea": null,
      "motivo": ""
     }
@@ -2715,11 +2715,11 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": 1,
      "motivo": ""
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": "local",
-     "monto": 3.108,
-     "ganancia": -3.108,
-     "banca": 100.49,
+     "monto": 3.09,
+     "ganancia": -3.09,
+     "banca": 99.91,
      "linea": null,
      "motivo": ""
     }
@@ -2882,11 +2882,11 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 103.6,
+     "banca": 103.0,
      "linea": null,
      "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
     }
@@ -3058,11 +3058,11 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": 1,
      "motivo": ""
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": "local",
-     "monto": 3.0,
-     "ganancia": 3.6,
-     "banca": 103.6,
+     "monto": 2.5,
+     "ganancia": 3.0,
+     "banca": 103.0,
      "linea": null,
      "motivo": ""
     }
@@ -3225,7 +3225,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3397,7 +3397,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3564,7 +3564,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 48 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3736,7 +3736,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 59 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3903,7 +3903,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 47 % al elegido: en el medio (45-60 %)"
     },
-    "fueraMedio3": {
+    "mixtaFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
