@@ -1697,7 +1697,11 @@ def oficial_de(fixture_id: int) -> dict:
         # CON EL GRID COMPLETO, LA LÍNEA DE ATRÁS ES LA FILA 2: la API etiqueta
         # «M» a carrileros y laterales que el grid pone en la línea (UCV, fila 2
         # con cuatro y defensoresOficiales=2, incidencia 137)
-        con_grid = len(xi) >= 10 and all(str(j["grid"] or "").count(":") == 1 for j in xi)
+        # …y con el arquero de la hoja en la fila 1: un grid revuelto (1415,
+        # Nacional–Albion: «E. Ancheta: la apertura lo pone de central y el grid,
+        # en el arco») no se lee como posiciones (ficha_tactica.grid_confiable)
+        from backend.ficha_tactica import grid_confiable
+        con_grid = grid_confiable(xi)
         fuera[lado] = {"formacion": (f["formacion"] if f else "") or "",
                        "titulares": [j["jugador"] or "" for j in xi],
                        "banca": _banca(fixture_id, tid),

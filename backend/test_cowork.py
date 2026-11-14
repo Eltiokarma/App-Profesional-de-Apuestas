@@ -2038,15 +2038,19 @@ def main():
     check("725: con el grid completo la fila manda (2:4 → D aunque la API diga M; la última fila → F)",
           _l725[(1, 1)] == "D" and _l725[(1, 0)] == "G" and _l725[(1, 10)] == "F" and _l725[(1, 5)] == "M", _l725)
     check("725: sin grid completo no se deduce nada", _f725._lineas_por_grid(_xi725[:9]) == {})
-    # 1413 (14/11/2026, Nacional–Albion 1649060): «A. Martín Arias», posición G de la API, con una
-    # casilla de la fila 2: entraba a la F1 como DEF. El arquero de la hoja es arquero
+    # 1413/1415 (14/11/2026, Nacional–Albion 1649060): el grid revuelto (arquero G en la fila 2, un
+    # defensa en 1:1) daba DEF al arquero y «el central en el arco». Ese once no se lee por el grid
+    from backend.ficha_tactica import grid_confiable as _gc1415
     _xi1413 = [dict(j) for j in _xi725]
     _xi1413[0] = {**_xi1413[0], "posicion": "D"}
     _xi1413[1] = {**_xi1413[1], "posicion": "G"}
+    _xi1415ok = [dict(j) for j in _xi725]
+    _xi1415ok[0] = {**_xi1415ok[0], "posicion": "G"}
     _l1413 = _f725._lineas_por_grid(_xi1413)
-    check("1413: la posición G de la hoja manda sobre la fila del grid (arquero en la fila 2 → G); "
-          "los de campo siguen con la fila (725)",
-          _l1413[(1, 1)] == "G" and _l1413[(1, 2)] == "D" and _l1413[(1, 10)] == "F", _l1413)
+    check("1413/1415: con el arquero de la hoja fuera de la fila 1 el grid no se usa (la F1 cae a la posición "
+          "de la API); con el G en 1:1, o sin ningún G en la hoja (725), el grid manda",
+          _l1413 == {} and not _gc1415(_xi1413) and _gc1415(_xi1415ok) and _gc1415(_xi725)
+          and _f725._lineas_por_grid(_xi1415ok)[(1, 0)] == "G", _l1413)
     check("879: el arquero que alterna rota sobre la ventana entera (5 de 10 → TH, no TF)",
           _f725.rol_por_onces(5, _f725.onces_disponible({"convocado": 5, "titular": 5, "posicionHabitual": "G"}, 10))
           == "TH")

@@ -17,6 +17,30 @@ from backend import db
 CARRILES = ("izquierda", "centro", "derecha")
 
 
+def grid_confiable(xi) -> bool:
+    """¿El grid de este once se puede leer como posiciones? UNA regla para todos
+    los lectores (la F1 y el rol contra el grid del DTP). Completo (10+ titulares
+    con «fila:columna») y con el arquero de la hoja en la fila 1: si la API pone
+    al G fuera de la fila 1, o a uno de campo en la 1, el grid está revuelto y no
+    dice nada (14/11/2026, incidencias 1413 y 1415, Nacional–Albion 1649060:
+    E. Ancheta (D) en 1:1 y el arquero A. Martín Arias (G) en 2:3; en Albion el
+    arquero S. Silva en 5:1 y C. Airala (F) en 1:1: la F1 daba DEF al arquero y
+    rolesVsGrid pedía rehacer porque «el central está en el arco»). Sin ningún G
+    en la hoja manda el grid (725: la API etiqueta mal y la fila corrige)."""
+    def _de(j, k):
+        try:
+            return j[k]
+        except (KeyError, IndexError, TypeError):
+            return None
+    grids = [str(_de(j, "grid") or "") for j in xi]
+    if len(xi) < 10 or not all(g.count(":") == 1 and g.split(":")[0].isdigit() for g in grids):
+        return False
+    pos = [(_de(j, "posicion") or "") for j in xi]
+    if "G" not in pos:
+        return True
+    return all((p == "G") == (g.split(":")[0] == "1") for p, g in zip(pos, grids))
+
+
 def _carril(grid: str | None, por_fila: dict[int, int]) -> str | None:
     """Carril a partir del grid, normalizado por cuánta gente hay en su línea:
     un 2:1 en línea de 4 es lateral izquierdo; en línea de 3, central izquierdo.

@@ -188,16 +188,13 @@ def _lineas_por_grid(filas) -> dict:
             continue
         if len(filas_g) < 10 or max(filas_g) < 3:
             continue
+        # EL GRID REVUELTO NO DICE NADA (1413/1415, Nacional–Albion: el arquero
+        # en 2:3 y un defensa en 1:1): ese once se lee por la posición de la API
+        from backend.ficha_tactica import grid_confiable
+        if not grid_confiable(xi):
+            continue
         ult = max(filas_g)
         for j, r in zip(xi, filas_g):
-            # EL ARQUERO DE LA HOJA ES ARQUERO (14/11/2026, incidencia 1413,
-            # Nacional–Albion 1649060): «A. Martín Arias», posición G, llegó con
-            # una casilla de la fila 2 y entraba a la F1 como DEF. Un arquero no
-            # juega de campo: la posición G manda sobre la fila (725 sigue: para
-            # los de campo la fila manda sobre la posición de la API)
-            if (j.get("posicion") if hasattr(j, "get") else j["posicion"]) == "G":
-                out[(fid, j["player_id"])] = "G"
-                continue
             out[(fid, j["player_id"])] = "G" if r == 1 else "D" if r == 2 else "F" if r == ult else "M"
     return out
 
