@@ -538,13 +538,17 @@ _c = _crit_f(100, 58, 60, 30)
 check("escalón 60: +8 pts y la plana de las puntas en positivo → CONFIRMADO", _c["estado"] == "confirmado" and _c["cumple"], _c)
 _c = _crit_f(100, 49, 60, 26)
 check("escalón 60: separa pero la plana de las puntas pierde → sin contacto", _c["estado"] == "sin_contacto", _c)
-# LAS MARTINGALAS FUERA DEL MEDIO (13/11/2026, usuario: «las dos, ármalas con tope»)
-check("martingalaFueraMedio y su tope no apuestan en el medio (el 32 y el 33)",
-      _ef["martingalaFueraMedio"]["apuestas"] == 3 and _ef["martingalaFueraMedioTope"]["apuestas"] == 3
-      and _ff[32]["porEstrategia"]["martingalaFueraMedio"]["motivo"].endswith("en el medio (45-60 %)"))
-# con cuota 1,10 y dos derrotas: sin tope 1 → 1 + 1/0,1 = 11; con tope (25 % de 99 = 24,75)
-# también 11. Tercera: sin tope 1 + 12/0,1 = 121 (recortada por la plata libre a 88);
-# con tope min(121, 25 % de 88) = 22: la línea arrastra lo que no recupera
+# FUERA DEL MEDIO, CÓMO SE PONE LA PLATA (14/11/2026, usuario: «estamos poniendo
+# mal la plata»): la martingala busca un TERCIO de la deuda por apuesta y la
+# proporcional pone el 3 % de la banca sin mirar lo que pasó antes
+check("martingalaFueraMedio y fueraMedio3 no apuestan en el medio (el 32 y el 33)",
+      _ef["martingalaFueraMedio"]["apuestas"] == 3 and _ef["fueraMedio3"]["apuestas"] == 3
+      and _ff[32]["porEstrategia"]["martingalaFueraMedio"]["motivo"].endswith("en el medio (45-60 %)")
+      and _ff[32]["porEstrategia"]["fueraMedio3"]["motivo"].endswith("en el medio (45-60 %)"))
+check("la del tope del 25 % salió", "martingalaFueraMedioTope" not in _ef and not hasattr(sim, "TOPE_MARTINGALA"))
+# con cuota 1,10 y dos derrotas: 1 → 1 + (1/3)/0,1 = 4,33 → 1 + (5,33/3)/0,1 = 18,78.
+# Antes (toda la deuda) eran 1 → 11 → 121 (88 por la plata libre): el tercio
+# no persigue la racha con todo lo que hay en la banca
 def _apt(fid, pit, res):
     a = _apf(fid, pit, res, 80)
     a["cuotas"] = {"local": 1.1, "empate": 8.0, "visita": 15.0}
@@ -553,15 +557,17 @@ _ot = sim.simular([_apt(41, "2026-11-14 15:00:00", "visita"), _apt(42, "2026-11-
                    _apt(43, "2026-11-15 15:00:00", "local")])
 _ft = {a["fixtureId"]: a["porEstrategia"] for a in _ot["apuestas"]}
 _et = {e["clave"]: e for e in _ot["estrategias"]}
-check("con tope: la apuesta no pasa del 25 % de la banca (22 de 88) y la línea arrastra lo que no recuperó",
-      [_ft[k]["martingalaFueraMedioTope"]["monto"] for k in (41, 42, 43)] == [1.0, 11.0, 22.0]
-      and _et["martingalaFueraMedioTope"]["lineas"]["perdidaMayor"] == round(12 - 2.2, 2)
-      and _et["martingalaFueraMedioTope"]["montoMaximo"] == 22.0, ([_ft[k]["martingalaFueraMedioTope"] for k in (41, 42, 43)],
-                                                                   _et["martingalaFueraMedioTope"]["lineas"]))
-check("…y sin tope apuesta todo lo libre (88 de las 121 que pedía): recupera 8,8 y le quedan 3,2",
-      [_ft[k]["martingalaFueraMedio"]["monto"] for k in (41, 42, 43)] == [1.0, 11.0, 88.0]
-      and _et["martingalaFueraMedio"]["lineas"]["perdidaMayor"] == 3.2, [_ft[k]["martingalaFueraMedio"] for k in (41, 42, 43)])
-check("el tope está fijado en el 25 % de la banca", sim.TOPE_MARTINGALA == 0.25)
+_m = [_ft[k]["martingalaFueraMedio"]["monto"] for k in (41, 42, 43)]
+check("recupera ⅓: 1 → 4,33 → 18,78 con cuota 1,10, y el acierto descuenta lo que gana (5,33 − 1,88 = 3,46)",
+      _m == [1.0, 4.3333, 18.7777]
+      and _et["martingalaFueraMedio"]["lineas"]["perdidaMayor"] == round(_m[0] + _m[1] - _m[2] * 0.1, 2) == 3.46,
+      (_m, _et["martingalaFueraMedio"]["lineas"]))
+_p = [_ft[k]["fueraMedio3"]["monto"] for k in (41, 42, 43)]
+check("fueraMedio3: el 3 % de la banca cobrada (100 → 97 → 94,09), gane o pierda antes",
+      _p == [3.0, 2.91, round(0.03 * 94.09, 4)] and _et["fueraMedio3"]["tramos"] is None
+      and _et["fueraMedio3"]["lineas"] is None, (_p, _et["fueraMedio3"]))
+check("las cifras fijadas: ⅓ de la deuda y 3 % de la banca",
+      sim.RECUPERA_FUERA_MEDIO == 1 / 3 and sim.PROPORCION_FUERA_MEDIO == 0.03)
 check("el criterio está fijado (medio 45-60 %, 30 · 60, 5 pts)",
       sim.MEDIO == (45.0, 60.0) and sim.MEDIO_ESCALONES == (30, 60) and sim.MEDIO_SEPARACION == 0.05)
 from backend import contacto as _ctf  # noqa: E402

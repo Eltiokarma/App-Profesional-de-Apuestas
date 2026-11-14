@@ -278,14 +278,47 @@ el criterio SÍ mira la cuota, porque el hallazgo es ese:
 | **30** | `prometedor` si las puntas le sacan **5+ pts** de ventaja al medio |
 | **60** | `confirmado` con 5+ pts y la plana de las puntas en positivo y sobre la del medio; si no, `sin_contacto` |
 
-Con las mismas puntas corren dos martingalas AJUSTADAS A LA CUOTA (pedido del
-usuario, 13/11): **`martingalaFueraMedio`** y **`martingalaFueraMedioTope`**
-(ninguna apuesta pasa del 25 % de la banca, `simulacion.TOPE_MARTINGALA`; si el
-tope recorta, la línea arrastra lo que no recuperó). Reconstruida sobre 231
-cerradas fuera del medio (28/10-13/11): +105,6 u con 100 u (ROI +15,9 %), sin
-quebrar, pero con una apuesta de 75 u en la peor racha; la misma en TODOS los
-partidos quebraba con 200 u. Fuera del medio entra la punta de cuota alta, que
-recupera una racha con poco.
+Con las mismas puntas corrían dos martingalas AJUSTADAS A LA CUOTA (pedido del
+usuario, 13/11): `martingalaFueraMedio`, que en cada apuesta buscaba TODA la
+deuda de la línea, y la misma con un tope del 25 % de la banca.
+
+### Cómo se pone la plata fuera del medio (14/11/2026)
+
+El usuario: «viendo que el control seguía creciendo, es evidente que estamos
+poniendo mal la plata». La ajustada cayó de 117,66 a 92,18 en UN partido
+(2 de Mayo – Sportivo Trinidense, 03/11) con el control subiendo. No era un
+error de cuenta: la línea 9 venía de cinco derrotas (Feyenoord a 1,15,
+Peñarol, Caracas, Huachipato, Elche: deuda 1 → 29 u), repartidas entre ~70
+partidos que las otras líneas ganaban; la sexta fue de 25,49 u (deuda 54 u) y
+se rescató con 90 u a cuota 1,35 y 104 u a cuota 1,23. Una martingala no
+sigue al control: en el mismo partido ganan o pierden juntas, pero ella pone
+20-30 veces más cuando su línea arrastra deuda.
+
+Backtest sobre los mismos 240 partidos fuera del medio de producción
+(28/10-13/11, 100 u, cuota = media de las casas; la reconstrucción da las
+bancas de producción al centavo). «Cae con el control subiendo» = la peor
+caída entre dos momentos en que la plana fuera del medio no bajó:
+
+| cómo se pone | banca | caída máx | apuesta máx | cae con el control subiendo |
+|---|---|---|---|---|
+| plana 1 u (control) | 126,1 | 6,7 % | 1,0 | — |
+| ajustada, toda la deuda (la de antes) | 207,3 | 27,2 % | 104,0 | **27,2 %** |
+| ajustada, deuda solo con las sorpresas (cuota ≥ 1,6) | 184,5 | 14,6 % | 10,1 | 7,9 % |
+| ajustada, recupera ½ | 160,1 | 8,4 % | 28,1 | 4,3 % |
+| **ajustada, recupera ⅓** | **150,0** | **7,9 %** | **16,3** | **2,2 %** |
+| ajustada, recupera ¼ | 144,6 | 7,5 % | 11,8 | 1,8 % |
+| proporcional 2 % | 161,5 | 16,7 % | 3,6 | 0,9 % |
+| **proporcional 3 %** | **199,1** | **24,4 %** | **7,0** | **2,1 %** |
+
+Lo de «solo con las sorpresas» es frágil: con el corte en 2,2 la caída sube a
+49,9 %. Decisión del usuario (14/11): correr las dos para comparar.
+**`martingalaFueraMedio`** pasa a buscar un TERCIO de la deuda por apuesta
+(1 + (lo perdido en la línea / 3) / (cuota − 1); el acierto descuenta lo que
+gana; `simulacion.RECUPERA_FUERA_MEDIO`) y **`fueraMedio3`** pone el 3 % de la
+banca cobrada sin freno (`simulacion.PROPORCION_FUERA_MEDIO`): no mira lo que
+pasó antes, así que sube y baja con el control. La del tope salió: recortaba
+la apuesta y la línea seguía cargada. Se miden hacia adelante; 240 partidos
+en 17 días es poco para dar el tercio o el 3 % por buenos.
 
 Tabla «Las puntas contra el medio» en la pantalla y sección «Fuera del medio»
 del informe de los lunes. El mismo 13/11 el usuario quitó de la Simulación las
