@@ -278,14 +278,73 @@ el criterio SÍ mira la cuota, porque el hallazgo es ese:
 | **30** | `prometedor` si las puntas le sacan **5+ pts** de ventaja al medio |
 | **60** | `confirmado` con 5+ pts y la plana de las puntas en positivo y sobre la del medio; si no, `sin_contacto` |
 
-Con las mismas puntas corren dos martingalas AJUSTADAS A LA CUOTA (pedido del
-usuario, 13/11): **`martingalaFueraMedio`** y **`martingalaFueraMedioTope`**
-(ninguna apuesta pasa del 25 % de la banca, `simulacion.TOPE_MARTINGALA`; si el
-tope recorta, la línea arrastra lo que no recuperó). Reconstruida sobre 231
-cerradas fuera del medio (28/10-13/11): +105,6 u con 100 u (ROI +15,9 %), sin
-quebrar, pero con una apuesta de 75 u en la peor racha; la misma en TODOS los
-partidos quebraba con 200 u. Fuera del medio entra la punta de cuota alta, que
-recupera una racha con poco.
+Con las mismas puntas corrían dos martingalas AJUSTADAS A LA CUOTA (pedido del
+usuario, 13/11): `martingalaFueraMedio`, que en cada apuesta buscaba TODA la
+deuda de la línea, y la misma con un tope del 25 % de la banca.
+
+### Cómo se pone la plata fuera del medio (14/11/2026)
+
+El usuario: «viendo que el control seguía creciendo, es evidente que estamos
+poniendo mal la plata». La ajustada cayó de 117,66 a 92,18 en UN partido
+(2 de Mayo – Sportivo Trinidense, 03/11) con el control subiendo. No era un
+error de cuenta: la línea 9 venía de cinco derrotas (Feyenoord a 1,15,
+Peñarol, Caracas, Huachipato, Elche: deuda 1 → 29 u), repartidas entre ~70
+partidos que las otras líneas ganaban; la sexta fue de 25,49 u (deuda 54 u) y
+se rescató con 90 u a cuota 1,35 y 104 u a cuota 1,23. Una martingala no
+sigue al control: en el mismo partido ganan o pierden juntas, pero ella pone
+20-30 veces más cuando su línea arrastra deuda.
+
+Backtest sobre los mismos 240 partidos fuera del medio de producción
+(28/10-13/11, 100 u, cuota = media de las casas; la reconstrucción da las
+bancas de producción al centavo). «Cae con el control subiendo» = la peor
+caída entre dos momentos en que la plana fuera del medio no bajó:
+
+| cómo se pone | banca | caída máx | apuesta máx | cae con el control subiendo |
+|---|---|---|---|---|
+| plana 1 u (control) | 126,1 | 6,7 % | 1,0 | — |
+| ajustada, toda la deuda (la de antes) | 207,3 | 27,2 % | 104,0 | **27,2 %** |
+| ajustada, deuda solo con las sorpresas (cuota ≥ 1,6) | 184,5 | 14,6 % | 10,1 | 7,9 % |
+| ajustada, recupera ½ | 160,1 | 8,4 % | 28,1 | 4,3 % |
+| **ajustada, recupera ⅓** | **150,0** | **7,9 %** | **16,3** | **2,2 %** |
+| ajustada, recupera ¼ | 144,6 | 7,5 % | 11,8 | 1,8 % |
+| proporcional 2 % | 161,5 | 16,7 % | 3,6 | 0,9 % |
+| **proporcional 3 %** | **199,1** | **24,4 %** | **7,0** | **2,1 %** |
+
+Lo de «solo con las sorpresas» es frágil: con el corte en 2,2 la caída sube a
+49,9 %. **`martingalaFueraMedio`** pasa a buscar un TERCIO de la deuda por
+apuesta (1 + (lo perdido en la línea / 3) / (cuota − 1); el acierto descuenta
+lo que gana; `simulacion.RECUPERA_FUERA_MEDIO`). La del tope salió: recortaba
+la apuesta y la línea seguía cargada.
+
+### El orden de las apuestas: la mixta (14/11/2026)
+
+El usuario: «el nuevo método tiene que ver con tener cuidado con el orden de
+las apuestas». Con los mismos 240 partidos, barajando 1000 veces qué partido
+cae en qué horario (aciertos y cuotas reales; solo cambia dónde caen las
+rachas):
+
+| cómo se pone | banca típica | 10 % peor | caída típica | caída 10 % peor | caída 1 % peor | termina bajo 100 u | quiebra |
+|---|---|---|---|---|---|---|---|
+| ajustada, toda la deuda (la de antes) | 201 | 5 | 24 % | 99 % | 100 % | 14 % | **10,7 %** |
+| martingala ⅓, 1 u | 149 | 137 | 11,8 % | 23,4 % | 53,4 % | 0,9 % | 0,1 % |
+| martingala ⅓, 2 u | 199 | 171 | 20,3 % | 40,4 % | 92,2 % | 1,5 % | 0,5 % |
+| mixta 2 % | 150 | 148 | 13,5 % | 19,2 % | 25,6 % | 0 % | 0 % |
+| **mixta 3 %** | **179** | **176** | **19,8 %** | **27,8 %** | **36,4 %** | **0 %** | **0 %** |
+| mixta 4 % | 212 | 205 | 25,8 % | 35,8 % | 46,8 % | 0 % | 0 % |
+| proporcional 3 % | 198 | 191 | 25,8 % | 34,7 % | 46,8 % | 0 % | 0 % |
+| plana 1 u (control) | 126 | 126 | 8,1 % | 11,5 % | 16,6 % | 0 % | 0 % |
+
+Las 207 u de la ajustada de antes fueron suerte del orden; toda martingala
+tiene esa cola. La **MIXTA** pone en el favorito (cuota hasta 2) el X % de la
+banca y en la sorpresa lo que GANA ese X %: X % / (cuota − 1). No mira lo que
+pasó antes, así que no depende del orden y sigue al control; a igual
+ganancia cae menos que la martingala ⅓ (2 %) y a igual caída gana más que la
+proporcional (4 % contra 3 %). La ganancia y la caída suben juntas con el
+porcentaje: elegirlo es elegir cuánto se aguanta. Decisión del usuario
+(14/11): **`mixtaFueraMedio` al 3 %** (`simulacion.MIXTA_FUERA_MEDIO`; en el
+orden real, 180,5 u con apuesta máxima de 5,9 u), al lado de la martingala ⅓
+para ver en vivo cuál aguanta las rachas. Se miden hacia adelante: 240
+partidos en 17 días es poco para dar el 3 % por bueno.
 
 Tabla «Las puntas contra el medio» en la pantalla y sección «Fuera del medio»
 del informe de los lunes. El mismo 13/11 el usuario quitó de la Simulación las
