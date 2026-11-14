@@ -324,6 +324,20 @@ def main():
                    ("A. Schmalbach", "2:4"), ("H. Rivera", "3:2"), ("G. Celis", "3:3"), ("F. Correa", "4:1"),
                    ("K. Pérez", "3:1"), ("L. Muriel", "4:2"), ("C. Barrios", "4:3")]]}}
     check("1391: con el grid que el parte escribió, nada", _dc646.roles_vs_grid(_b1391, _of_cuadra["b"]) == [])
+    # 1411 (14/11/2026, Austria–Irlanda 1528976): «Idah de segundo punta junto a Parrott (4:1)»: el 4:1
+    # es la casilla de Idah (nombrado sin casilla propia) y se le cobraba a Parrott (4:2)
+    _cas1411 = [("C. Kelleher", "1:1"), ("J. O'Brien", "2:1"), ("D. O'Shea", "2:2"), ("N. Collins", "2:3"),
+                ("A. Scales", "2:4"), ("R. Manning", "3:1"), ("J. Molumby", "3:2"), ("F. Azaz", "3:3"),
+                ("J. Moylan", "3:4"), ("A. Idah", "4:1"), ("T. Parrott", "4:2")]
+    _por1411 = {1: 1, 2: 4, 3: 4, 4: 2}
+    _of1411 = {"formacion": "4-4-2", "titulares": [n for n, _ in _cas1411], "defensores": 4,
+               "casillas": [{"nombre": n, "grid": g, "carril": _car1391(g, _por1411)} for n, g in _cas1411]}
+    _b1411 = {"equipo": "b", "apertura": {"m1": {"sistema": "4-4-2", "xiReferencia": "", "rolesReasignados": [
+        "Idah de segundo punta junto a Parrott (4:1)", "Molumby (2:2) de pivote"]}}}
+    _r1411 = {r["jugador"]: r["motivo"] for r in _dc646.roles_vs_grid(_b1411, _of1411)}
+    check("1411: la casilla de otro de la frase sin casilla propia (Idah, 4:1) no se le cobra a Parrott; "
+          "Molumby escrito en 2:2 (salió 3:2, otra línea) sí",
+          "T. Parrott" not in _r1411 and "J. Molumby" in _r1411, _r1411)
     # la API que solo re-etiqueta 4-2-3-1 → 4-3-3 corre los números de fila: el
     # mediapunta escrito 4:2 que el grid da 3:2 (medio) no es otra línea
     _b1391r = {"equipo": "b", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": "",
