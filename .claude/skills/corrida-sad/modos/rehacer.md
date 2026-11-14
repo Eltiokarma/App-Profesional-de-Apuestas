@@ -110,6 +110,13 @@ casi siempre no hay nada que hacer.
 
 4. Depositá lo roto como incidencias (`.claude/skills/corrida-sad/incidencias.md`;
    `origen: "partes"`, `corrida: "rehacer
-   <fecha hora>"`). Respuesta final, tres líneas: partidos rehechos, los que
+   <fecha hora>"`). **No son incidencias** (14/11/2026, 1408 y 1416, cinco
+   veces en un día): el DTP-REHACER que aparece cuando ya no quedan 10 min de
+   trabajo antes del tope —el once que la API publica a minutos del pitazo
+   (1072, 1264, «No se reporta»); la app ya lo sella como momento `tardio` y
+   va a la respuesta final como «no rehecho: once tardío»—, y el
+   `aperturaNoGuardada` del recibo con una apertura con XI ya en la cadena
+   (749, 1409: manda la primera; el DTP del parte sí quedó rehecho).
+   Respuesta final, tres líneas: partidos rehechos, los que
    no (y por qué) y qué se rompió. Al celular SOLO si se rehízo algo o algo
    falló.

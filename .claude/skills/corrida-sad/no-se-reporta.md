@@ -192,3 +192,11 @@
   quitó un fallo administrativo (1405, 694: la tabla se calcula de los
   resultados de la base y no tiene fuente para una deducción; el dato de la
   prensa va en `notas` del parte).
+  Y desde la pasada del 14/11 (tarde): el `aperturaNoGuardada` del recibo de
+  un rehacer con una apertura con XI ya en la cadena (1409, 749: manda la
+  primera; el DTP del parte sí se rehízo); «X y Y desde el banco» con X
+  titular, que suena FUERA-EN-LA-HOJA (1410: por el texto no se distingue de
+  los dos en el banco; escribí cada uno con su lugar); y el mismo jugador
+  con otro apellido en la API y en la prensa («Alberto Baio» / «Alberto
+  Costa», 1412: poné el `jugadorId` de la hoja en la fila de la prensa; por
+  nombre no se casa una pila sola, 1386).
