@@ -5079,6 +5079,14 @@ def main():
     try:
         _d1068 = _f1m.del_once_oficial({"candidatos": [dict(c) for c in _t1068["candidatos"]]}, 990778, _hid)
         _d1068_sin = _f1m.del_once_oficial({"candidatos": []}, 990779, _hid)
+        # 1400 (14/11/2026, Slovan–…): el parte rehecho no traía en su plantel a los titulares de la hoja
+        # sin fila; la app los completa al leer (fila ROT delOnceOficial) y ONCE-SIN-FILA-F1 no suena
+        from backend.analisis import parte as _p1400
+        _eq1400 = {"plantel": [{"nombre": _cola[k]["nombre"], "jugadorId": _cola[k]["id"], "zona": "MID",
+                                "rol": "TF"} for k in range(9)]}
+        _c1400 = _p1400.con_filas_del_once(_eq1400, 990778, _hid)
+        _c1400_sin_tid = _p1400.con_filas_del_once(_eq1400, 990778, None)
+        _c1400_sin_once = _p1400.con_filas_del_once(_eq1400, 990779, _hid)
     finally:
         with _sq3f.connect(os.path.join(tmp, "sad.db")) as _con:
             _con.execute("DELETE FROM alineaciones WHERE fixture_id=990778")
@@ -5089,6 +5097,18 @@ def main():
           and _nuevos[999069]["zona"] == "DEF" and _nuevos[999068]["rolSugerido"] == "ROT"
           and _nuevos[999068].get("sinStatsDeTemporada") is True and len(_d1068["candidatos"]) == 11
           and _d1068_sin["candidatos"] == [], _d1068["candidatos"])
+    _ag1400 = {j["jugadorId"]: j for j in _c1400["plantel"] if j.get("agregadaPorLaApp")}
+    check("1400: el plantel del parte se completa al leer con los titulares de la hoja sin fila (ROT, "
+          "delOnceOficial, zona de la hoja); sin team_id o sin once queda igual",
+          set(_ag1400) == {999068, 999069} and _ag1400[999068]["rol"] == "ROT"
+          and _ag1400[999068]["delOnceOficial"] is True and _ag1400[999069]["zona"] == "DEF"
+          and len(_c1400["plantel"]) == 11 and _c1400_sin_tid is _eq1400 and _c1400_sin_once is _eq1400,
+          _c1400["plantel"])
+    _r1400 = _bf1068.resolver([{**j, "rol": j["rol"]} for j in _c1400["plantel"]], [],
+                              [c["nombre"] for c in _d1068["candidatos"]],
+                              ids={c["nombre"]: c["jugadorId"] for c in _d1068["candidatos"]})
+    check("1400: con el plantel completado, el once ya no tiene titulares sin fila",
+          _r1400["noReconocidosOnce"] == [], _r1400["noReconocidosOnce"])
     _once1068 = [c["nombre"] for c in _d1068["candidatos"]]
     _ids1068 = {c["nombre"]: c["jugadorId"] for c in _d1068["candidatos"]}
     _pl = lambda cs: [{"nombre": c["nombre"], "jugadorId": c["jugadorId"], "zona": c["zona"],  # noqa: E731
