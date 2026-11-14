@@ -236,6 +236,15 @@ _aceptadas = set(re.findall(r'"(\w+)"', (_m_cj.group(1) if _m_cj else "") + (_m_
 check("eco: cada clave que con_filas_del_once agrega a una fila del plantel la acepta el POST",
       bool(_claves_filas) and _claves_filas <= _aceptadas, sorted(_claves_filas - _aceptadas))
 
+# 5-septies · el grid se lee como posiciones SOLO si es confiable (FALLAS.md
+# clase 11; 1413/1415: el grid revuelto de Nacional–Albion daba DEF al arquero y
+# «el central en el arco»). Los lectores de roles por la fila del grid pasan por
+# `ficha_tactica.grid_confiable`.
+_sin_gc = [r for r in ("backend/analisis/f1_base.py", "backend/analisis/dtp_cowork.py")
+           if "grid_confiable" not in leer(r)]
+check("grid: la F1 y el rol contra el grid leen la fila solo con ficha_tactica.grid_confiable",
+      not _sin_gc, _sin_gc)
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)
