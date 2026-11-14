@@ -134,8 +134,10 @@
   la API y nombres distintos («M. Ubandoma» / «M. Isah», 1314: sin nombre ni id
   común no hay regla); 5-4-1 contra 3-4-1-2 o 3-5-2 contra 3-4-2-1 sin rehacer
   (1311: misma línea de tres con carrileros, 734/1240); y un DTP-REHACER
-  `sinRehacer` con el once a tiempo (1305: sumalo a la #1052, que espera la
-  decisión). Y desde la pasada del 08/11 (mediodía): el F2 o los
+  `sinRehacer` con el once a tiempo sin más dato (1305, 1270, 1401: la #1052
+  se cerró rotando la sesión; reportalo SOLO con la respuesta de `/rehacer` del
+  disparo que no lo trajo o el GET del parte antes del pitazo, que es lo único
+  que deja ver la causa). Y desde la pasada del 08/11 (mediodía): el F2 o los
   `diasDescanso` «un día corto» (1322: son días ENTEROS por las horas entre
   saques, 769); `cierreContra` null del lado cuya apertura previa ES el último
   partido (1319, 1196: solo viaja cuando no lo es); la roja UEFA `senal` en
