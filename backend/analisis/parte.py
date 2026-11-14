@@ -396,7 +396,15 @@ _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto
               "xiConservados", "coherencia", "vsMercado", "desconfianza"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
-_ECO_JUGADOR = {"soloBaja"}
+# LAS FILAS QUE LA APP SUMA AL LEER (14/11/2026, incidencia 1404, rehacer de
+# Kosovo–Israel): `con_filas_del_once` completa el plantel con los titulares de
+# la hoja sin fila (1400) y el eco del GET los devolvía con `delOnceOficial` y
+# `agregadaPorLaApp`, que el POST rechazaba como «campo desconocido». Son eco:
+# la fila `agregadaPorLaApp` se descarta al depositar (se vuelve a calcular al
+# leer, con el once que haya entonces) y `delOnceOficial` de una fila copiada de
+# GET …/f1/{id} se acepta sin guardarse. Cada clave que `con_filas_del_once`
+# agrega tiene que estar acá (backend/test_arquitectura.py, FALLAS clase 5).
+_ECO_JUGADOR = {"soloBaja", "delOnceOficial", "agregadaPorLaApp"}
 # los indicadores del TDE, por bloque — para poder publicarlos en el contrato
 from backend.analisis.tde import INDICADORES as _IND_TDE, INDICADORES_ISE as _IND_ISE
 INDICADORES_TDE = {**_IND_TDE, "ISE": _IND_ISE}
@@ -662,9 +670,11 @@ def _equipo(bruto: dict, equipos_db: list[tuple[str, str]],
             # pisaba la nota de `bloques.X`, y lo pisado no salía en ningún lado)
             "nota": _juntar_notas(nota_obj, _txt(notas_in.get(letra))),
         }
+    # 1404: la fila que sumó la app al leer vuelve en el eco; no es del analista
     plantel = [j for j in (_jugador(x, rechazos, f"equipos.{lado}.plantel[{i}]")
                            for i, x in enumerate(_lista(bruto.get("plantel"), rechazos,
-                                                        f"equipos.{lado}.plantel"))) if j]
+                                                        f"equipos.{lado}.plantel"))
+                           if not (isinstance(x, dict) and x.get("agregadaPorLaApp") is True)) if j]
     fuera = [f for f in (_fuera(x, rechazos, f"equipos.{lado}.fuera[{i}]")
                          for i, x in enumerate(_lista(bruto.get("fuera"), rechazos,
                                                       f"equipos.{lado}.fuera"))) if f]

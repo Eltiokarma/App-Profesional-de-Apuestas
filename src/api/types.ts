@@ -1429,6 +1429,10 @@ export interface JugadorParte {
   motivo?: string
   /** true = entró a la tabla F1 desde `fuera`, para que su baja pese en el IP. */
   soloBaja?: boolean
+  /** solo lectura: titular del once oficial sin fila en la tabla (1068, 1400); eco en el POST. */
+  delOnceOficial?: boolean
+  /** solo lectura: la sumó la app al leer; si vuelve en el POST se descarta y se recalcula (1404). */
+  agregadaPorLaApp?: boolean
   /** dónde apareció en la hoja del partido, una vez resuelto el once. */
   hoja?: 'titular' | 'banca' | 'fuera' | 'duplicado'
   /** casó por la inicial de una primera pila que la tabla no escribe («O. Arias» = «Nahuel Arias», 1077). */
