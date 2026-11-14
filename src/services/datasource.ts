@@ -46,6 +46,9 @@ import type {
   InventarioLecciones,
   LeccionesParams,
   SimulacionApuesta,
+  SimulacionApuestasPagina,
+  SimulacionApuestasParams,
+  SimulacionResumen,
   SemaforoElegido,
   LecturaListaPartido,
   LigasAnalizadasDTO,
@@ -197,6 +200,8 @@ export interface SadDataSource {
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026: plana, Kelly y martingala. */
   /** con `porPagina`, `apuestas` paginada y `linea` para la gráfica (13/11/2026) */
   simulacion(pagina?: number, porPagina?: number): Promise<SimulacionApuesta>
+  simulacionApuestas(params: SimulacionApuestasParams, signal?: AbortSignal): Promise<SimulacionApuestasPagina>
+  simulacionResumen(signal?: AbortSignal): Promise<SimulacionResumen>
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones(params?: LeccionesParams): Promise<InventarioLecciones>
   /** Cuarentena por criterio (docs/APRENDIZAJE.md): la pone el usuario, con motivo. */
@@ -980,6 +985,31 @@ class MockDataSource implements SadDataSource {
     }
   }
 
+  async simulacionApuestas({ pagina, porPagina, q, desde, hasta, fixtureId }: SimulacionApuestasParams): Promise<SimulacionApuestasPagina> {
+    const normalizar = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+    const terminos = normalizar(q ?? '').match(/[\p{L}\p{N}]+/gu) ?? []
+    const todas = SIMULACION_DEMO.apuestas.filter(({ partido, pitazo, fixtureId: id }) => {
+      if (fixtureId && fixtureId !== id) return false
+      const texto = normalizar([partido.local, partido.visita, partido.liga].join(' '))
+      if (!terminos.every((termino) => texto.includes(termino))) return false
+      if (!desde && !hasta) return true
+      const utc = new Date(pitazo.replace(' ', 'T') + 'Z').getTime()
+      const dia = new Date(utc - 5 * 60 * 60_000).toISOString().slice(0, 10)
+      return (!desde || dia >= desde) && (!hasta || dia <= hasta)
+    })
+    const paginas = Math.max(1, Math.ceil(todas.length / porPagina))
+    const p = Math.min(Math.max(1, pagina), paginas)
+    return {
+      apuestas: todas.slice((p - 1) * porPagina, p * porPagina),
+      paginacion: { pagina: p, porPagina, total: todas.length, paginas },
+    }
+  }
+
+  async simulacionResumen(): Promise<SimulacionResumen> {
+    const { apuestas, paginacion, linea, ...resumen } = await this.simulacion(1, 1)
+    return { ...resumen, linea: linea ?? [] }
+  }
+
   async lecciones(params?: LeccionesParams): Promise<InventarioLecciones> {
     return paginarLecciones(leccionesDemo(params?.skill ?? '', params?.estado ?? '', params?.cohorte ?? ''), params)
   }
@@ -1370,6 +1400,8 @@ class HttpDataSource implements SadDataSource {
   }
   ligasAnalizadas = (dias?: number) => SadApi.ligasAnalizadas(dias)
   simulacion = (pagina?: number, porPagina?: number) => SadApi.simulacion(pagina, porPagina)
+  simulacionApuestas = SadApi.simulacionApuestas
+  simulacionResumen = SadApi.simulacionResumen
   lecciones = (params?: LeccionesParams) => SadApi.lecciones(params)
   cuarentena = (fixtureId: number, motivo: string, ensena = false) => SadApi.cuarentena(fixtureId, motivo, ensena)
   quitarCuarentena = (fixtureId: number) => SadApi.quitarCuarentena(fixtureId)

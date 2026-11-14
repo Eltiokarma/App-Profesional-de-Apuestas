@@ -1445,6 +1445,19 @@ def main():
     check("web: la simulación paginada trae `paginacion` y `linea`, y sin porPagina todo como antes",
           r_pag.status_code == 200 and r_pag.json()["paginacion"]["porPagina"] == 20
           and isinstance(r_pag.json()["linea"], list) and "paginacion" not in r_sim.json(), r_pag.text[:200])
+    r_hist = c.get(A + "/analisis/simulacion", params={"soloApuestas": True, "q": "sin-partido-987654"}, headers=wb)
+    check("web: el historial filtrado trae solo la página de apuestas",
+          r_hist.status_code == 200 and set(r_hist.json()) == {"apuestas", "paginacion"}
+          and r_hist.json()["apuestas"] == [] and r_hist.json()["paginacion"]["total"] == 0, r_hist.text[:200])
+    r_res = c.get(A + "/analisis/simulacion", params={"soloResumen": True}, headers=wb)
+    check("web: el resumen conserva las series y la línea sin las apuestas",
+          r_res.status_code == 200 and r_res.json()["estrategias"] == r_sim.json()["estrategias"]
+          and r_res.json()["linea"] == r_pag.json()["linea"] and "apuestas" not in r_res.json(), r_res.text[:200])
+    check("web: rechaza un intervalo invertido o dos vistas pedidas a la vez",
+          c.get(A + "/analisis/simulacion", params={"soloApuestas": True, "desde": "2026-11-02", "hasta": "2026-11-01"},
+                headers=wb).status_code == 422
+          and c.get(A + "/analisis/simulacion", params={"soloApuestas": True, "soloResumen": True},
+                    headers=wb).status_code == 422)
     r_gz = c.get(A + "/analisis/simulacion", headers={**wb, "Accept-Encoding": "gzip"})
     check("las respuestas grandes van comprimidas con gzip si el cliente lo acepta",
           r_gz.status_code == 200 and r_gz.headers.get("content-encoding") == "gzip", dict(r_gz.headers))

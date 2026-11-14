@@ -13,7 +13,7 @@ export interface AsyncState<T> {
  * `opts.refreshMs`: re-ejecuta fn en silencio cada N ms (sin tocar loading,
  * sin flicker) — para que las listas reflejen la ingesta sin recargar la página.
  */
-export function useAsync<T>(fn: () => Promise<T>, key: unknown, opts?: { refreshMs?: number }): AsyncState<T> {
+export function useAsync<T>(fn: (signal: AbortSignal) => Promise<T>, key: unknown, opts?: { refreshMs?: number }): AsyncState<T> {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -23,7 +23,7 @@ export function useAsync<T>(fn: () => Promise<T>, key: unknown, opts?: { refresh
   const prevKey = useRef(key)
 
   useEffect(() => {
-    let alive = true
+    const controller = new AbortController()
     if (prevKey.current !== key) {
       // al cambiar de key no puede quedar visible el dato del key anterior
       prevKey.current = key
@@ -32,36 +32,41 @@ export function useAsync<T>(fn: () => Promise<T>, key: unknown, opts?: { refresh
     setLoading(true)
     setError(null)
     fnRef
-      .current()
+      .current(controller.signal)
       .then((d) => {
-        if (alive) {
+        if (!controller.signal.aborted) {
           setData(d)
           setLoading(false)
         }
       })
       .catch((e: unknown) => {
-        if (alive) {
+        if (!controller.signal.aborted) {
           setError(e instanceof Error ? e.message : 'error de datos')
           setLoading(false)
         }
       })
-    return () => {
-      alive = false
-    }
+    return () => controller.abort()
   }, [key, tick])
 
   const refreshMs = opts?.refreshMs
   useEffect(() => {
     if (!refreshMs) return
+    const controller = new AbortController()
     const iv = setInterval(() => {
       fnRef
-        .current()
-        .then((d) => setData(d))
+        .current(controller.signal)
+        .then((d) => {
+          if (!controller.signal.aborted) setData(d)
+        })
         .catch(() => { /* refresco silencioso: el error visible ya lo da la carga normal */ })
     }, refreshMs)
-    return () => clearInterval(iv)
+    return () => {
+      controller.abort()
+      clearInterval(iv)
+    }
   }, [refreshMs, key])
 
   const reload = useCallback(() => setTick((t) => t + 1), [])
+  if (prevKey.current !== key) return { data: null, loading: true, error: null, reload }
   return { data, loading, error, reload }
 }
