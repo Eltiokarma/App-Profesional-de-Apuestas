@@ -4022,6 +4022,8 @@ components:
         estado: { type: string, enum: ['', disponible, baja, duda, duplicado], description: 'lo pone el backend al resolver el once. `duplicado`: una fila SIN jugadorId que casa por nombre con un titular o suplente que ya casó por id con OTRA fila (la base y la prensa lo escriben distinto, «D. Gelvez» / «Dayan Pérez»): es la misma persona y no pesa en el IP' }
         motivo: { type: string }
         porPilaCompuesta: { type: string, description: 'el nombre de la hoja con que casó por la inicial de una PRIMERA pila que la tabla no escribe («O. Arias» = «Nahuel Arias», incidencia 1077): fila sin jugadorId y apellido único en la tabla y en la hoja' }
+        delOnceOficial: { type: boolean, description: 'solo lectura: titular del once oficial capturado sin fila en la tabla (incidencias 1068 y 1400). En el POST se acepta como eco y no se guarda' }
+        agregadaPorLaApp: { type: boolean, description: 'solo lectura: la fila la sumó la app al leer, con el once oficial (incidencia 1400). Si vuelve en el eco del POST, la fila se descarta sin rechazo y se recalcula al leer (incidencia 1404)' }
     EquipoParteEntrada:
       type: object
       description: Lo que Cowork escribe de un equipo. a = local, b = visitante.

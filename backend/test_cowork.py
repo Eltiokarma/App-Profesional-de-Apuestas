@@ -5123,6 +5123,19 @@ def main():
                               ids={c["nombre"]: c["jugadorId"] for c in _d1068["candidatos"]})
     check("1400: con el plantel completado, el once ya no tiene titulares sin fila",
           _r1400["noReconocidosOnce"] == [], _r1400["noReconocidosOnce"])
+    # 1404 (14/11/2026, rehacer de Kosovo–Israel): re-depositar el eco del GET con esas filas daba
+    # «campo desconocido» en plantel[21].delOnceOficial y .agregadaPorLaApp. Son eco: la fila que sumó
+    # la app no se guarda como del analista (se recalcula al leer) y sin rechazo
+    _rech1404: list = []
+    _eco1404 = [*_c1400["plantel"], {"nombre": "Copiado De F1", "jugadorId": 999071, "zona": "MID",
+                                     "rol": "ROT", "delOnceOficial": True}]
+    _eq1404 = _p1400._equipo({"bloques": {"A": 3}, "plantel": _eco1404}, [], _rech1404, "a")
+    check("1404: el eco del plantel con filas de la app pasa limpio por el POST (sin rechazos) y la fila "
+          "agregadaPorLaApp no se guarda; la copiada de la F1 con delOnceOficial sí, sin la clave",
+          not [r for r in _rech1404 if "plantel" in r.get("donde", "")]
+          and {j["nombre"] for j in _eq1404["plantel"]} == {*(_cola[k]["nombre"] for k in range(9)), "Copiado De F1"}
+          and not any("delOnceOficial" in j or "agregadaPorLaApp" in j for j in _eq1404["plantel"]),
+          (_rech1404, [j["nombre"] for j in _eq1404["plantel"]]))
     _once1068 = [c["nombre"] for c in _d1068["candidatos"]]
     _ids1068 = {c["nombre"]: c["jugadorId"] for c in _d1068["candidatos"]}
     _pl = lambda cs: [{"nombre": c["nombre"], "jugadorId": c["jugadorId"], "zona": c["zona"],  # noqa: E731
