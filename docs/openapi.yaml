@@ -1389,16 +1389,25 @@ paths:
         (token web); no abierto a Cowork. Con `porPagina` (13/11/2026, usuario: «esa página demora mucho en
         cargarse»), `apuestas` trae solo esa página (la más nueva primero), con `paginacion`, y `linea` trae lo
         mínimo de cada partido cerrado para la gráfica (en el orden de `estrategias[].serie`). Sin `porPagina`,
-        todo como siempre. La respuesta va comprimida (gzip) si el cliente lo acepta.
+        se devuelve la simulación completa. Los filtros `q`, `desde` y `hasta` solo afectan a
+        `apuestas` y su paginación. La respuesta va comprimida (gzip) si el cliente lo acepta.
       parameters:
         - { name: pagina, in: query, schema: { type: integer, minimum: 1 }, description: '1 = la más nueva; fuera de rango, la última' }
         - { name: porPagina, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
+        - { name: q, in: query, schema: { type: string, maxLength: 120 }, description: 'Busca por palabras en ambos equipos y la liga, sin distinguir mayúsculas ni tildes' }
+        - { name: desde, in: query, schema: { type: string, format: date }, description: 'Fecha inicial inclusiva, día de Lima' }
+        - { name: hasta, in: query, schema: { type: string, format: date }, description: 'Fecha final inclusiva, día de Lima' }
+        - { name: soloApuestas, in: query, schema: { type: boolean, default: false }, description: 'Devuelve apuestas y paginacion; porPagina por defecto es 20. Las filas básicas no calculan estrategias, marcador acotado ni alerta' }
+        - { name: soloResumen, in: query, schema: { type: boolean, default: false }, description: 'Devuelve el resumen global con linea, sin apuestas ni paginacion' }
+        - { name: fixtureId, in: query, schema: { type: integer, minimum: 1 }, description: 'Con soloApuestas devuelve el detalle de un partido, con sus estrategias sobre la banca global' }
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SimulacionApuesta' }
+        '422':
+          description: Filtros inválidos, rango de fechas invertido o ambas vistas solicitadas a la vez
   /analisis/semaforo:
     get:
       summary: El semáforo del elegido de estos partidos (web; NO abierto a Cowork)
@@ -2030,15 +2039,15 @@ components:
       properties:
         paginacion:
           type: object
-          description: 'solo con `porPagina`'
+          description: 'con `porPagina` o `soloApuestas`'
           properties:
             pagina: { type: integer }
             porPagina: { type: integer }
-            total: { type: integer, description: 'todas las apuestas (cerradas y por jugarse)' }
+            total: { type: integer, description: 'apuestas que cumplen el filtro (cerradas y por jugarse)' }
             paginas: { type: integer }
         linea:
           type: array
-          description: 'solo con `porPagina`: cada partido cerrado, del más viejo al más nuevo (el orden de `estrategias[].serie` sin su primer punto, la banca inicial)'
+          description: 'con `porPagina` o `soloResumen`: cada partido cerrado, del más viejo al más nuevo (el orden de `estrategias[].serie` sin su primer punto, la banca inicial)'
           items:
             type: object
             properties:

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenMarcador, ResumenMedio, ResumenSemaforo, SimulacionApuesta, TrasFallos } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenMarcador, ResumenMedio, ResumenSemaforo, SimulacionResumen, TrasFallos } from '../api/types'
 import { SemaforoChip } from '../components/SemaforoChip'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
@@ -31,12 +31,18 @@ const CORTO: Record<EstrategiaClave, string> = {
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
-/** «2026-10-28 20:00:00» (UTC) → «28 oct 15:00» en hora local del navegador */
+const HORA_LIMA = new Intl.DateTimeFormat('es-PE', {
+  timeZone: 'America/Lima', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+})
+
+/** Las fechas de la lista y su filtro usan el mismo día de Lima. */
 function fecha(utc: string | null): string {
   if (!utc) return ''
-  const d = new Date(utc.replace(' ', 'T') + 'Z')
+  const iso = utc.replace(' ', 'T')
+  const d = new Date(/(?:Z|[+-]\d\d:\d\d)$/i.test(iso) ? iso : iso + 'Z')
   if (isNaN(d.getTime())) return utc
-  return `${d.getDate()} ${MES[d.getMonth()]} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const { day, month, hour, minute } = Object.fromEntries(HORA_LIMA.formatToParts(d).map(({ type, value }) => [type, value]))
+  return `${day} ${MES[Number(month) - 1]} ${hour}:${minute}`
 }
 const num = (x: number, d = 2) => x.toLocaleString('es-PE', { minimumFractionDigits: d, maximumFractionDigits: d })
 // el signo sale del número YA redondeado: −0,004 no se escribe «−0.00»
@@ -50,60 +56,140 @@ const colorDe = (x: number | null) => (x == null || x === 0 ? 'var(--t2)' : x > 
 const tarjeta: React.CSSProperties = { background: 'var(--bg2)', border: '1px solid var(--line)', borderRadius: 12, padding: '13px 14px', minWidth: 0 }
 const rotulo: React.CSSProperties = { font: '700 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.5px', textTransform: 'uppercase' }
 
-// LA LISTA DE APUESTAS PAGINADA (13/11/2026, usuario: «esa página demora mucho
-// en cargarse, se cargan muchos partidos… poner # de páginas»): el backend manda
-// una página y la gráfica sale de `linea` + `estrategias[].serie`
 const POR_PAGINA = 20
+const SIN_FILTROS = { q: '', desde: '', hasta: '' }
+const control: React.CSSProperties = {
+  boxSizing: 'border-box', width: '100%', minWidth: 0, minHeight: 34, padding: '6px 8px', border: '1px solid var(--line)',
+  borderRadius: 8, background: 'var(--bg2)', color: 'var(--t1)', font: '500 12px var(--sans)',
+}
+const botonVista: React.CSSProperties = {
+  padding: '6px 11px', minHeight: 34, border: '1px solid var(--line)', borderRadius: 8, cursor: 'pointer',
+  background: 'var(--bg3)', color: 'var(--t1)', font: '600 12px var(--sans)',
+}
 
 export function Simulacion({ isMobile }: { isMobile: boolean }) {
-  const sim = useAsync<SimulacionApuesta>(() => getDataSource().simulacion(1, POR_PAGINA), 'simulacion')
+  const [vista, setVista] = useState<'partidos' | 'resumen'>('partidos')
+  const [abrioResumen, setAbrioResumen] = useState(false)
   const [kelly, setKelly] = useState<Kelly>('kelly')
-  const [pagina, setPagina] = useState(1)
-  // la página 1 ya vino con la carga principal; las otras se piden al cambiar
-  const pag = useAsync<SimulacionApuesta | null>(
-    () => (pagina === 1 ? Promise.resolve(null) : getDataSource().simulacion(pagina, POR_PAGINA)), 'sim-pagina-' + pagina)
-  const lista = useRef<HTMLDivElement>(null)
+  const [borrador, setBorrador] = useState(SIN_FILTROS)
+  const [busqueda, setBusqueda] = useState({ ...SIN_FILTROS, pagina: 1 })
+  const { q, desde, hasta, pagina } = busqueda
+  const tabla = useAsync((signal) => getDataSource().simulacionApuestas({ ...busqueda, porPagina: POR_PAGINA }, signal), busqueda)
+  const sim = useAsync((signal) => abrioResumen ? getDataSource().simulacionResumen(signal) : Promise.resolve(null), abrioResumen)
+  const lista = useRef<HTMLElement>(null)
+  const fechasInvertidas = Boolean(borrador.desde && borrador.hasta && borrador.desde > borrador.hasta)
+  const paginacion = tabla.data?.paginacion
+  const paginaVisible = paginacion?.pagina ?? pagina
+  const irA = (p: number) => {
+    setBusqueda((f) => ({ ...f, pagina: p }))
+    lista.current?.scrollIntoView({ block: 'start' })
+  }
+  const filtroActivo = Boolean(q || desde || hasta)
+  const buscar = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (fechasInvertidas) return
+    const consulta = borrador.q.trim()
+    if (consulta === q && borrador.desde === desde && borrador.hasta === hasta && pagina === 1) {
+      if (tabla.error) tabla.reload()
+      return
+    }
+    setBusqueda({ ...borrador, q: consulta, pagina: 1 })
+  }
 
   const pad = isMobile ? '16px 14px 40px' : '22px 26px 48px'
-  if (sim.loading && !sim.data) return <div style={{ padding: pad, font: '500 12px var(--sans)', color: 'var(--t3)' }}>Simulando…</div>
-  if (sim.error || !sim.data) {
-    return (
-      <div style={{ padding: pad, display: 'flex', gap: 10, alignItems: 'center' }}>
-        <span style={{ font: '500 12px var(--sans)', color: 'var(--down)' }}>No se pudo leer la simulación: {sim.error ?? 'sin datos'}</span>
-        <button onClick={sim.reload} style={{ padding: '4px 10px', border: '1px solid var(--line)', borderRadius: 7, cursor: 'pointer', background: 'var(--bg3)', color: 'var(--t1)', font: '600 10.5px var(--sans)' }}>Reintentar</button>
-      </div>
-    )
-  }
-  const d = sim.data
-  const est = (c: EstrategiaClave) => d.estrategias.find((e) => e.clave === c)!
-  const visibles: { clave: EstrategiaClave; color: string }[] = [
-    { clave: 'proporcional', color: COLOR.proporcional },
-    // el método solo en verde (11/11/2026): en papel, para medir el semáforo
-    ...(d.estrategias.some((e) => e.clave === 'metodoVerde') ? [{ clave: 'metodoVerde' as EstrategiaClave, color: COLOR.metodoVerde }] : []),
-    // el método fuera del medio (13/11/2026): en papel, sin el 45-60 % de la casa
-    ...(d.estrategias.some((e) => e.clave === 'metodoFueraMedio') ? [{ clave: 'metodoFueraMedio' as EstrategiaClave, color: COLOR.metodoFueraMedio }] : []),
-    { clave: 'plana', color: COLOR.plana }, { clave: 'plana60', color: COLOR.plana60 }, { clave: kelly, color: COLOR.kelly }, { clave: 'martingala', color: COLOR.martingala },
-    { clave: 'martingala60', color: COLOR.martingala60 },
-    // la martingala de 60 %+ ajustada a la cuota (13/11/2026): recupera con cualquier cuota
-    ...(d.estrategias.some((e) => e.clave === 'martingala60Ajustada') ? [{ clave: 'martingala60Ajustada' as EstrategiaClave, color: COLOR.martingala60Ajustada }] : []),
-    // las martingalas ajustadas fuera del medio (13/11/2026), sin tope y con tope del 25 % de la banca
-    ...(['martingalaFueraMedio', 'martingalaFueraMedioTope'] as const).filter((c) => d.estrategias.some((e) => e.clave === c)).map((c) => ({ clave: c as EstrategiaClave, color: COLOR[c] })),
-  ]
-  // la gráfica: lo mínimo de cada cerrada (`linea`) y la banca de cada serie; sin
-  // `linea` (respuesta sin paginar) se arma de las apuestas, como antes
-  const linea = d.linea ?? [...d.apuestas].reverse().filter((a) => a.estado === 'cerrada').map((a) => ({
-    fixtureId: a.fixtureId, pitazo: a.pitazo, local: a.partido.local, visita: a.partido.visita,
-    resultado: a.resultado as Resultado1x2, sad: a.versiones['sad-analysis'] ?? '' }))
-  const paginacion = d.paginacion
-  const deLaPagina = pagina === 1 ? d.apuestas : pag.data?.apuestas ?? null
-  const irA = (p: number) => {
-    setPagina(p)
-    lista.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   return (
     <div style={{ padding: pad, maxWidth: 1080 }}>
-      <h1 style={{ font: '800 26px var(--sans)', color: 'var(--t1)', margin: '0 0 4px' }}>Simulación de apuesta</h1>
+      <h1 style={{ font: '800 26px var(--sans)', color: 'var(--t1)', margin: '0 0 10px' }}>Simulación de apuesta</h1>
+      <div role="group" aria-label="Vista de simulación" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+        {(['partidos', 'resumen'] as const).map((v) => (
+          <button key={v} type="button" aria-pressed={vista === v} onClick={() => {
+            setVista(v)
+            if (v === 'resumen') setAbrioResumen(true)
+          }}
+            style={{ ...botonVista, background: vista === v ? 'var(--bg3)' : 'var(--bg2)', borderColor: vista === v ? 'var(--accent)' : 'var(--line)' }}>
+            {v === 'partidos' ? 'Historial de partidos' : 'Resumen y gráfica'}
+          </button>
+        ))}
+      </div>
+      {vista === 'partidos' ? (
+        <section ref={lista} aria-label="Historial de partidos" style={{ scrollMarginTop: 12 }}>
+          <form onSubmit={buscar} style={{ ...tarjeta, marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0,1fr))' : 'minmax(0,2fr) repeat(2, minmax(0,1fr)) auto', gap: 8, alignItems: 'end' }}>
+              <label style={{ ...rotulo, display: 'grid', gap: 4, gridColumn: isMobile ? '1 / -1' : undefined }}>
+                Equipo o liga
+                <input style={control} type="search" maxLength={120} value={borrador.q} placeholder="Ej. Alianza Cristal"
+                  onChange={(event) => setBorrador({ ...borrador, q: event.target.value })} />
+              </label>
+              <label style={{ ...rotulo, display: 'grid', gap: 4 }}>
+                Desde
+                <input style={control} type="date" value={borrador.desde} onChange={(event) => setBorrador({ ...borrador, desde: event.target.value })} />
+              </label>
+              <label style={{ ...rotulo, display: 'grid', gap: 4 }}>
+                Hasta
+                <input style={control} type="date" value={borrador.hasta} onChange={(event) => setBorrador({ ...borrador, hasta: event.target.value })} />
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, gridColumn: isMobile ? '1 / -1' : undefined }}>
+                <button type="submit" style={botonVista}>Buscar</button>
+                {(filtroActivo || borrador.q || borrador.desde || borrador.hasta) && (
+                  <button type="button" style={{ ...botonVista, background: 'var(--bg2)' }} onClick={() => {
+                    setBorrador(SIN_FILTROS)
+                    if (filtroActivo || pagina > 1) setBusqueda({ ...SIN_FILTROS, pagina: 1 })
+                  }}>Limpiar</button>
+                )}
+              </div>
+            </div>
+            <div style={{ marginTop: 7, font: '500 11px var(--sans)', color: 'var(--t3)' }}>
+              Partidos incluidos en la simulación desde el 28 oct 2026 · hora de Lima
+            </div>
+            {fechasInvertidas && <div role="alert" style={{ marginTop: 5, color: 'var(--down)', font: '500 12px var(--sans)' }}>
+              La fecha «Desde» debe ser anterior o igual a «Hasta».
+            </div>}
+          </form>
+          <div role="status" style={{ ...rotulo, marginBottom: 8 }}>
+            {tabla.loading ? 'Cargando partidos…' : paginacion ? `${paginacion.total} ${paginacion.total === 1 ? 'partido' : 'partidos'} · más recientes primero` : ''}
+          </div>
+          {tabla.error && <ErrorSimulacion mensaje={tabla.error} recargar={tabla.reload} />}
+          {paginacion && paginacion.paginas > 1 && <Paginador pagina={paginaVisible} paginas={paginacion.paginas} irA={irA} />}
+          {tabla.data && (tabla.data.apuestas.length ? (
+            <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'minmax(0,1fr)' }}>
+              {tabla.data.apuestas.map((a) => <FilaApuesta key={a.fixtureId} a={a} kelly={kelly} />)}
+            </div>
+          ) : <div style={{ ...tarjeta, font: '500 12px var(--sans)', color: 'var(--t2)' }}>
+            {filtroActivo ? 'No hay partidos que coincidan con la búsqueda.' : 'Todavía no hay partidos incluidos en la simulación.'}
+          </div>)}
+          {paginacion && paginacion.paginas > 1 && <div style={{ marginTop: 10 }}>
+            <Paginador pagina={paginaVisible} paginas={paginacion.paginas} irA={irA} />
+          </div>}
+        </section>
+      ) : sim.data ? <ResumenSimulacion d={sim.data} kelly={kelly} setKelly={setKelly} isMobile={isMobile} />
+        : sim.error ? <ErrorSimulacion mensaje={sim.error} recargar={sim.reload} />
+        : <div role="status" style={{ ...tarjeta, font: '500 12px var(--sans)', color: 'var(--t3)' }}>Calculando resumen y gráfica…</div>}
+    </div>
+  )
+}
+
+function ErrorSimulacion({ mensaje, recargar }: { mensaje: string; recargar: () => void }) {
+  return <div style={{ ...tarjeta, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+    <span role="alert" style={{ font: '500 12px var(--sans)', color: 'var(--down)' }}>{mensaje}</span>
+    <button type="button" onClick={recargar} style={botonVista}>Reintentar</button>
+  </div>
+}
+
+function estrategiasVisibles(kelly: Kelly, claves: string[]): { clave: EstrategiaClave; color: string }[] {
+  const orden: EstrategiaClave[] = ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'plana', 'plana60', kelly,
+    'martingala', 'martingala60', 'martingala60Ajustada', 'martingalaFueraMedio', 'martingalaFueraMedioTope']
+  return orden.filter((clave) => claves.includes(clave)).map((clave) => ({
+    clave, color: COLOR[clave === 'kellyMedio' || clave === 'kellyCuarto' ? 'kelly' : clave],
+  }))
+}
+
+function ResumenSimulacion({ d, kelly, setKelly, isMobile }: { d: SimulacionResumen; kelly: Kelly; setKelly: (k: Kelly) => void; isMobile: boolean }) {
+  const est = (c: EstrategiaClave) => d.estrategias.find((e) => e.clave === c)!
+  const visibles = estrategiasVisibles(kelly, d.estrategias.map((e) => e.clave))
+  const linea = d.linea
+
+  return (
+    <section aria-label="Resumen y gráfica">
       <div style={{ font: '500 12px var(--sans)', color: 'var(--t3)', marginBottom: 12, lineHeight: 1.45 }}>
         Banca de {num(d.bancaInicial, 0)} unidades sobre nuestros 1X2 desde los partidos del {fecha(d.desde).split(' ').slice(0, 2).join(' ')} ·{' '}
         {d.cerradas} cerradas ({d.aciertos} aciertos del elegido) · {d.pendientes} por jugarse
@@ -120,7 +206,6 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
             </button>
           )
         })}
-        {sim.loading && <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>actualizando…</span>}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0,1fr)' : 'repeat(3, minmax(0,1fr))', gap: 10, marginBottom: 12 }}>
@@ -150,28 +235,6 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
 
       {d.alertaConfianza && <TablaAlerta r={d.alertaConfianza} isMobile={isMobile} />}
 
-      <div ref={lista} style={{ ...rotulo, margin: '18px 0 8px', scrollMarginTop: 12 }}>
-        Apuestas · la más nueva primero{paginacion ? ` · ${paginacion.total} en total` : ''}
-      </div>
-      {paginacion && paginacion.paginas > 1 && <Paginador pagina={pagina} paginas={paginacion.paginas} irA={irA} />}
-      {pag.error && pagina !== 1 ? (
-        <div style={{ ...tarjeta, font: '500 12px var(--sans)', color: 'var(--down)' }}>No se pudo leer la página {pagina}: {pag.error}</div>
-      ) : !deLaPagina ? (
-        <div style={{ ...tarjeta, font: '500 12px var(--sans)', color: 'var(--t3)' }}>Cargando la página {pagina}…</div>
-      ) : deLaPagina.length ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {deLaPagina.map((a) => <FilaApuesta key={a.fixtureId} a={a} visibles={visibles} />)}
-        </div>
-      ) : (
-        <div style={{ ...tarjeta, textAlign: 'center', font: '500 12px var(--sans)', color: 'var(--t3)' }}>
-          Sin partes con 1X2 y cuotas desde el inicio de la simulación.
-        </div>
-      )}
-
-      {paginacion && paginacion.paginas > 1 && deLaPagina && deLaPagina.length > 0 && (
-        <div style={{ marginTop: 10 }}><Paginador pagina={pagina} paginas={paginacion.paginas} irA={irA} /></div>
-      )}
-
       {d.excluidos.length > 0 && (
         <details style={{ marginTop: 14 }}>
           <summary style={{ cursor: 'pointer', font: '600 11.5px var(--sans)', color: 'var(--t2)' }}>
@@ -193,7 +256,7 @@ export function Simulacion({ isMobile }: { isMobile: boolean }) {
         ))}
         <div style={{ marginTop: 6 }}>{d.nota}.</div>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -259,7 +322,7 @@ function FrenoTramos({ tramos }: { tramos: FrenoTramo[] }) {
   )
 }
 
-type PuntoLinea = NonNullable<SimulacionApuesta['linea']>[number]
+type PuntoLinea = SimulacionResumen['linea'][number]
 
 /** Los números de página: 1 … p−1 p p+1 … N, con anterior y siguiente. */
 function Paginador({ pagina, paginas, irA }: { pagina: number; paginas: number; irA: (p: number) => void }) {
@@ -768,7 +831,7 @@ function TablaAlerta({ r, isMobile }: { r: ResumenAlerta; isMobile: boolean }) {
   )
 }
 
-function PorVersion({ d, visibles, isMobile }: { d: SimulacionApuesta; visibles: EstrategiaClave[]; isMobile: boolean }) {
+function PorVersion({ d, visibles, isMobile }: { d: SimulacionResumen; visibles: EstrategiaClave[]; isMobile: boolean }) {
   return (
     <div style={{ ...tarjeta }}>
       <div style={{ ...rotulo, marginBottom: 8 }}>Por versión de sad-analysis (la del 1X2)</div>
@@ -807,89 +870,122 @@ function PorVersion({ d, visibles, isMobile }: { d: SimulacionApuesta; visibles:
   )
 }
 
-function FilaApuesta({ a, visibles }: { a: ApuestaSimulada; visibles: { clave: EstrategiaClave; color: string }[] }) {
+function FilaApuesta({ a, kelly }: { a: ApuestaSimulada; kelly: Kelly }) {
+  const [abierta, setAbierta] = useState(false)
   const cerrada = a.estado === 'cerrada'
   const acierto = cerrada && a.resultado === a.elegido
   return (
-    <div style={{ ...tarjeta, padding: '11px 13px' }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
-        <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>{fecha(a.pitazo)}</span>
-        <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)' }}>{a.partido.local} – {a.partido.visita}</span>
-        {a.partido.liga && <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>{a.partido.liga}</span>}
-        {a.alerta?.activa && (
-          <span title={a.alerta.motivos.map((m) => m.detalle).join(' · ')}
-            style={{ padding: '1px 6px', borderRadius: 5, font: '700 9.5px var(--sans)', background: 'var(--down-soft)', color: 'var(--down)' }}>
-            ⚠ desconfiar
+    <details style={{ ...tarjeta, padding: '11px 13px' }} onToggle={(event) => setAbierta(event.currentTarget.open)}>
+      <summary style={{ cursor: 'pointer', color: 'var(--t2)' }}>
+        <span style={{ display: 'inline-flex', maxWidth: 'calc(100% - 20px)', gap: '4px 8px', alignItems: 'baseline', flexWrap: 'wrap', verticalAlign: 'top' }}>
+          <span style={{ font: '500 10.5px var(--mono)', color: 'var(--t3)' }}>{fecha(a.pitazo)}</span>
+          <span style={{ font: '700 12.5px var(--sans)', color: 'var(--t1)' }}>{a.partido.local} – {a.partido.visita}</span>
+          {a.partido.liga && <span style={{ font: '500 10.5px var(--sans)', color: 'var(--t3)' }}>{a.partido.liga}</span>}
+          {a.alerta?.activa && (
+            <span title={a.alerta.motivos.map((m) => m.detalle).join(' · ')}
+              style={{ padding: '1px 6px', borderRadius: 5, font: '700 9.5px var(--sans)', background: 'var(--down-soft)', color: 'var(--down)' }}>
+              ⚠ desconfiar
+            </span>
+          )}
+          {a.marcador && (
+            <span title={`Marcador más probable del modelo de goles: ${a.marcador.masProbable} (${num(100 * a.marcador.prob, 0)} %) · ${a.marcador.alineado ? 'va con el elegido' : 'no va con el elegido'}`}
+              style={{ padding: '1px 6px', borderRadius: 5, font: '700 9.5px var(--mono)', fontVariantNumeric: 'tabular-nums', border: `1px solid ${a.marcador.alineado ? 'var(--sim-metodo-marcador)' : 'var(--line)'}`, color: a.marcador.alineado ? 'var(--sim-metodo-marcador)' : 'var(--t3)' }}>
+              ⚽ {a.marcador.masProbable}
+            </span>
+          )}
+          <span style={{
+            marginLeft: 'auto', padding: '2px 8px', borderRadius: 6, font: '700 10px var(--sans)',
+            background: !cerrada ? 'var(--bg3)' : acierto ? 'var(--up-soft)' : 'var(--down-soft)',
+            color: !cerrada ? 'var(--t2)' : acierto ? 'var(--up)' : 'var(--down)',
+          }}>
+            {!cerrada ? 'por jugarse' : `${acierto ? '✓' : '✗'} salió ${RES[a.resultado!]}`}
           </span>
-        )}
-        {a.marcador && (
-          <span title={`Marcador más probable del modelo de goles: ${a.marcador.masProbable} (${num(100 * a.marcador.prob, 0)} %) · ${a.marcador.alineado ? 'va con el elegido' : 'no va con el elegido'}`}
-            style={{ padding: '1px 6px', borderRadius: 5, font: '700 9.5px var(--mono)', fontVariantNumeric: 'tabular-nums', border: `1px solid ${a.marcador.alineado ? 'var(--sim-metodo-marcador)' : 'var(--line)'}`, color: a.marcador.alineado ? 'var(--sim-metodo-marcador)' : 'var(--t3)' }}>
-            ⚽ {a.marcador.masProbable}
-          </span>
-        )}
-        <span style={{
-          marginLeft: 'auto', padding: '2px 8px', borderRadius: 6, font: '700 10px var(--sans)',
-          background: !cerrada ? 'var(--bg3)' : acierto ? 'var(--up-soft)' : 'var(--down-soft)',
-          color: !cerrada ? 'var(--t2)' : acierto ? 'var(--up)' : 'var(--down)',
-        }}>
-          {!cerrada ? 'por jugarse' : `${acierto ? '✓' : '✗'} salió ${RES[a.resultado!]}`}
         </span>
-      </div>
+      </summary>
 
-      {/* LA VERSIÓN DE CADA SKILL con la que se escribió el parte */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }} title={`parte depositado ${fecha(a.depositadoEn)} · prompt ${a.versionPrompt}`}>
-        {SKILL_CORTO.map(([s, c]) => a.versiones[s] ? (
-          <span key={s} style={{ padding: '1px 6px', borderRadius: 5, border: '1px solid var(--line)', font: '600 9.5px var(--mono)', color: s === 'sad-analysis' ? 'var(--t1)' : 'var(--t2)' }}>
-            {c} {a.versiones[s]}
-          </span>
-        ) : null)}
-      </div>
+      {abierta && <>
+        {/* LA VERSIÓN DE CADA SKILL con la que se escribió el parte */}
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }} title={`parte depositado ${fecha(a.depositadoEn)} · prompt ${a.versionPrompt}`}>
+          {SKILL_CORTO.map(([s, c]) => a.versiones[s] ? (
+            <span key={s} style={{ padding: '1px 6px', borderRadius: 5, border: '1px solid var(--line)', font: '600 9.5px var(--mono)', color: s === 'sad-analysis' ? 'var(--t1)' : 'var(--t2)' }}>
+              {c} {a.versiones[s]}
+            </span>
+          ) : null)}
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 6, marginTop: 8 }}>
-        {(['local', 'empate', 'visita'] as Resultado1x2[]).map((k) => {
-          const elegido = a.elegido === k
-          const salio = a.resultado === k
-          return (
-            <div key={k} style={{ padding: '5px 7px', borderRadius: 8, background: salio ? 'var(--bg3)' : 'transparent', border: `1px solid ${elegido ? 'var(--accent)' : 'var(--line)'}`, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', font: '600 9.5px var(--sans)', color: 'var(--t3)' }}>
-                {RES[k]}{elegido ? ' · elegido' : ''}{elegido && <SemaforoChip s={a.semaforo} corta />}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 6, marginTop: 8 }}>
+          {(['local', 'empate', 'visita'] as Resultado1x2[]).map((k) => {
+            const elegido = a.elegido === k
+            const salio = a.resultado === k
+            return (
+              <div key={k} style={{ padding: '5px 7px', borderRadius: 8, background: salio ? 'var(--bg3)' : 'transparent', border: `1px solid ${elegido ? 'var(--accent)' : 'var(--line)'}`, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', font: '600 9.5px var(--sans)', color: 'var(--t3)' }}>
+                  {RES[k]}{elegido ? ' · elegido' : ''}{elegido && <SemaforoChip s={a.semaforo} corta />}
+                </div>
+                <div style={{ font: '700 12px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
+                  {num(a.probabilidades[k], 0)} % <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>@ {num(a.cuotas[k])}</span>
+                </div>
+                <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>mercado {num(a.mercado[k], 0)} %</div>
               </div>
-              <div style={{ font: '700 12px var(--mono)', color: 'var(--t1)', fontVariantNumeric: 'tabular-nums' }}>
-                {num(a.probabilidades[k], 0)} % <span style={{ font: '500 10px var(--mono)', color: 'var(--t3)' }}>@ {num(a.cuotas[k])}</span>
-              </div>
-              <div style={{ font: '500 9.5px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>mercado {num(a.mercado[k], 0)} %</div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 8 }}>
-        {visibles.map((v) => {
-          const r = a.porEstrategia[v.clave]
-          if (!r) return null
-          return (
-            <div key={v.clave} style={{ display: 'grid', gridTemplateColumns: '10px 76px minmax(0,1fr)', alignItems: 'baseline', columnGap: 7, font: '500 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
-              <span style={{ width: 10, height: 2, background: v.color, alignSelf: 'center' }} />
-              <span style={{ color: 'var(--t2)', fontFamily: 'var(--sans)', fontWeight: 600 }}>{CORTO[v.clave]}</span>
-              {r.seleccion ? (
-                <span style={{ minWidth: 0 }}>
-                  {num(r.monto)} u a {RES[r.seleccion]}{r.linea ? <span style={{ color: 'var(--t3)' }}> (línea {r.linea})</span> : null}
-                  {r.ganancia != null && <> · <b style={{ color: colorDe(r.ganancia) }}>{signo(r.ganancia)}</b></>}
-                  {r.banca != null && <span style={{ color: 'var(--t3)' }}> · banca {num(r.banca)}</span>}
-                </span>
-              ) : (
-                <span style={{ color: 'var(--t3)', minWidth: 0 }}>
-                  {r.motivo === 'sin plata libre'
-                    ? 'no apuesta: toda la banca está en juego en otros partidos'
-                    : ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'martingalaFueraMedio', 'martingalaFueraMedioTope'].includes(v.clave) ? `no apuesta: ${r.motivo}`
-                    : v.clave === 'plana60' || v.clave === 'martingala60' || v.clave === 'martingala60Ajustada' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
-                    : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
-                </span>
-              )}
-            </div>
-          )
-        })}
+        <EstrategiasDePartido a={a} kelly={kelly} />
+      </>}
+    </details>
+  )
+}
+
+function EstrategiasDePartido({ a, kelly }: { a: ApuestaSimulada; kelly: Kelly }) {
+  const tieneDetalle = Object.keys(a.porEstrategia).length > 0
+  const detalle = useAsync(async (signal) => {
+    if (tieneDetalle) return a
+    const resultado = await getDataSource().simulacionApuestas({ pagina: 1, porPagina: 1, fixtureId: a.fixtureId }, signal)
+    return resultado.apuestas.find((fila) => fila.fixtureId === a.fixtureId) ?? null
+  }, a)
+  const fila = tieneDetalle ? a : detalle.data
+  if (!fila) {
+    if (detalle.error) return <ErrorSimulacion mensaje={detalle.error} recargar={detalle.reload} />
+    return <div role="status" style={{ marginTop: 8, font: '500 11px var(--sans)', color: 'var(--t3)' }}>
+      {detalle.loading ? 'Cargando estrategias…' : 'Este partido ya no figura en la simulación.'}
+    </div>
+  }
+  const visibles = estrategiasVisibles(kelly, Object.keys(fila.porEstrategia))
+  return (
+    <div style={{ marginTop: 8 }}>
+      {!tieneDetalle && (fila.alerta?.activa || fila.marcador) && (
+        <div style={{ font: '600 11px var(--sans)', color: 'var(--t2)', marginBottom: 5 }}>
+          {fila.alerta?.activa && <div title={fila.alerta.motivos.map((m) => m.detalle).join(' · ')}>⚠ Desconfiar del elegido</div>}
+          {fila.marcador && <div>Marcador más probable {fila.marcador.masProbable} · {num(100 * fila.marcador.prob, 0)} %</div>}
+        </div>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {visibles.map((v) => {
+            const r = fila.porEstrategia[v.clave]
+            if (!r) return null
+            return (
+              <div key={v.clave} style={{ display: 'grid', gridTemplateColumns: '10px 76px minmax(0,1fr)', alignItems: 'baseline', columnGap: 7, font: '500 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ width: 10, height: 2, background: v.color, alignSelf: 'center' }} />
+                <span style={{ color: 'var(--t2)', fontFamily: 'var(--sans)', fontWeight: 600 }}>{CORTO[v.clave]}</span>
+                {r.seleccion ? (
+                  <span style={{ minWidth: 0 }}>
+                    {num(r.monto)} u a {RES[r.seleccion]}{r.linea ? <span style={{ color: 'var(--t3)' }}> (línea {r.linea})</span> : null}
+                    {r.ganancia != null && <> · <b style={{ color: colorDe(r.ganancia) }}>{signo(r.ganancia)}</b></>}
+                    {r.banca != null && <span style={{ color: 'var(--t3)' }}> · banca {num(r.banca)}</span>}
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--t3)', minWidth: 0 }}>
+                    {r.motivo === 'sin plata libre'
+                      ? 'no apuesta: toda la banca está en juego en otros partidos'
+                      : ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'martingalaFueraMedio', 'martingalaFueraMedioTope'].includes(v.clave) ? `no apuesta: ${r.motivo}`
+                      : v.clave === 'plana60' || v.clave === 'martingala60' || v.clave === 'martingala60Ajustada' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
+                      : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
+                  </span>
+                )}
+              </div>
+            )
+          })}
       </div>
     </div>
   )

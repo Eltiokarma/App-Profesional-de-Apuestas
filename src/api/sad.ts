@@ -1,6 +1,6 @@
 // Endpoints del backend SAD (contrato: docs/openapi.yaml).
-import type { BurbujasEquipoDTO, LecturaListaPartido, LigasAnalizadasDTO, SemaforoElegido, SimulacionApuesta } from './types'
-import { apiDelete, apiGet, apiPost, qs } from './client'
+import type { BurbujasEquipoDTO, LecturaListaPartido, LigasAnalizadasDTO, SemaforoElegido, SimulacionApuesta, SimulacionApuestasPagina, SimulacionApuestasParams, SimulacionResumen } from './types'
+import { ApiError, apiDelete, apiGet, apiPost, qs } from './client'
 import type {
   CausaIncidencia,
   IncidenciaDTO,
@@ -182,6 +182,15 @@ export const SadApi = {
   /** Simulación de apuesta sobre nuestros 1X2 desde el 28/10/2026 (plana, Kelly, martingala). */
   simulacion: (pagina?: number, porPagina?: number) =>
     apiGet<SimulacionApuesta>('/analisis/simulacion' + qs({ pagina, porPagina }), { timeoutMs: 60_000 }),
+  simulacionApuestas: async (params: SimulacionApuestasParams, signal?: AbortSignal) => {
+    const datos = await apiGet<SimulacionApuestasPagina>('/analisis/simulacion' + qs({ ...params, soloApuestas: 'true' }), { signal, timeoutMs: 60_000 })
+    if ('estrategias' in datos && (params.q || params.desde || params.hasta || params.fixtureId)) {
+      throw new ApiError(503, 'El filtro de partidos estará disponible cuando termine la actualización del servidor.')
+    }
+    return datos
+  },
+  simulacionResumen: (signal?: AbortSignal) =>
+    apiGet<SimulacionResumen>('/analisis/simulacion' + qs({ soloResumen: 'true', porPagina: 1 }), { signal, timeoutMs: 60_000 }),
 
   /** Lo que el bucle aprendió, por skill (fase C de docs/APRENDIZAJE.md). */
   lecciones: (params?: LeccionesParams) =>

@@ -3050,6 +3050,24 @@ export interface SimulacionApuesta {
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]
 }
 
+export type SimulacionResumen = Omit<SimulacionApuesta, 'apuestas' | 'paginacion' | 'linea'> & {
+  linea: NonNullable<SimulacionApuesta['linea']>
+}
+
+export type SimulacionApuestasPagina = {
+  apuestas: ApuestaSimulada[]
+  paginacion: NonNullable<SimulacionApuesta['paginacion']>
+}
+
+export type SimulacionApuestasParams = {
+  pagina: number
+  porPagina: number
+  q?: string
+  desde?: string
+  hasta?: string
+  fixtureId?: number
+}
+
 /** Una fila de la ventaja por fuerza: cuánto NO gana con 1 o 2+ de ventaja al descanso (0-1). */
 export interface VentajaPorFuerza {
   prob: number
