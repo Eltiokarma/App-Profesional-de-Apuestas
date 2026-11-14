@@ -183,4 +183,12 @@
   (noche): el parte de una copa sin alineaciones que queda en `pendiente_xi`
   al cerrar el veredicto (1380, 941: con la ficha sellada sin once va a
   `nuncaVaALlegar` mientras no hay veredicto; después ese estado es la
-  constancia de que el bloque F no cerró).
+  constancia de que el bloque F no cerró). Y desde la pasada del 14/11
+  (mediodía): la prosa de `documentos[]` que un rehacer tomado a menos de
+  20 min del pitazo no alcanzó a reescribir con el rol del que entró (1407,
+  1219: la regla está en el paso 4 de `modos/rehacer.md` y no hay código
+  que arreglar; si no llegás, decí en `notas` del parte qué prosa quedó con
+  el once viejo, así el veredicto no la lee como análisis); y la tabla de posiciones sin los puntos que
+  quitó un fallo administrativo (1405, 694: la tabla se calcula de los
+  resultados de la base y no tiene fuente para una deducción; el dato de la
+  prensa va en `notas` del parte).
