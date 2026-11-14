@@ -4745,6 +4745,10 @@ def disparo_entre(desde: datetime, hasta: datetime) -> bool:
     return False
 
 
+# los motivos de DTP-REHACER que se miden contra el grid de la ficha (sistema y rol, 1350/1403)
+MOTIVOS_DEL_GRID = ("sistema:", "rol:")
+
+
 def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None,
                     creado_en: str | None = None) -> list[dict]:
     """CUÁNDO llegó el once que dispara DTP-REHACER, una vez jugado el partido
@@ -4819,10 +4823,15 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None,
         # el otro motivo —B. Quiñonez titular, Achilier al banco— ya estaba en el
         # once del último depósito). Si la corrección tardía es solo la del
         # sistema y hay motivos que no son del sistema, esos eran `conocido`.
-        otros = [x for x in a.get("motivos") or [] if not str(x).startswith("sistema:")]
+        # EL ROL TAMBIÉN ES DEL GRID (14/11/2026, incidencia 1403, Eslovenia 1545654 y
+        # Serbia 1528965: 4-4-2 → 5-3-2 después del pitazo y Karničnik/Zaletel, Gudelj/
+        # Sukacev comparados contra las casillas NUEVAS salían `conocido`). Con el grid
+        # corregido después del pitazo, el `rol:` se mide contra una corrección que nadie
+        # tenía: es tan tardío como el sistema.
+        otros = [x for x in a.get("motivos") or [] if not str(x).startswith(MOTIVOS_DEL_GRID)]
         if campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros:
             campos["momento"] = "conocido"
-            campos["motivosTardios"] = [x for x in a.get("motivos") or [] if str(x).startswith("sistema:")]
+            campos["motivosTardios"] = [x for x in a.get("motivos") or [] if str(x).startswith(MOTIVOS_DEL_GRID)]
             texto = (f"{texto}. PERO {'; '.join(otros)} ya estaba en el once del último depósito: ese motivo "
                      "era conocido y lo rehecho no lo corrigió")
         out.append({**a, **campos, "detalle": f"{a['detalle']} [{texto}]"})
