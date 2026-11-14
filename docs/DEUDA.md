@@ -1204,6 +1204,14 @@ conversación se pierde en la siguiente.
    estos puntos y rehacer `TASA_BACKTEST`/`MOVIMIENTO_BACKTEST`. Estudiado
    el mismo día y descartado: la «cara de empate» (burbuja grande + rival
    parejo + goles vivos) no separa en ningún nivel.
+34. **Vercel solo despliega `main`** (14/11/2026, usuario). El plan gratis
+   corta en 100 despliegues por día y cuenta CADA push a cualquier rama: ese
+   día las ramas del mantenimiento, de Codex y de Claude lo agotaron y el
+   #532 (ya mergeado) y el #533 quedaron sin desplegar («api-deployments-
+   free-per-day»). `vercel.json` apaga las vistas previas de las ramas
+   (`git.deploymentEnabled`: `"*": false`, `"main": true`): cada PR mergeado
+   gasta un despliegue. Lo que se pierde: la vista previa del PR antes de
+   mergearlo (se prueba con `npm run dev` o la demo).
 
 ## Siguientes pasos (en orden)
 
