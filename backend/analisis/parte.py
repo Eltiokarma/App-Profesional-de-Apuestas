@@ -4228,6 +4228,41 @@ def _gk_cubierta(fixture_id: int, lado: str, arqueros: list[dict], cache: dict) 
     return bloque_f.gk_cubierta(con_tit)
 
 
+# un once cierra con 7 nombres casados (bloque F): completar más de 11 − 7 sería inventar el plantel
+MAX_FILAS_DEL_ONCE = 4
+
+
+def con_filas_del_once(equipo: dict, fixture_id: int, team_id: int | None) -> dict:
+    """LOS TITULARES DEL ONCE OFICIAL QUE EL PARTE NO TRAE, SUMADOS POR LA APP
+    (14/11/2026, incidencia 1400: en 7 partes rehechos de la Nations League con
+    el once ya capturado sonaba ONCE-SIN-FILA-F1 —Prekop, Rusnák, Reis y Šatka
+    en Eslovaquia— aunque GET …/f1/{id} ya los traía como `delOnceOficial`: el
+    rehacer no copió esas filas). Lo que la base sabe no se le pide al
+    analista: con el once capturado, cada titular de la hoja que no está en el
+    plantel (por id, `idsAlternos` o nombre) entra como fila ROT con
+    `delOnceOficial` y `agregadaPorLaApp`, la MISMA regla de la tabla F1
+    (`f1_base.del_once_oficial`, #1068). Sin once o sin base, el equipo queda
+    como vino."""
+    plantel = equipo.get("plantel") or []
+    if not plantel or not team_id:
+        return equipo
+    try:
+        from backend.analisis.f1_base import del_once_oficial
+        t = {"candidatos": [{"jugadorId": j.get("jugadorId"), "nombre": j.get("nombre") or "",
+                             "idsAlternos": j.get("idsAlternos") or []} for j in plantel]}
+        nuevos = [c for c in del_once_oficial(t, fixture_id, team_id)["candidatos"] if c.get("delOnceOficial")]
+    except Exception:  # noqa: BLE001 — sin la base de alineaciones el plantel queda como lo declaró el parte
+        return equipo
+    if not nuevos or len(nuevos) > MAX_FILAS_DEL_ONCE:
+        # más de 4 titulares sin fila no es un debut: el plantel del parte no casa con la hoja
+        # (nombres mal escritos, otro equipo) y eso es un conflicto que el bloque F tiene que ver
+        return equipo
+    extra = [{"nombre": c["nombre"], "jugadorId": c.get("jugadorId"), "zona": c.get("zona") or "",
+              "posicion": c.get("posicion") or "", "rol": "ROT", "apps": "titular del once oficial",
+              "delOnceOficial": True, "agregadaPorLaApp": True} for c in nuevos]
+    return {**equipo, "plantel": [*plantel, *extra]}
+
+
 def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
     """El bloque F: resuelto si ya hay once, en dos ramas si todavía no."""
     plantel, fuera = equipo["plantel"], equipo["fuera"]
@@ -4918,8 +4953,12 @@ def dto(fixture_id: int) -> dict | None:
     alertas = list(parte["alertas"])
     equipos = {}
     base_f1: dict = {}
+    fx_lados = _fixture(fixture_id)
     for lado in LADOS:
         eq = parte["equipos"][lado]
+        if fx_lados and (xi.get(lado) or {}).get("once"):
+            # 1400: los titulares del once que la base conoce y el parte no copió
+            eq = con_filas_del_once(eq, fixture_id, fx_lados["home_team_id" if lado == "a" else "away_team_id"])
         tot = _totales(eq)
         disp = _disponibilidad(eq, xi.get(lado))
         if disp.get("resuelto"):
