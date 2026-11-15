@@ -15,7 +15,7 @@
    hasta el 50 % de los partidos de cada día, los que el 1X2 PERDIÓ, el más
    confiado primero—. No lo cambies a ojo: copialo al encargo de cada
    subagente como «prensa: sí (<prensaMotivo>)» o «prensa: no». El veredicto
-   corre horas después del partido justamente para que la crónica ya esté.
+   corre horas después del partido justamente para que la crónica ya esté. Desde el 15/11/2026 (1425) el backend lo asegura: el que lleva prensa no se lista hasta 6 h después del saque (sale en `noListados` con el motivo) y lo cierra la corrida siguiente.
 2. Un subagente por partido, en paralelo y **en tandas de a 8 como mucho**
    (incidencia 1353, como en partes: el veredicto es idempotente, así que un
    POST con 502 se verifica con GET y se reintenta), con este encargo:

@@ -101,3 +101,26 @@ def marcar(pendientes: list[dict]) -> None:
                                  "completa el 50 %: 1X2 acertado con poca confianza" if acerto else
                                  "completa el 50 %: sin 1X2 declarado")
             elegidos += 1
+
+
+# LA CRÓNICA TARDA EN APARECER (15/11/2026, incidencia 1425): la corrida de
+# veredictos de las 20:12 de Lima cerró partidos de ese mismo día; en 1528974,
+# 1528973 y 1492455 la búsqueda no encontró la crónica (devolvía partidos
+# viejos) y en otros dos solo la extended la dio. Un veredicto que lleva prensa
+# espera ESPERA_CRONICA_H horas desde el saque (≈ 4 h después del final); los
+# demás se cierran apenas el partido figura terminado, como siempre.
+ESPERA_CRONICA_H = 6
+
+
+def espera_cronica(p: dict, ahora) -> bool:
+    """¿Este pendiente lleva prensa y arrancó hace menos de ESPERA_CRONICA_H?
+    `jugadoEn` es la fecha de la base (UTC, «YYYY-MM-DD HH:MM:SS[.ffffff]»)."""
+    from datetime import datetime, timedelta, timezone
+    if not p.get("prensa"):
+        return False
+    try:
+        saque = datetime.strptime(str(p.get("jugadoEn") or "")[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return False
+    return ahora - saque < timedelta(hours=ESPERA_CRONICA_H)
+

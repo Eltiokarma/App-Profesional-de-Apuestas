@@ -81,5 +81,14 @@ prensa.marcar(dia)
 con = sorted(p["fixtureId"] for p in dia if p["prensa"])
 check("el cupo se cuenta por día, no por corrida", con == [1, 4], con)
 
+# 1425 (15/11/2026): el que lleva prensa espera ESPERA_CRONICA_H desde el saque; el que no, no espera
+from datetime import datetime as _dt, timezone as _tz  # noqa: E402
+_ahora = _dt(2026, 11, 15, 1, 12, tzinfo=_tz.utc)
+check("1425: con prensa y saque hace 3 h, espera; hace 7 h, no; sin prensa, nunca",
+      prensa.espera_cronica({"prensa": True, "jugadoEn": "2026-11-14 22:00:00.000000"}, _ahora)
+      and not prensa.espera_cronica({"prensa": True, "jugadoEn": "2026-11-14 18:00:00"}, _ahora)
+      and not prensa.espera_cronica({"prensa": False, "jugadoEn": "2026-11-14 22:00:00"}, _ahora)
+      and prensa.ESPERA_CRONICA_H >= 4)
+
 print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLA(S)'}")
 sys.exit(1 if fallos else 0)
