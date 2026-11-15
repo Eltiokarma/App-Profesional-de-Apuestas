@@ -2291,6 +2291,30 @@ DESENLACES = ("se_rompe", "rescata", "abierto")
 ISE_RAMA_SE_ROMPE = 7.0   # con ISE de rama ≥ 7 la lectura por defecto es `se_rompe`
 
 
+_VENTANA_EN_PROSA = re.compile(r"\bventana\b", re.I)
+
+
+def ramas_con_ventana_en_la_nota(tde_bloques: list) -> list[dict]:
+    """LA VENTANA DE LA RAMA VA EN SU CAMPO (15/11/2026, incidencia 1420, Cali–
+    Tolima 1549867: «siExpulsion» decía «ventana desde la roja +15» en `nota` y
+    sin `ventana`; con la roja de Mera al 58' los tramos de inferioridad salían
+    sin ventana ni rango y el gol del 84' quedó sin medir). El veredicto lee
+    `ventana`; la prosa no se mide. Aviso en `faltan`, sin rechazo."""
+    out = []
+    for b in tde_bloques or []:
+        for rama, r in ((b.get("reasignacion") or {}).items()):
+            if isinstance(r, dict) and not _txt(r.get("ventana")) and _VENTANA_EN_PROSA.search(_txt(r.get("nota"))):
+                out.append(f"{b.get('equipo') or '?'}.{rama}")
+    if not out:
+        return []
+    return [{
+        "bloque": "tde.reasignacion.ventana",
+        "costara": f"la ventana de {', '.join(out)} está escrita en la nota y no en `ventana`: si el partido pasa "
+                   "por esa rama, el tramo sale sin ventana ni rango y lo que pase ahí no se mide",
+        "comoSeArregla": '"ventana": "desde la roja +15" (o "60-75\'") en el objeto de la rama; la nota queda para la prosa',
+    }]
+
+
 DUAL_TDE = 5.0  # disciplina 43 del TDE: IE ≥ 5 Y ISE ≥ 5
 
 
@@ -3709,6 +3733,7 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": '"siLeEmpatan": {…} y "siExpulsion": {"propia": {…}, "rival": {…}} en cada bloque; '
                              '"siIguala" si el equipo puede ir abajo y empatar (TDE v0.1.23)',
         })
+    faltan.extend(ramas_con_ventana_en_la_nota(tde_bloques))
     # EL QUE ESTÁ FUERA NO ES SUPLENTE (incidencia 1051, Monterrey: De la Rosa en
     # `fuera` y como recambio en el DTP, en las ramas del TDE y en la matriz)
     fuera_usado = fuera_en_el_banco(parte)
