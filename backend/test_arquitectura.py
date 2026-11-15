@@ -74,6 +74,17 @@ npm = [k for k in json.loads(leer("package.json")).get("scripts", {}) if k.start
 check("CI: cada `npm run test:*` corre en CI", all(f"npm run {k}" in ci for k in npm),
       [k for k in npm if f"npm run {k}" not in ci])
 
+# 2-bis · un backtest sin test no protege de la fuga (FALLAS.md clase 8: «todo
+# backtest nuevo lleva un test que plante la fuga y la detecte»). El 15/11/2026
+# backtest_unxdos_motor.py, el que dio los coeficientes del 1X2 del motor, no
+# tenía ninguno. Cada backend/backtest_*.py lo importa algún test del backend.
+_tests_src = "\n".join(leer(os.path.relpath(p, RAIZ)) for p in glob.glob(os.path.join(RAIZ, "backend", "test_*.py")))
+_backtests = sorted(os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(RAIZ, "backend", "backtest_*.py")))
+_bt_sin_test = [b for b in _backtests
+                if not re.search(rf"(from backend\.{b} import|from backend import {b}\b|import backend\.{b}\b)", _tests_src)]
+check("fuga: cada backend/backtest_*.py lo importa un test (que plante la fuga y la detecte)",
+      bool(_backtests) and not _bt_sin_test, _bt_sin_test)
+
 # ── 3 · CONTRATO PRIMERO (CLAUDE.md: «primero docs/openapi.yaml») ───────────
 app = leer(os.path.join("backend", "app.py"))
 oa = leer(os.path.join("docs", "openapi.yaml"))

@@ -51,7 +51,7 @@ python -m backend.backtest_burbuja_1x2 --padron # ¿la burbuja / las K mejoran e
 python -m backend.test_backtest_1x2  # el método detecta un efecto real y no inventa uno (sintéticos + demo)
 python -m backend.backtest_familias --padron # ¿las burbujas de doble oportunidad, márgenes (1+…4+) y goles predicen el partido siguiente mejor que la frecuencia del equipo? (REVENTON §15; --desde-json para historias bajadas de /constantes)
 python -m backend.test_backtest_familias  # detecta un reventón plantado y no inventa uno
-python -m backend.backtest_unxdos_motor --padron # el 1X2 del motor desde μ: logística calibrada contra frecuencia y contra el Poisson sobre μ (MOTOR §5.6; --desde-dir para historias bajadas de /constantes y /niveles)
+python -m backend.backtest_unxdos_motor --padron # el 1X2 del motor desde μ: logística calibrada contra frecuencia y contra el Poisson sobre μ (MOTOR §5.6; --desde-dir para historias bajadas de /constantes y /niveles) · test_backtest_unxdos_motor
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
 python -m backend.fase0_ligas      # ¿qué ligas sumar? inventario de datos, μ por liga y reventón por liga, solo lee (29/10/2026; en Railway: nohup … > $SAD_DATA_DIR/fase0.log 2>&1 &, resumen en $SAD_DATA_DIR/fase0/resumen.txt; va en backend/ porque la imagen solo copia esa carpeta)

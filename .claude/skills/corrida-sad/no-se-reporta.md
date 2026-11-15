@@ -204,3 +204,13 @@
   marca porque la API no publicó la roja (1424, Di Noia en Maldonado: la
   ficha del partido anterior trae 0 rojas; cuando la API la publica, la
   agenda trae `dt.expulsado`, 919/920): la prensa manda y va en `dt.banco`.
+  Y desde la pasada del 15/11 (mediodía): el `actualizadoEn` del parte que
+  se mueve cuando `xi/auto` recaptura el once después del final (1221, 1394:
+  es informativo; el orden parte/pitazo, la simulación y el filtro «depositado
+  antes del pitazo» leen `deposito_previo_en`, que sella solo el POST de la
+  corrida); y el `dos-partidos` de un equipo con liga y copa a 24 h justas
+  (1398, 1399: Alianza Atlético y Cristal, Liga 1 el 14/11 y Copa de la Liga
+  el 15/11: es la fecha de la API, la agenda ya lo marca en `conflicto` y el
+  parte confirma la fecha en prensa). Si la fecha resulta ser un aplazado sin
+  marcar (un partido que ya no se juega ese día), eso sí se reporta, con la
+  fuente.
