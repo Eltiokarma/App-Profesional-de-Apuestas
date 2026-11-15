@@ -65,6 +65,11 @@ MECANISMOS = {
                      "salieron de los que entraron o de la descoordinación — Mallorca–Elversberg",
     "bajas_forzadas": "las bajas obligaron a un once remendado (jugadores fuera de puesto, línea nueva) y eso "
                       "decidió — Union SG–OH Leuven, cinco bajas y un central improvisado",
+    # 15/11/2026, incidencia 1422: tres «otro» en una corrida de veredictos
+    "sistema_propio_nuevo": "el de la racha salió con un sistema que su DT no había usado (otra línea de atrás, "
+                            "otro número de puntas) y el partido fue otro — Central Español con el primer 5-4-1",
+    "rival_esteril": "el rival no generó nada (xG mínimo, sin remates claros): la racha de recibir o de ambos "
+                     "marcan se cortó porque enfrente no hubo ataque, no por algo propio — 1549865, 0,19 de xG",
     "regresion_al_nivel": "sin un hecho que lo explique: la racha corta se cortó ante un rival de su nivel y "
                           "el equipo volvió a rendir lo suyo",
     "varianza": "sin mecanismo identificable: el partido no explica el resultado",
