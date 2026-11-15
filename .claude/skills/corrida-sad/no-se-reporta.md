@@ -200,3 +200,7 @@
   con otro apellido en la API y en la prensa («Alberto Baio» / «Alberto
   Costa», 1412: poné el `jugadorId` de la hoja en la fila de la prensa; por
   nombre no se casa una pila sola, 1386).
+  Y desde la pasada del 15/11 (noche): el DT suspendido que la base no
+  marca porque la API no publicó la roja (1424, Di Noia en Maldonado: la
+  ficha del partido anterior trae 0 rojas; cuando la API la publica, la
+  agenda trae `dt.expulsado`, 919/920): la prensa manda y va en `dt.banco`.
