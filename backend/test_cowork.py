@@ -4946,6 +4946,14 @@ def main():
     _m1220b = _mom(_al1220, _fx1220, "2026-10-25 15:45:00")[0]
     check("1220: con el grid cambiado, la corrección de después del pitazo sigue siendo `tardio` (848)",
           _m1220b.get("momento") == "tardio" and _m1220b.get("formacionCorregidaEn") == "2026-10-25T16:40:00Z", _m1220b)
+    # 1418 (14/11/2026, Israel 1528971): la API reescribió el GRID después del pitazo con la MISMA
+    # formación (Abada 3:4 → 2:1, Yehoshua 2:3 → 3:3): era `conocido` y el veredicto lo cobraba al DTP
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990490 AND capturada_en > '2026-10-25 16:15:00'")
+        _gal(_con, 990490, _og("4-4-2", _g4), "2026-10-25 16:40:00")   # misma etiqueta que la de 15:30, otro grid
+    _m1418 = _mom(_al1220, _fx1220, "2026-10-25 15:45:00")[0]
+    check("1418: el grid reescrito después del pitazo con la misma formación es corrección (`tardio`, con su hora)",
+          _m1418.get("momento") == "tardio" and _m1418.get("formacionCorregidaEn") == "2026-10-25T16:40:00Z", _m1418)
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
         _con.execute("DELETE FROM alineaciones_versiones WHERE fixture_id=990490")
         # Portuguesa–La Guaira: A antes del pitazo, B y otra vez A en juego (A se re-sella)

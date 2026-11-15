@@ -4878,6 +4878,25 @@ def _mismo_grid(a, b) -> bool:
     return bool(a.get("huella_grid")) and a.get("huella_grid") == b.get("huella_grid")
 
 
+def _grid_reescrito(a, b) -> bool:
+    """Las dos huellas del grid conocidas y DISTINTAS: la API movió casillas aunque
+    la etiqueta de la formación sea la misma (incidencia 1418, Israel 1528971:
+    con «5-4-1» igual, Abada de 3:4 a 2:1 y Yehoshua de 2:3 a 3:3 a las 15:50,
+    después del pitazo)."""
+    return bool(a.get("huella_grid")) and bool(b.get("huella_grid")) and a["huella_grid"] != b["huella_grid"]
+
+
+def _corregida(despues, previa) -> bool:
+    """¿La versión de después del pitazo corrige el once que ya estaba? Con otra
+    formación y otras casillas (848), o con la misma formación y el grid
+    reescrito (1418). Solo la etiqueta con las mismas casillas no (1220)."""
+    if not previa:
+        return False
+    if despues["formacion"] and despues["formacion"] != previa["formacion"] and not _mismo_grid(despues, previa):
+        return True
+    return _grid_reescrito(despues, previa)
+
+
 def _momento_de(filas, pitazo, dep) -> dict | None:
     """El `momento` de DTP-REHACER con las versiones del once dadas (las de un
     equipo, o las de los dos si no hay de ese). None = la alerta sale como estaba."""
@@ -4898,8 +4917,7 @@ def _momento_de(filas, pitazo, dep) -> dict | None:
             # 1220 (Libertad–Cerro): si el grid es el mismo, la API solo
             # re-etiquetó la formación: el once con esas casillas ya estaba
             previa = finales.get(f["team_id"])
-            if previa and f["formacion"] and f["formacion"] != previa["formacion"] \
-                    and not _mismo_grid(f, previa) and f["team_id"] not in corregida_en:
+            if _corregida(f, previa) and f["team_id"] not in corregida_en:
                 corregida_en[f["team_id"]] = t_f
             continue
         # LA PRIMERA VERSIÓN CON ESA HUELLA DEL GRID (1220): si la anterior del
@@ -4921,9 +4939,9 @@ def _momento_de(filas, pitazo, dep) -> dict | None:
     # 848: el once previo ya estaba en el depósito, pero la API corrigió la
     # formación DESPUÉS del pitazo y es esa corrección la que hace sonar la
     # alerta: nadie podía rehacer con ella
-    corregida = [(finales[k]["formacion"], v["formacion"]) for k, v in despues.items()
-                 if k in finales and v["formacion"] and v["formacion"] != finales[k]["formacion"]
-                 and not _mismo_grid(v, finales[k])]
+    corregida = [(finales[k]["formacion"], v["formacion"] if v["formacion"] != finales[k]["formacion"]
+                  else f"{v['formacion'] or 'misma formación'} con el grid reescrito")
+                 for k, v in despues.items() if k in finales and _corregida(v, finales[k])]
     t_corr = min(corregida_en.values()) if corregida_en else None
     if t <= dep and corregida:
         momento, texto = "tardio", ("la API corrigió la formación después del pitazo ("
