@@ -2052,6 +2052,9 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
       Ndiaye, Anderson, O'Reilly», titulares; Ameliano–Guaraní 1632051:
       «banco: … R. Torales», «banco: J. García, Maldonado, Añasco»).
 
+    · `caso: noConvocado`: uno del plantel que el DTP o una rama del TDE
+      nombran como banco y que no está en la hoja (Gales 1528972, K. Moore, 1423).
+
     Quién es quién lo decide identidad.py (el id manda cuando lo hay). Tipo
     dato: no corrige nada, dice qué re-depositar."""
     out = []
@@ -2121,6 +2124,46 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
                            + ", titular(es) en la hoja oficial. Las vías de gol y las ramas se escribieron sobre "
                              "otro once: rehacer el M2 con la hoja (GET /analisis/cowork/dtp/{id}).",
                 "titulares": hallados,
+            })
+    # EL BANCO QUE NO ESTÁ EN LA HOJA (15/11/2026, incidencia 1423, Gales
+    # 1528972: tras el rehacer con el once de las 16:31, el TDE, el DTP y la
+    # matriz seguían contando con K. Moore de banco y la hoja no lo traía; igual
+    # Bernard y Cuello en 1492455). Un jugador del PLANTEL del lado que el DTP o
+    # una rama del TDE nombran como banco y que no está en la hoja —ni titular
+    # ni suplente— no entra. Solo con la banca publicada: sin ella cualquiera
+    # que no es titular parecería ausente.
+    textos_tde = [(b.get("equipo"), "tde.reasignacion", (r or {}).get("nota") or "")
+                  for b in bloques_tde(parte.get("tde") or {})
+                  for r in (b.get("reasignacion") or {}).values() if isinstance(r, dict)]
+    for lado in LADOS:
+        h = hoja.get(lado) or {}
+        en_hoja = (h.get("titulares") or []) + (h.get("banca") or [])
+        if len(h.get("titulares") or []) < 7 or not h.get("banca"):
+            continue
+        rival = "b" if lado == "a" else "a"
+        otros = [j["nombre"] for j in en_hoja] + \
+                [j["nombre"] for k in ("titulares", "banca") for j in (hoja.get(rival) or {}).get(k) or []]
+        ausentes = [j for j in (eqs.get(lado) or {}).get("plantel") or [] if isinstance(j, dict) and _txt(j.get("nombre"))
+                    and not any((j.get("jugadorId") and j.get("jugadorId") == x["id"])
+                                or _identidad.mismo_jugador(_txt(j.get("nombre")), x["nombre"]) for x in en_hoja)]
+        hallados, vistos = [], set()
+        for foco, donde, texto in textos + textos_tde:
+            for trozo in _dtp.nombrados_de_banco(_txt(texto)):
+                for j in ausentes:
+                    n = _txt(j.get("nombre"))
+                    if n in vistos or not _identidad.menciona(n, trozo, nombre_suelto=True) \
+                            or _identidad.mencion_compartida(n, otros, trozo, nombre_suelto=True):
+                        continue
+                    vistos.add(n)
+                    hallados.append({"nombre": n, "dtp": foco, "donde": donde, "frase": _txt(texto)[:140]})
+        if hallados:
+            out.append({
+                "codigo": "FUERA-EN-LA-HOJA", "equipo": lado, "tipo": "dato", "caso": "noConvocado",
+                "detalle": f"{nombres.get(lado, lado)}: el parte cuenta de banco con "
+                           + "; ".join(f"{x['nombre']} ({x['donde']})" for x in hallados)
+                           + ", que no está en la hoja oficial (ni titular ni suplente). Las vías de gol y las ramas "
+                             "cuentan con quien no juega: rehacer el M2 y las ramas del TDE con el banco de la hoja.",
+                "jugadores": hallados,
             })
     return out
 
