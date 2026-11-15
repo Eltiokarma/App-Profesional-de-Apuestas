@@ -7002,7 +7002,9 @@ def main():
               and rv.cambios_en_el_once(_eq["fixture_id"], _eq["team_id"], -1) is None)
     check("once_distinto es calculada: un estudio no la declara ni la borra",
           "once_distinto" in rv.SENALES_CALCULADAS and "bloque_bajo_del_rival" in rv.MECANISMOS
-          and "arquero_rival" in rv.MECANISMOS and "clasico" in rv.SENALES)
+          and "arquero_rival" in rv.MECANISMOS and "clasico" in rv.SENALES
+          # 1422 (15/11/2026): el sistema propio nuevo y el rival estéril, sin «otro»
+          and "sistema_propio_nuevo" in rv.MECANISMOS and "rival_esteril" in rv.MECANISMOS)
     # EL ARQUERO ANTES DEL PITAZO (14/10/2026): dato calculado, no regla
     from backend.analisis import arquero as _arq
     # caso propio: el arquero 1 atajó los dos primeros, el 2 el tercero (suplente)
