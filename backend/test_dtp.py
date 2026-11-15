@@ -338,6 +338,22 @@ def main():
     check("1411: la casilla de otro de la frase sin casilla propia (Idah, 4:1) no se le cobra a Parrott; "
           "Molumby escrito en 2:2 (salió 3:2, otra línea) sí",
           "T. Parrott" not in _r1411 and "J. Molumby" in _r1411, _r1411)
+    # 1419 (15/11/2026, Georgia 1528973): «Tsitaishvili (extremo izquierdo, 4:1)» con el rol delante de la
+    # casilla en el mismo paréntesis: no se leía y la banda invertida (grid 4:3) no salía
+    _cas1419 = [("G. Mamardashvili", "1:1"), ("L. Lochoshvili", "2:1"), ("L. Dvali", "2:2"),
+                ("S. Goglichidze", "2:3"), ("O. Kakabadze", "2:4"), ("G. Mekvabishvili", "3:1"),
+                ("G. Chakvetadze", "3:2"), ("G. Kvernadze", "4:1"), ("N. Gagnidze", "4:2"),
+                ("G. Tsitaishvili", "4:3"), ("G. Mikautadze", "5:1")]
+    _por1419 = {1: 1, 2: 4, 3: 2, 4: 3, 5: 1}
+    _of1419 = {"formacion": "4-2-3-1", "titulares": [n for n, _ in _cas1419], "defensores": 4,
+               "casillas": [{"nombre": n, "grid": g, "carril": _car1391(g, _por1419)} for n, g in _cas1419]}
+    _b1419 = {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": ""}, "m2": {"duelosCarril": [
+        {"carril": "izquierda", "duelo": "Tsitaishvili (extremo izquierdo, 4:1) contra Osváth (lateral derecho, 2:4)"},
+        {"carril": "derecha", "duelo": "Kvernadze (4:3) y Kakabadze (2:4) contra Kerkez (2:1)"}]}}}
+    _r1419 = {r["jugador"]: r["motivo"] for r in _dc646.roles_vs_grid(_b1419, _of1419)}
+    check("1419: la casilla con el rol delante en el paréntesis se lee (Tsitaishvili 4:1 contra el grid 4:3) "
+          "y la de Kvernadze sigue",
+          set(_r1419) == {"G. Tsitaishvili", "G. Kvernadze"} and "4:1" in _r1419["G. Tsitaishvili"], _r1419)
     # la API que solo re-etiqueta 4-2-3-1 → 4-3-3 corre los números de fila: el
     # mediapunta escrito 4:2 que el grid da 3:2 (medio) no es otra línea
     _b1391r = {"equipo": "b", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": "",

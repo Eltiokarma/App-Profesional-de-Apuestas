@@ -1902,7 +1902,11 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
 
 
 # «Nombre Apellido (fila:columna)»: la casilla escrita al lado de un nombre (1391)
-_RX_CASILLA = re.compile(r"((?:[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’.-]*\s+){0,2}[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+)\s*\((\d):(\d)\)")
+# …también con el rol delante en el mismo paréntesis (15/11/2026, incidencia
+# 1419, Georgia 1528973: «Tsitaishvili (extremo izquierdo, 4:1)» no se leía y la
+# banda invertida contra el grid, 4:3, no salía en rolesVsGrid)
+_RX_CASILLA = re.compile(r"((?:[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’.-]*\s+){0,2}[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+)\s*"
+                         r"\((?:[^():]{0,40}?[,;]\s*)?(\d):(\d)\)")
 
 
 def rehacer(bloque: dict, oficial: dict | None) -> dict | None:
