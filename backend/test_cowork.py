@@ -5157,6 +5157,19 @@ def main():
           and {j["nombre"] for j in _eq1404["plantel"]} == {*(_cola[k]["nombre"] for k in range(9)), "Copiado De F1"}
           and not any("delOnceOficial" in j or "agregadaPorLaApp" in j for j in _eq1404["plantel"]),
           (_rech1404, [j["nombre"] for j in _eq1404["plantel"]]))
+    # 1420 (15/11/2026, Cali–Tolima 1549867): «ventana desde la roja +15» en la NOTA de siExpulsion y sin
+    # `ventana`: los tramos de inferioridad salían sin rango. El recibo lo dice en `faltan`
+    _f1420 = _p1400.ramas_con_ventana_en_la_nota([
+        {"equipo": "b", "reasignacion": {
+            "siExpulsion": {"nota": "régimen de inferioridad, ventana desde la roja +15"},
+            "siMarcaPrimero": {"nota": "administra", "ventana": "75-90'"},
+            "siRecibePrimero": {"nota": "carga por la derecha"}}}])
+    check("1420: la rama con la ventana en la nota y sin `ventana` sale en faltan; la que la trae en su campo "
+          "o no habla de ventana, no",
+          len(_f1420) == 1 and _f1420[0]["bloque"] == "tde.reasignacion.ventana"
+          and "b.siExpulsion" in _f1420[0]["costara"] and "siMarcaPrimero" not in _f1420[0]["costara"]
+          and "siRecibePrimero" not in _f1420[0]["costara"]
+          and _p1400.ramas_con_ventana_en_la_nota([{"equipo": "a", "reasignacion": {}}]) == [], _f1420)
     _once1068 = [c["nombre"] for c in _d1068["candidatos"]]
     _ids1068 = {c["nombre"]: c["jugadorId"] for c in _d1068["candidatos"]}
     _pl = lambda cs: [{"nombre": c["nombre"], "jugadorId": c["jugadorId"], "zona": c["zona"],  # noqa: E731
