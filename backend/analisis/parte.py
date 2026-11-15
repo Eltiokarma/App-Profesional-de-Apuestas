@@ -1939,7 +1939,14 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
                 por_rival = bool(rival & _palabras(frase, 4)) or (
                     ll.get("rivalId") is not None and ll["rivalId"] == rival_hoy
                     and _ESTE_RIVAL.search(frase))
-                if not any(a in plano for a in anclas) and not (donde == lado and por_rival):
+                # la copa se nombra con su PALABRA entera, no como pedazo de otra
+                # (1426, Defensor–Peñarol: «finalista del Uruguayo», la liga, casaba
+                # con «uruguay» de la Copa Uruguay, que Peñarol perdió; lo mismo
+                # «brasil» dentro de «brasileirao»). Solo «penal» va por prefijo
+                # (penales, penaltis).
+                nombra_copa = any(w == a or (a == "penal" and w.startswith("penal"))
+                                  for a in anclas for w in plano.split())
+                if not nombra_copa and not (donde == lado and por_rival):
                     continue
                 if despues and not (rival & _palabras(frase, 4)):
                     continue

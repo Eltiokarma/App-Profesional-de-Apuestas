@@ -238,6 +238,26 @@ check("1130: la prosa del bloque DTP de Cerro («eliminado por este rival») sue
 check("1130: la misma frase en el bloque del otro equipo, o con otro rival hoy, no se le carga a Cerro",
       _al1130b == [] and _al1130c == [], (_al1130b, _al1130c))
 
+# 1426 (1649062, Defensor–Peñarol, Clausura uruguayo): Peñarol cayó en la Copa
+# Uruguay y el parte decía «finalista del Uruguayo» (la LIGA): «uruguay» no se
+# busca como pedazo de «uruguayo». Nombrar la copa entera sigue sonando.
+_ll1426 = [{"fixtureId": 1640001, "competicion": "Copa Uruguay", "penales": None, "pasa": False,
+            "texto": "quedó eliminado", "rival": "Racing Montevideo", "rivalId": 55}]
+try:
+    eliminatoria.recientes = lambda tid, antes, dias=30: _ll1426 if tid == 2 else []
+    _fx1426 = {"home_team_id": 1, "away_team_id": 2, "date": "2026-11-15 23:00:00"}
+    _nom1426 = {"a": "Defensor Sporting", "b": "Penarol"}
+    _al1426 = parte.alertas_eliminatoria({"equipos": {"b": {"nota": "Peñarol, finalista del Uruguayo el año "
+                                                                    "pasado, llega con su once titular."}}},
+                                         _fx1426, _nom1426)
+    _al1426b = parte.alertas_eliminatoria({"equipos": {"b": {"nota": "Peñarol llega finalista de la Copa "
+                                                                     "Uruguay y con la moral alta."}}},
+                                          _fx1426, _nom1426)
+finally:
+    eliminatoria.recientes = _rec_orig
+check("1426: «finalista del Uruguayo» (la liga) no suena por la Copa Uruguay; «finalista de la Copa Uruguay» sí",
+      _al1426 == [] and [a["equipo"] for a in _al1426b] == ["b"], (_al1426, _al1426b))
+
 print()
 print("TODO OK" if not fallos else f"{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
