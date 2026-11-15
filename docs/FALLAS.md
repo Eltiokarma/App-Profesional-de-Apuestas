@@ -279,6 +279,7 @@ Tres lugares donde vive una guardia:
   - Disparar a mano desde fuera abre otra sesión.
   - El texto de una rutina solo se edita desde su propia conversación: las de mantenimiento seguían en «3 grupos» (30/10).
 - **Guardia:**
+  - **El veredicto con prensa espera la crónica:** un pendiente que lleva prensa no entra hasta `prensa.ESPERA_CRONICA_H` desde el saque (1425: la corrida de las 20:12 de Lima no encontró la crónica de partidos de esa tarde); los demás entran apenas figuran terminados. Test en `backend/test_prensa.py`.
   - **Sesiones fijas** con `git pull` en cada disparo.
   - **Ids anotados** en docs/DEUDA.md (deudas 11 y 17).
   - **El texto manda poco:** el texto de la rutina solo apunta al skill y el skill del repo manda.

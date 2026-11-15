@@ -5911,7 +5911,8 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
         # lo contrario y no tenía cómo saberlo.
         "criterio": f"partes sin veredicto cuyo partido figura TERMINADO con marcador en nuestra base "
                     f"(entra aunque haya arrancado hace menos de {horas} h), o que sin figurar terminado "
-                    f"arrancó hace más de {horas} h y ya tiene marcador (subir `horas` estrecha solo a esos)",
+                    f"arrancó hace más de {horas} h y ya tiene marcador (subir `horas` estrecha solo a esos); "
+                    f"el que lleva prensa espera 6 h desde el saque, por la crónica (1425)",
         "sinCerrar": len(filas),
         "pendientes": [],
         "noListados": [],
@@ -5979,6 +5980,16 @@ def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
         })
 
     _marcar_prensa(sobre["pendientes"])
+    # 1425: el que lleva la crónica de la prensa espera a que esté publicada
+    from backend.analisis.prensa import ESPERA_CRONICA_H, espera_cronica
+    esperan = [p for p in sobre["pendientes"] if espera_cronica(p, ahora)]
+    for p in esperan:
+        sobre["pendientes"].remove(p)
+        if len(sobre["noListados"]) < 20:
+            sobre["noListados"].append({
+                "fixtureId": p["fixtureId"], "partido": p["partido"], "fecha": p["fecha"], "estado": "FT",
+                "porque": f"lleva la crónica de la prensa ({p.get('prensaMotivo')}) y arrancó hace menos de "
+                          f"{ESPERA_CRONICA_H} h: espera a que la crónica esté publicada (la próxima corrida lo cierra)"})
     if not sobre["pendientes"]:
         sobre["nota"] = (f"ningún caso listo para cerrar: hay {len(filas)} parte(s) sin "
                          f"veredicto y ninguno pasa el filtro. Mirá `noListados`.")

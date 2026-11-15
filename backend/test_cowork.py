@@ -2605,9 +2605,12 @@ def main():
     sobre2 = c.get(f"{A}/analisis/cowork/veredictos/pendientes").json()
     with _sq3.connect(_sad) as _con:  # se devuelve la fecha: los checks de abajo eligen fixtures por fecha
         _con.execute("UPDATE fixtures SET date=? WHERE id=?", (fecha_original, reciente))
-    check("un partido TERMINADO de hace 2 h ya entra como pendiente (no espera las 12 h desde el saque)",
-          any(x["fixtureId"] == reciente for x in sobre2["pendientes"]),
-          [x for x in sobre2["noListados"] if x["fixtureId"] == reciente])
+    # …y si lleva la crónica de la prensa, espera solo por ella (1425, 15/11/2026), no por las 12 h
+    _nl2 = [x for x in sobre2["noListados"] if x["fixtureId"] == reciente]
+    check("un partido TERMINADO de hace 2 h ya entra como pendiente (no espera las 12 h desde el saque); "
+          "con prensa, espera solo la crónica (1425)",
+          any(x["fixtureId"] == reciente for x in sobre2["pendientes"])
+          or (len(_nl2) == 1 and "crónica" in _nl2[0]["porque"] and "12 h" not in _nl2[0]["porque"]), _nl2)
     check("el criterio lo dice: terminado con marcador entra aunque arrancó hace menos de 12 h",
           "TERMINADO" in sobre2["criterio"] and "arrancó hace más de" in sobre2["criterio"], sobre2["criterio"])
 
