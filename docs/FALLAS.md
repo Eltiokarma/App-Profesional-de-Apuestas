@@ -194,6 +194,7 @@ Tres lugares donde vive una guardia:
   - **Nivel previo:** `backtest_burbuja.nivel_rival_previo`, con su test anti-fuga.
   - **Vista al día del partido:** `antesDe=<fixture>` en `/constantes`, `/niveles` y `/burbujas`.
   - **Corte temporal** en todos los backtests; la guardia de 15-35 % de empates.
+  - **Cada backtest tiene su test** (15/11/2026: `backtest_unxdos_motor`, el que dio los coeficientes del 1X2 del motor, no tenía ninguno): `backend/test_arquitectura.py` (2-bis) exige que cada `backend/backtest_*.py` lo importe un test del backend. El de `backtest_unxdos_motor` planta la fuga (el nivel con la fecha del partido) y comprueba que no entra y que, abierta a propósito, se notaría (`backend/test_backtest_unxdos_motor.py`).
 - **Si vuelve:** todo backtest nuevo lleva un test que plante la fuga y la detecte.
 
 ### 9. El contrato desincronizado
