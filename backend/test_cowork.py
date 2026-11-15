@@ -2817,6 +2817,21 @@ def main():
           and _feh(_d_amb("banco: Lozano, y Adamo si arranca en el banco"), _h_amb, {}) == []
           and _feh(_d_amb("banco del que persigue: Castillo"), _h_amb, {}) == []
           and len(_feh(_d_amb("banco: Adamo"), _h_amb, {})) == 1)
+    # 1423 (15/11/2026, Gales 1528972): K. Moore de banco en el DTP y en una rama del TDE y fuera de la hoja
+    _h1423 = {"b": _hj([(10 + k, f"T{k}") for k in range(9)] + [(30, "B. Johnson"), (31, "H. Wilson")],
+                       [(40, "D. Brooks"), (41, "L. Harris")])}
+    _p1423 = {"equipos": {"b": {"plantel": [{"nombre": "K. Moore", "jugadorId": 50}, {"nombre": "D. Brooks", "jugadorId": 40},
+                                            {"nombre": "B. Johnson", "jugadorId": 30}]}},
+              "dtp": {"bloques": [{"equipo": "b", "apertura": {"m2": {"viasGol": {
+                  "foco": ["banco ofensivo de Gales que persigue: Moore, Brooks, Harris"]}}}}]},
+              "tde": {"bloques": [{"equipo": "b", "ie": 5, "reasignacion": {
+                  "siRecibePrimero": {"nota": "persigue; banco: Moore y Brooks"}}}]}}
+    _a1423 = [a for a in _feh(_p1423, _h1423, {"b": "Wales"}) if a.get("caso") == "noConvocado"]
+    _h1423sb = {"b": {**_h1423["b"], "banca": []}}
+    check("1423: el del plantel nombrado de banco que no está en la hoja → FUERA-EN-LA-HOJA noConvocado (una vez); "
+          "los suplentes de la hoja no; sin banca publicada, nada",
+          len(_a1423) == 1 and [x["nombre"] for x in _a1423[0]["jugadores"]] == ["K. Moore"]
+          and not [a for a in _feh(_p1423, _h1423sb, {}) if a.get("caso") == "noConvocado"], _a1423)
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("1218: la cláusula «ventana del reloj 60-75'» manda aunque no vaya primera; «desde el minuto 0» no es relativa",
