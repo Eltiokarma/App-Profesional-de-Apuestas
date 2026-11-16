@@ -115,6 +115,16 @@ check("1096: con la inicial o la pila dentro de la otra sigue casando (A. Rodrí
       and idn.mismo_nombre_dt("Ricardo Silva", "Ricardo Jorge Ferreira Pinto da Silva")
       and idn.mismo_nombre_dt("Luis Enrique", "Enrique Luis")
       and idn.mismo_nombre_dt("Victor Manuel Vucetich", "Manuel Vucetich Rojas Victor"))
+check("1428: una inicial que no es de ninguna pila del otro separa («A. Rodríguez» no es «Héctor Ignacio "
+      "Rodríguez Peña»); la que sí es de una pila sigue casando (H., I., A. con Andrés, J. C. Oblitas)",
+      not idn.mismo_dt("A. Rodríguez", "Héctor Ignacio Rodríguez Peña")
+      and not idn.mismo_nombre_dt("A. Rodríguez", "Héctor Ignacio Rodríguez Peña")
+      and not idn.mismo_nombre_dt("Héctor Ignacio Rodríguez Peña", "A. Rodríguez")
+      and idn.mismo_dt("H. Rodríguez", "Héctor Ignacio Rodríguez Peña")
+      and idn.mismo_dt("I. Rodríguez", "Héctor Ignacio Rodríguez Peña")
+      and idn.mismo_nombre_dt("A. Rodríguez", "Andrés Rodríguez")
+      and idn.mismo_nombre_dt("J. C. Oblitas", "Juan Carlos Oblitas")
+      and idn.mismo_dt("M. Pellegrino", "Mauricio Pellegrino"))
 check("1100/1123: la forma del nombre del DT (inicial o completo)",
       idn.forma_dt("W. Ribonetto") == "inicial" and idn.forma_dt("Davis Gonzalez") == "completo"
       and idn.forma_dt("Ribonetto") == "completo")

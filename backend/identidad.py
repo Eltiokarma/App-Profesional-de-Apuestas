@@ -500,9 +500,34 @@ def pilas_distintas_dt(a: str, b: str) -> bool:
                 return t[:i]
         return []
     pa, pb = pila(ta, tb), pila(tb, ta)
+    # UNA INICIAL QUE NO ES DE NINGUNA PILA DEL OTRO también separa (1428,
+    # Defensor 15/11/2026, la misma persona de la 1096: la hoja trae «A.
+    # Rodríguez», el interino Andrés, y /coachs a «Héctor Ignacio Rodríguez
+    # Peña»; como la inicial no contaba, `elegir_dt` casaba la hoja con Héctor y
+    # la base lo registraba «desde la alineación» con la llegada del interino).
+    ia, ib = _iniciales_dt(a, tb), _iniciales_dt(b, ta)
+    if ia and pb and not any(w.startswith(l) for l in ia for w in pb):
+        return True
+    if ib and pa and not any(w.startswith(l) for l in ib for w in pa):
+        return True
     if not pa or not pb:
         return False
     return not any(misma_pila(x, y) or x in y or y in x for x in pa for y in pb)
+
+
+def _iniciales_dt(nombre: str, otro: list[str]) -> list[str]:
+    """Las iniciales («A.», «J. M.») antes de la primera palabra que comparte
+    con el otro nombre (el apellido). Un apodo conocido no trae iniciales."""
+    t = " ".join(plano(nombre).split())
+    if t in APODOS_DT:
+        return []
+    out = []
+    for x in t.split():
+        if len(x) >= 3 and any(apellido_dt(x, y) for y in otro):
+            return out
+        if len(x) == 1:
+            out.append(x)
+    return []
 
 
 def mismo_dt(a: str, b: str) -> bool:

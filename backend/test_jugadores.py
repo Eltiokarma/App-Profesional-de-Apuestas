@@ -133,6 +133,17 @@ def main():
     check("el que sale de la carrera lleva fuente coachs", elegir_entrenador(carrera, 700)["fuente"] == "coachs")
     check("sin carrera pero con alineación, el de la alineación",
           elegir_entrenador([], 700, "Pep Guardiola", "2026-09-01")["nombre"] == "Pep Guardiola")
+    # 1428 (Defensor 2350, 15/11/2026): la hoja trae «A. Rodríguez» (el interino
+    # Andrés) y /coachs a «Héctor Ignacio Rodríguez Peña» con la etapa abierta:
+    # la inicial no es de su pila, así que el vigente es el de la hoja, no Héctor
+    # con la llegada del interino.
+    _def = [{"id": 77, "name": "Héctor Ignacio Rodríguez Peña",
+             "career": [{"team": {"id": 2350}, "start": "2025-06-01", "end": None}]}]
+    _e1428 = elegir_entrenador(_def, 2350, "A. Rodríguez", "2026-10-24")
+    check("1428: «A. Rodríguez» de la hoja no casa con «Héctor Ignacio Rodríguez Peña» de /coachs",
+          _e1428["nombre"] == "A. Rodríguez" and _e1428["fuente"] == "alineacion" and _e1428["coach_id"] == 0, _e1428)
+    check("1428: con la inicial de su pila («H. Rodríguez») sigue siendo Héctor",
+          elegir_entrenador(_def, 2350, "H. Rodríguez", None)["coach_id"] == 77)
     from backend.ingesta.jugadores import nombre_coach, dt_de_alineaciones
     check("el nombre se arma Nombre Apellido con firstname/lastname (Tigres devolvía «Manuel Vucetich Rojas Victor»)",
           nombre_coach({"name": "Manuel Vucetich Rojas Victor", "firstname": "Víctor Manuel",

@@ -65,6 +65,7 @@ Tres lugares donde vive una guardia:
 - **Síntoma:** el parte se escribe con el entrenador saliente; cuarentenas por DT equivocado.
 - **Casos:** deudas 2 y 6 (17 de 22 DT salientes el 16/09; la alineación rancia de Santa Fe–Cali; Pellegrini Ripamonti).
 - **Guardia:**
+  - **Una inicial que no es de ninguna pila del otro separa** (1428, 15/11/2026, Defensor: la hoja «A. Rodríguez», el interino Andrés, casaba con «Héctor Ignacio Rodríguez Peña» de /coachs y la base registraba a Héctor «desde la alineación» con la llegada del interino): `identidad.pilas_distintas_dt` mira también las iniciales, y con ella `mismo_dt`, `mismo_nombre_dt` y `jugadores.elegir_entrenador`. Tests en `backend/test_identidad.py` y `backend/test_jugadores.py`.
   - **Refresco diario:** `jugadores --dt-agenda`; la alineación vale solo si es de los últimos 3 partidos.
   - **Alertas** `DT-DISCREPANCIA` y `DT-SIN-DT`.
   - **Cuarentena automática** que enseña.
