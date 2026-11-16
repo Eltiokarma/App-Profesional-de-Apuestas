@@ -496,6 +496,20 @@ def main():
     check("769: del 25/10 21:05 al 29/10 01:05 UTC son 3 días de descanso, no 4; 8 días a la misma hora son 8",
           _jug471.dias_descanso("2026-10-25 21:05:00", "2026-10-29T01:05:00Z") == 3
           and _jug471.dias_descanso("2026-10-01", "2026-10-09") == 8)
+    # 1432 (Gibraltar–Malta, 16/11/2026): el amistoso de una SELECCIÓN (liga 10)
+    # en la fecha FIFA sí es descanso; el F2 contaba 43 días y eran 4
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,1,0)",
+                     (990479, (t0 - _dt.timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"), "FT",
+                      "Match Finished", 10, 2026, 990471, 990472))
+    try:
+        _c1432 = _jug471._congestion(990471, t0.strftime("%Y-%m-%d %H:%M:%S"))
+        check("1432: el amistoso de selecciones cuenta para el descanso; el de clubes (667) sigue sin contar",
+              _c1432 == {"diasDescanso": 2, "partidos21d": 3}, _c1432)
+    finally:
+        with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+            _con.execute("DELETE FROM fixtures WHERE id=990479")
     with _sq.connect(os.path.join(tmp, "sad.db")) as _con:   # que no los tome otro test como «el último jugado»
         _con.execute("DELETE FROM alineaciones WHERE fixture_id BETWEEN 990470 AND 990472")
     # 1357 (Anaitasuna, Copa del Rey R128: «38 días de descanso» con la regional

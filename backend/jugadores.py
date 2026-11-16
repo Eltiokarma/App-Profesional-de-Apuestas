@@ -717,8 +717,11 @@ def _congestion(team_id: int, fecha_fixture: str) -> dict:
     """Días de descanso y partidos en los últimos 21 días ANTES del fixture —
     sale de fixtures ya capturados (spec §11, 0 requests). Sin amistosos: el
     de Mainz con el Waldhof Mannheim contaba como partido de los 21 días en el
-    F2 del TDE (incidencia 471). Sin su liga en la base, sin dato (1357)."""
-    from backend.analisis.escala import AMISTOSOS
+    F2 del TDE (incidencia 471). Sin su liga en la base, sin dato (1357).
+    El amistoso de una SELECCIÓN sí cuenta: es la fecha FIFA, no pretemporada
+    (1432, Malta con 43 días de descanso y el 1-x con Eswatini cuatro días antes;
+    el DTP, que no saca amistosos, ya decía 4)."""
+    from backend.analisis.escala import AMISTOSOS_CLUBES as AMISTOSOS
     fecha = fecha_fixture.replace("T", " ").rstrip("Z")
     motivo = sin_liga_en_la_base(team_id, fecha)
     if motivo:

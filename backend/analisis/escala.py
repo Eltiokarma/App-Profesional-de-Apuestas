@@ -46,6 +46,11 @@ COPAS = {
 _COPA_RE = re.compile(r"\b(cup|copa|coppa|pokal|coupe|ta[cç]a|trophy|troph[ée]e|shield|super ?cup|supercopa|"
                       r"supercoppa|bicentenario)\b", re.I)
 AMISTOSOS = {667, 10}    # de clubes y de selecciones: nunca son la base de nadie
+# El amistoso de CLUBES (pretemporada, parón) no cansa como un partido: no es
+# descanso ni partido de los 21 días (471, Mainz–Waldhof). El de una SELECCIÓN
+# en la fecha FIFA sí se juega en serio: Malta–Eswatini del 12/11 eran 4 días
+# de descanso antes de Gibraltar–Malta y el F2 contaba 43 (1432).
+AMISTOSOS_CLUBES = {667}
 HISTORIAL_MAX = 40       # filas de copa que se miran hacia atrás
 
 
