@@ -6711,6 +6711,7 @@ def latido(horas: int = 36) -> dict:
 
     cuotas = cuotas_prepartido(ahora)
     presupuesto = presupuesto_api()
+    deriv = derivadas_al_dia(ahora)
 
     horas_sin_nada = None
     if ultimo:
@@ -6733,6 +6734,8 @@ def latido(horas: int = 36) -> dict:
         motivos.append(cuotas["alarma"])
     if presupuesto["alarma"]:
         motivos.append(presupuesto["alarma"])
+    if deriv["alarma"]:
+        motivos.append(deriv["alarma"])
     # LO QUE LAS CORRIDAS VIERON ROTO Y NADIE ARREGLÓ (incidencias, 18/10/2026)
     try:
         from backend.analisis import incidencias as _inc
@@ -6742,7 +6745,9 @@ def latido(horas: int = 36) -> dict:
     if inc and inc["bloquean"]:
         motivos.append(f"{inc['bloquean']} incidencia(s) que bloquean sin resolver "
                        "(GET /analisis/cowork/incidencias)")
-    estado = "rojo" if depositados == 0 else ("ambar" if motivos else "verde")
+    # las derivadas viejas son ROJO aunque se depositen partes: cada parte se
+    # escribe sobre un nivel y unas K que no vieron los últimos partidos (1430)
+    estado = "rojo" if depositados == 0 or deriv["alarma"] else ("ambar" if motivos else "verde")
     return {
         "estado": estado,
         "porque": motivos or ["todo al día"],
@@ -6764,10 +6769,57 @@ def latido(horas: int = 36) -> dict:
         "sinOnceCerrado": sin_xi,
         "cuotasPrepartido": cuotas,
         "presupuestoApi": presupuesto,
+        "derivadas": deriv,
         "incidencias": inc,
         "nota": "esto solo mira; no dispara nada. El silencio cuenta como fallo: "
                 "cero partes en la ventana es ROJO, no «sin novedad».",
     }
+
+
+# LAS DERIVADAS QUE NO SE REHACEN (16/11/2026, incidencia 1430): el pipeline
+# (sad.db → levels/constants/discreto) corre al final de cada corrida diaria
+# (SAD_INGESTA_HORA, tres por día) y su última corrida buena fue el 13/11 05:41
+# UTC. Durante 3 días los resultados entraban a sad.db (Slovakia 2-2 Faroe del
+# 13/11, finalizado) y ningún nivel ni K los veía; el latido seguía en ámbar por
+# los veredictos y nadie lo notó hasta que un parte lo dijo. Con tres corridas
+# por día, 14 h son dos corridas seguidas perdidas.
+DERIVADAS_MAX_HORAS = 14
+
+
+def derivadas_al_dia(ahora: datetime | None = None) -> dict:
+    """¿Cuándo corrió el pipeline por última vez y cuántos partidos terminados
+    de sad.db quedaron después (los que el motor todavía no ve)? Solo mira."""
+    ahora = ahora or datetime.now(timezone.utc)
+    base = {"ultimaCorrida": None, "horasDesde": None, "maxHoras": DERIVADAS_MAX_HORAS,
+            "terminadosSinPasar": None, "alarma": ""}
+    try:
+        fila = saddb.query_one("discreto", "SELECT MAX(processed_at) AS m FROM processed_matches")
+        ultima = str(fila["m"]) if fila and fila["m"] else ""
+    except Exception:  # noqa: BLE001 — sin discreto.db la vigilancia no tumba el latido: lo dice
+        return {**base, "alarma": "no se pudo leer discreto.db: las derivadas del motor no se ven"}
+    if not ultima:
+        return {**base, "alarma": "discreto.db no tiene corridas del pipeline"}
+    try:
+        t = datetime.strptime(ultima[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return {**base, "ultimaCorrida": ultima}
+    horas = round((ahora.replace(tzinfo=None) - t).total_seconds() / 3600, 1)
+    try:
+        # terminados con fecha posterior a la corrida: seguro que no entraron (los de
+        # antes que se cerraron después también faltan; esto es el piso, no el total)
+        n = saddb.query_one(
+            "sad", "SELECT COUNT(*) AS n FROM fixtures WHERE date > ? "
+                   "AND (status_short IN ('FT','AET','PEN') OR status_long = 'Match Finished')",
+            (t.strftime("%Y-%m-%d %H:%M:%S"),))["n"]
+    except Exception:  # noqa: BLE001 — sin sad.db se informa la hora igual
+        n = None
+    alarma = ""
+    if horas > DERIVADAS_MAX_HORAS and (n is None or n > 0):
+        alarma = (f"el pipeline de derivadas no corre hace {horas:.0f} h (última {t:%d/%m %H:%M} UTC)"
+                  + (f": {n} partido(s) terminados que el motor no ve" if n else "")
+                  + " — mirar los Deploy Logs de la corrida diaria")
+    return {**base, "ultimaCorrida": t.strftime("%Y-%m-%dT%H:%M:%SZ"), "horasDesde": horas,
+            "terminadosSinPasar": n, "alarma": alarma}
 
 
 # un equipo no juega dos partidos oficiales con menos de esto de diferencia:

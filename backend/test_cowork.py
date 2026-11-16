@@ -1371,6 +1371,35 @@ def main():
           corto["estado"] == "rojo" if corto["depositadosEnLaVentana"] == 0 else True,
           (corto["depositadosEnLaVentana"], corto["estado"]))
 
+    # 1430 (16/11/2026): el pipeline de derivadas llevaba 3 días sin correr
+    # (lastPipelineRun 13/11 05:41), ~250 partidos terminados en sad.db que el
+    # motor no veía (Slovakia 2-2 Faroe) y el latido en ámbar por otra cosa.
+    # Ahora el latido trae `derivadas` y, viejas con partidos sin pasar, ROJO.
+    check("1430: el latido dice cuándo corrió el pipeline de derivadas",
+          "derivadas" in lat and "terminadosSinPasar" in lat["derivadas"], sorted(lat))
+    from datetime import datetime, timedelta, timezone
+    from backend.analisis import parte as cowork
+    _d1430 = cowork.derivadas_al_dia()
+    _t1430 = datetime.strptime(_d1430["ultimaCorrida"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    _al_dia = cowork.derivadas_al_dia(_t1430 + timedelta(hours=1))
+    check("1430: una hora después de la corrida no hay alarma", _al_dia["alarma"] == "", _al_dia)
+    _p = os.path.join(tmp, "sad.db")
+    with _sq.connect(_p) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id, goals_home, goals_away) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                     (991430, (_t1430 + timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"), "FT",
+                      "Match Finished", 5, 2026, 990471, 990472, 2, 2))
+    try:
+        _viejo = cowork.derivadas_al_dia(_t1430 + timedelta(hours=cowork.DERIVADAS_MAX_HORAS + 60))
+        check("1430: 3 días sin corrida y un terminado después: alarma con el conteo",
+              _viejo["alarma"] and _viejo["terminadosSinPasar"] >= 1 and "no ve" in _viejo["alarma"], _viejo)
+        _sin = cowork.derivadas_al_dia(_t1430 + timedelta(hours=1))
+        check("1430: el terminado posterior se cuenta aunque todavía no haya alarma",
+              _sin["terminadosSinPasar"] >= 1 and _sin["alarma"] == "", _sin)
+    finally:
+        with _sq.connect(_p) as _con:
+            _con.execute("DELETE FROM fixtures WHERE id=991430")
+
     # ── LOS INSUMOS DEL TDE SALEN DEL MOTOR, NO DEL MODELO ──────────────────
     # El propio skill lo manda: P1a es «input inviolable» y F2 es «dato del
     # motor o no es dato». Pedirle a Cowork que escriba un μ que ya tenemos

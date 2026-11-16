@@ -5245,6 +5245,23 @@ components:
             conCuota: { type: integer }
             ultimaCaptura: { type: string, nullable: true }
             alarma: { type: string }
+        derivadas:
+          type: object
+          description: >
+            ¿Corre el pipeline que rehace niveles, constantes y discreto desde sad.db?
+            `ultimaCorrida` es MAX(processed_at) de discreto (lo mismo que `lastPipelineRun`
+            de /health) y `terminadosSinPasar` cuenta los partidos de sad.db terminados
+            después de esa corrida: los que el motor todavía no ve. Con más de
+            `maxHoras` sin corrida y algún partido sin pasar, `alarma` trae el motivo y el
+            latido pasa a ROJO: el 16/11/2026 (incidencia 1430) llevaba 3 días sin correr,
+            ~250 partidos sin pasar (Slovakia 2-2 Faroe del 13/11 entre ellos) y el latido
+            seguía en ámbar por otra cosa.
+          properties:
+            ultimaCorrida: { type: string, nullable: true }
+            horasDesde: { type: number, nullable: true }
+            maxHoras: { type: integer }
+            terminadosSinPasar: { type: integer, nullable: true }
+            alarma: { type: string }
         incidencias:
           type: object
           nullable: true

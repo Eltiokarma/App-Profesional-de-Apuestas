@@ -75,6 +75,14 @@ def main() -> int:
           [f[0] for f in quedan] == [1, 2, 3, 4] and fuera == [(5, 1137)], (quedan, fuera))
     os.remove(sad)
 
+    # 1430: el código de salida del pipeline se escribe en el log (antes nadie lo leía)
+    from backend.ingesta.corrida_diaria import motivo_pipeline
+    check("1430: un SIGKILL se nombra como el techo de memoria",
+          "señal 9" in motivo_pipeline(-9) and "memoria" in motivo_pipeline(-9), motivo_pipeline(-9))
+    check("1430: un código 1 dice que las derivadas quedan como estaban",
+          "código 1" in motivo_pipeline(1) and "quedan como estaban" in motivo_pipeline(1))
+    check("1430: el 0 es OK", motivo_pipeline(0).endswith("OK"))
+
     print("\nTODO OK" if not fallas else f"\n{fallas} FALLAS")
     return 1 if fallas else 0
 

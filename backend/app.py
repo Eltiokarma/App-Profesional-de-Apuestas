@@ -325,10 +325,12 @@ def _correr_backfill(motivo: str) -> None:
         cwd=db.BASE_DIR, env=env,
     )
     # niveles/constantes de las temporadas nuevas: el pipeline es local (0 requests)
-    subprocess.run(
+    pipe = subprocess.run(
         [sys.executable, "-u", "-m", "backend.ingesta.pipeline", "--out", "."],
         cwd=db.BASE_DIR, env=env,
     )
+    from backend.ingesta.corrida_diaria import motivo_pipeline   # 1430: que el log diga si murió
+    print(f"[ingesta] backfill: {motivo_pipeline(pipe.returncode)}", flush=True)
     liga_meta.cache_clear()
 
 

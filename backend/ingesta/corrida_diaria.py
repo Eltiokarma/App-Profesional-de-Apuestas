@@ -45,7 +45,26 @@ def main() -> int:
     if dta.returncode != 0:
         print(f"DT de la agenda terminó con código {dta.returncode}; el pipeline corre igual", file=sys.stderr)
     pipe = subprocess.run([sys.executable, "-m", "backend.ingesta.pipeline", "--out", "."], cwd=data, env=env)
+    # EL PIPELINE QUE MUERE CALLADO (16/11/2026, incidencia 1430): tres días sin
+    # derivadas nuevas y en los logs nada que lo dijera, porque este código de
+    # salida no lo leía nadie. Un código negativo es una señal: −9 (SIGKILL) es
+    # casi siempre el techo de memoria del contenedor (docs/DESPLIEGUE.md: el
+    # pipeline pica a ~1,6 GB con un techo de 2 GB).
+    print(f"[ingesta] {motivo_pipeline(pipe.returncode)}", file=sys.stderr if pipe.returncode else sys.stdout,
+          flush=True)
     return pipe.returncode
+
+
+def motivo_pipeline(codigo: int) -> str:
+    """La línea del log para el código de salida del pipeline."""
+    if codigo == 0:
+        return "pipeline de derivadas: OK"
+    if codigo < 0:
+        sen = -codigo
+        pista = (" — SIGKILL: casi siempre el techo de memoria del contenedor (Railway → Metrics → Memory)"
+                 if sen == 9 else "")
+        return f"pipeline de derivadas MATADO por la señal {sen}{pista}; levels/constants/discreto quedan como estaban"
+    return f"pipeline de derivadas terminó con código {codigo}; levels/constants/discreto quedan como estaban"
 
 
 if __name__ == "__main__":
