@@ -2045,6 +2045,11 @@ def hoja_capturada(fixture_id: int, fx) -> dict:
     return out
 
 
+# una banca publicada con menos suplentes que esto es la parcial que la API
+# sube antes de la completa (1427): no alcanza para decir quién NO está
+BANCA_MIN_COMPLETA = 5
+
+
 def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dict]:
     """FUERA-EN-LA-HOJA (10/11/2026, incidencias 1213 y 1225, decisión del
     usuario). Dos caras de la misma falla —el parte da por fuera de la cancha a
@@ -2145,7 +2150,12 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
     for lado in LADOS:
         h = hoja.get(lado) or {}
         en_hoja = (h.get("titulares") or []) + (h.get("banca") or [])
-        if len(h.get("titulares") or []) < 7 or not h.get("banca"):
+        # …y solo con una banca que parece completa (1427, 15/11/2026: la API
+        # publica primero una banca parcial —Albania con A. Ajeti solo,
+        # Garcilaso con dos— y la completa después; con esa banca todo el que
+        # faltaba «no estaba en la hoja» y el rehacer escribió «Ajeti, único
+        # suplente» con 12 en la hoja final).
+        if len(h.get("titulares") or []) < 7 or len(h.get("banca") or []) < BANCA_MIN_COMPLETA:
             continue
         rival = "b" if lado == "a" else "a"
         otros = [j["nombre"] for j in en_hoja] + \

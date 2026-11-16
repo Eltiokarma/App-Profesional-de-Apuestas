@@ -2822,7 +2822,8 @@ def main():
           and len(_feh(_d_amb("banco: Adamo"), _h_amb, {})) == 1)
     # 1423 (15/11/2026, Gales 1528972): K. Moore de banco en el DTP y en una rama del TDE y fuera de la hoja
     _h1423 = {"b": _hj([(10 + k, f"T{k}") for k in range(9)] + [(30, "B. Johnson"), (31, "H. Wilson")],
-                       [(40, "D. Brooks"), (41, "L. Harris")])}
+                       [(40, "D. Brooks"), (41, "L. Harris"), (42, "W. Hennessey"), (43, "J. Cabango"),
+                        (44, "R. Colwill")])}
     _p1423 = {"equipos": {"b": {"plantel": [{"nombre": "K. Moore", "jugadorId": 50}, {"nombre": "D. Brooks", "jugadorId": 40},
                                             {"nombre": "B. Johnson", "jugadorId": 30}]}},
               "dtp": {"bloques": [{"equipo": "b", "apertura": {"m2": {"viasGol": {
@@ -2835,6 +2836,11 @@ def main():
           "los suplentes de la hoja no; sin banca publicada, nada",
           len(_a1423) == 1 and [x["nombre"] for x in _a1423[0]["jugadores"]] == ["K. Moore"]
           and not [a for a in _feh(_p1423, _h1423sb, {}) if a.get("caso") == "noConvocado"], _a1423)
+    # 1427 (15/11/2026, Belarus–Albania 1528980): la API publicó primero la banca
+    # de Albania con A. Ajeti solo; con esa banca parcial nadie del plantel «falta»
+    _h1427 = {"b": {**_h1423["b"], "banca": [{"id": 40, "nombre": "D. Brooks", "titular": False}]}}
+    check("1427: con una banca de menos de 5 suplentes (la parcial de la API) noConvocado no afirma ausentes",
+          not [a for a in _feh(_p1423, _h1427, {}) if a.get("caso") == "noConvocado"])
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("1218: la cláusula «ventana del reloj 60-75'» manda aunque no vaya primera; «desde el minuto 0» no es relativa",
