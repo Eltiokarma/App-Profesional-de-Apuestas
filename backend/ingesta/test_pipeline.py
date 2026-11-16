@@ -75,6 +75,32 @@ def main() -> int:
           [f[0] for f in quedan] == [1, 2, 3, 4] and fuera == [(5, 1137)], (quedan, fuera))
     os.remove(sad)
 
+    # 1430: un fixture con el mismo equipo de local y de visita mataba el pipeline
+    # entero (UNIQUE de team_levels) desde el 13/11; ahora sale y el resto se escribe
+    from backend.ingesta.pipeline import sin_contra_si_mismo, construir_historias, etapa_niveles
+    fx1430 = [(1, "2026-11-12 18:00:00", 773, 773, 1, 1, "Match Finished", 10, 2026),
+              (2, "2026-11-13 19:45:00", 773, 1098, 2, 2, "Match Finished", 5, 2026)]
+    try:
+        etapa_niveles(construir_historias(fx1430), d)
+        murio = False
+    except sqlite3.IntegrityError:
+        murio = True
+    check("1430: sin el filtro, Slovakia contra Slovakia revienta team_levels (el caso real)", murio)
+    q1430, f1430 = sin_contra_si_mismo(fx1430)
+    check("1430: el partido contra sí mismo sale y el 2-2 con Faroe queda",
+          [f[0] for f in q1430] == [2] and f1430 == [1], (q1430, f1430))
+    filas1430 = etapa_niveles(construir_historias(q1430), d)
+    check("1430: con el filtro los niveles se escriben", len(filas1430) == 2, filas1430)
+    os.remove(os.path.join(d, "levels.db"))
+
+    # 1430: el código de salida del pipeline se escribe en el log (antes nadie lo leía)
+    from backend.ingesta.corrida_diaria import motivo_pipeline
+    check("1430: un SIGKILL se nombra como el techo de memoria",
+          "señal 9" in motivo_pipeline(-9) and "memoria" in motivo_pipeline(-9), motivo_pipeline(-9))
+    check("1430: un código 1 dice que las derivadas quedan como estaban",
+          "código 1" in motivo_pipeline(1) and "quedan como estaban" in motivo_pipeline(1))
+    check("1430: el 0 es OK", motivo_pipeline(0).endswith("OK"))
+
     print("\nTODO OK" if not fallas else f"\n{fallas} FALLAS")
     return 1 if fallas else 0
 
