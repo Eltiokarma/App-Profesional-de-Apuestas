@@ -214,3 +214,14 @@
   parte confirma la fecha en prensa). Si la fecha resulta ser un aplazado sin
   marcar (un partido que ya no se juega ese día), eso sí se reporta, con la
   fuente.
+  Y desde la pasada del 16/11 (tarde): el partido de la fecha que pasó y
+  sigue «programado» sin marcador (1429, 1433: Alianza Lima–Cajamarca y dos
+  más de la Liga 1 del 14/11, aplazados por la fecha FIFA que la API no
+  marca; el extractor re-pide por fecha hoy−3d..+10d en cada corrida y
+  `sanar_fechas` después, así que la base trae lo que da la API): el parte los
+  trata como no jugados y no se reporta mientras la API no cambie. Se
+  reporta si la prensa da el RESULTADO y la base sigue sin él después de una
+  corrida. Y la hoja de la API de una selección con el DT anterior en el
+  banco (1431: Nagelsmann y Stojković en las hojas de octubre de la Liga de
+  las Naciones, Klopp y Paunović según la prensa): la disciplina 30 lee la
+  hoja y DT-DISCREPANCIA ya avisa; la prensa manda y va en notas.
