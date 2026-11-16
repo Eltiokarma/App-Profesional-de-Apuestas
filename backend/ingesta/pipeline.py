@@ -129,6 +129,20 @@ def sin_duplicados(fixtures) -> tuple[list[tuple], list[tuple[int, int]]]:
     return fuera, dups
 
 
+def sin_contra_si_mismo(fixtures) -> tuple[list[tuple], list[int]]:
+    """UN EQUIPO NO JUEGA CONTRA SÍ MISMO (16/11/2026, incidencia 1430): la API
+    trae a veces un fixture con el mismo id de local y de visita (desde que
+    entraron las selecciones, 12/11). La historia lo apuntaba dos veces al
+    mismo equipo, `team_levels` rechazaba el par (team_id, fixture_id)
+    repetido y el pipeline ENTERO moría en cada corrida: tres días sin niveles
+    ni K nuevas (Slovakia 2-2 Faroe del 13/11 y ~250 partidos más). No es un
+    partido: sale, y su id queda en el log."""
+    quedan, fuera = [], []
+    for fx in fixtures:
+        (fuera.append(fx[0]) if fx[2] == fx[3] else quedan.append(fx))
+    return quedan, fuera
+
+
 def sin_ajenos(fixtures, sad_path: str) -> tuple[list[tuple], list[tuple[int, int]]]:
     """UN PARTIDO DEL HOMÓNIMO NO ES DEL EQUIPO (10/11/2026, incidencia 1371):
     la API le dio el id de Atlético Nacional (1137) a un club de la Copa Perú y
@@ -318,6 +332,10 @@ def main() -> int:
               + ", ".join(f"{a}→{b}" for a, b in dups[:20]) + (" …" if len(dups) > 20 else ""))
     if args.duplicados:
         return 0
+    fixtures, mismos = sin_contra_si_mismo(fixtures)
+    if mismos:
+        print(f"partidos de un equipo contra sí mismo fuera: {len(mismos)} (dato de la API): "
+              + ", ".join(str(f) for f in mismos[:20]) + (" …" if len(mismos) > 20 else ""))
     fixtures, ajenos = sin_ajenos(fixtures, args.sad)
     if ajenos:
         print(f"partidos ajenos fuera: {len(ajenos)} (competición nacional de otro país; fixture/equipo): "
