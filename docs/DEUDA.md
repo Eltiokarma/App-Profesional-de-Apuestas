@@ -780,9 +780,11 @@ conversación se pierde en la siguiente.
    releer), la de partes a 389 mil y 2.715 USD acumulados, y rehacer gastaba
    ~0,30 USD por cada uno de sus 71 disparos diarios vacíos. Se rotaron las
    cuatro el 03/11 y desde entonces una rutina de esta sesión de trabajo
-   («SAD · rotar sesiones fijas de las rutinas (v7)», `trig_01BSHViEGtGc4PZ4UbGRRwXV`,
+   («SAD · rotar sesiones fijas de las rutinas (v8)», `trig_01Lav5mJp3ym538484gN7KaK`,
    03:17 de Lima TODOS los días, en su PROPIA sesión fija
-   `session_01WwsfbU6BK8By1FrSsp5yYb` desde el 14/11 —la v6,
+   `session_01WwsfbUxpKJuVp7dUwUK5g6` desde el 16/11 —la v7,
+   `trig_01BSHViEGtGc4PZ4UbGRRwXV` en `session_01WwsfbU6BK8By1FrSsp5yYb`, quedó
+   desactivada al rotarse a sí misma con 204 mil; la v6,
    `trig_01G8Ry8o53XqUwJVvqoHmHd5` en `session_01WwsfbSnrVBkWjNjbrRqwgr`, quedó
    desactivada al rotarse a sí misma con dos corridas encima; la v5,
    `trig_019xQBbZqDGLdfnQhMR4qmEc` en `session_01WwsfbVucctWbKcwLnUEN7L`, quedó
@@ -799,22 +801,23 @@ conversación se pierde en la siguiente.
    la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
    herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
    por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
-   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (15/11 03:17 de Lima: rotadas las cuatro
-   —partes 296 mil, veredictos 225 mil, mantenimiento 483 mil y rehacer 587 mil—;
-   la de rotar sigue en su sesión, iba por su primer disparo; las reemplazadas
-   del 14/11 quedan desactivadas):
-   - partes (v13): `session_01WwsfbUUWUa3ZgA86E5Zpvp` · 04:47
-     `trig_01LMrGGEtuSLJ2GHPPTZuYff`, 09:52 `trig_01WvJNR1w1vdEEPkm24cAKP6`,
-     14:56 `trig_01PK12AnDJpaMEbKntK8HEzT`;
-   - veredictos (v14): `session_01WwsfbUzQZVPTLYh5mXD4Bv` · 20:12
-     `trig_01AWLRekrXdqn1Q9Z9euNohQ`;
-   - mantenimiento (v15): `session_01WwsfbUdWieXVAvFiwemxYB` · 12:23
-     `trig_01CMKp4VZysH2CTEATpNgrLF`, 17:41 `trig_01STrFBCBcFzVqDm71ySb7Zm`,
-     21:47 `trig_016SK3N3JAny7aSzaMNNrXWs`;
-   - rehacer (v17): `session_01WwsfbSuZ4MWrz3PtnChrop` · :02
-     `trig_01EKHwdq23jseyf9FYe3j1av`, :12 `trig_01CnYCPpGtWqxwDfRRgzxwVQ`,
-     :22 `trig_01BBt7wsCNsDXybr7K53dVks`, :42 `trig_0196mUDvSBE6WsXgLozajdLu`,
-     :52 `trig_01EzFgr5sS9SLNrVQjJEpCqP` (:52 desde el 10/11, incidencia 1304).
+   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (16/11 03:17 de Lima: rotadas las cuatro
+   —partes 250 mil, veredictos 182 mil, mantenimiento 303 mil y rehacer 644 mil—
+   y la de rotar (204 mil); las reemplazadas del 15/11 quedan desactivadas.
+   Ojo: las sesiones nacen anidadas bajo la de rotar y el límite de anidación
+   es 8; la de rotar v8 está en el nivel 7):
+   - partes (v14): `session_01WwsfbWFzxMToThNL4XaZ1K` · 04:47
+     `trig_01Cy8fbXPCAiQRoR5cVKK3g8`, 09:52 `trig_01Jg5qy6QfZZRcDEBHvoWaYP`,
+     14:56 `trig_01JqFdKYBBmfyXsTmVrdtieE`;
+   - veredictos (v15): `session_01WwsfbU3y7GQyssW3pRXExZ` · 20:12
+     `trig_014LTywXVCZAL5cNocLuLJbx`;
+   - mantenimiento (v16): `session_01WwsfbT7VQifC5gm1k4L4Wi` · 12:23
+     `trig_01GomdqUuRTJgejcWqH1FqZs`, 17:41 `trig_015wHVmpPtYkYJpv92RgRoK6`,
+     21:47 `trig_012vF1WZTDDNPGcaMWQaDs4o`;
+   - rehacer (v18): `session_01WwsfbRxepiGE8M7Bv351BL` · :02
+     `trig_01SDCHQN4wBCkQ4dabyt73rz`, :12 `trig_012uMR624m5nMycBzB6CfA4h`,
+     :22 `trig_013XKGZsBmXGrTXCErKAxe4X`, :42 `trig_01WWVdzZ3Q1zuDXF58trccR6`,
+     :52 `trig_01LmQuiL6RsxwiZvEZHnw26w` (:52 desde el 10/11, incidencia 1304).
    Medido el 03/11 con las sesiones nuevas: partes 117 USD (8 partes en el tramo
    3), veredictos 50 USD (18 veredictos), mantenimiento 29 USD por pasada,
    rehacer 41 USD en el día (hubo rehaceres reales). Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
