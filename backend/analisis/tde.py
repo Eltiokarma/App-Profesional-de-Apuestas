@@ -94,6 +94,38 @@ def _onces_previos(team_id: int, fecha: str, cuantos: int = VENTANA_F1) -> list[
 DT_CAMBIO_DIAS = 7      # disciplina 30 del TDE: cambio de DT en los 7 días previos
 
 
+def _primero_sin_hoja(team_id: int, desde: str, hasta: str) -> str | None:
+    """La fecha más vieja de un partido JUGADO del equipo, estrictamente entre `desde` y
+    `hasta` (YYYY-MM-DD), sin la hoja de ese equipo capturada (cualquier competición:
+    un DT también debuta en un amistoso). None sin hueco o sin base (1439)."""
+    if not team_id or not desde or not hasta or desde >= hasta:
+        return None
+    try:
+        fila = saddb.query_one(
+            "sad",
+            f"""SELECT MIN(substr(f.date, 1, 10)) AS d FROM fixtures f
+                WHERE (f.home_team_id=? OR f.away_team_id=?) AND {_FIN}
+                  AND substr(f.date, 1, 10) > ? AND substr(f.date, 1, 10) < ?
+                  AND NOT EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id=f.id AND a.team_id=?)""",
+            (team_id, team_id, desde, hasta, team_id))
+    except Exception:  # noqa: BLE001 — sin la base (tests, demo) no hay hueco que mirar
+        return None
+    return (fila or {})["d"] if fila and fila["d"] else None
+
+
+def _desde_en_base(team_id: int, actual: str, dt_base: dict | None) -> str | None:
+    """La llegada (`desde`) del DT de la base si es ESTE DT; None si no se sabe (1439)."""
+    from backend.analisis.parte import mismo_dt
+    if dt_base is None:
+        try:
+            from backend.analisis.parte import dt_de_base
+            dt_base = dt_de_base(team_id) if team_id else None
+        except Exception:  # noqa: BLE001 — sin DT en la base no hay llegada que mirar
+            dt_base = None
+    nombre, desde = (dt_base or {}).get("nombre") or "", str((dt_base or {}).get("desde") or "")[:10]
+    return desde if nombre and desde and mismo_dt(nombre, actual) else None
+
+
 DT_HISTORIAL = 10       # onces que se miran para saber si el «nuevo» ya había dirigido
 
 
@@ -147,6 +179,20 @@ def cambio_dt_reciente(team_id: int, fecha: str, onces: list[dict], dt_base: dic
                 posible = o["fecha"]
                 continue
             if not mismo_dt(o["entrenador"], actual):
+                # UN PARTIDO SIN HOJA ENTRE LOS DOS DT TAMBIÉN HACE INCIERTO EL DEBUT
+                # (17/11/2026, incidencia 1439, selecciones: Maldera dirige Ucrania desde
+                # mayo y Hagi a Rumania desde abril, pero el primer once CAPTURADO con
+                # ellos era de la semana y el TDE afirmaba «debutó el 14/11»). Si entre el
+                # último once del anterior y el primero del actual el equipo jugó partidos
+                # sin ficha, el debut pudo ser en cualquiera: se toma el más viejo
+                hueco = _primero_sin_hoja(team_id, o["fecha"], posible)
+                if hueco:
+                    posible = min(posible, hueco)
+                # …y si la base ya tiene a ESTE DT con una llegada anterior a la semana,
+                # la llegada manda sobre la hoja
+                base_desde = _desde_en_base(team_id, actual, dt_base)
+                if base_desde and base_desde < limite:
+                    posible = min(posible, base_desde)
                 if posible >= limite and not _vuelve_al_banco(team_id, fecha, onces, o, actual):
                     return {"nuevo": actual, "anterior": o["entrenador"], "desde": primero,
                             "porque": f"{actual} debutó en el banco el {primero}, después de {o['entrenador']}"}
