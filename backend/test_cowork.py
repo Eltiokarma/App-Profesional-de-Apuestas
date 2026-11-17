@@ -1838,6 +1838,42 @@ def main():
     c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
         "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
 
+    # EFE-RECOMPUTO-PENDIENTE (17/11/2026, 1068 paso 2): con el once oficial, 3+ titulares
+    # fijos que no arrancan (o el arquero titular) piden rehacer B y F del EFE
+    def _recomputo(lado="b"):
+        return [x for x in c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["alertas"]
+                if x["codigo"] == "EFE-RECOMPUTO-PENDIENTE" and x["equipo"] == lado]
+    check("1068: con los titulares fijos en el once, EFE-RECOMPUTO-PENDIENTE no suena", not _recomputo(), _recomputo())
+    c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
+        "once": [f"B Jugador{n}" for n in (1, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16)], "fuente": "rueda de prensa"}})
+    _rc = _recomputo()
+    check("1068: tres titulares fijos que no arrancan y el parte no declaró piden recomputar el EFE de su lado",
+          len(_rc) == 1 and set(_rc[0]["titulares"]) == {"B Jugador3", "B Jugador4", "B Jugador5"}
+          and "arquero" not in _rc[0], _rc)
+    _pb = _parte(sin_ficha)
+    _pb["equipos"]["b"]["notas"] = {"B": "recomputado con el once oficial: tres centrales rotados, B baja a 1"}
+    c.post(f"{A}/analisis/cowork", json=_pb)
+    check("1068: la nota del bloque B «recomputado con el once» la calla", not _recomputo(), _recomputo())
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+    _pb = _parte(sin_ficha)
+    _pb["equipos"]["b"]["fuera"] = [{"nombre": f"B Jugador{n}", "estado": "descanso", "motivo": "rotación"}
+                                    for n in (3, 4, 5)]
+    c.post(f"{A}/analisis/cowork", json=_pb)
+    check("1068: los titulares que el parte ya declaró fuera no cuentan", not _recomputo(), _recomputo())
+    c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
+        "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
+    _rc = _recomputo()
+    check("1068: en la otra dirección, los declarados fuera que la hoja pone en el once también lo piden",
+          len(_rc) == 1 and set(_rc[0]["volvieron"]) == {"B Jugador3", "B Jugador4", "B Jugador5"}, _rc)
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
+    c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
+        "once": [f"B Jugador{n}" for n in (2, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
+    _rc = _recomputo()
+    check("1068: el arquero titular que no arranca alcanza solo para pedir el recómputo",
+          len(_rc) == 1 and _rc[0].get("arquero") == "B Jugador1", _rc)
+    c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
+        "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
+
     # re-depositar el parte NO borra el once ya resuelto
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
     check("el once sobrevive a un parte nuevo",
@@ -7437,6 +7473,22 @@ def main():
         _p395 = next((x for x in _mv["pendientes"] if x["fixtureId"] == _ns[0]), None)
         check("395: un parte escrito 8 días antes de un partido reprogramado entra a la ventana y pide rehacerse entero",
               _p395 is not None and any(a["codigo"] == "PARTE-OTRA-FECHA" for a in _p395["alertas"]), _mv)
+        # 17/11/2026: FUERA-EN-LA-HOJA, ONCE-SIN-FILA-F1 y EFE-RECOMPUTO-PENDIENTE también meten
+        # el parte en el rehacer (antes sonaban en la tira y nadie volvía al parte)
+        _dto_orig = _pt.dto
+        _por = {}
+        for _cod in ("FUERA-EN-LA-HOJA", "ONCE-SIN-FILA-F1", "EFE-RECOMPUTO-PENDIENTE", "K-EXTREMO"):
+            _pt.dto = lambda _fid, _c=_cod: {"alertas": [{"codigo": _c, "equipo": "a", "tipo": "dato", "detalle": "x"}]}
+            try:
+                _r = _pt.rehacer_pendientes(ahora=_pit - _td(minutes=45))
+            finally:
+                _pt.dto = _dto_orig
+            _x = next((x for x in _r["pendientes"] if x["fixtureId"] == _ns[0]), None)
+            _por[_cod] = bool(_x and any(a["codigo"] == _cod for a in _x["alertas"]))
+        check("rehacer: FUERA-EN-LA-HOJA, ONCE-SIN-FILA-F1 y EFE-RECOMPUTO-PENDIENTE meten el parte en "
+              "`pendientes`; una alerta que no es del once (K-EXTREMO), no",
+              _por == {"FUERA-EN-LA-HOJA": True, "ONCE-SIN-FILA-F1": True, "EFE-RECOMPUTO-PENDIENTE": True,
+                       "K-EXTREMO": False}, _por)
         # 1190: una alerta declarada CONDICIONAL al once (EJE-DEBUTANTE, EFE v1.9) entra al rehacer
         # cuando el once oficial de su equipo llega, aunque DTP-REHACER no suene (Barcelona 1635627)
         import sqlite3 as _sq3_1190

@@ -24,7 +24,7 @@ casi siempre no hay nada que hacer.
    incidencia 395) o **DT-VS-BANCO** (el once oficial sienta a otro DT que el
    del parte: confirmalo en prensa y corregí SOLO el DT con `POST
    /analisis/cowork/{id}/dt`, o declará `dt.banco` si el titular no se sienta;
-   desde el 27/10/2026, incidencia 711) o **ALERTA-CONDICIONAL-AL-ONCE** («alerta condicional al once: EJE-DEBUTANTE», 10/11/2026, incidencia 1190): con el once oficial, resolvé esa alerta sobre el grid —confirmala o sacala— y escribí «confirmada/descartada con el once» en su detalle, aunque DTP-REHACER no suene. Con `pendientes` vacío: terminá YA en una
+   desde el 27/10/2026, incidencia 711) o **ALERTA-CONDICIONAL-AL-ONCE** («alerta condicional al once: EJE-DEBUTANTE», 10/11/2026, incidencia 1190): con el once oficial, resolvé esa alerta sobre el grid —confirmala o sacala— y escribí «confirmada/descartada con el once» en su detalle, aunque DTP-REHACER no suene. Desde el 17/11/2026 (estudio de las lecciones del 10-16/11: el once oficial no se propagaba) también **FUERA-EN-LA-HOJA** (un titular de la hoja nombrado de banco en el DTP o en una rama del TDE, alguien del banco que no está en la hoja, o una baja que está en la hoja), **ONCE-SIN-FILA-F1** (titulares sin fila en la tabla F1: copiá las filas `delOnceOficial` de `GET …/f1/{id}`) y **EFE-RECOMPUTO-PENDIENTE** (3+ titulares fijos que no arrancan, el arquero titular que no arranca, o declarados fuera que la hoja pone en el once: se rehace también el EFE; 1068 paso 2). Una de estas que sigue sonando después de tu depósito vuelve en el disparo siguiente: arreglala, no la dejes. Con `pendientes` vacío: terminá YA en una
    línea («Nada que rehacer a las HH:MM de Lima»), sin `git pull`, sin leer
    el resto de este skill, sin otra llamada y **sin avisar al celular** (corre
    cada 20 minutos: un aviso vacío cada vez se deja de leer).
@@ -42,7 +42,9 @@ casi siempre no hay nada que hacer.
 > Tus archivos van SOLO en `<scratchpad>/rehacer-{id}/`. El partido {id}
 > arranca a las {hora Lima}; hora tope de depósito: el pitazo − 5 minutos.
 > Credenciales en `$SAD_API_BASE`/`$SAD_TOKEN_COWORK` (nunca las imprimas).
-> Cargá `anthropic-skills:diagnostico-tactico` y `anthropic-skills:sad-analysis`.
+> Cargá `anthropic-skills:diagnostico-tactico` y `anthropic-skills:sad-analysis`;
+> **con EFE-RECOMPUTO-PENDIENTE, también `anthropic-skills:efe-clasificador`**
+> (1068, 17/11/2026).
 >
 > 1. `GET $B/analisis/cowork/{id}` (el parte entero: lo vas a devolver
 >    ENTERO), `GET $B/fixtures/{id}/ficha` (el once oficial, con grid) y
@@ -79,8 +81,12 @@ casi siempre no hay nada que hacer.
 >    sale de `fuera` (1213, Pollero entró y marcó). **El `cierre` de cada
 >    bloque del DTP NO entra en el reemplazo de nombres** (1258): es la
 >    autopsia del partido ANTERIOR, con los nombres de ese día. Lo demás no
->    se toca: una baja decisiva que no juega, un arquero distinto (EFE v1.6,
->    B6), la rama del TDE que dependía de un intérprete. Si el 1X2 se mueve,
+>    se toca, **salvo con EFE-RECOMPUTO-PENDIENTE**: entonces el EFE de ese lado
+>    se rehace en el orden de la v1.10 (F1 → bajas de la hoja → B6 → EJE → B y
+>    F → D1 y H), con las filas `delOnceOficial` que sumó la app y sin
+>    borrarlas, y la nota del bloque B dice «recomputado con el once» (eso
+>    calla la alerta). Sin ella, no se toca una baja decisiva que no juega ni
+>    la rama del TDE que dependía de un intérprete. Si el 1X2 se mueve,
 >    movelo con su porqué en la lectura del 1X2 (disciplina 33); si no, no.
 >    Antes de depositar, listá en tu respuesta los nombres que salieron y
 >    confirmá que ninguno queda en el texto como titular.
@@ -102,7 +108,8 @@ casi siempre no hay nada que hacer.
 >    respuesta del GET con tus cambios, **`entrada` incluida**: ahí viajan los
 >    eventos del timeline y los pronósticos de la cadena, y sacarla los borra
 >    (incidencia 1201; el GET re-depositado tal cual no pierde nada). Leé el recibo:
->    DTP-REHACER tiene que haber desaparecido de `alertas` en el GET
+>    DTP-REHACER, FUERA-EN-LA-HOJA, ONCE-SIN-FILA-F1 y
+>    EFE-RECOMPUTO-PENDIENTE tienen que haber desaparecido de `alertas` en el GET
 >    siguiente; si sigue, decí por qué (`contraElOnce.motivos`).
 > 6. Después del pitazo NO deposites: decilo. Respuesta final: qué cambió
 >    en M1/M2, qué otras secciones reescribiste por el once (paso 4), si se

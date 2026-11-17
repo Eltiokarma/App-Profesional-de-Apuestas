@@ -61,6 +61,8 @@ redactada:
   cambiados o arquero distinto); y recién entonces la rutina `corrida-sad`,
   modo `rehacer`, que con esa alerta carga `efe-clasificador` (líneas
   ~229-237, ~255 y ~291-293 de su SKILL.md).
+  **Hecho el 17/11/2026** (DEUDA 35): `EFE-RECOMPUTO-PENDIENTE` en el parte y
+  en `GET …/rehacer`, y el modo `rehacer` lo lee.
 - **Banco probable:** una sola lista en la app para EFE 10, DTP 5 y TDE 5
   (hoy cada propuesta la nombra distinto).
 - **Sanciones con `certeza` (A3 del EFE):** la leen EFE 5, DTP 7 y TDE 12.

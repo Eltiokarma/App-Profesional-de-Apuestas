@@ -2882,7 +2882,7 @@ _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
                         "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
                         "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR", "DESCONFIAR",
-                        "FUERA-EN-LA-HOJA"}
+                        "FUERA-EN-LA-HOJA", "EFE-RECOMPUTO-PENDIENTE"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -4372,6 +4372,76 @@ def con_filas_del_once(equipo: dict, fixture_id: int, team_id: int | None) -> di
     return {**equipo, "plantel": [*plantel, *extra]}
 
 
+# EFE-RECOMPUTO-PENDIENTE (17/11/2026, incidencia 1068 paso 2, aprobado por el
+# usuario con la EFE v1.10; estudio de las lecciones del 10-16/11: la tabla F1 y
+# el bloque B no se rehicieron con el once en 19 lecciones de 15 partidos). Con
+# el once oficial, «B y F se recomputan con el once que salió, haya rotado o
+# no» (rúbrica v1.10, «Cuando no hay XI», 6). El bloque F lo cierra la app; el
+# B y el porcentaje los escribe el analista, y nada le avisaba.
+RECOMPUTO_MIN_TITULARES = 3
+# lo que el analista escribe en `notas.B` al recomputar: así se levanta la alerta
+_RECOMPUTO_HECHO = re.compile(r"recomputad[oa]s?\s+con\s+el\s+once", re.I)
+
+
+def alerta_recomputo_efe(lado: str, equipo: dict, disp: dict) -> dict | None:
+    """Pide rehacer el EFE de un lado cuando el once oficial ya resolvió el
+    bloque F y (a) 3 o más titulares fijos (🔴 TF) de la tabla no arrancan y el
+    parte no los declaró en `fuera`, o el parte declaró en `fuera` a titulares
+    (TF/TH) que la hoja pone en el once —el condicionado se levanta en las dos
+    direcciones—, o (b) el arquero TF no arranca y el parte no lo declaró. Se
+    calla cuando la nota del bloque B dice «recomputado con el once»."""
+    if not disp.get("resuelto"):
+        return None
+    nota_b = ((equipo.get("bloques") or {}).get("B") or {})
+    nota_b = nota_b.get("nota") if isinstance(nota_b, dict) else ""
+    if _RECOMPUTO_HECHO.search(_txt(nota_b)):
+        return None
+    jugadores = [j for j in disp.get("jugadores") or []
+                 if j.get("estado") != "duplicado" and not j.get("agregadaPorLaApp") and _txt(j.get("nombre"))]
+    # quién de la tabla declaró el parte en `fuera`: el nombre exacto primero y,
+    # si no, identidad.py SOLO cuando casa con una única fila (dos «Torres» de la
+    # tabla no se dan por declarados con una sola línea)
+    declarados: set[int] = set()
+    for f in equipo.get("fuera") or []:
+        d = _txt(f.get("nombre")) if isinstance(f, dict) else ""
+        if not d:
+            continue
+        exactos = [i for i, j in enumerate(jugadores) if normalizar(_txt(j.get("nombre"))) == normalizar(d)]
+        parecidos = exactos or [i for i, j in enumerate(jugadores)
+                                if _identidad.mismo_jugador(_txt(j.get("nombre")), d)]
+        if len(parecidos) == 1:
+            declarados.add(parecidos[0])
+
+    salieron, volvieron, arquero = [], [], ""
+    for i, j in enumerate(jugadores):
+        rol, nombre = (j.get("rol") or "").upper(), _txt(j.get("nombre"))
+        en_once = str(j.get("hoja") or "").startswith("titular")   # «titular» o «titular (homónimo)»
+        if rol == "TF" and not en_once and i not in declarados:
+            salieron.append(nombre)
+            if (j.get("zona") or "").upper() == "GK":
+                arquero = nombre
+        elif rol in ("TF", "TH") and en_once and i in declarados:
+            volvieron.append(nombre)
+    if len(salieron) + len(volvieron) < RECOMPUTO_MIN_TITULARES and not arquero:
+        return None
+    partes_txt = []
+    if salieron:
+        partes_txt.append(f"titulares fijos que no arrancan y el parte no declaró: {', '.join(salieron)}")
+    if volvieron:
+        partes_txt.append(f"declarados fuera que la hoja pone en el once: {', '.join(volvieron)}")
+    texto = "; ".join(partes_txt)
+    return {
+        "codigo": "EFE-RECOMPUTO-PENDIENTE", "equipo": lado, "tipo": "dato",
+        "detalle": (texto[:1].upper() + texto[1:] if texto else "El arquero titular no arranca")
+                   + (f". El arquero titular ({arquero}) no arranca" if arquero else "")
+                   + ". Con el once oficial, B y F se recomputan con el once que salió (EFE v1.10): "
+                     "rehacer el EFE de este lado en el orden F1 → bajas de la hoja → B6 → EJE → B y F → D1 "
+                     "y H (con las filas `delOnceOficial`, sin borrarlas), y escribir «recomputado con el "
+                     "once» en la nota del bloque B.",
+        "titulares": salieron, "volvieron": volvieron, **({"arquero": arquero} if arquero else {}),
+    }
+
+
 def _disponibilidad(equipo: dict, xi: dict | None) -> dict:
     """El bloque F: resuelto si ya hay once, en dos ramas si todavía no."""
     plantel, fuera = equipo["plantel"], equipo["fuera"]
@@ -5151,6 +5221,9 @@ def dto(fixture_id: int) -> dict | None:
                            "rehacer la tabla F1 con GET /analisis/cowork/f1/{id} y re-depositar).",
                 "titulares": sin_fila,
             })
+        recomputo = alerta_recomputo_efe(lado, eq, disp)
+        if recomputo:
+            alertas.append(recomputo)
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}
     tde_calc = _tde_calculado(parte.get("tde") or {}, _dtp.herencia_tde(parte.get("dtp") or {}))
     # la herencia que contradice lo declarado se dice: el DTP manda, pero un
@@ -7229,6 +7302,15 @@ def alertas_condicionales_con_once(fixture_id: int, alertas: list) -> list[dict]
     return out
 
 
+# LAS ALERTAS QUE METEN UN PARTE EN EL REHACER. Hasta el 17/11/2026 eran solo
+# DTP-REHACER y DT-VS-BANCO: FUERA-EN-LA-HOJA (un titular nombrado de banco, una
+# baja que está en la hoja) y ONCE-SIN-FILA-F1 sonaban en la tira y nadie volvía
+# al parte (estudio de las lecciones del 10-16/11: banco con titulares en 16
+# lecciones del TDE y 16 del DTP, tabla F1 sin rehacer en 19 del EFE). El
+# EFE-RECOMPUTO-PENDIENTE es el paso 2 de la 1068: el disparador del EFE.
+REHACER_POR = ("DTP-REHACER", "DT-VS-BANCO", "FUERA-EN-LA-HOJA", "ONCE-SIN-FILA-F1", "EFE-RECOMPUTO-PENDIENTE")
+
+
 def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHACER_HASTA_MIN,
                        ahora: datetime | None = None) -> dict:
     from backend.app import iso
@@ -7260,7 +7342,7 @@ def rehacer_pendientes(desde_min: int = REHACER_DESDE_MIN, hasta_min: int = REHA
         en_ventana.append(item)
         d = dto(f["fixture_id"]) or {}
         # el DT del banco contra el del parte también se corrige antes del pitazo (711)
-        rehacer = [a for a in d.get("alertas") or [] if a.get("codigo") in ("DTP-REHACER", "DT-VS-BANCO")]
+        rehacer = [a for a in d.get("alertas") or [] if a.get("codigo") in REHACER_POR]
         movido = dias_movido(f["fecha"], fx["date"])
         if movido:
             # se escribió con otra semana de datos: se rehace ENTERO, no solo el DTP
