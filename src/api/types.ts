@@ -2309,6 +2309,8 @@ export interface ParteCoworkDTO {
   vsMercado?: VentajaMercado | null
   /** En quién desconfiar, calculado al leer (10/11/2026): no mueve el 1X2. */
   desconfianza?: DesconfianzaParte | null
+  /** DESCONFIAR del primer depósito, sellada (sad-analysis v4.6): la que mide la Simulación */
+  desconfianzaSellada?: { alerta?: unknown; elegido?: string; descarte?: unknown; selladaEn?: string } | null
   fuentes: string[]
   notas: string
   xi: Record<'a' | 'b', { once?: string[]; formacion?: string; fuente?: string; capturadoEn?: string }>

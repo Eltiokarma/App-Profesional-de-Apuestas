@@ -4787,6 +4787,10 @@ components:
             partidos calculados. Se arma AL LEER, no al depositar, para que una corrección
             de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
+        desconfianzaSellada:
+          type: object
+          nullable: true
+          description: 'DESCONFIAR del PRIMER depósito con 1X2 y cuota (17/11/2026, sad-analysis v4.6, decisión del usuario): {alerta, elegido, descarte, selladaEn}. Los depósitos siguientes no la pisan y la Simulación mide esta; `desconfianza` sigue siendo la de hoy'
         desconfianza:
           type: object
           nullable: true
@@ -5012,6 +5016,10 @@ components:
             properties:
               equipo: { type: string }
               campos: { type: array, items: { type: string } }
+        desconfianza:
+          type: object
+          nullable: true
+          description: 'DESCONFIAR sellada en el primer depósito (17/11/2026): {sellada: {alerta, elegido, descarte, selladaEn}, cambioDesdeLaSellada, nota}; null sin 1X2 o sin cuota todavía'
         alertasAlLeer:
           type: array
           description: 'las alertas CALCULADAS que el GET le pone a este parte (HERENCIA-DTP, TIPOLOGIA-VS-INDICES, K-EXTREMO…) y las de coherencia selladas al depositar (COHERENCIA-*, 1155): se ven al depositar, sin otro GET (771, 806)'

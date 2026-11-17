@@ -1121,8 +1121,8 @@ def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | N
     from backend.analisis.parte import _conectar
     with _conectar() as con:
         filas = con.execute(
-            "SELECT fixture_id, parte_json, version, creado_en, deposito_previo_en, cuarentena_json "
-            "FROM parte_cowork WHERE fecha >= ?", (DESDE[:10],)).fetchall()
+            "SELECT fixture_id, parte_json, version, creado_en, deposito_previo_en, cuarentena_json, "
+            "desconfianza_primera_json FROM parte_cowork WHERE fecha >= ?", (DESDE[:10],)).fetchall()
     ids = [f["fixture_id"] for f in filas]
     fx = {}
     if ids:
@@ -1191,6 +1191,9 @@ def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | N
         apuestas.append({
             **candidato,
             "depositadoEn": momento,
+            # DESCONFIAR del primer depósito (sad-analysis v4.6): manda sobre la recalculada
+            "desconfianzaSellada": (json.loads(f["desconfianza_primera_json"])
+                                    if f["desconfianza_primera_json"] else None),
             "versiones": {s: version_al(s, momento) for s in SKILLS},
             "versionPrompt": f["version"] or parte.get("version") or "",
             "probabilidades": probs,
@@ -1210,7 +1213,8 @@ def _simulacion() -> dict:
     for a in apuestas:
         r = fx[a["fixtureId"]]
         elegido = _elegido(_normalizar(a["probabilidades"]))
-        a["alerta"] = (alerta_confianza(a["probabilidades"], a["mercado"], _burbuja_elegido(r, elegido))
+        sellada = (a.get("desconfianzaSellada") or {}).get("alerta")
+        a["alerta"] = ((sellada or alerta_confianza(a["probabilidades"], a["mercado"], _burbuja_elegido(r, elegido)))
                        if _utc(a["pitazo"]) >= inicio_alerta else None)
         a["marcador"] = marcador_de(r, elegido)
     out = simular(apuestas)
