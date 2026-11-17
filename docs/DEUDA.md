@@ -1250,7 +1250,8 @@ conversación se pierde en la siguiente.
    (49 contra 50) y la brecha del EFE no ordena el partido mejor que la casa en
    ningún grupo. Decisión del 10/11 atada a esto («la corrida deja de escribir
    una lección por cada empate técnico declarado y cumplido, solo con A6
-   medido»): **queda para el usuario**. Los cinco zips se subieron el 17/11 hacia las 08:20 de Lima
+   medido»): **aplicada el 17/11** en el modo `veredictos`
+   (`.claude/skills/corrida-sad/modos/veredictos.md`). Los cinco zips se subieron el 17/11 hacia las 08:20 de Lima
    (anotado en `SUBIDA_VERSION`). **Pendiente del usuario**: cerrar con 🔑 las
    lecciones anteriores al corte. **Pendiente de la app** (de «Para la app» de cada
    propuesta, en PENDIENTES): `pronostico.descarte`, `1X2-CARGA-CONTRA-RIESGO`,
