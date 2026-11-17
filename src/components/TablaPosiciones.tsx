@@ -91,10 +91,15 @@ export function TablaPosiciones({ ligaId, temporada, fases, destacar = [], desta
           {CABECERAS.map((h, i) => (
             <span key={h} style={{ font: '600 9.5px var(--mono)', color: 'var(--t3)', letterSpacing: '.4px', padding: '2px 0 8px', textAlign: i >= 2 ? 'right' : 'left' }}>{h}</span>
           ))}
-          {tabla.map((r) => {
+          {tabla.map((r, i) => {
             const hl = resaltados.has(r.equipoId) || resaltadosNombre.has(r.nombre)
+            // con grupos (1440) cada uno abre con su título: la posición es dentro del grupo
+            const titulo = r.grupo && r.grupo !== tabla[i - 1]?.grupo ? r.grupo : null
             return (
               <div key={r.equipoId} style={{ display: 'contents' }}>
+                {titulo && (
+                  <span style={{ gridColumn: '1 / -1', font: '700 10px var(--mono)', color: 'var(--t2)', letterSpacing: '.4px', padding: i > 0 ? '10px 0 4px' : '0 0 4px' }}>{titulo}</span>
+                )}
                 <span style={{ ...celda, font: '600 11px var(--mono)', color: hl ? 'var(--accent)' : r.posicion <= 4 ? 'var(--accent)' : 'var(--t3)' }}>{r.posicion}</span>
                 <span style={{ ...celda, font: hl ? '700 11.5px var(--sans)' : '600 11.5px var(--sans)', color: hl ? 'var(--accent)' : 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.nombre}</span>
                 <span style={num}>{r.partidosJugados}</span>

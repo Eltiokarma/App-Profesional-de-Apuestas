@@ -1985,7 +1985,60 @@ def tabla_posiciones(liga_id: int, temporada: int | None = None, fase: str | Non
     else:
         clave = lambda e: (-e["puntos"], -(e["golesFavor"] - e["golesContra"]), -e["golesFavor"], e["nombre"])  # noqa: E731
     tabla = sorted(acc.values(), key=clave)
+    # LOS GRUPOS QUE NUNCA SE CRUZAN SON TABLAS APARTE (17/11/2026, incidencia 1440: la
+    # Liga de las Naciones y las eliminatorias salían en una sola tabla con todos los
+    # grupos mezclados; los puntos estaban bien y la posición no servía para leer qué se
+    # juega cada uno). La API no trae el grupo: sale de quién jugó contra quién en la
+    # temporada (o la fase). Con UNA sola componente —una liga, o una fase de liga con
+    # cruces como la Champions nueva— la tabla queda como siempre, sin `grupo`.
+    grupos = grupos_de_pares([(r["home_team_id"], r["away_team_id"]) for r in pares_liga(liga_id, temporada)
+                              if fase is None or _fase_de_round(r["ronda"]) == fase])
+    if len(set(grupos.values())) > 1:
+        orden: dict[int, int] = {}
+        for e in tabla:   # el grupo del mejor equipo de la tabla general va primero
+            g = grupos.get(e["equipoId"])
+            if g is not None and g not in orden:
+                orden[g] = len(orden)
+        salida, cuenta = [], {}
+        for e in sorted(tabla, key=lambda e: orden.get(grupos.get(e["equipoId"]), len(orden))):
+            g = orden.get(grupos.get(e["equipoId"]), len(orden))
+            cuenta[g] = cuenta.get(g, 0) + 1
+            salida.append({"posicion": cuenta[g], "grupo": f"Grupo {g + 1}",
+                           **{k: v for k, v in e.items() if not k.startswith("_")}})
+        return salida
     return [{"posicion": i + 1, **{k: v for k, v in e.items() if not k.startswith("_")}} for i, e in enumerate(tabla)]
+
+
+def pares_liga(liga_id: int, temporada) -> list:
+    """Quién juega contra quién en la temporada (jugados o no), con la ronda."""
+    return db.query("sad", "SELECT home_team_id, away_team_id, league_round AS ronda FROM fixtures "
+                           "WHERE league_id=? AND league_season=?", (liga_id, temporada))
+
+
+def grupos_de_pares(pares) -> dict[int, int]:
+    """Componentes conexas del grafo de partidos: equipo → índice de grupo. Un
+    grupo de 2 equipos solos (un cruce de eliminación suelto) no parte la tabla:
+    se cuentan solo las componentes de 3 o más; si hay menos de 2 de esas, {}."""
+    padre: dict[int, int] = {}
+
+    def raiz(x):
+        while padre.setdefault(x, x) != x:
+            padre[x] = padre[padre[x]]
+            x = padre[x]
+        return x
+    for a, b in pares:
+        if a is None or b is None:
+            continue
+        ra, rb = raiz(a), raiz(b)
+        if ra != rb:
+            padre[ra] = rb
+    comp: dict[int, list[int]] = {}
+    for x in list(padre):
+        comp.setdefault(raiz(x), []).append(x)
+    grandes = [sorted(v) for v in comp.values() if len(v) >= 3]
+    if len(grandes) < 2:
+        return {}
+    return {t: i for i, v in enumerate(sorted(grandes)) for t in v}
 
 
 # ligas cuyo primer desempate son las victorias (reglamento): Brasileirão A y B
