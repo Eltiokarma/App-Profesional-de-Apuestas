@@ -105,6 +105,8 @@ def leer(pron: dict | None, mercado: dict | None, reventon: dict | None, nombres
         "descarte": {"resultado": descartado, "nuestra": nuestras[descartado],
                      "casa": round(float(mercado[descartado]), 1) if mercado else None},
         "dobleOportunidad": None,
+        # el elegido, nuestro número contra el de la casa (para 1X2-CARGA-CONTRA-RIESGO)
+        "probElegido": {"nuestra": nuestras[e], "casa": round(float(mercado[e]), 1) if mercado else None},
         "ventajaPorFuerza": {lado: ventaja_por_fuerza(mercado.get(k)) if mercado else None
                              for k, lado in LADO.items()},
         "fuenteVentaja": FUENTE_VENTAJA,
@@ -122,6 +124,43 @@ def leer(pron: dict | None, mercado: dict | None, reventon: dict | None, nombres
             "resaltar": alerta["activa"],
         }
     return out
+
+
+_EXTREMOS = ("K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION")
+
+
+def alerta_carga(bloque: dict | None, reventon: dict | None, alertas: list, nombres: dict) -> list[dict]:
+    """1X2-CARGA-CONTRA-RIESGO (17/11/2026, aprobada en la sad-analysis v4.4 y pedida otra vez
+    en la v4.6, «Para la app» 3): el 1X2 declarado sigue una racha con riesgo alto o muy alto
+    (o en K-EXTREMO / K-CERCA-EXTREMO) y el número del elegido queda SOBRE el de la casa. Es la
+    guardia de «con riesgo alto, el número del lado de la racha no sube sobre el mercado»: el
+    cumplimiento se frena en el recibo, no repitiendo la regla. Tipo dato; no mueve nada.
+    Armenia–Chipre 1528959, Once Caldas 1648691, Llaneros 1549870."""
+    from backend.analisis.veredicto import pronostico_vs_racha
+    if not bloque or bloque.get("elegido") in (None, "empate"):
+        return []
+    pe = bloque.get("probElegido") or {}
+    if pe.get("casa") is None or pe.get("nuestra") is None or pe["nuestra"] <= pe["casa"]:
+        return []
+    extremos = {a.get("equipo") for a in alertas or [] if isinstance(a, dict) and a.get("codigo") in _EXTREMOS}
+    motivos = []
+    for lado in ("a", "b"):
+        act = ((reventon or {}).get(lado) or {})
+        signo = (act.get("actual") or {}).get("signo")
+        nivel = (act.get("riesgo") or {}).get("nivel") or ""
+        if not signo or not (nivel in ("alto", "muy alto") or lado in extremos):
+            continue
+        if pronostico_vs_racha(lado, {"signo": signo, "riesgo": {"nivel": "alto"}},
+                               bloque["elegido"])["pronosticoVsRacha"] != "aFavor":
+            continue
+        por = f"riesgo {nivel}" if nivel in ("alto", "muy alto") else "en el extremo de su K"
+        motivos.append(f"{nombres.get(lado, lado)}: racha {signo} ({por}) y el 1X2 apuesta a que sigue")
+    if not motivos:
+        return []
+    return [{"codigo": "1X2-CARGA-CONTRA-RIESGO", "equipo": "global", "tipo": "dato", "motivos": motivos,
+             "detalle": "; ".join(motivos) + f". El elegido quedó en {pe['nuestra']:g} % contra {pe['casa']:g} % "
+                        "de la casa: con riesgo alto, el número del lado de la racha no sube sobre el mercado "
+                        "(sad-analysis 1.6) y el `porque` del 1X2 nombra el riesgo"}]
 
 
 def alerta_tira(bloque: dict | None, nombres: dict) -> list[dict]:

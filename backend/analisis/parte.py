@@ -2886,7 +2886,7 @@ _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
                         "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
                         "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR", "DESCONFIAR",
-                        "FUERA-EN-LA-HOJA", "EFE-RECOMPUTO-PENDIENTE"}
+                        "FUERA-EN-LA-HOJA", "EFE-RECOMPUTO-PENDIENTE", "1X2-CARGA-CONTRA-RIESGO"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -5254,8 +5254,10 @@ def dto(fixture_id: int) -> dict | None:
                 "codigo": "ONCE-SIN-FILA-F1", "equipo": lado, "tipo": "dato",
                 "detalle": f"{len(sin_fila)} titular(es) del once oficial sin fila en la tabla F1: "
                            f"{', '.join(sin_fila)}. No pesan en el IP ni en el FACTOR-X: si son caras "
-                           "nuevas o rotados, el EFE y el bloque F leyeron otro equipo (con 3 o más, "
-                           "rehacer la tabla F1 con GET /analisis/cowork/f1/{id} y re-depositar).",
+                           "nuevas o rotados, el EFE y el bloque F leyeron otro equipo: rehacer la tabla F1 "
+                           "con las filas `delOnceOficial` de GET /analisis/cowork/f1/{id} y re-depositar, "
+                           "AUNQUE SEA UNO (EFE v1.11: una fila por titular, sin umbral); el recómputo de B "
+                           "y F lo pide EFE-RECOMPUTO-PENDIENTE.",
                 "titulares": sin_fila,
             })
         recomputo = alerta_recomputo_efe(lado, eq, disp)
@@ -5330,6 +5332,8 @@ def dto(fixture_id: int) -> dict | None:
     desconfianza = _desconfianza_o_nada(fila["fixture_id"], parte.get("pronostico"), reventon,
                                         {"a": fila["equipo_a"], "b": fila["equipo_b"]})
     alertas.extend(_desconfianza.alerta_tira(desconfianza, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(_desconfianza.alerta_carga(desconfianza, reventon, alertas,
+                                              {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     alertas.extend(alertas_espina(reventon, (parte.get("lecturaSad") or {}).get("espina"),
                                   {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # dos equipos de ligas distintas: el nivel no compara entre bases, y el

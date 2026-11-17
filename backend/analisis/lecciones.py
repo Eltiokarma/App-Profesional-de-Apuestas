@@ -888,8 +888,9 @@ def _cerrar_desenlace(d: dict) -> dict:
                         "intervalo": intervalo_wilson(c["cumplidos"], n) if cobrable else None}
     out["nota"] = ("el desenlace del régimen del que persigue (TDE v0.1.24, disciplina 65): «se_rompe» se "
                    "cumple si el tramo lo cierra un gol del rival, «rescata» si lo cierra uno propio; "
-                   "«abierto» no se cobra. Lectura por defecto: ISE de rama ≥ 7 → se_rompe. Tasa con "
-                   f"n ≥ {DESENLACE_N_MINIMO}; el corte en 7 se revisa con n ≥ 30 por lectura")
+                   "«abierto» no se cobra. Lectura por defecto: `abierto` con cualquier ISE de rama (TDE "
+                   "v0.1.25: el corte en 7 se retiró porque no separaba; los partes de la v0.1.24 se cobran "
+                   f"con su regla). Tasa con n ≥ {DESENLACE_N_MINIMO}")
     return out
 
 

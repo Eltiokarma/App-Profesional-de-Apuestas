@@ -328,7 +328,8 @@ def f2_calendario(team_id: int, fecha: str, contexto: dict) -> dict:
         "exigenciaProxima": exig,
         "puedeSubir": "viaje largo, cambio de altitud, calor extremo o un próximo partido de "
                       "altísima exigencia que la base no reconoce (rival directo, final de liga) — NO "
-                      "están en nuestra base y son parte de la rúbrica F2: si los hay, súbelo a mano",
+                      "están en nuestra base: F2 NO se sube a mano (TDE disciplina 21, decisión del "
+                      "usuario del 10/11/2026); van a la caja de sensibilidad como el otro extremo, con su fuente",
     }
 
 

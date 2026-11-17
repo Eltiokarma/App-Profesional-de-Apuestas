@@ -88,7 +88,10 @@ casi siempre no hay nada que hacer.
 >    F → D1 y H), con las filas `delOnceOficial` que sumó la app y sin
 >    borrarlas, y la nota del bloque B dice «recomputado con el once» (eso
 >    calla la alerta). Sin ella, no se toca una baja decisiva que no juega ni
->    la rama del TDE que dependía de un intérprete. Si el 1X2 se mueve,
+>    la rama del TDE que dependía de un intérprete. **El hecho de la espina**
+>    (sad-analysis v4.6, 1.6 (i) y 1.7 (g)) que se apoyaba en el once probable
+>    se revisa con la hoja: si el jugador o el sistema que lo sostenía no está,
+>    la espina vuelve a la tarjeta o se reescribe con el hecho de hoy. Si el 1X2 se mueve,
 >    movelo con su porqué en la lectura del 1X2 (disciplina 33); si no, no.
 >    Antes de depositar, listá en tu respuesta los nombres que salieron y
 >    confirmá que ninguno queda en el texto como titular.
