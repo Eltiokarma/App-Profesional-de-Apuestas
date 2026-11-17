@@ -491,11 +491,21 @@ def ficha(fixture_id: int) -> dict | None:
                             "es imposible con nuestras fuentes; esto es lo que hay"
                             + ("" if con_once else " — y sin onces capturados baja a C")),
         "noCalculables": no_calc,
-        "referencias": {"ventajaPorMinuto": ventaja_por_minuto(fecha)},
+        "referencias": {"ventajaPorMinuto": ventaja_por_minuto(fecha),
+                        # la fuerza, antes de escribir la rama (TDE v0.1.27 punto 2, 17/11/2026)
+                        "ventajaPorFuerza": _ventaja_por_fuerza(fixture_id)},
         "nota": "esto NO es el IE. Son los insumos que el skill manda tomar del motor "
                 "(P1a es input inviolable; F2 es dato del motor o no es dato) más F1, "
                 "que sale de las alineaciones ya ingestadas. El resto lo escribe quien analiza.",
     }
+
+
+def _ventaja_por_fuerza(fixture_id: int) -> dict:
+    from backend.analisis.desconfianza import de_fixture
+    try:
+        return de_fixture(fixture_id)
+    except Exception as e:  # noqa: BLE001 — sin la referencia los insumos siguen sirviendo; se dice por qué
+        return {"a": None, "b": None, "sinCuota": True, "error": f"no se pudo calcular: {e}"}
 
 
 # ── referencia: la ventaja según el minuto del primer gol (TDE v0.1.24) ─────

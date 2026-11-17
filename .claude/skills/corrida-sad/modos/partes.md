@@ -90,7 +90,7 @@
 >   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ;
 >   si el servidor todavía no trae `unXDos`, se calcula con
 >   `backend/analisis/unxdos_motor.probabilidades(μ_local, μ_visita)` —la misma
->   función— y se dice en `pronostico.motor`); P1a del TDE ya viene calculado en `tde/{id}`. El
+>   función— y se dice en `pronostico.motor`); P1a del TDE ya viene calculado en `tde/{id}`, y también `referencias.ventajaPorFuerza` (17/11/2026: la rama de ventaja la cita; el número del desenlace lo pone la fuerza). El
 >   `desde` del DT con `desdeConfirmar: true` NO es dato: la llegada sale de
 >   prensa o va vacía. Una ventana del TDE que cambia según quién marque va
 >   en la rama: `reasignacion.siMarcaPrimero.ventana`, RELATIVA al gol que la
