@@ -3243,6 +3243,17 @@ class VeredictoBody(BaseModel):
     notas: str = ""
 
 
+def _con_banco(d: dict, fixture_id: int) -> dict:
+    """EL BANCO PROBABLE, UNA SOLA LISTA (17/11/2026, A8 de la EFE v1.10 = `bancoOfensivo`
+    del DTP v1.8 = punto 2 del TDE v0.1.26): la misma en f1, dtp y tde."""
+    from backend.analisis import banco
+    try:
+        d["bancoProbable"] = banco.banco_probable(fixture_id)
+    except Exception as e:  # noqa: BLE001 — sin la lista el insumo sigue sirviendo; se dice por qué
+        d["bancoProbable"] = {"error": f"no se pudo calcular: {e}"}
+    return d
+
+
 @app.get(API + "/analisis/cowork/dtp/{fixture_id}")
 def cowork_dtp(fixture_id: int):
     """Los insumos del DTP que salen de NUESTRA base (ficha de partido ya
@@ -3254,7 +3265,7 @@ def cowork_dtp(fixture_id: int):
     d = dtp_cowork.ficha(fixture_id)
     if not d:
         raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
-    return d
+    return _con_banco(d, fixture_id)
 
 
 @app.get(API + "/analisis/cowork/f1/{fixture_id}")
@@ -3267,7 +3278,7 @@ def cowork_f1(fixture_id: int):
     d = f1_base.tabla(fixture_id)
     if not d:
         raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
-    return d
+    return _con_banco(d, fixture_id)
 
 
 @app.get(API + "/analisis/cowork/tde/{fixture_id}")
@@ -3284,7 +3295,7 @@ def cowork_tde(fixture_id: int):
     d = tdemod.ficha(fixture_id)
     if not d:
         raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
-    return d
+    return _con_banco(d, fixture_id)
 
 
 @app.get(API + "/analisis/cowork/veredictos/pendientes")

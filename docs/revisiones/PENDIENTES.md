@@ -65,6 +65,8 @@ redactada:
   en `GET …/rehacer`, y el modo `rehacer` lo lee.
 - **Banco probable:** una sola lista en la app para EFE 10, DTP 5 y TDE 5
   (hoy cada propuesta la nombra distinto).
+  **Hecho el 17/11/2026** (DEUDA 35): `bancoProbable` en `f1/{id}`,
+  `dtp/{id}` y `tde/{id}` (`backend/analisis/banco.py`).
 - **Sanciones con `certeza` (A3 del EFE):** la leen EFE 5, DTP 7 y TDE 12.
   Kortrijk 1558673 va primero.
 - **SAD 1, el origen de la burbuja:** `origen` en `/burbujas`, con las alertas

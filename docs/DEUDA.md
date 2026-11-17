@@ -1229,9 +1229,13 @@ conversación se pierde en la siguiente.
    del EFE). **App, hecho en esta rama**: `EFE-RECOMPUTO-PENDIENTE` (1068 paso
    2, aprobado con la EFE v1.10) y el rehacer (`parte.REHACER_POR`) que ahora
    también entra con FUERA-EN-LA-HOJA, ONCE-SIN-FILA-F1 y esa alerta; el modo
-   `rehacer` carga `efe-clasificador` con ella. **Pendiente de la app**: el
-   banco probable (A8, una lista para EFE/DTP/TDE) y Jev A0 (`lectura` por
-   skill, ya decidido el 10/11). **Después**: paso 2, las propuestas de TDE
+   `rehacer` carga `efe-clasificador` con ella (PR #560). **El banco
+   probable, hecho** (`backend/analisis/banco.py`, `bancoProbable` en
+   `f1/{id}`, `dtp/{id}` y `tde/{id}`, `test_banco`): UNA lista para EFE B5,
+   DTP `bancoOfensivo` y TDE; con el once y la banca completa es la hoja, antes
+   es probable (entradas y goles/asistencias entrando en los últimos 10).
+   **Pendiente de la app**: Jev A0 (`lectura` por skill, ya decidido el 10/11)
+   y medir la costumbre de rotación por DT (A8, solo medición). **Después**: paso 2, las propuestas de TDE
    v0.1.27, DTP v1.9, EFE v1.11 y sad-analysis v4.6 (con el núcleo).
 
 ## Siguientes pasos (en orden)

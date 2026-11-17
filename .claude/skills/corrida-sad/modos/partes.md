@@ -78,6 +78,11 @@
 >   motivo «sanción» salvo que la prensa diga que juega, y entonces la nota del
 >   equipo lo dice con la fuente —en una nota de bloque A-E, nunca `notas.F`,
 >   que se rechaza (1276)—: si no, SANCION-SIN-DECLARAR) →
+>   **el banco: `bancoProbable` de cualquiera de los tres (`tde`, `dtp`, `f1`; es UNA lista,
+>   17/11/2026)** —antes del once es «probable» y se escribe así en las ramas del TDE, las vías
+>   del DTP (banco ofensivo), B5 y la palanca de la matriz; con `fuente: hoja` son los
+>   suplentes reales y ningún titular va de banco; el titular habitual de
+>   `titularesHabitualesEnElBanco` se nombra primero— →
 >   `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
 >   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
 >   EXACTO al punto 7 (a = local).
