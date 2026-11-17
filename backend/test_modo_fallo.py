@@ -55,6 +55,23 @@ check("la prosa va en el estado y no en las instrucciones",
       POR_LADO["b"]["leccion"] in json.dumps(estado, ensure_ascii=False)
       and all(POR_LADO["b"]["leccion"] not in q["instructions"] for q in preg.values()))
 
+print("\n== A0 (17/11/2026): `lectura_efe` pasa a `lectura`; lo sellado se lee con el nombre nuevo ==")
+check("la taxonomía trae `lectura` y no `lectura_efe`", "lectura" in mf.MODOS and "lectura_efe" not in mf.MODOS)
+check("lo sellado como `lectura_efe` se lee como `lectura`; lo demás no cambia",
+      mf.canonico("lectura_efe") == "lectura" and mf.canonico("tde") == "tde" and mf.canonico(None) is None)
+from backend.analisis import lecciones as _lec
+_base = {"veredicto": "fallo", "orden": 1, "modoFallo": "lectura"}
+_items = [
+    {**_base, "clave": "1:a:1", "skill": "diagnostico-tactico", "reglaTocada": "M2 · tabla F1 sin rehacer con el once"},
+    {**_base, "clave": "2:a:1", "skill": "teorema-del-echado", "reglaTocada": "disciplina 44 (b)"},
+    {**_base, "clave": "3:a:1", "skill": "efe-clasificador", "reglaTocada": "F1"},
+    {**_base, "clave": "4:a:1", "skill": "teorema-del-echado", "reglaTocada": "rama once alternativo, rotación",
+     "veredicto": "acierto"},
+]
+_x = _lec.lectura_con_insumo_efe(_items)
+check("la cuenta cruzada del EFE: solo fallos de OTROS skills cuya regla nombra un insumo del EFE",
+      _x["claves"] == ["1:a:1"] and _x["porSkill"] == {"diagnostico-tactico": 1}, _x)
+
 print("\n== sin clave: nada se etiqueta ==")
 ev = mf.evaluar(POR_LADO, NOMBRES)
 check("se evaluó y se marcó simulado", ev["simulado"] is True and ev["preguntas"] == 2)

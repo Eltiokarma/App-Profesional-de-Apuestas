@@ -79,6 +79,9 @@ redactada:
   tras el pitazo (DTP 6).
 - **Jev, A0:** `lectura_efe` pasa a ser `lectura` del skill de su dossier. Lo
   ya sellado no se reetiqueta.
+  **Hecho el 17/11/2026**: `modo_fallo.MODOS` trae `lectura`, lo sellado se
+  lee como `lectura` (`modo_fallo.canonico`), y el dossier del EFE cuenta
+  aparte `lecturaDeOtrosConInsumoEfe`.
 - **Medir:** EFE A6, A7 y A8; TDE 10; SAD 8 y 20; DTP `rolesVsGrid` sobre los
   6 casos del cambio 6.
 

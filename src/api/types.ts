@@ -2430,7 +2430,8 @@ export interface LeccionItem {
   actualizadoEn: string
 }
 
-export type ModoFalloEtiqueta = 'insumo' | 'lectura_efe' | 'tde' | 'reventon' | 'mercado' | 'imprevisto' | 'varianza' | 'no_lo_dice'
+/** `lectura_efe` es el nombre viejo de `lectura` (sellado antes del 17/11/2026; las lecciones ya lo traen como `lectura`) */
+export type ModoFalloEtiqueta = 'insumo' | 'lectura' | 'lectura_efe' | 'tde' | 'reventon' | 'mercado' | 'imprevisto' | 'varianza' | 'no_lo_dice'
 
 /** Los fallos agrupados por la etiqueta de Jev, para el dossier de la fase D. */
 export interface PorModoFallo {
@@ -2440,6 +2441,8 @@ export interface PorModoFallo {
   pidenMoverNumero: number
   pidenMoverSinPoder: string[]
   nota: string
+  /** solo en el EFE: los `lectura` de otros skills cuya regla nombra un insumo del EFE (A0) */
+  lecturaDeOtrosConInsumoEfe?: { cuantas: number; porSkill: Record<string, number>; claves: string[]; nota: string }
 }
 
 export interface SkillAprendizaje {

@@ -38,7 +38,7 @@
   depósito y la formación corregida DESPUÉS del pitazo (1053, 848: el detalle
   lo dice); la salida «pelota parada» del TDE (1058, 744: espera la v0.1.25);
   el bloque F cerrado con la ficha después del partido (1061: lo sellado
-  antes del pitazo no se toca); la etiqueta `lectura_efe` del modo de fallo
+  antes del pitazo no se toca); la etiqueta `lectura_efe` (hoy `lectura`, 17/11/2026) del modo de fallo
   de Jev (1062, 794: insumo de la fase D, no juez); y un once que la API
   publica con 10 titulares (1060, 1045). Y desde la pasada del 02/11 (noche):
   el ONCE-SIN-FILA-F1 de un debut o recambio fuera de los últimos 3 onces
