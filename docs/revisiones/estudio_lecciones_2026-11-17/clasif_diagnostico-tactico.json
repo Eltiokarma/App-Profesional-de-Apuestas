@@ -1,0 +1,2084 @@
+[
+ {
+  "clave": "1649063:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649063:a:5",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649063:b:4",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649063:b:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:a:6",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:a:7",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el perfil de balón del rival es su posesión en la sede de hoy, no su tasa de resultados ni «sin objetivo cede»"
+ },
+ {
+  "clave": "1549560:b:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:b:6",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549558:a:3",
+  "regla": "vía de expulsión",
+  "clase": "imprevisto",
+  "propuesta_corta": "la vía de expulsión se escribe con toda la línea, arquero incluido"
+ },
+ {
+  "clave": "1549558:b",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549558:b:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549558:b:5",
+  "regla": "M5 · rama con diferencia numérica",
+  "clase": "imprevisto",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:a:6",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:a:7",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:b:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:b:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:a",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:a:2",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:a:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:b",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528989:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528989:a:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528989:b:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:a:4",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "el que llega de segunda línea desde el banco también ataca la pelota parada"
+ },
+ {
+  "clave": "1528988:a:5",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:a:6",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:b:3",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528987:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528987:b:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528986:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528986:a:4",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528986:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la falta de urgencia de tabla no baja la rama persiguiendo sin dato de volumen"
+ },
+ {
+  "clave": "1649149:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma un caso (mismo cruce, copa) al candidato de penales concedidos en serie"
+ },
+ {
+  "clave": "1649149:a:4",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649149:b:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el tercer nombre de la lista sale de la hoja: delantero del banco aunque tenga pocos minutos"
+ },
+ {
+  "clave": "1649149:b:3",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:a:3",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "insumo",
+  "propuesta_corta": "sin once oficial, la baja de prensa de un titular de carril va en dos variantes"
+ },
+ {
+  "clave": "1649148:a:4",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:a:5",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:b:3",
+  "regla": "M2 · duelos por carril",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:b:4",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:a",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:a:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:b:5",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la rama de ventaja dice qué queda atrás si el DT no hace el cambio defensivo anunciado"
+ },
+ {
+  "clave": "1649061:a:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:a:6",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:b:4",
+  "regla": "vía de expulsión",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:b:5",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:b:6",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:a",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:a:2",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:b",
+  "regla": "M2 · banco ofensivo",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:a:6",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:a:7",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545616:a",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545616:a:2",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la materia de córners sale del cruce: los que concede el rival mandan sobre el promedio propio"
+ },
+ {
+  "clave": "1545616:b",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:a",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:a:5",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:a:3",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:a:4",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la presión del rival se escribe con su vuelta sobre la salida propia (candidato presión con su vuelta)"
+ },
+ {
+  "clave": "1528984:a:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:b",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:b:4",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:a:3",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:b:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:b:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:b:6",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:a:4",
+  "regla": "al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:a:5",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:b:2",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:b:4",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:a:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:b:3",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:b:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:b:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "sin penales en la base, el orden de la lista se declara sin fuente y no se afirma"
+ },
+ {
+  "clave": "1528981:b:6",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:a:5",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:a:6",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:a:7",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:b:4",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:b:5",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:b:6",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:b:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:b:5",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:b:6",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:a:5",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:b:3",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_fallo",
+  "propuesta_corta": "persiguiendo, la materia de córners del que cede sube: la condicional se relee por rama"
+ },
+ {
+  "clave": "1649060:b:4",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649059:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649059:a:5",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649059:b",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649059:b:2",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:b:3",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:b:4",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:a:5",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:a:6",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:b",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:b:2",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:a:4",
+  "regla": "M5 · rama con diferencia numérica",
+  "clase": "imprevisto",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:b",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:b:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:a:3",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:b:4",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:a:4",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:a:5",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:b:2",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:b:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:a:3",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:a:4",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:b:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:a:2",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549865:a",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549865:b",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con condición que depende del rival, la rama va con la línea menos favorable hasta el cierre"
+ },
+ {
+  "clave": "1549864:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:a:5",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:b:4",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:a:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:b:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:a:4",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:a:5",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:b:4",
+  "regla": "M2 · posesión por rama",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con el favorito muy arriba, el que persigue toma la pelota: se escribe la dirección, no el perfil"
+ },
+ {
+  "clave": "1528977:a",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:a:2",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:a:3",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:b:5",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:a",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:b:2",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:b:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:a:3",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:a:4",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "persiguiendo con seguro «sin» y rival con transición, la rama sale DESFAVORABLE (candidato existente)"
+ },
+ {
+  "clave": "1528974:a:5",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:b",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:b:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "con el primero de la lista como víctima de la falta, patea el segundo (candidato Panathinaikos)"
+ },
+ {
+  "clave": "1528974:b:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:a:2",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:a:4",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:b:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:a:3",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:a:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:b:2",
+  "regla": "al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:b:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:b:4",
+  "regla": "M2 · duelos por carril",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528971:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528971:a:3",
+  "regla": "candidato · el reconvertido también ataca",
+  "clase": "regla_fallo",
+  "propuesta_corta": "suma un caso al candidato: la cara ofensiva de la pieza nueva de la línea va a las vías"
+ },
+ {
+  "clave": "1528971:b:3",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492455:a",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492455:a:2",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492455:b:3",
+  "regla": "al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:a:4",
+  "regla": "al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:a:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:b",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:b:4",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:a:3",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:b:3",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:a:3",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:a:4",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:b:2",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:b:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "contra una línea de cinco nueva, el pase entre centrales del contenedor va en las vías"
+ },
+ {
+  "clave": "1549870:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:a:3",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:b",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:b:3",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:b:6",
+  "regla": "plan / matriz",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:a:2",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:a:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:b:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:a",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:a:5",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:b",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545614:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545614:a:3",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la pelota parada del que tiene la pelota también va condicional a los córners del cruce"
+ },
+ {
+  "clave": "1545614:b:2",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545614:b:4",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:a",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:a:3",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "dos partidos seguidos sostenidos por el arquero dejan la 6 en «no» (candidato existente)"
+ },
+ {
+  "clave": "1528970:b",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:b:2",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:a:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:a:6",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:b",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:b:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:b:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:a",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:a:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:b",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:a:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:b",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:b:2",
+  "regla": "M2 · veredicto con condición / ceder / vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:b:3",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:a:3",
+  "regla": "candidato · el reconvertido también ataca",
+  "clase": "regla_fallo",
+  "propuesta_corta": "suma un caso al candidato del reconvertido que también ataca"
+ },
+ {
+  "clave": "1528966:b:2",
+  "regla": "al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:b:3",
+  "regla": "al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528965:a:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528965:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:a:2",
+  "regla": "M2 · duelos por carril",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:a:3",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:a:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:a:5",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:b:3",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:b:4",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:a:3",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:a:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:a:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:b:4",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:a:3",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:b",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644379:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644379:b:2",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644379:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con penales sin fuente, la lista no se ordena por goles: se declara abierta"
+ },
+ {
+  "clave": "1549868:a:2",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549868:a:3",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "regla_fallo",
+  "propuesta_corta": "contra un bloque replegado, la media distancia es vía por defecto aunque falte registro de rematadores"
+ },
+ {
+  "clave": "1549868:b",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549868:b:2",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549868:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:a:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:a:6",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:b:3",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:b:5",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:a",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:a:6",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:b:3",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:b:5",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "sumar el minuto a minuto de VAVEL al protocolo de fuentes de selecciones menores"
+ },
+ {
+  "clave": "1528963:a:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:a:6",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:b:6",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el rechazo corto al borde del área es vía del rival que remata de afuera"
+ },
+ {
+  "clave": "1528962:a:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:b:3",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:b:5",
+  "regla": "plan / matriz",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:a:3",
+  "regla": "vía de expulsión",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:b:4",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:b:5",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:b:7",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con ventaja contra diez que sigue saliendo jugado, la presión tras pérdida es vía de la rama"
+ },
+ {
+  "clave": "1528960:a",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:a:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:a:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:b:3",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:b:6",
+  "regla": "M2 · duelos por carril",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el duelo lateral contra extremo que encara se nombra aunque el plan sea de pelota"
+ },
+ {
+  "clave": "1528959:a",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528959:a:3",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528959:b:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:a:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:a:7",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:b",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:b:2",
+  "regla": "M2 · posesión por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:b:3",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:a:3",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:a:4",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el arquero suplente propio va como vía en contra aunque no llegue al umbral (candidato)"
+ },
+ {
+  "clave": "1649433:a:5",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:b:5",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:b:7",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649146:a",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649146:a:2",
+  "regla": "M2 · posesión por rama",
+  "clase": "regla_fallo",
+  "propuesta_corta": "en ida de llave, el local con interino no toma la pelota si al visitante le sirve el empate"
+ },
+ {
+  "clave": "1649146:b:2",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:b",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:b:5",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:a:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:a:3",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:b:4",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:a:3",
+  "regla": "vía de expulsión",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:a:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:a:6",
+  "regla": "M5 · rama con diferencia numérica",
+  "clase": "imprevisto",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:b:4",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:b:5",
+  "regla": "M5 · rama con diferencia numérica",
+  "clase": "imprevisto",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:a:3",
+  "regla": "M1 · grid, variantes y xiReferencia",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:a:4",
+  "regla": "checklist del bloque (pregunta 6, vida útil)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:b",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:b:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:b:4",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:a:3",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:a:4",
+  "regla": "M4 · categoría del gol y fuentes",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:b:2",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644362:a:2",
+  "regla": "M2 · pelota parada con materia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644362:b:2",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644362:b:3",
+  "regla": "M2 · vías de gol (lista obligatoria)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:a:3",
+  "regla": "M5 · veredicto de la rama contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:b:2",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:b:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:a:2",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:a:3",
+  "regla": "M2 · banco ofensivo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:a:4",
+  "regla": "M5 · sin stats no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:b:5",
+  "regla": "M2 · dos capas (once tardío, rotación M6)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ }
+]
