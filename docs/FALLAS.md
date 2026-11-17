@@ -276,6 +276,7 @@ Tres lugares donde vive una guardia:
   - **Reglas nuevas:** `DESENLACE_DEFECTO_DESDE` y `REGLAS_CALCULADAS_DESDE` (`posteriorAlParte`).
   - **Cohortes** selladas al depositar.
   - **Se cobra lo que el parte muestra** (11/11/2026): el objetivo del veredicto lee el TDE con la herencia del DTP aplicada (`parte._heredar`, 1387: la rama se cobraba con el SOB2 escrito y el parte mostraba el heredado) y la ventana «desde el gol» de un tramo se ancla en el último gol, no en la roja que abrió el tramo (1388). Tests en `backend/test_cowork.py`.
+  - **La ventana es la que el parte declaró, y la vía que no es la rama no se cobra** (17/11/2026): «+15 y el régimen hasta el final» se mide hasta el final y «hasta el empate» hasta el cambio del marcador en los tramos (`veredicto._regimen`, 1435, Cusco: el gol del 87' con diez quedaba fuera de [31,46]); el desenlace de una rama que cierra un penal o un autogol sale `porOtraVia` y no se cobra (1436, Grau; TDE «cumplido por otra vía»). Tests en `backend/test_cowork.py`.
 - **Si vuelve:** lo que no es comparable sale de la métrica con su motivo, y se dice.
 
 ### 14. La automatización que no hace lo que creemos

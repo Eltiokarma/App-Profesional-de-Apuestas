@@ -6320,6 +6320,29 @@ def main():
                                 [{"minuto": 12, "lado": "b"}, {"minuto": 46, "lado": "a"}], "a")
     check("695: «desde el gol hasta el empate» en un tramo va del gol al final del tramo",
           _t695[1]["rango"] == [12, 90] and rango_relativo("desde el gol hasta el empate", 12) is None, _t695)
+    # 1435 (17/11/2026, Cusco 1549558): «desde la roja +15 y el régimen hasta el final» (disciplina 16)
+    # se medía [31,46] y el gol del 87' con diez quedaba fuera; «+15 y el régimen hasta el empate o el
+    # final» va hasta el cambio del marcador en los tramos y sigue con el +15 fuera de ellos
+    check("1435: el régimen declarado manda sobre el +N (hasta el final: al 90; hasta el empate: en los tramos)",
+          rango_relativo("desde la roja +15 y el régimen hasta el final", 31) == (31, 90)
+          and rango_relativo("desde el gol +15 y el régimen hasta el empate o el final", 16) == (16, 31)
+          and rango_relativo("desde el gol +15 y el régimen hasta el empate o el final", 16, abierto=True) == (16, 90)
+          and rango_relativo("desde el gol +15", 16, abierto=True) == (16, 31))
+    _t1435 = tramos_por_marcador({"reasignacion": {"siExpulsion": {
+        "ventana": "desde la roja +15 y el régimen hasta el final"}}},
+        [{"minuto": 20, "lado": "a"}, {"minuto": 87, "lado": "b"}], "a", [{"minuto": 31, "lado": "a"}])
+    _tx = [t for t in _t1435 if t["rama"] == "siExpulsion" and t["concedio"] == [87]]
+    check("1435: con la roja al 31' y el gol en contra al 87', ese gol está en la ventana de la rama",
+          _tx and _tx[0]["golEnVentana"] is True and _tx[0]["rango"] == [31, 90], _t1435)
+    # 1436 (17/11/2026, Grau 1549560): siLeEmpatan cerrado por un penal del 90+14 salía `se_rompe`
+    # cobrado; el TDE manda marcarlo `porOtraVia` sin cobrarlo
+    _p1436 = _ddt({"desenlace": "rescata"}, ((90, 14), 0, 0, "gol", {"minuto": 104, "lado": "b", "penal": True}), "a", 1, 1)
+    _n1436 = _ddt({"desenlace": "rescata"}, ((90, 14), 0, 0, "gol", {"minuto": 104, "lado": "b"}), "a", 1, 1)
+    _a1436 = _ddt({"desenlace": "rescata"}, ((70, 0), 0, 0, "gol", {"minuto": 70, "lado": "a", "autogol": True}), "a", 0, 1)
+    check("1436: el desenlace que cierra un penal o un autogol sale porOtraVia y no se cobra; uno de jugada, sí",
+          _p1436["porOtraVia"] == "penal" and _p1436["cumplido"] is None and _p1436["observado"] == "se_rompe"
+          and _n1436["cumplido"] is False and "porOtraVia" not in _n1436
+          and _a1436["porOtraVia"] == "autogol" and _a1436["cumplido"] is None, (_p1436, _n1436, _a1436))
     from backend.analisis.lecciones import _cerrar_desenlace
     _cd = _cerrar_desenlace({"se_rompe": {"tramos": 12, "cumplidos": 8, "deDefecto": 12, "observado": {"se_rompe": 8}},
                              "rescata": {"tramos": 3, "cumplidos": 1, "deDefecto": 0, "observado": {}},
