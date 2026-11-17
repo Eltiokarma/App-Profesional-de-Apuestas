@@ -1,0 +1,45 @@
+{
+ "nota": "núcleo de los skills (NUCLEO_SKILLS_propuesta.md, aplicado el 17/11/2026 con TDE v0.1.27, DTP v1.9, EFE v1.11, efe-dashboard v1.14 y sad-analysis v4.6): por skill, frases ancla literales que tienen que estar en el núcleo (SKILL.md o una referencia que no sea HISTORIAL.md) y el tope de tokens del núcleo (caracteres/4, +10 % sobre lo medido). Una regla nueva suma su ancla acá.",
+ "anclas": {
+  "teorema-del-echado": [
+   "La rama copia la lista entera, en una línea, por rol y sin el arquero suplente",
+   "La referencia también se parte por la fuerza",
+   "La plantilla de `siExpulsion`",
+   "`SOB1` dice la necesidad, no el régimen",
+   "La ventana modal se declara para la vía del índice que manda"
+  ],
+  "diagnostico-tactico": [
+   "intervenciones fallidas con gol en el torneo en curso",
+   "la convergencia entre redacciones es copia, no observación independiente",
+   "La presión alta, con su vuelta",
+   "El reconvertido también ataca",
+   "se escribe siempre aparte",
+   "Candidatos abiertos (no regla)"
+  ],
+  "efe-clasificador": [
+   "Una fila por titular, sin umbral; el 3 es del recómputo",
+   "Lo mismo para B6 🔶, la zona GK en rojo y GK-DOWNGRADE",
+   "clasificado o eliminado en la última fecha",
+   "El suplente con impacto documentado desde el banco",
+   "Bloque F sin XI confirmado",
+   "recomputado con el once"
+  ],
+  "efe-dashboard": [
+   "El arco no es gatillo de gol en «Para perder»"
+  ],
+  "sad-analysis": [
+   "DESCONFIAR, la alerta de la app",
+   "Una racha de un partido no sostiene al elegido",
+   "nombra lo que hace imposible el pronóstico",
+   "se rehace con el once oficial",
+   "salen de `bancoProbable`"
+  ]
+ },
+ "topeTokens": {
+  "teorema-del-echado": 60278,
+  "diagnostico-tactico": 22859,
+  "efe-clasificador": 25717,
+  "efe-dashboard": 6119,
+  "sad-analysis": 27634
+ }
+}

@@ -1237,6 +1237,17 @@ conversación se pierde en la siguiente.
    **Pendiente de la app**: Jev A0 (`lectura` por skill, ya decidido el 10/11)
    y medir la costumbre de rotación por DT (A8, solo medición). **Después**: paso 2, las propuestas de TDE
    v0.1.27, DTP v1.9, EFE v1.11 y sad-analysis v4.6 (con el núcleo).
+   **Paso 2 hecho el 17/11**: las cuatro propuestas aprobadas con todas las
+   recomendaciones (la frase de la espina con 3+ partidos de la v4.6 NO
+   entra) y aplicadas en `docs/skills/` con el núcleo (`references/HISTORIAL.md`
+   en cada skill, `backend/test_nucleo_skills.py` en CI); `CORTE_VERSION` al
+   17/11. Ya en la app: `ventajaPorFuerza` en `tde/{id}` (#563) y DESCONFIAR
+   sellada en el primer depósito (#564). **Pendiente del usuario**: subir los
+   cinco zips y anotar la hora en `SUBIDA_VERSION`; cerrar con 🔑 las lecciones
+   anteriores al corte. **Pendiente de la app** (de «Para la app» de cada
+   propuesta, en PENDIENTES): `pronostico.descarte`, `1X2-CARGA-CONTRA-RIESGO`,
+   el texto de ONCE-SIN-FILA-F1, la medición A6 del EFE, `EJE-DEBUTANTE-SIN-
+   DECLARAR`/`onceTardio` y los avisos del grid del DTP.
 
 ## Siguientes pasos (en orden)
 

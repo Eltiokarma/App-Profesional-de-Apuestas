@@ -25,4 +25,4 @@ silencio. El sha256 fijado solo se mueve declarando el alta.
 fecha:** dos de las tres desincronizaciones no cambiaron el conteo.
 
 IDs al cierre de v0.1.20: TDE-001…009, 011…018, 021…026, 029…034, 043…048.
-Numeraciones ausentes y sus etiquetas: `SKILL.md` § EL REGISTRO.
+Numeraciones ausentes y sus etiquetas: `references/HISTORIAL.md` § EL REGISTRO.
