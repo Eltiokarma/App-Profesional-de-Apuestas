@@ -6132,6 +6132,22 @@ def main():
           _cdr(1, "2026-10-31", _on1037, _sin) is None
           and (_cdr(1, "2026-10-27", _on1037, _sin) or {}).get("nuevo") == "Sandoval",
           (_cdr(1, "2026-10-31", _on1037, _sin), _cdr(1, "2026-10-27", _on1037, _sin)))
+    # 1439 (selecciones, 17/11/2026): Maldera dirige desde mayo, pero el primer once CAPTURADO con él es del 14/11
+    import backend.analisis.tde as _tdm1439
+    _on1439 = [{"fecha": "2026-11-14", "entrenador": "Andrea Maldera"}, {"fecha": "2026-03-25", "entrenador": "Serhii Rebrov"}]
+    _psh = _tdm1439._primero_sin_hoja
+    try:
+        _tdm1439._primero_sin_hoja = lambda tid, d, h: "2026-06-06"
+        _con_hueco = _cdr(7, "2026-11-17", _on1439, _sin)
+        _tdm1439._primero_sin_hoja = lambda tid, d, h: None
+        _sin_hueco = _cdr(7, "2026-11-17", _on1439, _sin)
+        _con_base = _cdr(7, "2026-11-17", _on1439, {"nombre": "A. Maldera", "desde": "2026-05-18"})
+    finally:
+        _tdm1439._primero_sin_hoja = _psh
+    check("1439: partidos sin hoja entre los dos DT hacen incierto el debut: fuera de la semana no se afirma el cambio",
+          _con_hueco is None and (_sin_hueco or {}).get("nuevo") == "Andrea Maldera", (_con_hueco, _sin_hueco))
+    check("1439: la llegada de ESTE DT en la base (18/05) manda sobre el primer once capturado",
+          _con_base is None, _con_base)
     # 1249 (PEC Zwolle): la API sentó a Clifford tres partidos y después otra vez a Van der Vegt
     _on1249 = [{"fecha": "2026-11-01", "entrenador": "H. van der Vegt"}, {"fecha": "2026-10-25", "entrenador": "M. Clifford"},
                {"fecha": "2026-10-18", "entrenador": "M. Clifford"}, {"fecha": "2026-10-04", "entrenador": "H. van der Vegt"}]
