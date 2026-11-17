@@ -1,0 +1,422 @@
+[
+ {
+  "clave": "1549560:b:7",
+  "regla": "FALSADOR-1X2",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "Falsador del 1X2: lo que da vuelta el resultado, no un gol suelto del débil"
+ },
+ {
+  "clave": "1528989:a:6",
+  "regla": "FALSADOR-1X2",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "Falsador del 1X2: lo que da vuelta el resultado, no un gol suelto del débil"
+ },
+ {
+  "clave": "1649148:a:6",
+  "regla": "MARCADOR-ACOTADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:b:6",
+  "regla": "RAMA-GOLEADA",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Rama de goleada atada solo al minuto del primer gol: candidato a medir"
+ },
+ {
+  "clave": "1649062:a:7",
+  "regla": "ESPINA-CORTE-SIGNO",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Corte a cero vs otro signo con riesgo alto: candidato a medir (guía calibrada)"
+ },
+ {
+  "clave": "1549559:b:7",
+  "regla": "K-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:b:4",
+  "regla": "FALSADOR-NOMBRES",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Falsador por nombre propio lleva también la vía; hereda el once de referencia"
+ },
+ {
+  "clave": "1545616:a:5",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:a:7",
+  "regla": "RAMA-GOLEADA",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Declarar la rama de goleada junto al arquero rival que la puede contener"
+ },
+ {
+  "clave": "1528985:b:7",
+  "regla": "K-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:b:6",
+  "regla": "K-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:a:6",
+  "regla": "FALSADOR-1X2",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:a:7",
+  "regla": "MARCADOR-DECLARADO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:a:6",
+  "regla": "FALSADOR-1X2",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:a:6",
+  "regla": "K-EXTREMO",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:b:5",
+  "regla": "RIESGO-ALTO-RESPETADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:a:5",
+  "regla": "RIESGO-ALTO-RESPETADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:b:5",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:b:6",
+  "regla": "RAMA-GOLEADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "Si la rama es la más probable tras el primer gol, ¿marcador? candidato a medir"
+ },
+ {
+  "clave": "1549867:a:7",
+  "regla": "ESPINA-TARJETA-FUERTE",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Racha de un partido: cómo se cortan (empate) pesa más que la tarjeta fuerte"
+ },
+ {
+  "clave": "1549867:b:7",
+  "regla": "ESPINA-CORTE-SIGNO",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:b:5",
+  "regla": "FALSADOR-NOMBRES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:b:5",
+  "regla": "DESCONFIAR",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:a:6",
+  "regla": "K-EXTREMO",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:b:3",
+  "regla": "ESPINA-CONTRA-TARJETA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:a:6",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:b:6",
+  "regla": "RIESGO-ALTO-ESPINA",
+  "clase": "regla_fallo",
+  "propuesta_corta": "La espina no se apoya en una rama condicional del DTP (persiguiendo)"
+ },
+ {
+  "clave": "1528972:a:6",
+  "regla": "K-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:a:7",
+  "regla": "FALSADOR-1X2",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528971:a:4",
+  "regla": "FALSADOR-MECANISMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528971:b:4",
+  "regla": "ESPINA-GUIA-TOTAL",
+  "clase": "imprevisto",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492455:a:3",
+  "regla": "DESCONFIAR",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492455:b:2",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "Con el once oficial, la espina sostenida en el once alternativo se rehace"
+ },
+ {
+  "clave": "1649057:a:6",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:b:6",
+  "regla": "ESPINA-CORTE-SIGNO",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:a:5",
+  "regla": "RIESGO-DOS-BURBUJAS",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:a:7",
+  "regla": "CONTEXTO-SIN-NADA",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:b:5",
+  "regla": "ESPINA-CORTE-SIGNO",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:a:5",
+  "regla": "ESPINA-TARJETA-DEBIL",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:b:4",
+  "regla": "K-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:b:3",
+  "regla": "ESPINA-TARJETA-FUERTE",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:a",
+  "regla": "DIV-MOTOR-MERCADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:b:3",
+  "regla": "ESPINA-CONTRA-TARJETA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:b:4",
+  "regla": "FAMILIA-RECORD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545614:a",
+  "regla": "1X2-MERCADO",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Tres fuentes contra el mercado casi parejo: candidato a backtest, no regla"
+ },
+ {
+  "clave": "1528970:b:5",
+  "regla": "DIV-MOTOR-MERCADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:b:6",
+  "regla": "MARCADOR-ACOTADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:a:7",
+  "regla": "ESPINA-CORTE-SIGNO",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:b:7",
+  "regla": "FAMILIA-RECORD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528965:a:6",
+  "regla": "K-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:b:5",
+  "regla": "ESPINA-PERFILES-DC",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:a",
+  "regla": "DESCONFIAR",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:a:4",
+  "regla": "RAMA-GOLEADA",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:a:5",
+  "regla": "FALSADOR-1X2",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:b:4",
+  "regla": "K-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:b:5",
+  "regla": "RIESGO-ALTO-1X2",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528959:b:4",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:b:7",
+  "regla": "RIESGO-ALTO-RESPETADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649146:b:4",
+  "regla": "EMPATE-MERCADO",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Ida con empate útil y once desconocido: candidato a medir, no regla"
+ },
+ {
+  "clave": "1648691:a:4",
+  "regla": "RIESGO-ALTO-RESPETADO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:a:6",
+  "regla": "RIESGO-ALTO-RESPETADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:b:5",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:b:2",
+  "regla": "FALSADOR-NOMBRES",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Con rotación anunciada, el falsador nombra la vía o el rol, no el once probable"
+ },
+ {
+  "clave": "1644380:b:7",
+  "regla": "RAMA-GOLEADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:a:6",
+  "regla": "COPA-6E",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:b:4",
+  "regla": "RAMA-GOLEADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:b:5",
+  "regla": "RIESGO-ALTO-RESPETADO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:a:5",
+  "regla": "K-CERCA-EXTREMO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:b:6",
+  "regla": "RAMA-GOLEADA",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Con distancia de categoría el minuto del primer gol no separa la goleada"
+ },
+ {
+  "clave": "1644335:b",
+  "regla": "RIESGO-ALTO-ESCALA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ }
+]

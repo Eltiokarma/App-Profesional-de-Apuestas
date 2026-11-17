@@ -1,0 +1,2210 @@
+[
+ {
+  "clave": "1649063:a",
+  "partido": "Wanderers vs Juventud",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "línea de riesgo del empate incluye titulares rivales, no solo el banco nombrado"
+ },
+ {
+  "clave": "1649063:a:2",
+  "partido": "Wanderers vs Juventud",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "insumo",
+  "propuesta_corta": "antes del once el banco va marcado «probable»; once tardío no se cobra"
+ },
+ {
+  "clave": "1649063:b",
+  "partido": "Wanderers vs Juventud",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649063:b:2",
+  "partido": "Wanderers vs Juventud",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:a",
+  "partido": "UCV Moquegua vs Atletico Grau",
+  "veredicto": "acierto",
+  "regla": "disc 44(f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:a:2",
+  "partido": "UCV Moquegua vs Atletico Grau",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:b",
+  "partido": "UCV Moquegua vs Atletico Grau",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:b:2",
+  "partido": "UCV Moquegua vs Atletico Grau",
+  "veredicto": "acierto",
+  "regla": "disc 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "candidato 90+: añadido largo generado por VAR (duración endógena)"
+ },
+ {
+  "clave": "1549558:a",
+  "partido": "Cusco vs ADT",
+  "veredicto": "fallo",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549558:a:2",
+  "partido": "Cusco vs ADT",
+  "veredicto": "fallo",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "con roja al arquero, la salida de la pieza del seguro se lee como seguro roto"
+ },
+ {
+  "clave": "1549558:b:2",
+  "partido": "Cusco vs ADT",
+  "veredicto": "parcial",
+  "regla": "disc 49 (C3)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549558:b:3",
+  "partido": "Cusco vs ADT",
+  "veredicto": "parcial",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:a",
+  "partido": "UTC Cajamarca vs Club Deportivo Los Chankas",
+  "veredicto": "fallo",
+  "regla": "disc 6",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "tipología de base no se apoya en identidad (descenso, C3) sin hecho de hoy"
+ },
+ {
+  "clave": "1549556:a:2",
+  "partido": "UTC Cajamarca vs Club Deportivo Los Chankas",
+  "veredicto": "fallo",
+  "regla": "PASO 4 falsador",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "falsador como condición observable pura, sin depender del estado del marcador"
+ },
+ {
+  "clave": "1549556:a:3",
+  "partido": "UTC Cajamarca vs Club Deportivo Los Chankas",
+  "veredicto": "fallo",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:b",
+  "partido": "UTC Cajamarca vs Club Deportivo Los Chankas",
+  "veredicto": "fallo",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:b:2",
+  "partido": "UTC Cajamarca vs Club Deportivo Los Chankas",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:a:4",
+  "partido": "Iceland vs Luxembourg",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:b:2",
+  "partido": "Iceland vs Luxembourg",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:b:3",
+  "partido": "Iceland vs Luxembourg",
+  "veredicto": "acierto",
+  "regla": "disc 61 / SOB1",
+  "clase": "regla_fallo",
+  "propuesta_corta": "SOB1 = 1 por tabla no trae el régimen: la SOB del obligado va condicional al sistema/once (medir)"
+ },
+ {
+  "clave": "1528989:a",
+  "partido": "Lithuania vs Liechtenstein",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528989:a:5",
+  "partido": "Lithuania vs Liechtenstein",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "no_dice",
+  "propuesta_corta": "concedió 3' tras doble cambio ofensivo rival con seguro amonestado; candidato a medir: ventana de riesgo desde el cambio ofensivo (propio o rival), no solo desde el gol"
+ },
+ {
+  "clave": "1528989:b",
+  "partido": "Lithuania vs Liechtenstein",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1528989:b:2",
+  "partido": "Lithuania vs Liechtenstein",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:a",
+  "partido": "Estonia vs Bulgaria",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:a:2",
+  "partido": "Estonia vs Bulgaria",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco; pieza del seguro sale del once"
+ },
+ {
+  "clave": "1528988:b",
+  "partido": "Estonia vs Bulgaria",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:b:2",
+  "partido": "Estonia vs Bulgaria",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528987:a",
+  "partido": "Faroe Islands vs Moldova",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528987:a:2",
+  "partido": "Faroe Islands vs Moldova",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "antecedente PSI debe coincidir en condición (local/visita); base y rama no se contradicen"
+ },
+ {
+  "clave": "1528987:b",
+  "partido": "Faroe Islands vs Moldova",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1528987:b:2",
+  "partido": "Faroe Islands vs Moldova",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528987:b:4",
+  "partido": "Faroe Islands vs Moldova",
+  "veredicto": "acierto",
+  "regla": "disc 16 ARQUERO-NUEVO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "declarar ARQUERO-NUEVO al rehacer con el once"
+ },
+ {
+  "clave": "1528986:a",
+  "partido": "Kazakhstan vs Slovakia",
+  "veredicto": "parcial",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528986:a:2",
+  "partido": "Kazakhstan vs Slovakia",
+  "veredicto": "parcial",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1528986:b",
+  "partido": "Kazakhstan vs Slovakia",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528986:b:2",
+  "partido": "Kazakhstan vs Slovakia",
+  "veredicto": "fallo",
+  "regla": "disc 44(f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649149:a",
+  "partido": "Nacional Potosí vs Real Potosí",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649149:a:2",
+  "partido": "Nacional Potosí vs Real Potosí",
+  "veredicto": "fallo",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649149:b",
+  "partido": "Nacional Potosí vs Real Potosí",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:a",
+  "partido": "Always Ready vs Independiente Petrolero",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:b",
+  "partido": "Always Ready vs Independiente Petrolero",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649148:b:5",
+  "partido": "Always Ready vs Independiente Petrolero",
+  "veredicto": "acierto",
+  "regla": "S1",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:a:4",
+  "partido": "Defensor Sporting vs Penarol",
+  "veredicto": "parcial",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:a:5",
+  "partido": "Defensor Sporting vs Penarol",
+  "veredicto": "parcial",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:b",
+  "partido": "Defensor Sporting vs Penarol",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:b:2",
+  "partido": "Defensor Sporting vs Penarol",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "motivo nombrable del DTP (cambio de cierre) se condiciona a que el cambio ocurra"
+ },
+ {
+  "clave": "1649062:b:3",
+  "partido": "Defensor Sporting vs Penarol",
+  "veredicto": "fallo",
+  "regla": "disc 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:a",
+  "partido": "Danubio vs Liverpool Montevideo",
+  "veredicto": "parcial",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "pieza del seguro también en rama de ventaja/superioridad (candidato v0.1.26)"
+ },
+ {
+  "clave": "1649061:a:2",
+  "partido": "Danubio vs Liverpool Montevideo",
+  "veredicto": "parcial",
+  "regla": "disc 16 siExpulsionRival",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "ventana de siExpulsionRival en su campo y régimen hasta el final, como la propia"
+ },
+ {
+  "clave": "1649061:a:3",
+  "partido": "Danubio vs Liverpool Montevideo",
+  "veredicto": "parcial",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:a:4",
+  "partido": "Danubio vs Liverpool Montevideo",
+  "veredicto": "parcial",
+  "regla": "doble golpe (cand. v0.1.25)",
+  "clase": "no_dice",
+  "propuesta_corta": "suma un caso al candidato «doble golpe» (2º gol ≤ 3')"
+ },
+ {
+  "clave": "1649061:b",
+  "partido": "Danubio vs Liverpool Montevideo",
+  "veredicto": "acierto",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:b:2",
+  "partido": "Danubio vs Liverpool Montevideo",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:b:3",
+  "partido": "Danubio vs Liverpool Montevideo",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:a:4",
+  "partido": "Juan Pablo II College vs Deportivo Garcilaso",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:a:5",
+  "partido": "Juan Pablo II College vs Deportivo Garcilaso",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:a:6",
+  "partido": "Juan Pablo II College vs Deportivo Garcilaso",
+  "veredicto": "fallo",
+  "regla": "disc 52",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la pelota de la rama se declara contra el perfil del rival de hoy, no por antecedente"
+ },
+ {
+  "clave": "1549559:b:3",
+  "partido": "Juan Pablo II College vs Deportivo Garcilaso",
+  "veredicto": "fallo",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco ofensivo del rival va entero (todos los suplentes por rol) en cada rama"
+ },
+ {
+  "clave": "1549559:b:4",
+  "partido": "Juan Pablo II College vs Deportivo Garcilaso",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:a",
+  "partido": "Comerciantes Unidos vs Sport Boys",
+  "veredicto": "fallo",
+  "regla": "disc 16 roja propia perdiendo",
+  "clase": "regla_fallo",
+  "propuesta_corta": "contraejemplo del ISE agravado con roja propia perdiendo (medir)"
+ },
+ {
+  "clave": "1549557:a:2",
+  "partido": "Comerciantes Unidos vs Sport Boys",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:b:2",
+  "partido": "Comerciantes Unidos vs Sport Boys",
+  "veredicto": "parcial",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:b:5",
+  "partido": "Comerciantes Unidos vs Sport Boys",
+  "veredicto": "parcial",
+  "regla": "disc 16 siExpulsionRival",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545616:a:3",
+  "partido": "Latvia vs Armenia",
+  "veredicto": "parcial",
+  "regla": "ventana 15'",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545616:b:2",
+  "partido": "Latvia vs Armenia",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "el banco se nombra sin minuto fijo de entrada"
+ },
+ {
+  "clave": "1545616:b:4",
+  "partido": "Latvia vs Armenia",
+  "veredicto": "fallo",
+  "regla": "ventana 15'",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:a:2",
+  "partido": "Croatia vs Czech Republic",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:a:3",
+  "partido": "Croatia vs Czech Republic",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco ofensivo del rival va entero (todos los suplentes por rol) en cada rama"
+ },
+ {
+  "clave": "1528985:b",
+  "partido": "Croatia vs Czech Republic",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:b:2",
+  "partido": "Croatia vs Czech Republic",
+  "veredicto": "acierto",
+  "regla": "disc 61 / SOB1",
+  "clase": "regla_fallo",
+  "propuesta_corta": "SOB1 = 1 por tabla no trae el régimen: la SOB del obligado va condicional al sistema/once (medir)"
+ },
+ {
+  "clave": "1528985:b:3",
+  "partido": "Croatia vs Czech Republic",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:a",
+  "partido": "Spain vs England",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:a:2",
+  "partido": "Spain vs England",
+  "veredicto": "fallo",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:b:2",
+  "partido": "Spain vs England",
+  "veredicto": "parcial",
+  "regla": "disc 16 siExpulsion propia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "siExpulsion.propia escribe las tres cuentas del marcador (ganando, empatando, perdiendo)"
+ },
+ {
+  "clave": "1528984:b:3",
+  "partido": "Spain vs England",
+  "veredicto": "parcial",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:a",
+  "partido": "Belgium vs Italy",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:a:4",
+  "partido": "Belgium vs Italy",
+  "veredicto": "acierto",
+  "regla": "disc 3/24",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:b",
+  "partido": "Belgium vs Italy",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "el seguro sin pieza pesa también en siLeEmpatan (candidato pieza del seguro fuera de persecución)"
+ },
+ {
+  "clave": "1528983:b:2",
+  "partido": "Belgium vs Italy",
+  "veredicto": "acierto",
+  "regla": "disc 3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:a",
+  "partido": "France vs Türkiye",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:a:2",
+  "partido": "France vs Türkiye",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1528982:b",
+  "partido": "France vs Türkiye",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:a",
+  "partido": "Finland vs San Marino",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:a:2",
+  "partido": "Finland vs San Marino",
+  "veredicto": "acierto",
+  "regla": "disc 50",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:b",
+  "partido": "Finland vs San Marino",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:a",
+  "partido": "Belarus vs Albania",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:a:2",
+  "partido": "Belarus vs Albania",
+  "veredicto": "acierto",
+  "regla": "disc 52 / SOB1",
+  "clase": "regla_fallo",
+  "propuesta_corta": "SOB1 = 1 por tabla no trae el régimen: la SOB del obligado va condicional al sistema/once (medir)"
+ },
+ {
+  "clave": "1528980:a:3",
+  "partido": "Belarus vs Albania",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco ofensivo del rival va entero (todos los suplentes por rol) en cada rama"
+ },
+ {
+  "clave": "1528980:b",
+  "partido": "Belarus vs Albania",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528980:b:2",
+  "partido": "Belarus vs Albania",
+  "veredicto": "acierto",
+  "regla": "disc 20",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:a",
+  "partido": "Cyprus vs Montenegro",
+  "veredicto": "acierto",
+  "regla": "disc 44(f)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:a:2",
+  "partido": "Cyprus vs Montenegro",
+  "veredicto": "acierto",
+  "regla": "disc 50",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:b",
+  "partido": "Cyprus vs Montenegro",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:b:2",
+  "partido": "Cyprus vs Montenegro",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:b:3",
+  "partido": "Cyprus vs Montenegro",
+  "veredicto": "acierto",
+  "regla": "disc 43",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:a",
+  "partido": "Club Nacional vs Albion FC",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:a:2",
+  "partido": "Club Nacional vs Albion FC",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:a:3",
+  "partido": "Club Nacional vs Albion FC",
+  "veredicto": "fallo",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:b",
+  "partido": "Club Nacional vs Albion FC",
+  "veredicto": "parcial",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:b:2",
+  "partido": "Club Nacional vs Albion FC",
+  "veredicto": "parcial",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco ofensivo del rival va entero (todos los suplentes por rol) en cada rama, incluido el lanzador de pelota parada"
+ },
+ {
+  "clave": "1649059:a",
+  "partido": "Deportivo Maldonado vs Cerro",
+  "veredicto": "fallo",
+  "regla": "cand. SOB de la hora 0-0",
+  "clase": "regla_fallo",
+  "propuesta_corta": "candidato a medir: con 0-0 que no sirve la SOB del favorito empieza antes del 75"
+ },
+ {
+  "clave": "1649059:a:2",
+  "partido": "Deportivo Maldonado vs Cerro",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649059:a:3",
+  "partido": "Deportivo Maldonado vs Cerro",
+  "veredicto": "fallo",
+  "regla": "S1",
+  "clase": "imprevisto",
+  "propuesta_corta": "hueco de S1 con la conducta violenta (roja sin pelota)"
+ },
+ {
+  "clave": "1649059:b:3",
+  "partido": "Deportivo Maldonado vs Cerro",
+  "veredicto": "fallo",
+  "regla": "disc 16 siExpulsionRival",
+  "clase": "regla_fallo",
+  "propuesta_corta": "candidato a medir: desdoblar siExpulsionRival por marcador; ganando con uno más puede administrar"
+ },
+ {
+  "clave": "1649059:b:4",
+  "partido": "Deportivo Maldonado vs Cerro",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:a",
+  "partido": "Central Espanol vs Boston River",
+  "veredicto": "fallo",
+  "regla": "SOB1 (disc 56)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "SOB1 = 1 por tabla no trae el régimen: la SOB del obligado va condicional al sistema/once (medir)"
+ },
+ {
+  "clave": "1649058:a:2",
+  "partido": "Central Espanol vs Boston River",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "antecedente de otra sede no elige tipología (ya escrito)"
+ },
+ {
+  "clave": "1649058:b",
+  "partido": "Central Espanol vs Boston River",
+  "veredicto": "fallo",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:a",
+  "partido": "Club Queretaro vs Monterrey",
+  "veredicto": "acierto",
+  "regla": "disc 16 / S1",
+  "clase": "imprevisto",
+  "propuesta_corta": "hueco: roja al arquero titular sin casillero (TDE-019)"
+ },
+ {
+  "clave": "1550951:a:2",
+  "partido": "Club Queretaro vs Monterrey",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:a:3",
+  "partido": "Club Queretaro vs Monterrey",
+  "veredicto": "acierto",
+  "regla": "disc 17",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:b:3",
+  "partido": "Club Queretaro vs Monterrey",
+  "veredicto": "acierto",
+  "regla": "disc 16 siExpulsionRival",
+  "clase": "regla_fallo",
+  "propuesta_corta": "candidato a medir: desdoblar siExpulsionRival por marcador; ganando con uno más puede administrar"
+ },
+ {
+  "clave": "1549872:a",
+  "partido": "Deportivo Pereira vs America de Cali",
+  "veredicto": "parcial",
+  "regla": "disc 16 siExpulsion propia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "siExpulsion con ventana desde la roja y desdoble propia/rival"
+ },
+ {
+  "clave": "1549872:a:2",
+  "partido": "Deportivo Pereira vs America de Cali",
+  "veredicto": "parcial",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:a:5",
+  "partido": "Deportivo Pereira vs America de Cali",
+  "veredicto": "parcial",
+  "regla": "S1",
+  "clase": "imprevisto",
+  "propuesta_corta": "hueco de S1: roja del DT y del suplente que entra"
+ },
+ {
+  "clave": "1549872:b:4",
+  "partido": "Deportivo Pereira vs America de Cali",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:b:5",
+  "partido": "Deportivo Pereira vs America de Cali",
+  "veredicto": "acierto",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:a",
+  "partido": "Millonarios vs Alianza Valledupar",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:b",
+  "partido": "Millonarios vs Alianza Valledupar",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:b:2",
+  "partido": "Millonarios vs Alianza Valledupar",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "insumo",
+  "propuesta_corta": "antes del once el banco va marcado «probable»; once tardío no se cobra"
+ },
+ {
+  "clave": "1549869:a",
+  "partido": "Internacional de Bogota vs Santa Fe",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:a:2",
+  "partido": "Internacional de Bogota vs Santa Fe",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:a:3",
+  "partido": "Internacional de Bogota vs Santa Fe",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:b",
+  "partido": "Internacional de Bogota vs Santa Fe",
+  "veredicto": "parcial",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:a",
+  "partido": "Deportivo Cali vs Deportes Tolima",
+  "veredicto": "parcial",
+  "regla": "disc 66",
+  "clase": "regla_fallo",
+  "propuesta_corta": "candidato a medir: ventana de riesgo desde el cambio ofensivo (propio o rival), no solo desde el gol"
+ },
+ {
+  "clave": "1549867:a:2",
+  "partido": "Deportivo Cali vs Deportes Tolima",
+  "veredicto": "parcial",
+  "regla": "disc 63",
+  "clase": "regla_fallo",
+  "propuesta_corta": "nombrar la pieza del seguro también en la rama de superioridad/ventaja"
+ },
+ {
+  "clave": "1549867:b",
+  "partido": "Deportivo Cali vs Deportes Tolima",
+  "veredicto": "parcial",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:b:2",
+  "partido": "Deportivo Cali vs Deportes Tolima",
+  "veredicto": "parcial",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:a",
+  "partido": "Cucuta vs Jaguares",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:b",
+  "partido": "Cucuta vs Jaguares",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "candidato a medir: ventana de riesgo desde el cambio ofensivo (propio o rival), no solo desde el gol"
+ },
+ {
+  "clave": "1549865:a:4",
+  "partido": "Bucaramanga vs Fortaleza FC",
+  "veredicto": "acierto",
+  "regla": "disc 17",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549865:b:2",
+  "partido": "Bucaramanga vs Fortaleza FC",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549865:b:3",
+  "partido": "Bucaramanga vs Fortaleza FC",
+  "veredicto": "acierto",
+  "regla": "disc 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:a:2",
+  "partido": "Atletico Nacional vs Once Caldas",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:a:3",
+  "partido": "Atletico Nacional vs Once Caldas",
+  "veredicto": "fallo",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:b",
+  "partido": "Atletico Nacional vs Once Caldas",
+  "veredicto": "parcial",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:b:2",
+  "partido": "Atletico Nacional vs Once Caldas",
+  "veredicto": "parcial",
+  "regla": "disc 44(f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:a",
+  "partido": "Águilas Doradas vs Independiente Medellin",
+  "veredicto": "fallo",
+  "regla": "ventana 15' (disc 56)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:a:2",
+  "partido": "Águilas Doradas vs Independiente Medellin",
+  "veredicto": "fallo",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:b:2",
+  "partido": "Águilas Doradas vs Independiente Medellin",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:a",
+  "partido": "Sweden vs Bosnia & Herzegovina",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:a:2",
+  "partido": "Sweden vs Bosnia & Herzegovina",
+  "veredicto": "acierto",
+  "regla": "disc 24",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "app: la ventana del reloj con gol de pelota parada no se cobra (viaGol)"
+ },
+ {
+  "clave": "1528978:b:2",
+  "partido": "Sweden vs Bosnia & Herzegovina",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:a:4",
+  "partido": "Romania vs Poland",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:a:5",
+  "partido": "Romania vs Poland",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:b",
+  "partido": "Romania vs Poland",
+  "veredicto": "fallo",
+  "regla": "disc 61/65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:a:4",
+  "partido": "Austria vs Rep. Of Ireland",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:b",
+  "partido": "Austria vs Rep. Of Ireland",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:b:5",
+  "partido": "Austria vs Rep. Of Ireland",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:a",
+  "partido": "Northern Ireland vs Ukraine",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:a:2",
+  "partido": "Northern Ireland vs Ukraine",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1528975:b",
+  "partido": "Northern Ireland vs Ukraine",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:a",
+  "partido": "Portugal vs Denmark",
+  "veredicto": "fallo",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "con sob2 = 1 heredado, el seguro está roto desde el gol aunque la pieza siga en cancha"
+ },
+ {
+  "clave": "1528974:b:4",
+  "partido": "Portugal vs Denmark",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:a",
+  "partido": "Georgia vs Hungary",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:b",
+  "partido": "Georgia vs Hungary",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:b:2",
+  "partido": "Georgia vs Hungary",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:a",
+  "partido": "Norway vs Wales",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:b",
+  "partido": "Norway vs Wales",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:b:6",
+  "partido": "Norway vs Wales",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1528971:a",
+  "partido": "Kosovo vs Israel",
+  "veredicto": "parcial",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528971:b",
+  "partido": "Kosovo vs Israel",
+  "veredicto": "parcial",
+  "regla": "disc 16 siExpulsionRival",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la rama de superioridad se lee por la amenaza, no por los cambios ni la intención del DT"
+ },
+ {
+  "clave": "1492455:a:4",
+  "partido": "Mirassol vs Atletico-MG",
+  "veredicto": "fallo",
+  "regla": "disc 17",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492455:b:4",
+  "partido": "Mirassol vs Atletico-MG",
+  "veredicto": "fallo",
+  "regla": "disc 65/66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1492312:a",
+  "partido": "Chapecoense-sc vs Vasco DA Gama",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:a:2",
+  "partido": "Chapecoense-sc vs Vasco DA Gama",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1492312:a:3",
+  "partido": "Chapecoense-sc vs Vasco DA Gama",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con doble pivote, la rama nombra las dos piezas del seguro, no una"
+ },
+ {
+  "clave": "1492312:b:3",
+  "partido": "Chapecoense-sc vs Vasco DA Gama",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:a",
+  "partido": "Atletico Torque vs Racing Montevideo",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:a:2",
+  "partido": "Atletico Torque vs Racing Montevideo",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "favorito obligado con 2-0 temprano administró con cambios defensivos; leer el plan del DT"
+ },
+ {
+  "clave": "1649057:b:5",
+  "partido": "Atletico Torque vs Racing Montevideo",
+  "veredicto": "parcial",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:a",
+  "partido": "Salamanca UDS vs Celta Vigo",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:a:2",
+  "partido": "Salamanca UDS vs Celta Vigo",
+  "veredicto": "acierto",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:b",
+  "partido": "Salamanca UDS vs Celta Vigo",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:a",
+  "partido": "Llaneros vs Chico",
+  "veredicto": "fallo",
+  "regla": "disc 43",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:a:6",
+  "partido": "Llaneros vs Chico",
+  "veredicto": "fallo",
+  "regla": "disc 66 banco",
+  "clase": "insumo",
+  "propuesta_corta": "antes del once el banco va marcado «probable»; once tardío no se cobra"
+ },
+ {
+  "clave": "1549870:b:2",
+  "partido": "Llaneros vs Chico",
+  "veredicto": "parcial",
+  "regla": "tipología ECHADA-VOL",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:a",
+  "partido": "Scotland vs FYR Macedonia",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "app: aceptar la vía por gol (pelota parada → otra_via)"
+ },
+ {
+  "clave": "1545659:b",
+  "partido": "Scotland vs FYR Macedonia",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:b:2",
+  "partido": "Scotland vs FYR Macedonia",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:a:2",
+  "partido": "Slovenia vs Switzerland",
+  "veredicto": "fallo",
+  "regla": "tipología ECHADA-PSI",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "repliegue de plan desde el arranque es bloque bajo, no ECHADA-PSI"
+ },
+ {
+  "clave": "1545654:b:2",
+  "partido": "Slovenia vs Switzerland",
+  "veredicto": "fallo",
+  "regla": "disc 44(f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:a:2",
+  "partido": "Andorra vs Gibraltar",
+  "veredicto": "acierto",
+  "regla": "tipología ECHADA-VOL",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:b",
+  "partido": "Andorra vs Gibraltar",
+  "veredicto": "acierto",
+  "regla": "disc 65/61",
+  "clase": "imprevisto",
+  "propuesta_corta": "antes de cobrar la SOB, mirar si hubo un cambio forzado en la línea"
+ },
+ {
+  "clave": "1545614:a:4",
+  "partido": "Luxembourg vs Estonia",
+  "veredicto": "fallo",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545614:b",
+  "partido": "Luxembourg vs Estonia",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:a:2",
+  "partido": "Liechtenstein vs Azerbaijan",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:b:3",
+  "partido": "Liechtenstein vs Azerbaijan",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:a",
+  "partido": "Bulgaria vs Iceland",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:a:2",
+  "partido": "Bulgaria vs Iceland",
+  "veredicto": "acierto",
+  "regla": "disc 46",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:b:5",
+  "partido": "Bulgaria vs Iceland",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:a:2",
+  "partido": "Moldova vs Kazakhstan",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:b:2",
+  "partido": "Moldova vs Kazakhstan",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:a",
+  "partido": "Slovakia vs Faroe Islands",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:a:2",
+  "partido": "Slovakia vs Faroe Islands",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:b:4",
+  "partido": "Slovakia vs Faroe Islands",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:b:5",
+  "partido": "Slovakia vs Faroe Islands",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:a",
+  "partido": "Netherlands vs Greece",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:b",
+  "partido": "Netherlands vs Greece",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528965:a",
+  "partido": "Serbia vs Germany",
+  "veredicto": "acierto",
+  "regla": "disc 61 / SOB1",
+  "clase": "regla_fallo",
+  "propuesta_corta": "SOB1 = 1 por tabla no trae el régimen: la SOB del obligado va condicional al sistema/once (medir)"
+ },
+ {
+  "clave": "1528965:a:2",
+  "partido": "Serbia vs Germany",
+  "veredicto": "acierto",
+  "regla": "S1",
+  "clase": "imprevisto",
+  "propuesta_corta": "hueco de S1: rojas de suplentes que entran"
+ },
+ {
+  "clave": "1528965:b",
+  "partido": "Serbia vs Germany",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528965:b:3",
+  "partido": "Serbia vs Germany",
+  "veredicto": "acierto",
+  "regla": "disc 16 siExpulsionRival",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:a",
+  "partido": "Real Potosí vs Nacional Potosí",
+  "veredicto": "fallo",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:b",
+  "partido": "Real Potosí vs Nacional Potosí",
+  "veredicto": "fallo",
+  "regla": "disc 24",
+  "clase": "regla_fallo",
+  "propuesta_corta": "tres arriba no cierra la rama con bloque improvisado (C1 = 1) y triple cambio"
+ },
+ {
+  "clave": "1649147:b:2",
+  "partido": "Real Potosí vs Nacional Potosí",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:a",
+  "partido": "Cerro Largo vs Progreso",
+  "veredicto": "fallo",
+  "regla": "disc 66 banco",
+  "clase": "insumo",
+  "propuesta_corta": "antes del once el banco va marcado «probable»; once tardío no se cobra"
+ },
+ {
+  "clave": "1649056:a:2",
+  "partido": "Cerro Largo vs Progreso",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:b",
+  "partido": "Cerro Largo vs Progreso",
+  "veredicto": "parcial",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:b:2",
+  "partido": "Cerro Largo vs Progreso",
+  "veredicto": "parcial",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:a:4",
+  "partido": "Puerto Cabello vs Monagas SC",
+  "veredicto": "fallo",
+  "regla": "disc 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:b:4",
+  "partido": "Puerto Cabello vs Monagas SC",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644379:a",
+  "partido": "Tarancón vs Levante",
+  "veredicto": "fallo",
+  "regla": "disc 66 banco",
+  "clase": "insumo",
+  "propuesta_corta": "antes del once el banco va marcado «probable»; once tardío no se cobra"
+ },
+ {
+  "clave": "1644379:a:2",
+  "partido": "Tarancón vs Levante",
+  "veredicto": "fallo",
+  "regla": "disc 44(f) en siLeEmpatan",
+  "clase": "regla_fallo",
+  "propuesta_corta": "aplicar la lista de no-motivos del 44(f) también en siLeEmpatan (candidato v0.1.26)"
+ },
+ {
+  "clave": "1644379:b",
+  "partido": "Tarancón vs Levante",
+  "veredicto": "fallo",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549868:a",
+  "partido": "Deportivo Pasto vs Junior",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "se_rompe por un precedente de un partido no es hecho de hoy (ya escrito)"
+ },
+ {
+  "clave": "1549868:b:3",
+  "partido": "Deportivo Pasto vs Junior",
+  "veredicto": "acierto",
+  "regla": "disc 16 siExpulsion propia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:a",
+  "partido": "Montenegro vs Latvia",
+  "veredicto": "acierto",
+  "regla": "disc 16 siExpulsion propia",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "siExpulsion.propia escribe la vía de gol propia del que necesita ganar"
+ },
+ {
+  "clave": "1545613:a:2",
+  "partido": "Montenegro vs Latvia",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:b",
+  "partido": "Montenegro vs Latvia",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco ofensivo del rival va entero (todos los suplentes por rol) en cada rama, también en la de sostener"
+ },
+ {
+  "clave": "1545613:b:2",
+  "partido": "Montenegro vs Latvia",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:a:2",
+  "partido": "San Marino vs Belarus",
+  "veredicto": "acierto",
+  "regla": "disc 29/50",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:a:3",
+  "partido": "San Marino vs Belarus",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:b",
+  "partido": "San Marino vs Belarus",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:a",
+  "partido": "Albania vs Finland",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:b",
+  "partido": "Albania vs Finland",
+  "veredicto": "acierto",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de la hoja: al rehacer con el once la app copia los suplentes reales; titular deja de ser banco"
+ },
+ {
+  "clave": "1528963:b:2",
+  "partido": "Albania vs Finland",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:b:3",
+  "partido": "Albania vs Finland",
+  "veredicto": "acierto",
+  "regla": "disc 16 roja propia perdiendo",
+  "clase": "regla_fallo",
+  "propuesta_corta": "contraejemplo del ISE agravado con roja propia perdiendo (medir)"
+ },
+ {
+  "clave": "1528962:a",
+  "partido": "England vs Croatia",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:a:6",
+  "partido": "England vs Croatia",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "no_dice",
+  "propuesta_corta": "el banco rival cargó tras los cambios del favorito: candidato a medir: ventana de riesgo desde el cambio ofensivo (propio o rival), no solo desde el gol"
+ },
+ {
+  "clave": "1528962:b",
+  "partido": "England vs Croatia",
+  "veredicto": "acierto",
+  "regla": "disc 62/61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "el ISE de rama máximo pide que el rival siga cargando: leer banco y agenda del favorito"
+ },
+ {
+  "clave": "1528961:a",
+  "partido": "Czech Republic vs Spain",
+  "veredicto": "acierto",
+  "regla": "S1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "S1 se puntúa con las rojas de la competición; no se deja vacío"
+ },
+ {
+  "clave": "1528961:a:2",
+  "partido": "Czech Republic vs Spain",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:b",
+  "partido": "Czech Republic vs Spain",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:b:2",
+  "partido": "Czech Republic vs Spain",
+  "veredicto": "acierto",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:a:4",
+  "partido": "Italy vs France",
+  "veredicto": "fallo",
+  "regla": "disc 44(f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:a:5",
+  "partido": "Italy vs France",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:b",
+  "partido": "Italy vs France",
+  "veredicto": "fallo",
+  "regla": "disc 66 banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco ofensivo del rival va entero (todos los suplentes por rol) en cada rama, también en siLeEmpatan"
+ },
+ {
+  "clave": "1528959:a:2",
+  "partido": "Armenia vs Cyprus",
+  "veredicto": "parcial",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528959:b",
+  "partido": "Armenia vs Cyprus",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528959:b:2",
+  "partido": "Armenia vs Cyprus",
+  "veredicto": "fallo",
+  "regla": "disc 66",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la vía del empate también son los titulares del rival que domina, no solo el banco"
+ },
+ {
+  "clave": "1528958:a",
+  "partido": "Türkiye vs Belgium",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:a:2",
+  "partido": "Türkiye vs Belgium",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:b:4",
+  "partido": "Türkiye vs Belgium",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:b:5",
+  "partido": "Türkiye vs Belgium",
+  "veredicto": "acierto",
+  "regla": "disc 50",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:a",
+  "partido": "Liverpool Montevideo vs Juventud",
+  "veredicto": "fallo",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:b",
+  "partido": "Liverpool Montevideo vs Juventud",
+  "veredicto": "parcial",
+  "regla": "disc 16 siExpulsion propia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "roja propia ganando tampoco es punto asegurado (extender la referencia medida empatando)"
+ },
+ {
+  "clave": "1649433:b:2",
+  "partido": "Liverpool Montevideo vs Juventud",
+  "veredicto": "parcial",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:b:3",
+  "partido": "Liverpool Montevideo vs Juventud",
+  "veredicto": "parcial",
+  "regla": "S1",
+  "clase": "imprevisto",
+  "propuesta_corta": "hueco de S1: suplente que entra y ve la roja"
+ },
+ {
+  "clave": "1649433:b:4",
+  "partido": "Liverpool Montevideo vs Juventud",
+  "veredicto": "parcial",
+  "regla": "ARQUERO-NUEVO",
+  "clase": "imprevisto",
+  "propuesta_corta": "cambio de arquero en vivo no cubierto; dato contra leer al suplente como agravante"
+ },
+ {
+  "clave": "1649146:a:4",
+  "partido": "Independiente Petrolero vs Always Ready",
+  "veredicto": "fallo",
+  "regla": "disc 50",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649146:b:3",
+  "partido": "Independiente Petrolero vs Always Ready",
+  "veredicto": "fallo",
+  "regla": "tipología ECHADA-FIS",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:a",
+  "partido": "Once Caldas vs Atletico Nacional",
+  "veredicto": "parcial",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:a:2",
+  "partido": "Once Caldas vs Atletico Nacional",
+  "veredicto": "parcial",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:b:4",
+  "partido": "Once Caldas vs Atletico Nacional",
+  "veredicto": "parcial",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:a",
+  "partido": "Boston River vs Atletico Torque",
+  "veredicto": "acierto",
+  "regla": "disc 61/65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:b",
+  "partido": "Boston River vs Atletico Torque",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:b:2",
+  "partido": "Boston River vs Atletico Torque",
+  "veredicto": "acierto",
+  "regla": "disc 66",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:a",
+  "partido": "Internacional de Bogota vs America de Cali",
+  "veredicto": "acierto",
+  "regla": "S1",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:a:2",
+  "partido": "Internacional de Bogota vs America de Cali",
+  "veredicto": "acierto",
+  "regla": "disc 16 siExpulsion propia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "roja propia temprana ganando: régimen hasta el final, tampoco punto asegurado"
+ },
+ {
+  "clave": "1648690:b",
+  "partido": "Internacional de Bogota vs America de Cali",
+  "veredicto": "acierto",
+  "regla": "disc 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:a",
+  "partido": "Tavernes vs Valencia",
+  "veredicto": "acierto",
+  "regla": "disc 50",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:a:2",
+  "partido": "Tavernes vs Valencia",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:b:2",
+  "partido": "Tavernes vs Valencia",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:a",
+  "partido": "Pamplona vs Eibar",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:a:2",
+  "partido": "Pamplona vs Eibar",
+  "veredicto": "acierto",
+  "regla": "disc 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:b:3",
+  "partido": "Pamplona vs Eibar",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644362:a",
+  "partido": "Mijas Las Lagunas vs Real Jaén",
+  "veredicto": "acierto",
+  "regla": "disc 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644362:b",
+  "partido": "Mijas Las Lagunas vs Real Jaén",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el favorito de mercado sin margen de μ va «en su plan» (ya escrito)"
+ },
+ {
+  "clave": "1644336:a",
+  "partido": "Anaitasuna vs Alaves",
+  "veredicto": "acierto",
+  "regla": "disc 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "caso a favor del candidato v0.1.25: defecto se_rompe para quien persigue sin ser favorito por μ"
+ },
+ {
+  "clave": "1644336:a:2",
+  "partido": "Anaitasuna vs Alaves",
+  "veredicto": "acierto",
+  "regla": "disc 50",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:b",
+  "partido": "Anaitasuna vs Alaves",
+  "veredicto": "acierto",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:a",
+  "partido": "Amorebieta vs UD Logroñés",
+  "veredicto": "fallo",
+  "regla": "disc 44(b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:b:2",
+  "partido": "Amorebieta vs UD Logroñés",
+  "veredicto": "fallo",
+  "regla": "disc 61/65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:b:3",
+  "partido": "Amorebieta vs UD Logroñés",
+  "veredicto": "fallo",
+  "regla": "disc 66 banco",
+  "clase": "insumo",
+  "propuesta_corta": "antes del once el banco va marcado «probable»; once tardío no se cobra"
+ }
+]

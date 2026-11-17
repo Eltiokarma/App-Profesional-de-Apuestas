@@ -1,0 +1,1136 @@
+[
+ {
+  "clave": "1649063:a:3",
+  "regla": "CAJA-SENSIBILIDAD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649063:b:3",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:a:3",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:a:4",
+  "regla": "B5",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549560:b:3",
+  "regla": "D3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "La nota del D3 ❌ de visita nombra también perder la ventaja si abre"
+ },
+ {
+  "clave": "1549560:b:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549558:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:a:4",
+  "regla": "D3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "D3 se mide por la respuesta tras recibir, no por una racha de resultados"
+ },
+ {
+  "clave": "1549556:a:5",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549556:b:5",
+  "regla": "B5",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:a:5",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "Ciclo de amarillas con conteo parcial: Duda con rama, nunca reemplazo disponible"
+ },
+ {
+  "clave": "1545617:a:6",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545617:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528989:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528989:b:3",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528989:b:4",
+  "regla": "G-BLOQUE",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:a:7",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:b:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528988:b:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528987:a:4",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528987:b:3",
+  "regla": "B6",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "B6 sale de los minutos de la hoja del arquero del once"
+ },
+ {
+  "clave": "1528986:a:5",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528986:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528986:b:5",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649149:a:5",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649149:b:4",
+  "regla": "BLOQUE-A/DT",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649149:b:5",
+  "regla": "B5",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "B5 por rol: todos los que pueden entrar, no los goleadores de la ida"
+ },
+ {
+  "clave": "1649148:a:2",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«Se recupera de una lesión» el día del partido es Duda con rama, no Baja"
+ },
+ {
+  "clave": "1649148:b:2",
+  "regla": "CAJA-SENSIBILIDAD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:a:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:b:6",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649062:b:7",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:a:7",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649061:b:7",
+  "regla": "B5",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:a:7",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:b:5",
+  "regla": "B5",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549559:b:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:a:5",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549557:b",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545616:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545616:b:3",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:a:6",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:b:5",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528985:b:6",
+  "regla": "B6",
+  "clase": "regla_fallo",
+  "propuesta_corta": "B6 🔶 por rodaje no es vía de gol por sí solo: candidato a medir"
+ },
+ {
+  "clave": "1528984:a:6",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528984:b:5",
+  "regla": "B6",
+  "clase": "regla_fallo",
+  "propuesta_corta": "B6 🔶 por rodaje no es vía de gol por sí solo: candidato a medir"
+ },
+ {
+  "clave": "1528983:a:5",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528983:b:3",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:a:6",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528982:b:5",
+  "regla": "B6",
+  "clase": "regla_fallo",
+  "propuesta_corta": "El ×1.5 de F2c mide ausencia, no la forma del suplente"
+ },
+ {
+  "clave": "1528981:a:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528981:b:2",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "Suma al candidato COLAPSO + AGRAVANTE, con reserva por distancia de nivel"
+ },
+ {
+  "clave": "1528980:b:7",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528979:b:7",
+  "regla": "F1-REHACER",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "Con la hoja se reescribe toda la prosa de bajas, no solo la tabla"
+ },
+ {
+  "clave": "1649060:a:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649060:b:5",
+  "regla": "B5",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Banco decisivo en 2 de 2 con la dupla: umbral del 🔶 candidato a medir"
+ },
+ {
+  "clave": "1649059:a:6",
+  "regla": "BLOQUE-A/DT",
+  "clase": "insumo",
+  "propuesta_corta": "Antes de depositar, buscar si el DT cumple suspensión (dt.banco y caja)"
+ },
+ {
+  "clave": "1649059:b:5",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649059:b:6",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:a:3",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:a:4",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649058:b:2",
+  "regla": "B5",
+  "clase": "regla_fallo",
+  "propuesta_corta": "En copa con liga a ≤ 5 días, B5 por rol y condicionado al once"
+ },
+ {
+  "clave": "1550951:a:4",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550951:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:a:6",
+  "regla": "ONCE-TARDIO",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549872:b:6",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:a:4",
+  "regla": "ONCE-TARDIO",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:b:5",
+  "regla": "ONCE-TARDIO",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549871:b:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:a:6",
+  "regla": "F1-REHACER",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:a:7",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549869:b:4",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:a:6",
+  "regla": "B5",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549867:b:5",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "El convocado con sanción discutida va disponible con rama «no habilitado»"
+ },
+ {
+  "clave": "1549867:b:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:b:2",
+  "regla": "B6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549866:b:3",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549865:a:2",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549865:a:3",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "Clasificado en la última fecha con fase final por delante: hecho que abre la rama"
+ },
+ {
+  "clave": "1549865:b:4",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:a",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549864:b:3",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:a:5",
+  "regla": "ONCE-TARDIO",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549863:b",
+  "regla": "B5",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:a:6",
+  "regla": "CAJA-SENSIBILIDAD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528978:b",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:b:2",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528977:b:4",
+  "regla": "F3",
+  "clase": "otro_skill",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528976:a:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:a:5",
+  "regla": "B6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528975:a:6",
+  "regla": "ONCE-TARDIO",
+  "clase": "insumo",
+  "propuesta_corta": "Con D1 ✅ estable y roles contra el oficio en el grid, la variante va a la caja"
+ },
+ {
+  "clave": "1528974:a:2",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:a:3",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528974:b:5",
+  "regla": "B6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:a:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528973:b:5",
+  "regla": "F3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "La reducción por zona no cuenta bajas de una rotación previa como hueco"
+ },
+ {
+  "clave": "1528972:b:5",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528972:b:7",
+  "regla": "B6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528971:b:2",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492455:b",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:a:6",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492312:b:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:b",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649057:b:2",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:a:5",
+  "regla": "CAJA-SENSIBILIDAD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644376:b:4",
+  "regla": "FACTOR-X",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549870:b:4",
+  "regla": "ONCE-TARDIO",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:a:6",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545659:b:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:a:3",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:a:4",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545654:b:4",
+  "regla": "F2-ZONA/CREACION",
+  "clase": "regla_fallo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545615:a:4",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "F3 contra un rival sin profundidad no se paga: leerla junto al H"
+ },
+ {
+  "clave": "1545615:b:5",
+  "regla": "BLOQUE-E/C3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "Con C3 ❌, descontar el E hecho ante rivales muy inferiores"
+ },
+ {
+  "clave": "1545614:a:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545614:b:3",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:a:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528970:b:4",
+  "regla": "G-BLOQUE",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:a:3",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528969:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:b:3",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528968:b:4",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:a:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:a:6",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528967:b:6",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:a:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528966:b:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528965:a:3",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528965:a:4",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649147:a:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:a:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649056:b:6",
+  "regla": "ONCE-TARDIO",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:a:2",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:b:2",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646937:b:3",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644379:a:4",
+  "regla": "HUECO-DOBLE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644379:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644379:b:5",
+  "regla": "FACTOR-X",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549868:a:4",
+  "regla": "B6",
+  "clase": "regla_fallo",
+  "propuesta_corta": "GK-DOWNGRADE por debut no garantiza que el arco sea la vía"
+ },
+ {
+  "clave": "1549868:a:5",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1545613:a:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:a:4",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:a:5",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528964:b:4",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "La reducción de la zona de punta no apaga la segunda línea que el perfil nombra"
+ },
+ {
+  "clave": "1528963:a:4",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:a:5",
+  "regla": "B6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528963:b:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:a:2",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528962:b:2",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:a:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:a:6",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528961:b:6",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:a:6",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528960:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528959:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:a:5",
+  "regla": "CAJA-SENSIBILIDAD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:a:6",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528958:b:6",
+  "regla": "F3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "El rol del arquero se mira en la competición del partido antes de la F3 de GK"
+ },
+ {
+  "clave": "1649433:a:2",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649433:b:6",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649146:a:3",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649146:b",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:a:3",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:b:2",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648691:b:3",
+  "regla": "FACTOR-X",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:a:4",
+  "regla": "DISCIPLINA-35",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649432:a:5",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:a:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1648690:b:3",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:a:5",
+  "regla": "F1-TABLA",
+  "clase": "insumo",
+  "propuesta_corta": "F1 de un solo agregador sin plantilla: sin dato, IP no publicado"
+ },
+ {
+  "clave": "1644380:a:6",
+  "regla": "G-BLOQUE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:b:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644380:b:6",
+  "regla": "JERARQUIA-FUENTES",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:a:5",
+  "regla": "SIN-DATO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644365:b",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644362:a:3",
+  "regla": "CAJA-SENSIBILIDAD",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644362:b:4",
+  "regla": "F1-TABLA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:a:4",
+  "regla": "EFE-EMPATE-TECNICO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:b:4",
+  "regla": "F3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644336:b:5",
+  "regla": "F1-TABLA",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:a:5",
+  "regla": "ONCE-ALTERNATIVO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644335:b:4",
+  "regla": "B5",
+  "clase": "regla_fallo",
+  "propuesta_corta": "En copa con liga a ≤ 5 días, B5 por rol y condicionado al once"
+ }
+]
