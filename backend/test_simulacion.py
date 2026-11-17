@@ -477,6 +477,24 @@ check("parte: sin cuotas, la casa queda en null pero el bloque sale",
 from backend.analisis import parte as _pt  # noqa: E402
 check("DESCONFIAR es calculada (se descarta del depósito) y `desconfianza` es eco",
       "DESCONFIAR" in _pt._ALERTAS_CALCULADAS and "desconfianza" in _pt._ECO_PARTE)
+# la ventaja por fuerza ANTES de escribir la rama (TDE v0.1.27 punto 2, 17/11/2026)
+from backend.analisis import lecciones as _lc  # noqa: E402
+_cm_orig = _lc.cuotas_mercado
+try:
+    _lc.cuotas_mercado = lambda ids: {ids[0]: {"prob": {"local": 66.0, "empate": 21.0, "visita": 13.0}}}
+    _vf = _dsc.de_fixture(424242)
+    _lc.cuotas_mercado = lambda ids: {}
+    _vs = _dsc.de_fixture(424242)
+finally:
+    _lc.cuotas_mercado = _cm_orig
+check("ventajaPorFuerza por fixture: la fila de cada lado con la cuota de la casa (60-75 % y < 35 %)",
+      _vf["a"]["tramo"] == "60-75 %" and _vf["a"]["noGanaCon1"] == 0.157 and _vf["b"]["tramo"] == "< 35 %"
+      and _vf["sinCuota"] is False, _vf)
+check("sin cuota, los lados en None y `sinCuota` lo dice (no se inventa la fuerza)",
+      _vs["a"] is None and _vs["b"] is None and _vs["sinCuota"] is True, _vs)
+from backend.analisis import tde as _tdm  # noqa: E402
+check("los insumos del TDE (tde/{id}) traen ventajaPorFuerza en `referencias`",
+      "ventajaPorFuerza" in __import__("inspect").getsource(_tdm.ficha), "")
 
 # ── EL MÉTODO CON EL MARCADOR (13/11/2026, usuario: «si el marcador más
 # probable se alinea con el elegido… lo más probable es que gane»; y «también

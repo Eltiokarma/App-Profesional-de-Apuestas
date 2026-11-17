@@ -1339,6 +1339,7 @@ paths:
         y no un score cerrado, porque el viaje y la altitud son parte de la rúbrica y no
         están en nuestra base.
         `bancoProbable` (17/11/2026, A8 de la EFE v1.10 = `bancoOfensivo` del DTP = punto 2 del TDE): UNA lista por lado, la misma en f1, dtp y tde. Con el once oficial y la banca completa (5+), `fuente: hoja`: todos los suplentes publicados, ningún titular, el titular habitual primero (`titularesHabitualesEnElBanco`). Antes, `fuente: probable`: los que en los últimos 10 entraron del banco 3+ veces o hicieron goles o asistencias entrando. Cada uno con `titularidades`, `entradas`, `golesDesdeBanco`, `asistenciasDesdeBanco`, `lateral` (punta de la línea de atrás en su último grid), `titularHabitual` y `porque`. No decide minutos ni puntúa B5.
+        `referencias.ventajaPorFuerza` (17/11/2026, TDE v0.1.27 punto 2): por lado, con la cuota de la casa sin margen, cuánto NO gana con 1 o 2+ de ventaja al descanso (`tramo`, `noGanaCon1`, `noGanaCon2`), la misma tabla del bloque `desconfianza` del parte, ahora antes de escribir la rama; sin cuota, `sinCuota: true` y los lados en null.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       responses:

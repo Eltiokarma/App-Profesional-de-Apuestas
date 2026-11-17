@@ -54,6 +54,27 @@ def ventaja_por_fuerza(prob_pct: float | None) -> dict | None:
     return None
 
 
+def de_fixture(fixture_id: int) -> dict:
+    """LA VENTAJA POR FUERZA ANTES DE ESCRIBIR LAS RAMAS (17/11/2026, TDE v0.1.27 punto 2,
+    «Para la app» A1). Hasta hoy vivía solo en el bloque `desconfianza`, que se arma al
+    leer el parte YA depositado: quien escribía la rama de ventaja del TDE no la tenía.
+    La misma tabla y la misma cuota (1X2 de la casa sin margen, última captura
+    prepartido), por lado; sin cuota, `sinCuota` y los lados en None."""
+    from backend.analisis.lecciones import cuotas_mercado
+    try:
+        m = cuotas_mercado([fixture_id]).get(fixture_id)
+    except Exception:  # noqa: BLE001 — sin cuotas no hay fuerza que leer; se dice
+        m = None
+    mercado = {k: m["prob"][k] for k in CLAVES} if m else None
+    return {"a": ventaja_por_fuerza(mercado["local"]) if mercado else None,
+            "b": ventaja_por_fuerza(mercado["visita"]) if mercado else None,
+            "sinCuota": mercado is None,
+            "fuente": FUENTE_VENTAJA, "paraElAnalista": PARA_EL_ANALISTA,
+            "nota": "con 1 de ventaja (o 2+) al DESCANSO, cuánto NO gana un equipo según su probabilidad "
+                    "previa sin margen (`noGanaCon1`, `noGanaCon2`, en 0-1). La rama de ventaja cita el campo: "
+                    "el número del desenlace lo pone la fuerza y la tipología describe la vía"}
+
+
 def _burbuja(reventon: dict | None, lado: str | None) -> dict | None:
     if not reventon or not lado:
         return None
