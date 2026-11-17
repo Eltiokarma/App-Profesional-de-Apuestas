@@ -135,7 +135,9 @@ compara.
      `docs/MOTOR_SAD_EXTRACCION.md`) y cualquier número calibrado
      (`PUNTOS_*`, `TASA_BACKTEST`, `MOVIMIENTO*` en `burbuja.py`/`burbuja.ts`,
      los pesos de un skill, umbrales del TDE/EFE);
-   - los skills (`docs/skills/`) y lo que puntúan;
+   - los skills (`docs/skills/`) y lo que puntúan (desde el 17/11/2026 cada uno separa
+     el núcleo del `references/HISTORIAL.md`: los candidatos ya vistos y la historia de
+     una regla se buscan ahí, no en el `SKILL.md`);
    - la autenticación y los tokens (`_COWORK_PERMITIDO`, `SAD_TOKEN_*`):
      abrir un endpoint es una decisión;
    - borrar datos, levantar o poner cuarentenas, el presupuesto de la API

@@ -1,30 +1,6 @@
 # Índice de Echada (IE) — indicadores y rúbrica
 
-> **v0.1.19 (13.09.2026).** Alta de la regla **el inicio del regimen se deriva del indicador y no del reloj**: con `SOB1 = 1` el regimen arranca en el minuto 0 y el gol en contra lo **adelanta**, nunca lo retrasa. El once probable baja a **nivel de dato C** por muchas fuentes que converjan, y `F1` y `C2` solo alcanzan nivel A con el once oficial: la convergencia de previas es copia entre redacciones, no observacion independiente. Alta del candidato **`GK-FALLA-ACTIVA`**, declarado y NO aplicado, para el arquero que es el titular habitual pero acumula errores con gol en el torneo en curso — el hueco entre `B6` del clasificador y la bandera `ARQUERO-NUEVO`. La ventana `90+` llega a **2 de los 3 casos** que necesita, con un generador nuevo que invierte la sub-hipotesis: la **revision de video de un gol tardio**, producida por el equipo que perseguia. Dos casos **EN CONTRA** de refinamientos propios: la saturacion del ISE y la lectura de la casa de margen minimo en un extremo del rango. **Ningun peso tocado, ningun indicador anadido.**
-
-> **v0.1.18 (30.08.2026).** Alta del **tope del bloque C**: con `C3 = 1` el bloque no promedia por debajo de **0.60**. Alta de la clase **`no probado`** en `C1`, para el bloque que da estructural en el checklist pero nunca fue puesto a prueba. Alta del **`CHEQUEO DE RELEVANCIA DEL MODULO`** antes de derivar la ventana. `mu_partido` **no se corrige por localia a mano** en ningun caso. El perfil de posesion se declara **condicional al marcador**. Candidato declarado y NO aplicado: **dispersion entre casas**, cuatro campos registrados sin umbral, revision con 20 filas. **Ningun peso tocado, ningun indicador anadido.**
-
-> **v0.1.16 (22.08.2026).** Alta del **`PROTOCOLO FECHA-1`**: `F1`, `F3` y `C3` se declaran automaticamente `sin dato` en el partido inaugural de un torneo, y la caja de sensibilidad pasa a obligatoria. Alta de la **`FICHA MINIMA DEL MOTOR`**: lista de campos verificable en el paso cero, porque `mu esperado` no es `mu_partido` y confundirlos es puntuar `P1a` con la cantidad equivocada. **`P(gol | sobreexposicion)` pasa a publicarse en sus dos versiones** cuando la regla de interaccion entre vias esta activa. Candidato declarado y NO aplicado: **`SOB2` heredado de un M2 contaminado** se declara con nivel de dato C. Segundo caso del registro donde la caja **cruza la banda**, por causa distinta al primero (TDE-042: calendario; TDE-032: cambio de entrenador). **Ningun peso tocado, ningun indicador anadido.**
-
-> **v0.1.15 (22.08.2026).** Regla nueva de **doble ventana `SOB`** cuando la obligación de arranque y el gol en contra activan juntas. Dos candidatos declarados y NO aplicados: **`F2 × F4`** (el coste de altitud/viaje se atenúa con `F4 = 0`: el bloque bajo no paga la altura como el que presiona — TDE-040) y **`C3` desdoblado por magnitud de la ventaja** (la rúbrica solo nombra "ventajas de un gol"; una ventaja doble es otro objeto — TDE-040 defendió 2-0 durante 44'). **Segundo caso de la regla de interacción entre vías** (TDE-039, tras TDE-016), sin coeficiente por ser RETRO. Alta de la **disciplina 39**: todo RETRO declara qué indicadores no eran puntuables en PRE. **Ningún peso tocado, ningún indicador añadido.**
-
-> **v0.1.12 (16.08.2026).** Candidato declarado y NO aplicado: **desdoblar la disciplina 16 por marcador al momento de la expulsión** — roja yendo empatado o ganando anula el ISE, roja yendo perdiendo lo **agrava**. Hueco de rúbrica nuevo: la **pérdida del organizador y ejecutor de pelota parada en los primeros minutos** no tiene representación en ninguna capa. `S1` acertó el indicador y falló el mecanismo: su redacción cubre faltas y corte táctico y **no cubre la conducta violenta**. Primer error de ventana cero desde TDE-001, **declinado** por la disciplina 24. Bandera `ARQUERO-NUEVO` activada y **sin testear**. **Ningún peso tocado, ningún indicador añadido.**
->
-> **v0.1.11 (15.08.2026).** La regla de XI no confirmado se extiende al **cambio de entrenador en los siete días previos**: fuerza `F1` y `C2` a `sin dato`. Alta de la bandera **`ARQUERO-NUEVO`** como agravante declarado de `P(fractura | echada)`, sin coeficiente. La **caja de sensibilidad pasa a ser salida obligatoria** cuando algún indicador se declara `sin dato` (2 de 2 a favor). Dos candidatos declarados y NO aplicados: la contradicción interna de `SOB1` y la posible saturación del ISE. **Ningún peso tocado, ningún indicador añadido.**
->
-> **v0.1.10 (15.08.2026).** Se corrige la forma de escribir la condición de `rama_abandonada`: se declara **por vía y nombrando la premisa**, no por evento del partido. Alta de la regla de **XI no confirmado**: ante levantamiento de inhibición, habilitación masiva de fichas o cierre de mercado en la semana previa, `F1` y `C2` se declaran `sin dato`. Se separa `gol_del_partido` de `gol_del_tramo_final` en el cierre. Primera vindicación de bajar `P(gol | fractura)` del default alto con justificación explícita. **Ningún peso tocado, ningún indicador añadido.**
->
-> **v0.1.8 (11.08.2026).** Se declara el **hueco de la ventana `90+`**: las seis ventanas terminan en el 90 y en TDE-023/024 los dos goles del tramo cayeron en el añadido. Candidato de ventana `90+` con duración endógena **declarado y NO aplicado**. Sesgo arbitral **descartado como variable** por razones de calibración, no de criterio. **Ningún peso tocado, ningún indicador añadido.**
->
-> **v0.1.7 (10.08.2026).** Chequeo de calibración completo. La advertencia de sobreestimación se extiende de la banda 5-7 a **toda la escala** de `P(echada)`. `P(gol | fractura)` arranca en la banda alta por defecto. **F2 pasa a ser dato obligatorio del motor**: sin salida de Regresión al Nivel, el bloque F se declara `sin dato`. Candidato de reescalado del mapeo declarado y no aplicado; candidato de `C1` despriorizado. **Ningún peso tocado**, ahora porque el grupo de echadas observadas ciegas tiene un solo miembro.
->
-> **v0.1.5 (10.08.2026).** Se cierra el ítem abierto de P1a con **dos modos de evaluación**, `PRE` y `COND`. Se elimina la cláusula "o ya obtenida" de la escala pre-partido y se formaliza el IE condicional de ventana. Alta de la bandera `VENTAJA-INESPERADA`, de la regla de procedencia del dato de F2 y de la regla de interacción entre vías en `P(gol | sobreexposición)`. Hipótesis nueva sobre el driver de la banda 5-7 y candidato de reescalado de C1, declarado y no aplicado. **Ningún peso tocado: N = 6 declarados, el umbral es 8.**
->
-> **v0.1.4 (10.08.2026).** Se cierra la definición de "favorito" para P1a con la Ley de la Regresión al Nivel del motor: el input es `μ_partido`, nunca el gap. Se añaden tres prohibiciones al bloque P derivadas del backtest del motor. **Ningún peso tocado.**
->
-> **v0.1.3 (09.08.2026).** Fusión de las dos ramas de v0.1.2. Del parche de rúbrica: tres compuertas correctoras, desdoble de P4, disciplina de puntuación de P1a por número, advertencia de banda 5–7 y declaración de dos candidatos no ratificados. De la rama de segunda vía: el **ISE**, la regla `n/a` de S3 y el indicador P1c. **Los pesos del IE siguen sin cambiar.**
->
-> **v0.1.1 (09.08.2026).** Correcciones de rúbrica derivadas del cierre de TDE-005 y TDE-006. **Los pesos NO cambiaron** — con N = 2 casos declarados estamos por debajo del primer umbral de revisión de `CALIBRACION.md`. Lo que cambió: P1 se dividió en P1a y P1b, F3 recibió una regla de procedencia del dato, y la ventana modal se desacopló del bloque dominante.
+> Las notas de versión de este archivo (v0.1.1 … v0.1.19) están en `HISTORIAL.md`, junto al del `SKILL.md`.
 
 ```
 IE = [ F×3 + C×2 + P×2 + S×1.5 ] / 8.5 × 10
@@ -117,7 +93,7 @@ Es la causa más común y la menos reconocida. Presionar alto cuesta muchísimo;
 |---|-----------|----------|-------------|----------|
 | F1 | Rotación en los últimos 3 partidos | 3+ titulares rotados con nivel titularizable | 1–2 rotados | 0 rotados, mismos once nombres |
 | F2 | Descanso, viaje y calendario | 6+ días, sin viaje exigente, próximo partido accesible | 4–5 días *(viaje con cambio de altitud: caja de sensibilidad, disciplina 21)* | ≤3 días, o próximo partido de altísima exigencia *(altura o calor extremo: caja de sensibilidad, disciplina 21)* |
-| F3 | Profundidad de banco *(hereda B5 del EFE)* | ≥2 recambios con impacto documentado | 1 recambio de impacto | Banco sin alternativas que cambien el trámite |
+| F3 | Profundidad de banco *(hereda B5 del EFE)* | ≥2 recambios con impacto documentado | 1 recambio de impacto | Banco sin alternativas que cambien el trámite. *Sin datos de impacto de banco en la temporada, `F3` es `sin dato` y entra en la caja conjunta, también fuera de la fecha 1 (v0.1.27).* |
 | F4 | Costo energético del modelo | Bloque medio, salida directa | Presión selectiva | Presión alta sostenida y/o construcción obligada desde el arquero |
 
 **Regla especial F**: si F1 = 1 **y** F3 = 1 (sin rotación y sin banco), el bloque F no puede puntuar menos de 0.75 — es la combinación que produce la echada física clásica del minuto 60.
@@ -354,6 +330,8 @@ Redacción corregida: **S3 habilita la echada solo si el equipo evaluado presion
 
 ## Mapeo de IE a probabilidad
 
+> **🚫 SUSPENDIDO en v0.1.20: no se emite; queda como historia de la escala.**
+
 | IE | P(echada) | Lectura |
 |----|-----------|---------|
 | 0–3 | 10–25% | Improbable. Si repliega, será por decisión y ordenado |
@@ -469,7 +447,7 @@ La disciplina 14 sigue prohibiendo el coeficiente de forma estructural. Prohibir
 
 **Regla de asimetría.** En un cruce, lo normal es que las dos vías estén activas en equipos distintos: el que aguanta corre riesgo de echada, el que necesita el gol corre riesgo de sobreexposición. Si el módulo asigna la misma vía a los dos equipos, revisar SOB1 antes de seguir.
 
-**Ventana modal de `SOB`**: no se deriva del reloj ni del bloque físico, sino del minuto en que el equipo empieza a necesitar el gol. Con SOB1 = 1 desde el arranque, la ventana es 75-90. Si la necesidad aparece por un gol en contra, es la ventana posterior a ese gol. **Si las dos cláusulas activan a la vez** —obligación desde el arranque y además gol en contra—, **se declaran las dos ventanas y se puntúan por separado** *(v0.1.15, mismo criterio que la disciplina 37)*. En TDE-039 ambas activaron y el gol del segundo tiempo cayó fuera de las dos, al 46', que no es tramo final.
+**Ventana modal de `SOB`**: no se deriva del reloj ni del bloque físico, sino del minuto en que el equipo empieza a necesitar el gol. Con SOB1 = 1 desde el arranque, la ventana es 75-90. Si la necesidad aparece por un gol en contra, es la ventana posterior a ese gol. **Si las dos cláusulas activan a la vez** —obligación desde el arranque y además gol en contra—, **se declaran las dos ventanas y se puntúan por separado** *(v0.1.15)*. En TDE-039 ambas activaron y el gol del segundo tiempo cayó fuera de las dos, al 46', que no es tramo final.
 
 ---
 

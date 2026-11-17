@@ -1,5 +1,15 @@
 # Snapshot de los skills — material de referencia, no fuente de verdad
 
+> **Actualizado el 17/11/2026.** La copia del repo está en **sad-analysis v4.6**,
+> **teorema-del-echado v0.1.27**, **efe-clasificador v1.11** (rúbrica en
+> `references/rubrica-efe-v1.11.md`), **efe-dashboard v1.14** y
+> **diagnostico-tactico v1.9** (propuestas aprobadas en `docs/revisiones/*_propuesta.md`
+> del 17/11, desde `docs/revisiones/estudio_lecciones_2026-11-17/`). **Primera
+> versión con núcleo**: el changelog, los casos y las mediciones de cada skill
+> viven en su `references/HISTORIAL.md`, y `backend/test_nucleo_skills.py` cuida
+> que una regla no quede solo ahí (`scripts/nucleo_reglas.json`). La cuenta sigue
+> con la versión anterior hasta que el usuario suba los zips.
+
 > **Actualizado el 10/11/2026.** La copia del repo está en **sad-analysis v4.5**,
 > **teorema-del-echado v0.1.26**, **efe-clasificador v1.10** (rúbrica en
 > `references/rubrica-efe-v1.10.md`), **efe-dashboard v1.13** y

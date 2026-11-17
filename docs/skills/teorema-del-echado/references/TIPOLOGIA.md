@@ -1,6 +1,6 @@
 # Tipología — seis causas y dos eventos críticos
 
-> **v0.1.3 (09.08.2026).** Alta de `SOB` como sexta tipología y de `SOBREEXPOSICIÓN` como segundo evento crítico. Derivado de TDE-014.
+> Notas de versión de esta referencia: `references/HISTORIAL.md`.
 
 Cada tipo trae **definición**, **señal observable**, **cuándo falla el diagnóstico** y **contramedida**. Antes de asignar un tipo, leer la ficha completa: el módulo no permite aplicar un mecanismo sin haber leído dónde falla.
 
