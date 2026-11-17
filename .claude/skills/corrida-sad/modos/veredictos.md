@@ -37,6 +37,17 @@
 > confirmación de una regla también es lección («disciplina 44 declarada y
 > cumplida»): es lo que cuenta casos a favor.
 >
+> **Salvo EFE-EMPATE-TECNICO «declarado y cumplido»** (17/11/2026, decisión del
+> usuario del 10/11 atada a la medición A6, `backend/medir_brecha_efe.py`): NO
+> escribas una lección por un empate técnico de formación que el partido
+> «confirmó». Sonó en 514 de 740 partidos y el de mayor EFE ganó lo mismo con
+> la alerta que sin ella (49 % contra 50 %): así escrita no se puede refutar y
+> esas lecciones (138 de 568 en la tanda del 10/11, 27 de 189 en la del 17/11)
+> no enseñan nada. Sí va lección si el caso la CONTRADICE con un hecho (el de
+> mayor EFE ganó por lo que la brecha decía, contra el motivo de la alerta) o si
+> el EFE se apartó de ella (se declaró FORMADO-contra-EN-FORMACION como ventaja
+> con la alerta sonando).
+>
 > **DTP-REHACER en el cierre: leé su `momento`** (26/10/2026: el 25/10 doce
 > lecciones dijeron «sonó y no se rehízo» y la rutina había rehecho 18 partes;
 > la API corrigió la formación cuando ya no quedaba disparo). `tardio` = la
