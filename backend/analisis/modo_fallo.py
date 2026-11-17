@@ -34,8 +34,13 @@ from backend.analisis import jev
 MODOS = {
     "insumo": "el dato de entrada estaba mal o faltaba ANTES del partido: DT viejo o desconocido, "
               "plantel incompleto, once que no llegó, ficha sin eventos, cuota no capturada",
-    "lectura_efe": "la rúbrica del EFE se aplicó mal: un bloque puntuó lo que el propio texto no "
-                   "sostenía, se ignoró una alerta estructural, o se sobrevaloró la estabilidad",
+    # `lectura` (17/11/2026, decisión del usuario del 10/11, A0 de la EFE v1.10): era
+    # `lectura_efe` y Jev la usaba para CUALQUIER regla mal aplicada —de 107 fallos del
+    # TDE con esa etiqueta, 7 hablaban del EFE—. El dossier ya es por skill: `lectura`
+    # en el dossier del DTP es lectura del DTP.
+    "lectura": "una regla del propio skill del que habla el texto se aplicó mal: un bloque o un "
+               "indicador puntuó lo que el texto no sostenía, se apartó del defecto sin el sostén que "
+               "pide la regla, se ignoró una alerta, o se tomó una referencia de otra condición",
     "tde": "el tramo final: la ventana o el índice de echada / sobreexposición no describieron lo "
            "que pasó en los últimos minutos",
     "reventon": "la racha: se apostó a que la burbuja seguía (o se cortaba) contra lo que decía el "
@@ -49,6 +54,16 @@ MODOS = {
     "no_lo_dice": "el texto no permite ubicar el fallo en ninguna de las anteriores, o no explica "
                   "por qué falló",
 }
+# LO YA SELLADO NO SE RE-ETIQUETA (decisión del 10/11): al leer, la etiqueta vieja
+# cuenta como la nueva
+LEGADO = {"lectura_efe": "lectura"}
+
+
+def canonico(modo: str | None) -> str | None:
+    """La etiqueta sellada con el nombre de hoy (`lectura_efe` → `lectura`)."""
+    return LEGADO.get(modo, modo) if modo else modo
+
+
 # probabilidad del noul «pide mover un número»: actuar ≥ 0.70, negar ≤ 0.30
 # (los umbrales del cookbook de guardrails de Jev); en medio, no se sabe
 P_SI, P_NO = 0.70, 0.30

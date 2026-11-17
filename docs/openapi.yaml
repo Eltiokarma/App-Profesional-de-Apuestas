@@ -2404,7 +2404,7 @@ components:
           additionalProperties:
             type: object
             properties:
-              modo: { type: string, nullable: true, enum: [insumo, lectura_efe, tde, reventon, mercado, imprevisto, varianza, no_lo_dice, null], description: 'null = sin confianza suficiente o simulado' }
+              modo: { type: string, nullable: true, enum: [insumo, lectura, lectura_efe, tde, reventon, mercado, imprevisto, varianza, no_lo_dice, null], description: 'null = sin confianza suficiente o simulado. Lo sellado tal cual: `lectura_efe` es el nombre viejo de `lectura` (hasta el 17/11/2026; las lecciones ya lo leen como `lectura`)' }
               modoConfianza: { type: number }
               proponeMoverNumero: { type: boolean, nullable: true, description: 'true ≥ 0.70 · false ≤ 0.30 · null en medio o sin lección' }
               proponeMoverP: { type: number, nullable: true }
@@ -2453,7 +2453,7 @@ components:
               lado: { type: string }
               parte: { type: string }
               banco: { type: string }
-        modoFallo: { type: string, nullable: true, description: 'etiqueta de Jev: insumo · lectura_efe · tde · reventon · mercado · imprevisto · varianza · no_lo_dice; null sin etiqueta' }
+        modoFallo: { type: string, nullable: true, description: 'etiqueta de Jev: insumo · lectura (una regla del propio skill mal aplicada; el `lectura_efe` sellado antes del 17/11/2026 se lee como `lectura`, A0 de la EFE v1.10) · tde · reventon · mercado · imprevisto · varianza · no_lo_dice; null sin etiqueta. En `porSkill[efe-clasificador].porModoFallo` viaja además `lecturaDeOtrosConInsumoEfe` (cuantas, porSkill, claves): los `lectura` de otros skills cuya regla nombra un insumo del EFE, contados aparte' }
         modoFalloConfianza: { type: number, nullable: true }
         proponeMoverNumero: { type: boolean, nullable: true, description: 'la lección pide mover un número del skill (Jev); cruzado con puedeMoverNumeros da la alarma del dossier' }
         estado: { type: string, enum: [pendiente, en_revision, aplicada, descartada] }

@@ -14,7 +14,7 @@ import { FormCuarentena } from '../components/FormCuarentena'
  *  abrirla, no autorizarla. */
 
 const MODO_FALLO_NOMBRE: Record<ModoFalloEtiqueta, string> = {
-  insumo: 'insumo', lectura_efe: 'lectura EFE', tde: 'TDE', reventon: 'reventón',
+  insumo: 'insumo', lectura: 'lectura del skill', lectura_efe: 'lectura del skill', tde: 'TDE', reventon: 'reventón',
   mercado: 'mercado', imprevisto: 'imprevisto', varianza: 'varianza', no_lo_dice: 'no lo dice',
 }
 const COLOR_VER: Record<string, string> = {
@@ -625,6 +625,9 @@ function PanelSkill({ sk, cohorte, recarga, onCambio }: { sk: SkillAprendizaje; 
               <span style={{ display: 'block', marginTop: 4, font: '500 10.5px var(--mono)', color: 'var(--t2)' }}>
                 fallos por causa: {Object.entries(sk.porModoFallo.porModo).map(([m, n]) => `${MODO_FALLO_NOMBRE[m as ModoFalloEtiqueta] ?? m} ${n}`).join(' · ') || '—'}
                 {sk.porModoFallo.sinEtiqueta ? ` · sin etiqueta ${sk.porModoFallo.sinEtiqueta}` : ''}
+                {sk.porModoFallo.lecturaDeOtrosConInsumoEfe?.cuantas
+                  ? ` · aparte, ${sk.porModoFallo.lecturaDeOtrosConInsumoEfe.cuantas} de otros skills con un insumo del EFE`
+                  : ''}
                 {sk.porModoFallo.pidenMoverSinPoder.length ? <b style={{ color: 'var(--down)' }}> · {sk.porModoFallo.pidenMoverSinPoder.length} piden mover un número sin poder sostenerlo</b> : null}
               </span>
             )}
