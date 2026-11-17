@@ -67,6 +67,8 @@ jobs:
         run: python -m backend.test_identidad
       - name: El núcleo de los skills (reglas en el cuerpo, historia en HISTORIAL.md, tope de tokens)
         run: python -m backend.test_nucleo_skills
+      - name: A6 del EFE, la brecha con y sin EFE-EMPATE-TECNICO (sintéticos)
+        run: python -m backend.test_medir_brecha_efe
       - name: El banco probable, una lista para EFE, DTP y TDE (la hoja con el once)
         run: python -m backend.test_banco
       - name: De qué está hecho el nivel del motor (amistosos e internacionales en la ventana)

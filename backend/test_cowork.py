@@ -1835,6 +1835,8 @@ def main():
               if x["codigo"] == "ONCE-SIN-FILA-F1"]
     check("743: un titular del once oficial sin fila en la tabla F1 suena ONCE-SIN-FILA-F1 en su lado",
           len(_al743) == 1 and _al743[0]["equipo"] == "b" and _al743[0]["titulares"] == ["Zeta Desconocido"], _al743)
+    check("EFE v1.11: ONCE-SIN-FILA-F1 pide rehacer la F1 aunque sea uno (sin el «con 3 o más» viejo)",
+          _al743 and "AUNQUE SEA UNO" in _al743[0]["detalle"] and "con 3 o más" not in _al743[0]["detalle"], _al743)
     c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
         "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
 
@@ -1873,6 +1875,28 @@ def main():
           len(_rc) == 1 and _rc[0].get("arquero") == "B Jugador1", _rc)
     c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
         "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
+
+    # VIAS-SIN-BANCO (17/11/2026, DTP v1.9 punto 7)
+    from backend.analisis import parte as _ptv
+    _pv = {"dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {"viasGol": {"foco": ["centro al segundo palo de Pérez"]}}}},
+                               {"equipo": "b", "apertura": {"m2": {"viasGol": {"foco": ["Gómez entra por la izquierda desde el banco"]}}}}]}}
+    _bv = {"a": {"fuente": "hoja", "lista": [{"nombre": "Juan Gómez"}, {"nombre": "Luis Ramírez"}]},
+           "b": {"fuente": "probable", "lista": [{"nombre": "Carlos Gómez"}]}}
+    _av = _ptv.alertas_vias_sin_banco(_pv, 0, {"a": "Local", "b": "Visita"}, banco=_bv)
+    check("VIAS-SIN-BANCO: suena en el lado cuyas vías no nombran a nadie del banco, no en el que sí",
+          [x["equipo"] for x in _av] == ["a"] and _av[0]["codigo"] == "VIAS-SIN-BANCO", _av)
+    check("VIAS-SIN-BANCO: con la lista vacía no suena",
+          _ptv.alertas_vias_sin_banco(_pv, 0, {}, banco={"a": {"lista": []}, "b": {"lista": []}}) == [])
+
+    # pronostico.descarte (17/11/2026, sad-analysis v4.6, 6-B): la frase se guarda, el resultado lo calcula la app
+    _pd = _parte(sin_ficha)
+    _pd["pronostico"]["descarte"] = "la visita no gana: sin su 9 no tiene vía contra el bloque bajo"
+    _rd = c.post(f"{A}/analisis/cowork", json=_pd).json()
+    check("6-B: `pronostico.descarte` se guarda sin rechazo y vuelve en el GET",
+          not [r for r in _rd.get("rechazos") or [] if "descarte" in r.get("donde", "")]
+          and c.get(f"{A}/analisis/cowork/{sin_ficha}").json()["pronostico"].get("descarte", "").startswith("la visita no gana"),
+          _rd.get("rechazos"))
+    c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
     # DESCONFIAR sellada en el PRIMER depósito (17/11/2026, sad-analysis v4.6, decisión 4 (a))
     from backend.analisis import parte as _pts

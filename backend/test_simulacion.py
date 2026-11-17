@@ -493,6 +493,27 @@ check("ventajaPorFuerza por fixture: la fila de cada lado con la cuota de la cas
 check("sin cuota, los lados en None y `sinCuota` lo dice (no se inventa la fuerza)",
       _vs["a"] is None and _vs["b"] is None and _vs["sinCuota"] is True, _vs)
 from backend.analisis import tde as _tdm  # noqa: E402
+# 1X2-CARGA-CONTRA-RIESGO (17/11/2026, sad-analysis v4.4/v4.6)
+_nm = {"a": "Local", "b": "Visita"}
+_rv = {"a": {"actual": {"signo": "+"}, "riesgo": {"nivel": "muy alto"}}, "b": {"actual": {"signo": "-"}, "riesgo": {"nivel": "bajo"}}}
+_bq = lambda e, n, c: {"elegido": e, "probElegido": {"nuestra": n, "casa": c}}  # noqa: E731
+_c1 = _dsc.alerta_carga(_bq("local", 58.0, 52.0), _rv, [], _nm)
+check("1X2-CARGA-CONTRA-RIESGO: el elegido sigue su racha + con riesgo muy alto y queda sobre la casa",
+      len(_c1) == 1 and _c1[0]["codigo"] == "1X2-CARGA-CONTRA-RIESGO" and "Local" in _c1[0]["detalle"], _c1)
+check("…con el número EN o bajo la casa no suena (la regla pide no subir sobre el mercado)",
+      _dsc.alerta_carga(_bq("local", 52.0, 52.0), _rv, [], _nm) == [])
+check("…si el 1X2 va contra la racha (elige la visita) no suena",
+      _dsc.alerta_carga(_bq("visita", 40.0, 30.0), _rv, [], _nm) == [])
+_rv2 = {"a": {"actual": {"signo": "+"}, "riesgo": {"nivel": "medio"}}, "b": {}}
+check("…riesgo medio no alcanza, pero en K-EXTREMO sí",
+      _dsc.alerta_carga(_bq("local", 58.0, 52.0), _rv2, [], _nm) == []
+      and len(_dsc.alerta_carga(_bq("local", 58.0, 52.0), _rv2, [{"codigo": "K-EXTREMO", "equipo": "a"}], _nm)) == 1)
+_rv3 = {"a": {}, "b": {"actual": {"signo": "-"}, "riesgo": {"nivel": "alto"}}}
+check("…también sigue la racha elegir al local cuando la visita viene en racha − con riesgo alto",
+      len(_dsc.alerta_carga(_bq("local", 58.0, 52.0), _rv3, [], _nm)) == 1)
+check("…el empate no carga ninguna racha", _dsc.alerta_carga(_bq("empate", 35.0, 25.0), _rv, [], _nm) == [])
+check("1X2-CARGA-CONTRA-RIESGO es calculada (se descarta del depósito)",
+      "1X2-CARGA-CONTRA-RIESGO" in _pt._ALERTAS_CALCULADAS)
 check("los insumos del TDE (tde/{id}) traen ventajaPorFuerza en `referencias`",
       "ventajaPorFuerza" in __import__("inspect").getsource(_tdm.ficha), "")
 
