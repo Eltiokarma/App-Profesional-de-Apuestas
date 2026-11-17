@@ -134,8 +134,17 @@ inventadas = []
 _corrida = os.path.join(".claude", "skills", "corrida-sad")
 _corrida_md = sorted(os.path.relpath(os.path.join(d, f), RAIZ)
                      for d, _, fs in os.walk(os.path.join(RAIZ, _corrida)) for f in fs if f.endswith(".md"))
-for rel in (*_corrida_md, os.path.join("docs", "COWORK.md"),
-            os.path.join("docs", "skills", "sad-analysis", "SKILL.md")):
+# …y el NÚCLEO de cada skill del pipeline (17/11/2026, prevención del mantenimiento):
+# desde la v0.1.27/v1.9/v1.11/v4.6 el TDE, el DTP y el EFE también mandan leer rutas
+# de la app (`tde/{id}`, `dtp/{id}`, `f1/{id}`, `bancoProbable`) y antes solo se
+# miraba sad-analysis. El HISTORIAL no: cita rutas de su época a propósito.
+_nucleos = sorted(os.path.relpath(os.path.join(d, f), RAIZ)
+                  for d, _, fs in os.walk(os.path.join(RAIZ, "docs", "skills"))
+                  for f in fs if f.endswith(".md") and f != "HISTORIAL.md"
+                  and os.path.basename(os.path.dirname(os.path.join(d, f))) in (
+                      "teorema-del-echado", "diagnostico-tactico", "efe-clasificador", "efe-dashboard",
+                      "sad-analysis", "references"))
+for rel in (*_corrida_md, os.path.join("docs", "COWORK.md"), *_nucleos):
     t = leer(rel)
     t = re.sub(r"\$(B|SAD_API_BASE)/", " /", t)
     # `antecedentes/` también: el encargo pedía «GET antecedentes/{id}», que no
