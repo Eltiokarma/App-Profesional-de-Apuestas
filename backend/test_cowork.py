@@ -1874,6 +1874,30 @@ def main():
     c.post(f"{A}/analisis/cowork/{sin_ficha}/xi", json={"b": {
         "once": [f"B Jugador{n}" for n in (1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15)], "fuente": "rueda de prensa"}})
 
+    # DESCONFIAR sellada en el PRIMER depósito (17/11/2026, sad-analysis v4.6, decisión 4 (a))
+    from backend.analisis import parte as _pts
+    _dto_o = _pts.dto
+    _bloque = lambda activa, elegido="local": {"desconfianza": {  # noqa: E731
+        "alerta": {"activa": activa, "motivos": ["SOBRE-LA-CASA"] if activa else []},
+        "elegido": elegido, "descarte": {"resultado": "visita"}}}
+    try:
+        _pts.dto = lambda _fid: _bloque(True)
+        _s1 = _pts._sellar_desconfianza(sin_ficha)
+        _pts.dto = lambda _fid: _bloque(False)
+        _s2 = _pts._sellar_desconfianza(sin_ficha)
+    finally:
+        _pts.dto = _dto_o
+    check("DESCONFIAR: el primer depósito con el bloque la sella tal cual",
+          _s1 and _s1["sellada"]["alerta"]["activa"] is True and _s1["cambioDesdeLaSellada"] is False, _s1)
+    check("DESCONFIAR: un depósito siguiente no la pisa, y el recibo dice que la de hoy cambió",
+          _s2 and _s2["sellada"]["alerta"]["activa"] is True and _s2["cambioDesdeLaSellada"] is True, _s2)
+    check("DESCONFIAR: el GET trae la sellada aparte de la de hoy",
+          (c.get(f"{A}/analisis/cowork/{sin_ficha}").json().get("desconfianzaSellada") or {}).get("alerta", {}).get("activa")
+          is True)
+    with _pts._conectar() as _cn:
+        _cn.execute("UPDATE parte_cowork SET desconfianza_primera_json=NULL WHERE fixture_id=?", (sin_ficha,))
+        _cn.commit()
+
     # re-depositar el parte NO borra el once ya resuelto
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
     check("el once sobrevive a un parte nuevo",

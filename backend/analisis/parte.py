@@ -118,7 +118,11 @@ _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarenten
                     ("dt_original_json", "TEXT"),
                     # el PRIMER cierre lleno de cada bloque del DTP (06/11/2026, incidencia
                     # 1258): restaurarlo en un rehacer no es reescribirlo
-                    ("cierres_json", "TEXT"))
+                    ("cierres_json", "TEXT"),
+                    # DESCONFIAR del PRIMER depósito (17/11/2026, sad-analysis v4.6, decisión 4
+                    # del usuario): verla antes del cierre invitaría a bajar el número para
+                    # apagarla; se sella la primera, como la cadena, y la Simulación mide esa
+                    ("desconfianza_primera_json", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -393,7 +397,7 @@ _LADOS_ALIAS_MATCHUP = {"a", "b", "local", "visita", "visitante"}
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
               "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena", "bancoDesmentido",
-              "xiConservados", "coherencia", "vsMercado", "desconfianza"}
+              "xiConservados", "coherencia", "vsMercado", "desconfianza", "desconfianzaSellada"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 # LAS FILAS QUE LA APP SUMA AL LEER (14/11/2026, incidencia 1404, rehacer de
@@ -4066,6 +4070,7 @@ def guardar(payload: dict) -> dict:
     # al depositar—, y el recibo solo traía cuántas alertas había). Con la lista
     # se corrige en el mismo depósito, sin otro GET.
     resumen["alertasAlLeer"] = _alertas_al_leer(parte["fixtureId"])
+    resumen["desconfianza"] = _sellar_desconfianza(parte["fixtureId"])
     print(f"[cowork] parte {resumen['estado']}: {resumen['partido']} "
           f"({resumen['jugadores']['a']}+{resumen['jugadores']['b']} jugadores, "
           f"{len(parte['documentos'])} documentos, "
@@ -4206,6 +4211,38 @@ def nombres_vs_id(parte: dict, nombres: dict) -> list[dict]:
 def _plano_txt(t: str) -> str:
     from backend.identidad import plano
     return " ".join(plano(t).split())
+
+
+def _sellar_desconfianza(fixture_id: int) -> dict | None:
+    """DESCONFIAR SELLADA EN EL PRIMER DEPÓSITO (17/11/2026, sad-analysis v4.6, decisión
+    4 (a) del usuario). La primera vez que el parte tiene bloque `desconfianza` (1X2
+    declarado y cuota capturada) se guarda la alerta tal cual; los depósitos siguientes
+    no la pisan. El recibo dice cuál quedó sellada y si la de hoy es otra. Nunca lanza."""
+    try:
+        with _conectar() as con:
+            fila = con.execute("SELECT desconfianza_primera_json FROM parte_cowork WHERE fixture_id=?",
+                               (fixture_id,)).fetchone()
+        if not fila:
+            return None
+        sellada = json.loads(fila["desconfianza_primera_json"]) if fila["desconfianza_primera_json"] else None
+        hoy = (dto(fixture_id) or {}).get("desconfianza")
+        if sellada is None and hoy:
+            sellada = {"alerta": hoy.get("alerta"), "elegido": hoy.get("elegido"),
+                       "descarte": hoy.get("descarte"), "selladaEn": efedb.ahora()}
+            with _conectar() as con:
+                con.execute("UPDATE parte_cowork SET desconfianza_primera_json=? WHERE fixture_id=? "
+                            "AND desconfianza_primera_json IS NULL",
+                            (json.dumps(sellada, ensure_ascii=False), fixture_id))
+                con.commit()
+        if sellada is None:
+            return None
+        cambio = bool(hoy) and ((hoy.get("alerta") or {}).get("activa") != (sellada.get("alerta") or {}).get("activa")
+                                or hoy.get("elegido") != sellada.get("elegido"))
+        return {"sellada": sellada, "cambioDesdeLaSellada": cambio,
+                "nota": "DESCONFIAR se sella en el PRIMER depósito con 1X2 y cuota: la Simulación mide esa. "
+                        "Retocar el número para apagarla no la apaga"}
+    except Exception:  # noqa: BLE001 — el depósito ya quedó guardado; sin sello, el GET la recalcula igual
+        return None
 
 
 def _alertas_al_leer(fixture_id: int) -> list[dict]:
@@ -5148,7 +5185,7 @@ def dto(fixture_id: int) -> dict | None:
         fila = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, estado, version, parte_json, "
             "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json, coherencia_json, "
-            "banco_desmentido_json, deposito_previo_en FROM parte_cowork WHERE fixture_id=?",
+            "banco_desmentido_json, deposito_previo_en, desconfianza_primera_json FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,),
         ).fetchone()
     if not fila:
@@ -5363,6 +5400,9 @@ def dto(fixture_id: int) -> dict | None:
         # la ventaja sobre el mercado (26/10/2026): calculada al leer, nunca declarada
         "vsMercado": _ventaja_o_nada(fila["fixture_id"], parte["pronostico"], fila["parte_json"]),
         "desconfianza": desconfianza,
+        # la del PRIMER depósito, sellada (sad-analysis v4.6): la que mide la Simulación
+        "desconfianzaSellada": (json.loads(fila["desconfianza_primera_json"])
+                                if fila["desconfianza_primera_json"] else None),
         "matriz": parte.get("matriz") or {},
         "documentos": parte["documentos"],
         "pendientes": parte["pendientes"],
