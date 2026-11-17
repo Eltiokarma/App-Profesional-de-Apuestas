@@ -124,6 +124,13 @@ SUBIDA_VERSION = {
     ("diagnostico-tactico", "v1.8"): "2026-11-10 12:15:00",
     ("efe-clasificador", "v1.10"): "2026-11-10 12:15:00",
     ("sad-analysis", "v4.5"): "2026-11-10 12:15:00",
+    # el usuario subió los cinco zips de la tanda del 17/11 (avisó a las 08:24 de
+    # Lima; EFE v1.11 y sad v4.6 ya se veían en la cuenta un rato antes): lo que se
+    # depositó antes corrió con la anterior (efe-dashboard v1.14 va con el EFE)
+    ("teorema-del-echado", "v0.1.27"): "2026-11-17 13:20:00",
+    ("diagnostico-tactico", "v1.9"): "2026-11-17 13:20:00",
+    ("efe-clasificador", "v1.11"): "2026-11-17 13:20:00",
+    ("sad-analysis", "v4.6"): "2026-11-17 13:20:00",
 }
 
 # EL MEDIO: lo que la casa (sin margen) le da al elegido, en % [desde, hasta)

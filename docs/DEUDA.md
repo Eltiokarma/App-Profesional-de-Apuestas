@@ -1242,9 +1242,9 @@ conversación se pierde en la siguiente.
    entra) y aplicadas en `docs/skills/` con el núcleo (`references/HISTORIAL.md`
    en cada skill, `backend/test_nucleo_skills.py` en CI); `CORTE_VERSION` al
    17/11. Ya en la app: `ventajaPorFuerza` en `tde/{id}` (#563) y DESCONFIAR
-   sellada en el primer depósito (#564). **Pendiente del usuario**: subir los
-   cinco zips y anotar la hora en `SUBIDA_VERSION`; cerrar con 🔑 las lecciones
-   anteriores al corte. **Pendiente de la app** (de «Para la app» de cada
+   sellada en el primer depósito (#564). Los cinco zips se subieron el 17/11 hacia las 08:20 de Lima
+   (anotado en `SUBIDA_VERSION`). **Pendiente del usuario**: cerrar con 🔑 las
+   lecciones anteriores al corte. **Pendiente de la app** (de «Para la app» de cada
    propuesta, en PENDIENTES): `pronostico.descarte`, `1X2-CARGA-CONTRA-RIESGO`,
    el texto de ONCE-SIN-FILA-F1, la medición A6 del EFE, `EJE-DEBUTANTE-SIN-
    DECLARAR`/`onceTardio` y los avisos del grid del DTP.
