@@ -1,5 +1,7 @@
 # Propuesta de revisión · `teorema-del-echado` v0.1.26 → v0.1.27
 
+> **APROBADA por el usuario el 17/11/2026, con todas las recomendaciones.** D1 (a) la lista entera de `bancoProbable` · D2 (a) cita el campo, que la app ya trae desde el 17/11 (`tde/{id}` → `referencias.ventajaPorFuerza`, PR #563) · D3 (a) la pieza del seguro entra como texto · D4 (a) las disciplinas 34-39 en su hueco y la 37 sin la cláusula de cercanía · D5 (a) las tres frases se corrigen ahora. Los nueve puntos, aprobados como recomienda la propuesta.
+
 **Estado: PROPUESTA (17/11/2026), para aprobar punto por punto.** No se tocó
 el skill, ni el código, ni otros docs. Se aplica **con el núcleo**
 (`NUCLEO_SKILLS_propuesta.md`, aprobado con las cinco recomendaciones de

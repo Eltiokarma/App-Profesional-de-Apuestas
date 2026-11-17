@@ -1,5 +1,7 @@
 # Propuesta de revisión · `sad-analysis` v4.5 → v4.6
 
+> **APROBADA por el usuario el 17/11/2026, con todas las recomendaciones.** 1. (a) la frase «con 3+ partidos la espina puede leer “sigue”» NO entra · 2. (a) un descarte distinto del menos probable es contradicción y se resuelve en el número · 3. (a) el falsador por nombres con la vía o el rol entra · 4. (a) DESCONFIAR sellada en el primer depósito, y la Simulación mide esa. Lo demás, como recomienda la propuesta.
+
 **Estado: PROPUESTA (17/11/2026), para aprobar punto por punto.** No toca
 `docs/skills/sad-analysis/SKILL.md` hasta que se redacte. Se aplica **con el
 núcleo** (`NUCLEO_SKILLS_propuesta.md`, aprobado con las cinco

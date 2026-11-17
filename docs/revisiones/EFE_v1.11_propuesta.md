@@ -1,5 +1,7 @@
 # Propuesta de revisión · `efe-clasificador` v1.10 → v1.11 (+ `efe-dashboard` v1.13 → v1.14)
 
+> **APROBADA por el usuario el 17/11/2026, con todas las recomendaciones.** 1. (a) B y F se recomputan siempre con el once; la app lo exige desde 3 · 2. (a) el punto 6 entra como aclaración · 3. (a) COLAPSO + AGRAVANTE sigue candidato. Lo demás, como recomienda la propuesta (con efe-dashboard v1.14).
+
 **Estado:** PROPUESTA (17/11/2026), para aprobar punto por punto. No se tocó
 ningún skill, ni código, ni lección. Se aplica **junto con el núcleo**
 (`NUCLEO_SKILLS_propuesta.md`, aprobado el 10/11 con las cinco

@@ -1,5 +1,7 @@
 # Propuesta de revisión · `diagnostico-tactico` v1.8 → v1.9
 
+> **APROBADA por el usuario el 17/11/2026, con todas las recomendaciones.** 1. la presión alta con su vuelta sube a regla · 2. se borra la condición de la l. 314: «arriba» siempre aparte · 3. bloque «Candidatos abiertos» en el cuerpo. Lo demás, como recomienda la propuesta (punto 8 a medición).
+
 **Estado: PROPUESTA (17/11/2026), pendiente de aprobación punto por punto.**
 No se tocó `docs/skills/diagnostico-tactico/SKILL.md` ni código. Se aplica
 **junto con el núcleo** (`NUCLEO_SKILLS_propuesta.md`, aprobado con las cinco

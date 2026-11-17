@@ -4,6 +4,18 @@ Lo que el usuario ya aprobó para una revisión que todavía no se escribió. La
 revisión de cada skill empieza por acá (y por su dossier en Aprendizaje): un
 pendiente que solo vive en una incidencia cerrada se pierde.
 
+## Aprobado el 17/11/2026 — TDE v0.1.27, DTP v1.9, EFE v1.11 (+ efe-dashboard v1.14) y sad-analysis v4.6
+
+Las cuatro propuestas (`TDE_v0.1.27_propuesta.md`, `DTP_v1.9_propuesta.md`,
+`EFE_v1.11_propuesta.md`, `SAD_v4.6_propuesta.md`), desde el estudio
+`estudio_lecciones_2026-11-17/`, aprobadas por el usuario con TODAS las
+recomendaciones de sus «Decisiones del usuario» (la 1 de sad-analysis: la
+frase de la espina con 3+ partidos NO entra). Se aplican con el núcleo
+(`NUCLEO_SKILLS_propuesta.md`). Lo de «Para la app» de cada una queda acá
+hasta hacerse; ya hecho el 17/11: `bancoProbable` (#561), Jev `lectura`
+(#562), `ventajaPorFuerza` en `tde/{id}` (#563), EFE-RECOMPUTO-PENDIENTE y el
+rehacer por la hoja (#560).
+
 ## Aprobado el 10/11/2026 para la PRÓXIMA versión — «en quién desconfiar»
 
 El usuario lo aprobó para sad-analysis v4.6 y TDE v0.1.27:
