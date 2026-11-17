@@ -354,6 +354,25 @@ def main():
     check("1419: la casilla con el rol delante en el paréntesis se lee (Tsitaishvili 4:1 contra el grid 4:3) "
           "y la de Kvernadze sigue",
           set(_r1419) == {"G. Tsitaishvili", "G. Kvernadze"} and "4:1" in _r1419["G. Tsitaishvili"], _r1419)
+    # 1438 (17/11/2026, Croacia–Chequia 1528985): sin casillas escritas, el duelo del carril
+    # izquierdo junta a Perišić (grid 4:3, derecha) con Gvardiol (2:1, izquierda)
+    _cas1438 = [("D. Livaković", "1:1"), ("J. Gvardiol", "2:1"), ("L. Vušković", "2:2"), ("D. Ćaleta-Car", "2:3"),
+                ("J. Stanišić", "2:4"), ("M. Kovačić", "3:1"), ("L. Modrić", "3:2"), ("M. Baturina", "4:1"),
+                ("P. Sučić", "4:2"), ("I. Perišić", "4:3"), ("D. Beljo", "5:1")]
+    _por1438 = {1: 1, 2: 4, 3: 2, 4: 3, 5: 1}
+    _of1438 = {"formacion": "4-2-3-1", "titulares": [n for n, _ in _cas1438], "defensores": 4,
+               "casillas": [{"nombre": n, "grid": g, "carril": _car1391(g, _por1438)} for n, g in _cas1438]}
+    _duelos = lambda d1, d2: {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": ""},
+                                                          "m2": {"duelosCarril": [
+        {"carril": "izquierdo croata", "duelo": d1}, {"carril": "derecho croata", "duelo": d2}]}}}
+    _r1438 = {r["jugador"]: r["motivo"] for r in _dc646.roles_vs_grid(
+        _duelos("Perišić y Gvardiol contra Coufal y Hopi", "Stanišić y Baturina contra Sláma y Kabongo"), _of1438)}
+    check("1438: el duelo con dos del equipo en bandas opuestas del grid sale en rolesVsGrid (los cuatro)",
+          set(_r1438) == {"I. Perišić", "J. Gvardiol", "J. Stanišić", "M. Baturina"}
+          and "bandas" in _r1438["I. Perišić"], _r1438)
+    check("1438: con el grid que el parte escribió (Baturina y Gvardiol, Perišić y Stanišić) y un central, nada",
+          _dc646.roles_vs_grid(_duelos("Baturina y Gvardiol contra Coufal y Hopi",
+                                       "Stanišić, Perišić y Modrić contra Sláma y Kabongo"), _of1438) == [])
     # la API que solo re-etiqueta 4-2-3-1 → 4-3-3 corre los números de fila: el
     # mediapunta escrito 4:2 que el grid da 3:2 (medio) no es otra línea
     _b1391r = {"equipo": "b", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": "",

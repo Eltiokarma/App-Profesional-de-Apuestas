@@ -1900,6 +1900,35 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
                 continue
             vistos.add(c["nombre"])
             out.append({"jugador": c["nombre"], "rol": texto[:140], "grid": c["grid"], "motivo": motivo})
+    # UN DUELO DE CARRIL CON DOS DEL EQUIPO EN BANDAS OPUESTAS (17/11/2026,
+    # incidencia 1438, Croacia–Chequia 1528985: «Perišić y Gvardiol contra
+    # Coufal y Hopi» en el carril izquierdo croata, y el grid oficial dio a
+    # Perišić en 4:3 —derecha— y a Gvardiol en 2:1; el duelo real de Perišić fue
+    # con Sláma). Sin casilla escrita no hay nada que cruzar, pero un mismo
+    # carril no tiene a un jugador por cada banda: alguno está en el otro.
+    for d in m2.get("duelosCarril") or []:
+        if not isinstance(d, dict):
+            continue
+        texto = d.get("duelo") or ""
+        plano = _plano_num(texto).split()
+        en_duelo = []
+        for c in casillas:
+            ap = [w for w in _plano_num(c["nombre"]).split() if len(w) > 2]
+            if ap and ap[-1] in plano and c.get("carril") in ("izquierda", "derecha"):
+                en_duelo.append(c)
+        bandas = {c["carril"] for c in en_duelo}
+        # si la casilla escrita de alguno ya se contradijo (1391/1419), esa es la
+        # explicación del duelo: no se suma al compañero
+        if len(bandas) < 2 or any(c["nombre"] in vistos for c in en_duelo):
+            continue
+        resumen = ", ".join(f"{c['nombre']} {c['grid']} ({c['carril']})" for c in en_duelo)
+        for c in en_duelo:
+            if c["nombre"] in vistos:
+                continue
+            vistos.add(c["nombre"])
+            out.append({"jugador": c["nombre"], "rol": texto[:140], "grid": c["grid"],
+                        "motivo": (f"el duelo «{texto[:80]}» junta jugadores de las dos bandas en el grid oficial "
+                                   f"({resumen}): el carril se escribió sobre otra disposición")})
     return out
 
 
