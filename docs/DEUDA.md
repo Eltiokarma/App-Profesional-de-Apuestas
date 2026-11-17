@@ -1219,6 +1219,20 @@ conversación se pierde en la siguiente.
    (`git.deploymentEnabled`: `"*": false`, `"main": true`): cada PR mergeado
    gasta un despliegue. Lo que se pierde: la vista previa del PR antes de
    mergearlo (se prueba con `npm run dev` o la demo).
+35. **Revisión de los skills desde las lecciones del 10-16/11** (17/11/2026,
+   usuario: «vamos a actualizar los skills… primero la app y después el paso
+   2»). **Paso 1 hecho**: `docs/revisiones/estudio_lecciones_2026-11-17/`
+   (las 882 lecciones pendientes leídas una por una: las reglas se sostienen
+   en su mayoría; lo que más se repite es el once oficial que no se propaga al
+   rehacer; la etiqueta `lectura_efe` de Jev fuera del EFE es «regla del
+   propio skill mal aplicada», 7 de 107 en el TDE y 4 de 102 en el DTP hablan
+   del EFE). **App, hecho en esta rama**: `EFE-RECOMPUTO-PENDIENTE` (1068 paso
+   2, aprobado con la EFE v1.10) y el rehacer (`parte.REHACER_POR`) que ahora
+   también entra con FUERA-EN-LA-HOJA, ONCE-SIN-FILA-F1 y esa alerta; el modo
+   `rehacer` carga `efe-clasificador` con ella. **Pendiente de la app**: el
+   banco probable (A8, una lista para EFE/DTP/TDE) y Jev A0 (`lectura` por
+   skill, ya decidido el 10/11). **Después**: paso 2, las propuestas de TDE
+   v0.1.27, DTP v1.9, EFE v1.11 y sad-analysis v4.6 (con el núcleo).
 
 ## Siguientes pasos (en orden)
 
