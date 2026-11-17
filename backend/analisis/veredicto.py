@@ -356,6 +356,26 @@ _SIN_GOL = re.compile(r"sin gol[^0-9]{0,20}(\d{1,3})\s*[-–a]+\s*(\d{1,3})", re
 _HASTA_CAMBIO = re.compile(r"hasta (el|la|que) ?(empate|iguala|igualdad|final|pitazo|remontada|cambi)", re.I)
 
 
+# «+15 y el régimen hasta el final» (17/11/2026, incidencia 1435, Cusco: la
+# siExpulsion «desde la roja +15 y el régimen hasta el final», disciplina 16 del
+# TDE v0.1.26, se medía [31,46] y el gol del 87' con diez salía fuera de la
+# ventana). El régimen declarado manda sobre el +N: hasta el final es hasta el
+# final; hasta el empate, hasta el próximo cambio del marcador (en los tramos).
+_REGIMEN_HASTA = re.compile(r"r[ée]gimen\b[^.;]{0,40}?\bhasta (?:el |la |que )?([a-záéíóú]+)(?:[^.;]{0,30})", re.I)
+
+
+def _regimen(texto: str) -> str:
+    """'final' si el régimen declarado va hasta el final y nada más; 'cambio' si
+    va hasta el empate (o el empate o el final); '' sin régimen declarado."""
+    m = _REGIMEN_HASTA.search(texto or "")
+    if not m:
+        return ""
+    trozo = m.group(0).lower()
+    if re.search(r"empate|iguala|igualdad|remontada|cambi", trozo):
+        return "cambio"
+    return "final" if re.search(r"final|pitazo", trozo) else ""
+
+
 def rango_relativo(texto: str, minuto, abierto: bool = False) -> tuple[int, int] | None:
     """«desde el gol +15» con el gol al 50' → (50, 65). El TDE v0.1.21 pide la
     ventana de cada rama RELATIVA al gol que la abre, y el veredicto la mandaba
@@ -363,6 +383,9 @@ def rango_relativo(texto: str, minuto, abierto: bool = False) -> tuple[int, int]
     minuto del gol o sin un «+N», no hay tramo de reloj y sigue sin cobrarse."""
     if minuto is None or not ventana_relativa(texto):
         return None
+    regimen = _regimen(texto)
+    if regimen == "final" or (regimen == "cambio" and abierto):
+        return int(minuto), 90
     m = _MAS_N.search(texto or "") or _POSTERIORES.search(texto or "")
     if not m:
         # `abierto` (solo en los tramos, que ya terminan en el próximo cambio
@@ -1345,9 +1368,20 @@ def desenlace_del_tramo(lo: dict | None, evento: tuple | None, foco: str,
         observado = "rescata"
     lectura = declarado or defecto
     cumplido = None if lectura == "abierto" or observado is None else observado == lectura
+    # EL DESENLACE QUE CIERRA UN PENAL O UN AUTOGOL ES POR OTRA VÍA (17/11/2026,
+    # incidencia 1436, Grau: siLeEmpatan salía `se_rompe` por el penal del
+    # 90+14). TDE, «cumplido por otra vía»: marcar `porOtraVia` sin cobrarlo ni
+    # a favor ni en contra del hecho (aprobado y pendiente de la app); la misma
+    # vía que ya no cobra la ventana (1271, disciplina 24)
+    por_otra_via = bool(evento is not None and evento[3] == "gol" and observado in ("se_rompe", "rescata")
+                        and _otra_via(evento[4]))
+    if por_otra_via:
+        cumplido = None
     out = {"declarado": declarado, "defecto": defecto, "lectura": lectura, "deDefecto": not declarado,
            "observado": observado, "cumplido": cumplido, "iseRama": ise,
            "porque": lo.get("porqueDesenlace") or ""}
+    if por_otra_via:
+        out["porOtraVia"] = "penal" if evento[4].get("penal") else "autogol"
     if not declarado and not con_defecto:
         out["cumplido"] = None
         out["noEvaluable"] = ("el parte es anterior a la lectura por defecto (TDE v0.1.24, 26/10/2026): "
