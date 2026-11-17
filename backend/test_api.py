@@ -829,6 +829,15 @@ def main():
 
     # /ligas/{id}/standings
     tb = c.get(A + "/ligas/140/standings").json()
+    # 1440 (17/11/2026): grupos que nunca se cruzan son tablas aparte; una liga, no
+    from backend.app import grupos_de_pares as _gdp
+    _g2 = _gdp([(1, 2), (2, 3), (3, 1), (4, 5), (5, 6), (6, 4)])
+    check("1440: dos grupos de 3 que no se cruzan salen como dos grupos",
+          len(set(_g2.values())) == 2 and _g2[1] == _g2[2] == _g2[3] != _g2[4], _g2)
+    check("1440: con un cruce entre grupos es una sola tabla (sin `grupo`)",
+          _gdp([(1, 2), (2, 3), (3, 1), (4, 5), (5, 6), (6, 4), (3, 4)]) == {})
+    check("1440: un cruce suelto de 2 equipos no parte la tabla", _gdp([(1, 2), (2, 3), (3, 1), (7, 8)]) == {})
+    check("1440: una liga normal no trae `grupo`", all("grupo" not in t for t in tb), tb[:2])
     check("standings: liga COMPLETA (6 con partidos + 2 sin jugar)", len(tb) == 8 and tb[0]["posicion"] == 1 and tb[-1]["posicion"] == 8, [t["nombre"] for t in tb])
     check("standings: orden por puntos desc", all(tb[i]["puntos"] >= tb[i + 1]["puntos"] for i in range(len(tb) - 1)))
     sin_jugar = next((t for t in tb if t["nombre"] == "Demo Sin Plantilla"), None)

@@ -1046,6 +1046,8 @@ export interface StandingRowDTO {
   partidosJugados: number
   golesFavor: number
   golesContra: number
+  /** con grupos que nunca se cruzan (Liga de las Naciones, eliminatorias, 1440): «Grupo N»; `posicion` es dentro del grupo */
+  grupo?: string
 }
 
 export interface CuotaDTO {

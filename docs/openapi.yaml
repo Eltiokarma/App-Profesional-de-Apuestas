@@ -3790,6 +3790,7 @@ components:
         partidosJugados: { type: integer }
         golesFavor: { type: integer }
         golesContra: { type: integer }
+        grupo: { type: string, description: 'solo cuando la competición tiene grupos que nunca se cruzan (Liga de las Naciones, eliminatorias: 17/11/2026, incidencia 1440): «Grupo N», calculado de quién jugó contra quién; `posicion` es dentro del grupo. Sin grupos, el campo no viene' }
     Cuota:
       type: object
       required: [fixtureId, mercado, seleccion, cuota, actualizadoEn]
