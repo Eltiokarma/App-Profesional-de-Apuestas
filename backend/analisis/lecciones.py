@@ -25,6 +25,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import threading
 import time
 
@@ -200,7 +201,7 @@ def _item(caso, lado, clave, lv, mf, orden, propio, rival, estados, seleccion, m
         # naturaleza fue el fallo y si la lección pide mover un número.
         # Sellada al cerrar el caso; None = sin clave, sin confianza o
         # cerrado antes de que existiera. No entra en ninguna métrica.
-        "modoFallo": mf.get("modo"),
+        "modoFallo": _modo_fallo_canonico(mf.get("modo")),
         "modoFalloConfianza": mf.get("modoConfianza"),
         "proponeMoverNumero": mf.get("proponeMoverNumero"),
         "equipo": propio, "rival": rival,
@@ -1014,6 +1015,33 @@ def _liston(skill: str, metricas: dict) -> dict | None:
     }
 
 
+def _modo_fallo_canonico(modo):
+    from backend.analisis.modo_fallo import canonico
+    return canonico(modo)
+
+
+# LA CUENTA CRUZADA DEL DOSSIER DEL EFE (A0 de la EFE v1.10, decidida el 10/11):
+# las `lectura` de OTROS skills cuya regla nombra un insumo del EFE (la tabla F1,
+# B5, el eje, la rotación) se cuentan aparte en el dossier del EFE, para que la
+# lectura del EFE que se nota en el DTP o el TDE no se pierda
+_INSUMO_EFE = re.compile(r"\bF1\b|\bB5\b|\bB6\b|\bEJE\b|EJE-DEBUTANTE|rotaci[oó]n|rotad|once alternativo"
+                         r"|tabla F1|\bEFE\b", re.I)
+
+
+def lectura_con_insumo_efe(todos: list[dict]) -> dict:
+    """Fallos de otros skills etiquetados `lectura` cuya `reglaTocada` nombra un insumo del EFE."""
+    hallados = [i for i in todos
+                if i["skill"] != "efe-clasificador" and i.get("modoFallo") == "lectura"
+                and i["veredicto"] in ("fallo", "parcial") and i.get("orden", 1) == 1
+                and _INSUMO_EFE.search(i.get("reglaTocada") or "")]
+    por_skill: dict[str, int] = {}
+    for i in hallados:
+        por_skill[i["skill"]] = por_skill.get(i["skill"], 0) + 1
+    return {"cuantas": len(hallados), "porSkill": por_skill, "claves": [i["clave"] for i in hallados],
+            "nota": "fallos de otros skills etiquetados `lectura` cuya regla nombra un insumo del EFE (F1, "
+                    "B5, B6, eje, rotación): se cuentan aparte, no se suman a los del EFE"}
+
+
 def _por_modo_fallo(items: list[dict]) -> dict:
     """Los fallos y parciales agrupados por la etiqueta de Jev, más la alarma
     del dossier: lecciones que piden mover un número y no pueden sostenerlo."""
@@ -1236,7 +1264,8 @@ def inventario(skill: str = "", estado: str = "", limite: int = 400, cohorte: st
             "disparador": f"{DISPARADOR_REVISION} fallos con lección pendiente del mismo skill "
                           "ABREN la revisión; no autorizan ningún cambio",
             "liston": _liston(nombre, metricas),
-            "porModoFallo": _por_modo_fallo(suyas),
+            "porModoFallo": ({**_por_modo_fallo(suyas), "lecturaDeOtrosConInsumoEfe": lectura_con_insumo_efe(todos)}
+                             if nombre == "efe-clasificador" else _por_modo_fallo(suyas)),
             "versionVigente": version_skill(nombre),
             "anterioresAlCorte": _anteriores_al_corte(nombre, suyas),
             "items": [] if paginar else [i for i in filtrados if i["skill"] == nombre],
