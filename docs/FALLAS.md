@@ -228,7 +228,7 @@ Tres lugares donde vive una guardia:
   - El Poisson sobre μ, en 78 partes, porque el skill pedía un modelo de goles que no había.
   - La Fe Perdida sin motor; el «checklist de 9 puntos».
 - **Guardia:**
-  - **Test de arquitectura (regla 5):** cada ruta que citan el skill de la corrida, `docs/COWORK.md` y `sad-analysis` existe.
+  - **Test de arquitectura (regla 5):** cada ruta que citan el skill de la corrida, `docs/COWORK.md` y el NÚCLEO de cada skill del pipeline (TDE, DTP, EFE, efe-dashboard y sad-analysis, sin su `HISTORIAL.md`; desde el 17/11/2026, cuando el TDE, el DTP y el EFE empezaron a mandar leer `tde/{id}`, `dtp/{id}` y `f1/{id}`) existe.
   - **Motores suspendidos:** sad v4.0 suspende lo que no tiene motor.
 - **Si vuelve:** un insumo que el skill necesita y no existe se construye o se suspende. No se deja al analista adivinarlo.
 
