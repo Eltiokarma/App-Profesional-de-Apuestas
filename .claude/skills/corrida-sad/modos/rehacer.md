@@ -48,7 +48,9 @@ casi siempre no hay nada que hacer.
 >
 > 1. `GET $B/analisis/cowork/{id}` (el parte entero: lo vas a devolver
 >    ENTERO), `GET $B/fixtures/{id}/ficha` (el once oficial, con grid) y
->    `GET $B/analisis/cowork/dtp/{id}`. El motivo está en el detalle de la
+>    `GET $B/analisis/cowork/dtp/{id}` (su `bancoProbable` con `fuente: hoja` son los
+>    suplentes reales: las listas de banco del DTP y de las ramas del TDE se reescriben
+>    con ella, 17/11/2026). El motivo está en el detalle de la
 >    alerta DTP-REHACER y en `dtp.bloques[].calculado.contraElOnce`.
 > 2. En el bloque del DTP marcado —y SIEMPRE también en el bloque del rival,
 >    porque su M2 nombra como rivales a los jugadores que cambiaron (incidencia

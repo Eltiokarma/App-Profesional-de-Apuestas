@@ -1158,6 +1158,7 @@ paths:
         `ultimoOnceDeLiga` (si el último partido fue de copa: el último once de liga, formación y grid; 966);
         `aperturaPrevia` (la del último partido CON parte, con su `fixtureId`; 997; si no es el último partido, `cierreContra` trae el marcador y los goles de ESE partido, que es contra el que se valida el cierre, 1035): lo que se declaró ANTES del partido anterior, contra lo que se valida el
         cierre. Lo que es juicio va en `noCalculables`. 0 tokens, 0 requests.
+        `bancoProbable` (17/11/2026, A8 de la EFE v1.10 = `bancoOfensivo` del DTP = punto 2 del TDE): UNA lista por lado, la misma en f1, dtp y tde. Con el once oficial y la banca completa (5+), `fuente: hoja`: todos los suplentes publicados, ningún titular, el titular habitual primero (`titularesHabitualesEnElBanco`). Antes, `fuente: probable`: los que en los últimos 10 entraron del banco 3+ veces o hicieron goles o asistencias entrando. Cada uno con `titularidades`, `entradas`, `golesDesdeBanco`, `asistenciasDesdeBanco`, `lateral` (punta de la línea de atrás en su último grid), `titularHabitual` y `porque`. No decide minutos ni puntúa B5.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       responses:
@@ -1311,6 +1312,7 @@ paths:
         «Francisco», 937).
         0 tokens, 0 requests.
         Abierto a Cowork.
+        `bancoProbable` (17/11/2026, A8 de la EFE v1.10 = `bancoOfensivo` del DTP = punto 2 del TDE): UNA lista por lado, la misma en f1, dtp y tde. Con el once oficial y la banca completa (5+), `fuente: hoja`: todos los suplentes publicados, ningún titular, el titular habitual primero (`titularesHabitualesEnElBanco`). Antes, `fuente: probable`: los que en los últimos 10 entraron del banco 3+ veces o hicieron goles o asistencias entrando. Cada uno con `titularidades`, `entradas`, `golesDesdeBanco`, `asistenciasDesdeBanco`, `lateral` (punta de la línea de atrás en su último grid), `titularHabitual` y `porque`. No decide minutos ni puntúa B5.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       responses:
@@ -1336,6 +1338,7 @@ paths:
         motivo: un insumo que falta tiene que verse, no adivinarse. `f2` devuelve un PISO
         y no un score cerrado, porque el viaje y la altitud son parte de la rúbrica y no
         están en nuestra base.
+        `bancoProbable` (17/11/2026, A8 de la EFE v1.10 = `bancoOfensivo` del DTP = punto 2 del TDE): UNA lista por lado, la misma en f1, dtp y tde. Con el once oficial y la banca completa (5+), `fuente: hoja`: todos los suplentes publicados, ningún titular, el titular habitual primero (`titularesHabitualesEnElBanco`). Antes, `fuente: probable`: los que en los últimos 10 entraron del banco 3+ veces o hicieron goles o asistencias entrando. Cada uno con `titularidades`, `entradas`, `golesDesdeBanco`, `asistenciasDesdeBanco`, `lateral` (punta de la línea de atrás en su último grid), `titularHabitual` y `porque`. No decide minutos ni puntúa B5.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       responses:
