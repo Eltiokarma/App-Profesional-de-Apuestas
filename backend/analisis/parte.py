@@ -2203,6 +2203,45 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
     return out
 
 
+def alertas_vias_sin_banco(parte: dict, fixture_id: int, nombres: dict, banco: dict | None = None) -> list[dict]:
+    """VIAS-SIN-BANCO (17/11/2026, DTP v1.9 punto 7, la parte del banco que seguía
+    pendiente): las vías de gol propias de un bloque del DTP (`m2.viasGol.foco`) no
+    nombran a NADIE de `bancoProbable` de su lado. El banco ofensivo va en todas las
+    ramas (v1.7) y la lista sale de la app (v1.9): un lado sin un solo nombre del banco
+    es la vía del suplente que decidió y nadie había escrito (Heerenveen, Köln, Porto).
+    Solo con la lista no vacía. Tipo dato: no corrige nada. `banco`: la lista ya
+    calculada (tests); si no, `banco.banco_probable`."""
+    bloques = [b for b in (parte.get("dtp") or {}).get("bloques") or []
+               if b.get("equipo") in LADOS and (((b.get("apertura") or {}).get("m2") or {}).get("viasGol") or {}).get("foco")]
+    if not bloques:
+        return []
+    if banco is None:
+        try:
+            from backend.analisis.banco import banco_probable
+            banco = banco_probable(fixture_id) or {}
+        except Exception:  # noqa: BLE001 — sin la lista no hay nada que cruzar
+            return []
+    out = []
+    for b in bloques:
+        lado = b["equipo"]
+        lista = [x.get("nombre") or "" for x in (banco.get(lado) or {}).get("lista") or [] if x.get("nombre")]
+        if not lista:
+            continue
+        texto = " ".join(_txt(t) for t in b["apertura"]["m2"]["viasGol"]["foco"])
+        if any(_identidad.menciona(n, texto, nombre_suelto=True) for n in lista):
+            continue
+        fuente = (banco.get(lado) or {}).get("fuente") or "probable"
+        out.append({
+            "codigo": "VIAS-SIN-BANCO", "equipo": lado, "tipo": "dato",
+            "detalle": f"{nombres.get(lado, lado)}: las vías de gol del DTP no nombran a nadie del banco "
+                       f"({'la hoja' if fuente == 'hoja' else 'banco probable'}: {', '.join(lista[:6])}"
+                       f"{'…' if len(lista) > 6 else ''}). El banco ofensivo va en todas las ramas y sale de "
+                       "`bancoProbable` (DTP v1.9): nombrá por rol a quien puede entrar a cambiar el partido.",
+            "banco": lista[:6],
+        })
+    return out
+
+
 def alertas_dt(parte: dict, fx, nombres: dict) -> list[dict]:
     """DT-DISCREPANCIA cuando el parte (la prensa) y la base no dicen el mismo
     DT: manda el parte, y la base queda marcada para refrescarse. DT-SIN-DT
@@ -2886,7 +2925,8 @@ _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K
                         "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
                         "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
                         "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR", "DESCONFIAR",
-                        "FUERA-EN-LA-HOJA", "EFE-RECOMPUTO-PENDIENTE", "1X2-CARGA-CONTRA-RIESGO"}
+                        "FUERA-EN-LA-HOJA", "EFE-RECOMPUTO-PENDIENTE", "1X2-CARGA-CONTRA-RIESGO",
+                        "VIAS-SIN-BANCO"}
 # LA TERCERA CLASE: las de coherencia las pone Jev AL DEPOSITAR y se guardan
 # selladas (coherencia_json), porque no son deterministas y rehacerlas al leer
 # las haría parpadear. Del depósito se descartan igual que las calculadas
@@ -3521,6 +3561,10 @@ def normalizar_parte(payload: dict) -> dict:
         "probabilidades": {k: _num(prob.get(k), 100) for k in ("local", "empate", "visita")},
         "marcador": _txt(p.get("marcador")),
         "falsador": _txt(p.get("falsador")),
+        # LA FRASE QUE SOSTIENE EL DESCARTE (17/11/2026, sad-analysis v4.6, 6-B): el resultado
+        # descartado lo calcula la app (`desconfianza.descarte`, el menos probable del 1X2); el
+        # parte escribe solo por qué, con un hecho de este partido. Vacío si no lo escribe.
+        "descarte": _txt(p.get("descarte")),
     }
     return parte
 
@@ -5359,6 +5403,8 @@ def dto(fixture_id: int) -> dict | None:
     # en la cancha (1213, 1225)
     alertas.extend(alertas_fuera_en_la_hoja(parte, hoja_capturada(fila["fixture_id"], fx),
                                             {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    # las vías de gol que no nombran a nadie del banco (DTP v1.9, punto 7)
+    alertas.extend(alertas_vias_sin_banco(parte, fila["fixture_id"], {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
     # el once oficial contra la apertura del DTP: si no cuadra, el M2 se
     # escribió sobre otro equipo
     oficial = _dtp.oficial_de(fila["fixture_id"])

@@ -2298,6 +2298,8 @@ export interface ParteCoworkDTO {
     probabilidades: { local: number; empate: number; visita: number }
     marcador: string
     falsador: string
+    /** la frase que sostiene el descarte (sad-analysis v4.6); el resultado lo calcula la app */
+    descarte?: string
   }
   /** La matriz de escenarios por equipo (vacía en partes anteriores al 15/10/2026). */
   matriz?: MatrizParte

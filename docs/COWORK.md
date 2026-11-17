@@ -1697,7 +1697,8 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     "mercado": "1.85 / 3.40 / 4.20 (promedio de 6 casas)",
     "probabilidades": {"local": 52, "empate": 27, "visita": 21},
     "marcador": "2-1",
-    "falsador": "si el visitante abre el marcador antes del 20', la lectura de bloque bajo queda fallada"
+    "falsador": "si el visitante abre el marcador antes del 20', la lectura de bloque bajo queda fallada",
+    "descarte": "la visita no gana: sin su 9 y con dos centrales nuevos no tiene vía contra el bloque bajo"
   },
   "matriz": {
     "a": {"ganar": {"probabilidad": 52, "tactica": "acumula por fuera y carga el segundo palo",
