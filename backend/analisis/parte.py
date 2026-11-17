@@ -2110,6 +2110,18 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
         textos += [(b.get("equipo"), "veredictoRamas", (r or {}).get("razon") or "")
                    for r in (m2.get("veredictoRamas") or {}).values() if isinstance(r, dict)]
     textos += espejo
+    # LAS RAMAS DEL TDE TAMBIÉN (17/11/2026, incidencia 1434): en 5 de 12
+    # veredictos de la fecha FIFA las ramas siguieron nombrando de banco a
+    # titulares de la hoja después del rehacer (Kazajistán 1528986: «persigue
+    # con Islamkhan y Kenzhebek del banco», titulares los dos y Kenzhebek
+    # asistió los dos goles; Liechtenstein, Moldavia, Estonia, Francia). El
+    # cruce miraba solo el DTP. Las notas de cada rama y el detalle de las vías.
+    textos_tde = [(b.get("equipo"), "tde.reasignacion", (r or {}).get("nota") or "")
+                  for b in bloques_tde(parte.get("tde") or {})
+                  for r in (b.get("reasignacion") or {}).values() if isinstance(r, dict)]
+    textos_tde += [(b.get("equipo"), "tde.vias", (v or {}).get("detalle") or "")
+                   for b in bloques_tde(parte.get("tde") or {})
+                   for v in b.get("vias") or [] if isinstance(v, dict)]
     for lado in LADOS:
         tit = [j["nombre"] for j in (hoja.get(lado) or {}).get("titulares") or []]
         if not tit:
@@ -2120,7 +2132,7 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
         otros = [j["nombre"] for j in (hoja.get(lado) or {}).get("banca") or []] + \
                 [j["nombre"] for k in ("titulares", "banca") for j in (hoja.get(rival) or {}).get(k) or []]
         hallados, vistos = [], set()
-        for foco, donde, texto in textos:
+        for foco, donde, texto in textos + textos_tde:
             for trozo in _dtp.nombrados_de_banco(_txt(texto)):
                 for n in tit:
                     if n in vistos or not _identidad.menciona(n, trozo, nombre_suelto=True) \
@@ -2131,10 +2143,15 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
         if hallados:
             out.append({
                 "codigo": "FUERA-EN-LA-HOJA", "equipo": lado, "tipo": "dato", "caso": "dtpBanco",
-                "detalle": f"{nombres.get(lado, lado)}: el DTP nombra como banco a "
+                "detalle": f"{nombres.get(lado, lado)}: el "
+                           + ("DTP y el TDE nombran" if any(x["donde"].startswith("tde") for x in hallados)
+                              and any(not x["donde"].startswith("tde") for x in hallados)
+                              else "TDE nombra" if any(x["donde"].startswith("tde") for x in hallados)
+                              else "DTP nombra")
+                           + " como banco a "
                            + "; ".join(f"{x['nombre']} ({x['donde']})" for x in hallados)
                            + ", titular(es) en la hoja oficial. Las vías de gol y las ramas se escribieron sobre "
-                             "otro once: rehacer el M2 con la hoja (GET /analisis/cowork/dtp/{id}).",
+                             "otro once: rehacer el M2 y las ramas del TDE con la hoja (GET /analisis/cowork/dtp/{id}).",
                 "titulares": hallados,
             })
     # EL BANCO QUE NO ESTÁ EN LA HOJA (15/11/2026, incidencia 1423, Gales
@@ -2144,9 +2161,6 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
     # una rama del TDE nombran como banco y que no está en la hoja —ni titular
     # ni suplente— no entra. Solo con la banca publicada: sin ella cualquiera
     # que no es titular parecería ausente.
-    textos_tde = [(b.get("equipo"), "tde.reasignacion", (r or {}).get("nota") or "")
-                  for b in bloques_tde(parte.get("tde") or {})
-                  for r in (b.get("reasignacion") or {}).values() if isinstance(r, dict)]
     for lado in LADOS:
         h = hoja.get(lado) or {}
         en_hoja = (h.get("titulares") or []) + (h.get("banca") or [])

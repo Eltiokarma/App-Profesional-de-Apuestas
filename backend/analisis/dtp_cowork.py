@@ -1557,7 +1557,9 @@ _AUSENTES = re.compile(r"\b(?i:sin|ausente[s]?|sin contar con|baja de)\s+(?:[A-Z
 _EN_BANCO = re.compile(r"(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*"
                        r"(?:\s+(?:y|e)\s+(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]*)*"
                        r"(?:\s+(?:(?:arranca|empieza|inicia|comienza|queda|sale|va|parte)\s+)?"
-                       r"(?:en el banco|en la banca|al banco|desde el banco|de suplentes?|como suplentes?|"
+                       # «del banco» (1434, Kazajistán: «persigue con Islamkhan y Kenzhebek del banco»,
+                       # titulares los dos en la hoja)
+                       r"(?:en el banco|en la banca|al banco|desde el banco|del banco|de suplentes?|como suplentes?|"
                        r"fuera del once|fuera del xi)"
                        r"|\s*\((?:en el )?banco\)|\s*,\s*suplente\b)", re.I)
 

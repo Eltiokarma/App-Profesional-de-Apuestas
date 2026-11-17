@@ -2884,6 +2884,23 @@ def main():
     _h1427 = {"b": {**_h1423["b"], "banca": [{"id": 40, "nombre": "D. Brooks", "titular": False}]}}
     check("1427: con una banca de menos de 5 suplentes (la parcial de la API) noConvocado no afirma ausentes",
           not [a for a in _feh(_p1423, _h1427, {}) if a.get("caso") == "noConvocado"])
+    # 1434 (17/11/2026, Kazajistán–Eslovaquia 1528986): tras el rehacer, las ramas del
+    # TDE seguían nombrando de banco a Islamkhan y Kenzhebek, titulares en la hoja
+    _h1434 = {"a": _hj([(1, "B. Islamkhan"), (2, "G. Kenzhebek"), (3, "I. Chesnokov")],
+                       [(4, "R. Orazov"), (5, "A. Zhaksylykov")]),
+              "b": _hj([(6, "L. Haraslín"), (7, "D. Boženík")], [(8, "R. Bobček")])}
+    _p1434 = {"tde": {"bloques": [
+        {"equipo": "a", "reasignacion": {"siRecibePrimero": {
+            "nota": "persigue de local ante su gente con Islamkhan y Kenzhebek del banco; atrás quedan dos centrales"}}},
+        {"equipo": "b", "reasignacion": {"siMarcaPrimero": {
+            "nota": "Banco kazajo que entra a romperlo: Islamkhan (pelota parada), Kenzhebek, Zhaksylykov"}}}]}}
+    _a1434 = [a for a in _feh(_p1434, _h1434, {"a": "Kazakhstan", "b": "Slovakia"}) if a.get("caso") == "dtpBanco"]
+    check("1434: titulares de la hoja nombrados de banco en las ramas del TDE («del banco», «Banco …:») → dtpBanco, "
+          "el suplente de verdad no",
+          len(_a1434) == 1 and _a1434[0]["equipo"] == "a"
+          and sorted(x["nombre"] for x in _a1434[0]["titulares"]) == ["B. Islamkhan", "G. Kenzhebek"]
+          and all(x["donde"] == "tde.reasignacion" for x in _a1434[0]["titulares"])
+          and "TDE nombra" in _a1434[0]["detalle"], _a1434)
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("1218: la cláusula «ventana del reloj 60-75'» manda aunque no vaya primera; «desde el minuto 0» no es relativa",
