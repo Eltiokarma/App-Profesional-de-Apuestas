@@ -166,6 +166,47 @@ MEDIO_SEPARACION = 0.05   # pts de ventaja (acierto − lo que pide la cuota) de
 # El usuario eligió la mixta al 3 %, al lado de la martingala ⅓ para comparar.
 RECUPERA_FUERA_MEDIO = 1 / 3       # la parte de la deuda de la línea que busca cada apuesta
 MIXTA_FUERA_MEDIO = 0.03           # la mixta fuera del medio: 3 % de la banca (o lo que gana el 3 %)
+# LA MARTINGALA CUIDADA (18/11/2026, usuario: «veo a martingala hasta el culo…
+# es como que no supiera en qué partido duplicar… lo estamos dejando menos
+# cuidado que Kelly»). La clásica cayó de 211 u a 5,50 u: duplicaba a ciegas, y
+# las apuestas que la hundieron (64 u y 86 u, 15-17/11) fueron EN EL MEDIO, donde
+# no hay ventaja (447 partidos: medio 54,8 % de acierto contra 55,4 % que pide la
+# cuota; puntas 63,0 % contra 56,6 %). La cuidada le pone tres cuidados:
+#   DÓNDE duplica: solo fuera del medio (las puntas, `MEDIO`);
+#   CUÁNTO arriesga: la unidad de la línea es el 1 % de la banca cobrada al
+#     empezar cada ciclo (como el método y Kelly, crece y se achica con la banca);
+#   HASTA DÓNDE: tras `CORTE_CUIDADA` derrotas seguidas la línea acepta la
+#     pérdida y vuelve a la unidad (1 · 2 · 4 y corta: a lo más 7 % por línea).
+# Backtest sobre los 447 partidos de producción (28/10-17/11, 100 u):
+#   orden real: banca · caída máx · apuesta máx
+#   barajado (1000 órdenes): banca típica · 10 % peor · caída 1 % peor · bajo 100 u
+#   sin ventaja (500, resultados sorteados con la casa): P(banca < 50) · quiebra
+#   clásica                       5,5 · 97 % · 86  | 192 ·   0 · 100 % · 21 %  | 66 % · 60 %
+#   sin medio (sin corte)       153,7 · 42 % · 64  | 175 ·  92 · 100 % · 11 %  | —
+#   corta a 3, en todo          119,6 · 28 % ·  4  | 148 · 125 ·  41 % · 0,4 % | 46 % · 12 %
+#   sin medio, corta a 3, 1 u   155,9 ·  9 % ·  4  | 147 · 129 ·  31 % · 0 %   | 24 % · 1,6 %
+#   cuidada (sin medio, 3, 1 %) 169,7 · 14 % · 6,7 | 154 · 129 ·  37 % · 0,1 % | 13 % · 0 %
+# Cortar a 4 quiebra el 10 % sin ventaja; a 2 es casi la plana. El medio salió
+# de datos que se solapan con estos: se mide hacia adelante (docs/METODO_APUESTA.md).
+PROPORCION_CUIDADA = 0.01          # la unidad de cada ciclo de la línea: 1 % de la banca cobrada
+CORTE_CUIDADA = 3                  # derrotas seguidas tras las que la línea acepta la pérdida
+# GANAR FIJO (18/11/2026, usuario: «evalúa un método de poner dinero que sea
+# mejor que la mixta 3 %» y «¿es el único camino?»). Fuera del medio cada unidad
+# rinde parecido en todas las franjas de la casa (+10 a +14 %), así que conviene
+# poner más donde menos se falla: cada apuesta busca GANAR lo mismo
+# (`GANAR_FIJO` de la banca / (cuota − 1)), con un tope de `TOPE_GANAR_FIJO`
+# veces eso. La mixta ya lo hacía con la sorpresa y dejaba al favorito clavado.
+# Cuatro cuidados más: no apuesta en el medio; no apuesta con el semáforo fuera
+# de verde (usuario, 18/11: «saber cuándo no apostar»; verde y sin pasarse, 365
+# partidos a +12,0 % por unidad contra −16,6 % de los otros 82); no apuesta cuando le damos al
+# elegido más de `ALERTA_SOBRE_CASA` puntos sobre la casa (46 partidos a −14 %
+# por unidad contra +9 % del resto); y un freno por FRANJA (sorpresa: la casa
+# bajo el medio; favorito: sobre el medio) con la regla del método. Medido sobre
+# los 447 partidos de producción (28/10-17/11) en docs/METODO_APUESTA.md: es la
+# misma muestra donde salieron el medio y la alerta, se mide hacia adelante.
+GANAR_FIJO = 0.025                 # lo que cada apuesta busca ganar: 2,5 % de la banca cobrada
+TOPE_GANAR_FIJO = 2.0              # la apuesta no pasa de 2 × eso (5 % de la banca; pega con cuota < 1,50)
+FRANJAS_GANAR_FIJO = ("sorpresa", "favorito")
 
 ESTRATEGIAS = (
     ("proporcional", "Proporcional con freno",
@@ -227,16 +268,25 @@ ESTRATEGIAS = (
     ("martingalaFueraMedio", "Martingala fuera del medio, recupera ⅓",
      f"por líneas, sin apostar cuando la casa le da al elegido entre {MEDIO[0]:g} % y {MEDIO[1]:g} %; tras perder "
      "apuesta 1 + (lo perdido en la línea / 3) / (cuota − 1): cada acierto descuenta lo que gana de la deuda"),
+    ("martingalaCuidada", "Martingala cuidada",
+     f"por líneas, sin apostar cuando la casa le da al elegido entre {MEDIO[0]:g} % y {MEDIO[1]:g} %; cada ciclo de "
+     f"la línea empieza con el {100 * PROPORCION_CUIDADA:g} % de la banca, se duplica tras perder y tras "
+     f"{CORTE_CUIDADA} derrotas seguidas acepta la pérdida y vuelve a empezar"),
     ("mixtaFueraMedio", f"Mixta fuera del medio al {100 * MIXTA_FUERA_MEDIO:g} %",
      f"al favorito (cuota hasta 2) el {100 * MIXTA_FUERA_MEDIO:g} % de la banca; a la sorpresa, lo que gana ese "
      f"{100 * MIXTA_FUERA_MEDIO:g} %: {100 * MIXTA_FUERA_MEDIO:g} % / (cuota − 1). Sin apostar cuando la casa le da "
      f"entre {MEDIO[0]:g} % y {MEDIO[1]:g} % y sin freno: no mira lo que pasó antes, así que no depende del orden"),
+    ("ganarFijo", "Ganar fijo",
+     f"cada apuesta busca ganar el {100 * GANAR_FIJO:g} % de la banca: apuesta {100 * GANAR_FIJO:g} % / (cuota − 1), "
+     f"sin pasar del {100 * GANAR_FIJO * TOPE_GANAR_FIJO:g} %. No apuesta cuando la casa le da al elegido entre "
+     f"{MEDIO[0]:g} % y {MEDIO[1]:g} %, ni cuando le damos más de 2 puntos sobre la casa, ni con el semáforo fuera de verde; sorpresas y favoritos se "
+     f"pausan por separado si en sus últimos {FRENO_VENTANA} partidos acertaron menos de lo que pedía la cuota"),
 )
-_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaFueraMedio")
+_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaFueraMedio", "martingalaCuidada")
 # las que, tras perder, apuestan lo que recupera según la cuota (no duplican)
 _AJUSTADAS = ("martingala60Ajustada", "martingalaFueraMedio")
 # las que no apuestan en el medio (lo que la casa le da al elegido, 45-60 %)
-_FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "mixtaFueraMedio")
+_FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "martingalaCuidada", "mixtaFueraMedio", "ganarFijo")
 # las ajustadas que buscan solo una parte de la deuda de la línea en cada apuesta
 _RECUPERA_PARTE = {"martingalaFueraMedio": RECUPERA_FUERA_MEDIO}
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
@@ -705,6 +755,11 @@ def freno_tramo(historia) -> dict:
             "z": round(z, 2) if z is not None else None, "pausado": pausado}
 
 
+def _franja(fila: dict) -> str:
+    """La franja de ganarFijo, fuera del medio: sorpresa (la casa le da al elegido menos que el medio) o favorito."""
+    return "sorpresa" if fila["mercado"][fila["elegido"]] < MEDIO[0] else "favorito"
+
+
 def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     """Arma la apuesta de una estrategia en el pitazo, con lo que ya se cobró."""
     libre = max(e["banca"] - e["comprometido"], 0.0)
@@ -750,9 +805,14 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             linea = min(libres, key=lambda l: (l["libreDesde"], l["id"]))
         else:
             linea = {"id": len(e["lineas"]) + 1, "proximo": UNIDAD, "libreDesde": t, "ocupada": False,
-                     "perdida": 0.0}
+                     "perdida": 0.0, "racha": 0, "unidad": UNIDAD}
             e["lineas"].append(linea)
         previsto = linea["proximo"]
+        if clave == "martingalaCuidada":
+            # un ciclo nuevo de la línea toma su unidad de la banca de AHORA (lo cobrado)
+            if linea["racha"] == 0:
+                linea["unidad"] = PROPORCION_CUIDADA * e["banca"]
+            previsto = linea["unidad"] * 2 ** linea["racha"]
         if clave in _AJUSTADAS:
             c = fila["cuotas"][sel]
             parte = _RECUPERA_PARTE.get(clave, 1.0)
@@ -762,6 +822,29 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         c = fila["cuotas"][sel]
         # la banca de AHORA (lo cobrado), como el método; con cuota > 2, lo que gana el X %
         previsto = MIXTA_FUERA_MEDIO * e["banca"] * (min(1.0, 1 / (c - 1)) if c > 1 else 0.0)
+    elif clave == "ganarFijo":
+        sel = fila["elegido"]
+        nuestra, casa = fila["probabilidades"][sel], fila["mercado"][sel]
+        fr = _franja(fila)
+        f = freno_tramo(e["tramos"].setdefault(fr, deque(maxlen=FRENO_VENTANA)))
+        estado = (fila.get("semaforo") or {}).get("estado") or "sinDato"
+        motivo = ""
+        if estado != "confirma":
+            motivo = {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
+                estado, "semáforo sin dato")
+        elif nuestra - casa > ALERTA_SOBRE_CASA:
+            motivo = (f"le damos {nuestra:.1f} % al elegido y la casa {casa:.1f} % (+{nuestra - casa:.1f} pts): "
+                      "nos pasamos de la casa")
+        elif f["pausado"]:
+            motivo = (f"{fr}s en pausa: acertó {f['aciertos']} de {f['n']} ({100 * f['tasa']:.0f} %) y la cuota "
+                      f"pedía {100 * f['pide']:.0f} %")
+        if motivo:
+            fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
+                                            "linea": None, "motivo": motivo}
+            return
+        c = fila["cuotas"][sel]
+        # la banca de AHORA (lo cobrado); lo que gana el X %, con tope en el favorito de cuota baja
+        previsto = GANAR_FIJO * e["banca"] * (min(TOPE_GANAR_FIJO, 1 / (c - 1)) if c > 1 else 0.0)
     elif clave == "plana60":
         sel = fila["elegido"]
         previsto = UNIDAD if fila["probabilidades"][sel] >= CONFIANZA_ALTA else 0.0
@@ -774,7 +857,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             motivo = "sin plata libre"
         elif clave in _SOLO_ALTA:
             motivo = f"bajo {CONFIANZA_ALTA:g} %"
-        elif clave in _CON_FRENO or clave == "mixtaFueraMedio":
+        elif clave in _CON_FRENO or clave in ("mixtaFueraMedio", "martingalaCuidada", "ganarFijo"):
             motivo = "banca en cero"
         else:
             motivo = "sin ventaja"
@@ -808,6 +891,13 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
                 # lo perdido en la línea: un acierto lo descuenta (entero si la apuesta no se recortó)
                 l["perdida"] = max(0.0, l["perdida"] - ganancia) if gano else l["perdida"] + r["monto"]
                 l.update(ocupada=False, libreDesde=t, proximo=UNIDAD)
+            elif clave == "martingalaCuidada":
+                # gana o llega al corte: la línea vuelve a empezar (la pérdida del ciclo se acepta)
+                racha = 0 if gano or l["racha"] + 1 >= CORTE_CUIDADA else l["racha"] + 1
+                if not gano and racha == 0:
+                    e["cortes"] += 1
+                l.update(ocupada=False, libreDesde=t, racha=racha,
+                         proximo=l["unidad"] * 2 ** racha if racha else UNIDAD)
             else:
                 # una derrota duplica lo que la línea IBA a apostar, aunque la plata libre lo haya recortado
                 l.update(ocupada=False, libreDesde=t, proximo=UNIDAD if gano else r["_previsto"] * 2)
@@ -823,6 +913,11 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         # el freno anota TODO partido cerrado del tramo, se haya apostado o no
         sel = fila["elegido"]
         e["tramos"].setdefault(tramo_confianza(fila["probabilidades"][sel]), deque(maxlen=FRENO_VENTANA)).append(
+            (fila["resultado"] == sel, 1 / fila["cuotas"][sel]))
+    if clave == "ganarFijo" and not fila["enElMedio"]:
+        # el freno por franja anota todo partido cerrado fuera del medio, se haya apostado o no
+        sel = fila["elegido"]
+        e["tramos"].setdefault(_franja(fila), deque(maxlen=FRENO_VENTANA)).append(
             (fila["resultado"] == sel, 1 / fila["cuotas"][sel]))
     r["banca"] = round(e["banca"], 2)
     e["serie"].append({"fixtureId": fila["fixtureId"], "pitazo": fila["pitazo"], "banca": round(e["banca"], 2)})
@@ -865,7 +960,7 @@ def simular(apuestas: list[dict]) -> dict:
 
     estado = {c: {"banca": BANCA_INICIAL, "comprometido": 0.0, "pico": BANCA_INICIAL, "caida": 0.0,
                   "apostado": 0.0, "apuestas": 0, "ganadas": 0, "quebro": None,
-                  "exposicion": 0.0, "montoMax": 0.0, "lineas": [], "tramos": {},
+                  "exposicion": 0.0, "montoMax": 0.0, "lineas": [], "tramos": {}, "cortes": 0,
                   "serie": [{"fixtureId": None, "pitazo": None, "banca": BANCA_INICIAL}]}
               for c, _, _ in ESTRATEGIAS}
 
@@ -900,13 +995,23 @@ def simular(apuestas: list[dict]) -> dict:
                          # la ajustada no tiene un «próximo» fijo (depende de la cuota): lo que lleva perdido
                          "perdidaMayor": round(max((l.get("perdida", 0) for l in e["lineas"]), default=0.0), 2)}
                         if clave in _AJUSTADAS else
+                        # la cuidada: el próximo de una línea que viene de perder, en u, y cuántas veces cortó
+                        {"abiertas": len(e["lineas"]),
+                         "perdiendo": sum(1 for l in e["lineas"] if l["racha"] > 0),
+                         "proximoMayor": round(max((l["proximo"] for l in e["lineas"] if l["racha"] > 0),
+                                                   default=0.0), 2),
+                         "cortes": e["cortes"]}
+                        if clave == "martingalaCuidada" else
                         {"abiertas": len(e["lineas"]),
                          "perdiendo": sum(1 for l in e["lineas"] if l["proximo"] > UNIDAD),
                          "proximoMayor": round(max((l["proximo"] for l in e["lineas"]), default=UNIDAD), 2)})
                        if clave in _MARTINGALAS else None),
             # solo el método: cómo está hoy el freno de cada tramo
             "tramos": ([{"tramo": tr, **freno_tramo(e["tramos"].get(tr, ()))} for tr, _, _ in TRAMOS_CONFIANZA]
-                       if clave in _CON_FRENO else None),
+                       if clave in _CON_FRENO else
+                       # ganarFijo: el freno de sus dos franjas (sorpresa y favorito)
+                       [{"tramo": fr, **freno_tramo(e["tramos"].get(fr, ()))} for fr in FRANJAS_GANAR_FIJO]
+                       if clave == "ganarFijo" else None),
             "serie": e["serie"],
         })
 

@@ -1382,10 +1382,13 @@ paths:
       summary: Simulación de apuesta sobre nuestros 1X2 (desde el 28/10/2026)
       description: >
         Qué habría pasado con una banca de 100 unidades apostando con los 1X2 declarados en los
-        partes, con trece series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), el método sin apostar cuando la casa le da al elegido entre 45 % y 60 % (`metodoFueraMedio`, 13/11/2026: la ventaja sobre la cuota está en las puntas), la martingala de 60 %+ AJUSTADA A LA CUOTA (`martingala60Ajustada`: tras perder apuesta 1 + lo perdido en la línea / (cuota − 1)), la martingala ajustada fuera del medio que busca un TERCIO de la deuda de la línea por apuesta (`martingalaFueraMedio`, corregida el 14/11/2026: tras perder apuesta 1 + (lo perdido en la línea / 3) / (cuota − 1)), la MIXTA fuera del medio (`mixtaFueraMedio`, 14/11/2026: al favorito, cuota hasta 2, el 3 % de la banca; a la sorpresa, lo que gana ese 3 %, 3 % / (cuota − 1); sin freno, no depende del orden de las apuestas), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
+        partes, con quince series lado a lado: EL MÉTODO (`proporcional`, 03/11/2026: el 1 % de la banca al elegido con un freno que pausa el tramo de confianza que en sus últimos 50 partidos acertó menos de lo que pedía la cuota; docs/METODO_APUESTA.md), el método solo cuando el semáforo del elegido está en verde (`metodoVerde`, 11/11/2026), el método sin apostar cuando la casa le da al elegido entre 45 % y 60 % (`metodoFueraMedio`, 13/11/2026: la ventaja sobre la cuota está en las puntas), la martingala de 60 %+ AJUSTADA A LA CUOTA (`martingala60Ajustada`: tras perder apuesta 1 + lo perdido en la línea / (cuota − 1)), la martingala ajustada fuera del medio que busca un TERCIO de la deuda de la línea por apuesta (`martingalaFueraMedio`, corregida el 14/11/2026: tras perder apuesta 1 + (lo perdido en la línea / 3) / (cuota − 1)), la MIXTA fuera del medio (`mixtaFueraMedio`, 14/11/2026: al favorito, cuota hasta 2, el 3 % de la banca; a la sorpresa, lo que gana ese 3 %, 3 % / (cuota − 1); sin freno, no depende del orden de las apuestas), plana (control, 1 unidad al elegido), plana solo con el elegido a 60 %+ (el tramo alto de confianza), Kelly entero,
         ½ y ¼ (f* = (p·c − 1)/(c − 1) sobre NUESTRAS probabilidades, a la selección con más
         ventaja; sin ventaja no apuesta) y martingala (1 unidad al elegido, se duplica tras cada
-        derrota, por líneas en paralelo). Se apuesta en el pitazo y se cobra dos horas después:
+        derrota, por líneas en paralelo), con su versión CUIDADA (`martingalaCuidada`, 18/11/2026: sin apostar en el
+        medio, cada ciclo de la línea empieza con el 1 % de la banca y tras 3 derrotas seguidas acepta la pérdida) y GANAR FIJO
+        (`ganarFijo`, 18/11/2026: cada apuesta busca ganar el 2,5 % de la banca —2,5 % / (cuota − 1), tope 5 %—, sin apostar en el
+        medio ni cuando le damos al elegido más de 2 puntos sobre la casa ni con el semáforo fuera de verde, con un freno por franja: sorpresa y favorito). Se apuesta en el pitazo y se cobra dos horas después:
         los partidos simultáneos se apuestan con la banca de antes y ninguna apuesta pasa de la plata
         libre. Cuenta desde los partidos del 28/10/2026 (hora de Lima); entran los partes
         depositados antes del pitazo, sin cuarentena, con el 1X2 completo y las tres cuotas. La
@@ -2075,7 +2078,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaFueraMedio, mixtaFueraMedio] }
+              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaFueraMedio, martingalaCuidada, mixtaFueraMedio, ganarFijo] }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -2097,14 +2100,15 @@ components:
                   perdiendo: { type: integer }
                   proximoMayor: { type: number }
                   perdidaMayor: { type: number, description: 'solo las martingalas ajustadas a la cuota: lo que lleva perdido la línea más cargada (su próxima apuesta depende de la cuota)' }
+                  cortes: { type: integer, description: 'solo martingalaCuidada: cuántas veces una línea llegó a 3 derrotas seguidas, aceptó la pérdida y volvió a empezar' }
               tramos:
                 type: array
                 nullable: true
-                description: 'solo el método (proporcional, metodoVerde y metodoFueraMedio): el freno de cada tramo de confianza AHORA, sobre sus últimos 50 partidos cerrados (con o sin apuesta)'
+                description: 'solo el método (proporcional, metodoVerde y metodoFueraMedio): el freno de cada tramo de confianza AHORA, sobre sus últimos 50 partidos cerrados (con o sin apuesta). En `ganarFijo`, el freno de sus dos franjas fuera del medio: `sorpresa` (la casa le da al elegido menos de 45 %) y `favorito` (60 % o más)'
                 items:
                   type: object
                   properties:
-                    tramo: { type: string, enum: ['<40', '40-49', '50-59', '60+'] }
+                    tramo: { type: string, enum: ['<40', '40-49', '50-59', '60+', sorpresa, favorito] }
                     n: { type: integer }
                     aciertos: { type: integer }
                     tasa: { type: number, nullable: true, description: 'aciertos / n, 0-1' }

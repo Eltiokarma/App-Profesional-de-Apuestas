@@ -2768,12 +2768,13 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'mixtaFueraMedio'
+export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaCuidada' | 'mixtaFueraMedio' | 'ganarFijo'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
 export interface FrenoTramo {
-  tramo: '<40' | '40-49' | '50-59' | '60+'
+  /** en `ganarFijo`, sus dos franjas fuera del medio: sorpresa (casa < 45 %) y favorito (60 %+) */
+  tramo: '<40' | '40-49' | '50-59' | '60+' | 'sorpresa' | 'favorito'
   n: number
   aciertos: number
   /** 0-1 */
@@ -2807,7 +2808,8 @@ export interface EstrategiaSimulada {
   montoMaximo: number
   /** solo martingala: líneas abiertas, cuántas vienen de perder y el próximo monto más alto */
   /** solo martingalas; `perdidaMayor` solo en las ajustadas a la cuota (lo que lleva perdido la línea más cargada) */
-  lineas: { abiertas: number; perdiendo: number; proximoMayor: number; perdidaMayor?: number } | null
+  /** `cortes` solo en la cuidada: veces que una línea llegó a 3 derrotas seguidas y aceptó la pérdida */
+  lineas: { abiertas: number; perdiendo: number; proximoMayor: number; perdidaMayor?: number; cortes?: number } | null
   /** solo el método (proporcional y metodoVerde): el freno de cada tramo de confianza ahora */
   tramos: FrenoTramo[] | null
   serie: { fixtureId: number | null; pitazo: string | null; banca: number }[]

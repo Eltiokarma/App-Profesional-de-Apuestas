@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las trece estrategias (con el método, en verde, fuera del medio y las martingalas ajustadas)", len(out["estrategias"]) == 13, out.keys())
+check("simulacion() responde con las quince estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas, la cuidada y ganar fijo)", len(out["estrategias"]) == 15, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -642,6 +642,62 @@ check("las cifras fijadas: ⅓ de la deuda y la mixta al 3 %",
       sim.RECUPERA_FUERA_MEDIO == 1 / 3 and sim.MIXTA_FUERA_MEDIO == 0.03 and not hasattr(sim, "PROPORCION_FUERA_MEDIO"))
 check("el criterio está fijado (medio 45-60 %, 30 · 60, 5 pts)",
       sim.MEDIO == (45.0, 60.0) and sim.MEDIO_ESCALONES == (30, 60) and sim.MEDIO_SEPARACION == 0.05)
+# LA MARTINGALA CUIDADA (18/11/2026, usuario: «no sabe en qué partido duplicar y
+# se va a la mierda»): sin medio, unidad = 1 % de la banca al empezar cada ciclo
+# de la línea, se duplica tras perder y a las 3 derrotas acepta la pérdida
+check("martingalaCuidada no apuesta en el medio (el 32 y el 33)",
+      _ef["martingalaCuidada"]["apuestas"] == 3
+      and _ff[32]["porEstrategia"]["martingalaCuidada"]["motivo"].endswith("en el medio (45-60 %)"))
+_oc = sim.simular([_apt(61, "2026-11-14 15:00:00", "visita"), _apt(62, "2026-11-14 18:00:00", "visita"),
+                   _apt(63, "2026-11-14 21:00:00", "visita"), _apt(64, "2026-11-15 15:00:00", "visita"),
+                   _apt(65, "2026-11-15 18:00:00", "local"), _apt(66, "2026-11-15 21:00:00", "local")])
+_fc = {a["fixtureId"]: a["porEstrategia"]["martingalaCuidada"] for a in _oc["apuestas"]}
+_ec = {e["clave"]: e for e in _oc["estrategias"]}["martingalaCuidada"]
+check("cuidada: 1 · 2 · 4 (el 1 % de 100) y a la tercera derrota corta; el ciclo nuevo va por el 1 % de 93 (0,93 · 1,86) y, al ganar, por el 1 % de 92,26",
+      [_fc[k]["monto"] for k in range(61, 67)] == [1.0, 2.0, 4.0, 0.93, 1.86, 0.9226]
+      and all(_fc[k]["linea"] == 1 for k in range(61, 67)), _fc)
+check("…y cuenta el corte, sin línea viniendo de perder al final",
+      _ec["lineas"] == {"abiertas": 1, "perdiendo": 0, "proximoMayor": 0.0, "cortes": 1}
+      and _ec["montoMaximo"] == 4.0, _ec)
+check("la cuidada está fijada: 1 % por ciclo y corte a 3 derrotas",
+      sim.PROPORCION_CUIDADA == 0.01 and sim.CORTE_CUIDADA == 3)
+# GANAR FIJO (18/11/2026, usuario: «un método de poner dinero que sea mejor que
+# la mixta 3 %»): cada apuesta busca ganar el 2,5 % de la banca, con tope del
+# doble; no apuesta en el medio ni cuando nos pasamos 2+ puntos de la casa, y
+# frena sorpresas y favoritos por separado
+def _apg(fid, pit, res, nuestra, casa, cuota):
+    a = _apm(fid, pit, res, None)
+    a["probabilidades"] = {"local": nuestra, "empate": (100 - nuestra) / 2, "visita": (100 - nuestra) / 2}
+    a["mercado"] = {"local": casa, "empate": (100 - casa) / 2, "visita": (100 - casa) / 2}
+    a["cuotas"] = {"local": cuota, "empate": 6.0, "visita": 9.0}
+    return a
+def _gf(aps):
+    o = sim.simular(aps)
+    return ({a["fixtureId"]: a["porEstrategia"]["ganarFijo"] for a in o["apuestas"]},
+            {e["clave"]: e for e in o["estrategias"]}["ganarFijo"])
+_fg, _eg = _gf([_apg(71, "2026-12-01 15:00:00", "visita", 80, 80, 1.1), _apg(72, "2026-12-02 15:00:00", "local", 80, 80, 1.1)])
+check("ganarFijo con el favorito de cuota 1,10: el tope, 5 % de la banca cobrada (100 → 95)",
+      [_fg[71]["monto"], _fg[72]["monto"]] == [5.0, 4.75] and _eg["lineas"] is None, _fg)
+_fg, _eg = _gf([_apg(73, "2026-12-01 15:00:00", "local", 39, 38, 2.5)])
+check("ganarFijo con la sorpresa (cuota 2,50): apuesta 1,67 u para ganar 2,5 (el 2,5 % de 100)",
+      _fg[73]["monto"] == 1.6667 and _eg["banca"] == 102.5, (_fg, _eg["banca"]))
+_fg, _eg = _gf([_apg(74, "2026-12-01 15:00:00", "local", 45, 38, 2.5), _apg(75, "2026-12-02 15:00:00", "local", 40, 38, 2.5),
+                _apg(76, "2026-12-03 15:00:00", "local", 50, 50, 1.9)])
+check("ganarFijo no apuesta si nos pasamos de la casa (+7 pts), sí con +2 justos, y no en el medio",
+      _fg[74]["monto"] == 0 and _fg[74]["motivo"].endswith("nos pasamos de la casa") and _fg[75]["monto"] > 0
+      and _fg[76]["motivo"].endswith("en el medio (45-60 %)") and _eg["apuestas"] == 1, _fg)
+_fg, _eg = _gf([_apg(100 + d, f"2026-12-{d:02d} 15:00:00", "visita", 80, 80, 1.1) for d in range(1, 17)]
+               + [_apg(117, "2026-12-17 15:00:00", "local", 39, 38, 2.5)])
+check("ganarFijo frena por franja: tras 15 favoritos fallados el 16 no se apuesta, y la sorpresa sí",
+      all(_fg[100 + d]["monto"] > 0 for d in range(1, 16)) and _fg[116]["monto"] == 0
+      and _fg[116]["motivo"].startswith("favoritos en pausa: acertó 0 de 15") and _fg[117]["monto"] > 0, _fg[116])
+check("…y el freno de las dos franjas viaja en `tramos` (el pausado anota también el partido sin apuesta)",
+      [(t["tramo"], t["n"], t["pausado"]) for t in _eg["tramos"]] == [("sorpresa", 1, False), ("favorito", 16, True)], _eg["tramos"])
+_ag = _apg(77, "2026-12-01 15:00:00", "local", 39, 38, 2.5); _ag["semaforo"] = {"estado": "duda", "motivos": []}
+_fg, _eg = _gf([_ag])
+check("ganarFijo no apuesta con el semáforo fuera de verde", _fg[77]["monto"] == 0 and _fg[77]["motivo"] == "semáforo en amarillo", _fg)
+check("ganar fijo está fijado: 2,5 % de la banca, tope del doble y las dos franjas",
+      sim.GANAR_FIJO == 0.025 and sim.TOPE_GANAR_FIJO == 2.0 and sim.FRANJAS_GANAR_FIJO == ("sorpresa", "favorito"))
 from backend import contacto as _ctf  # noqa: E402
 check("el informe de los lunes trae «Fuera del medio» con el criterio",
       "Fuera del medio · cuenta desde 2026-11-14" in _ctf.informe_medio(_of)
