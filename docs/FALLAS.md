@@ -170,6 +170,7 @@ Tres lugares donde vive una guardia:
   - Un insumo calculado con muestra corta lo dice y no afirma (`PENALES_MUESTRA_MIN`, 942); el ejecutor de baja o sin titularidad reciente baja en la lista (895).
   - Una regla del skill «pendiente de la app» que se aprueba se implementa donde se calcula la alerta, con su proxy dicho: la F3 por zona GK no sale sola si la GK es la única zona crítica y el arquero disponible tiene titularidades en la temporada (`bloque_f.gk_cubierta`, `disponibilidad.gkCubierta`; 1323, EFE §F3, OFI 1593356).
   - Un aviso que cobra contra una lista de la base mira quién puede HOY (plantel y once oficial) y reconoce el texto que nombra al de la lista: `dtp_cowork._ejecutores_hoy` y `_nombra_ejecutor` (864, 885: el ejecutor en el banco, la línea que lo nombra con un «si no»). El mismo id con dos grafías es un jugador (872).
+  - **La etiqueta de la prosa contra el número** (`parte.dual_sin_indices`, alerta `TDE-DUAL-SIN-INDICES`, 1442, Grecia–Serbia): «configuración dual» escrita con el IE o el ISE calculado por debajo de 5; como `TIPOLOGIA-VS-INDICES`, el número manda. Test en `backend/test_cowork.py`.
 - **Si vuelve:** si la regla se puede calcular, se calcula. Si no, va a la próxima revisión del skill.
 
 ### 7. Una regla del fútbol leída del marcador

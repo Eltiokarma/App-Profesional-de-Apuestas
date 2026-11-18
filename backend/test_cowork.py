@@ -6110,6 +6110,12 @@ def main():
     # incidencias 446 y 448: la roja propia abre tramo con siExpulsion (declarada o no)
     # ── TDE v0.1.23 (25/10/2026) ────────────────────────────────────────────
     from backend.analisis.parte import tipologia_vs_indices as _tvi
+    from backend.analisis.parte import dual_sin_indices as _dsi
+    check("1442: «configuración dual» en la prosa con ISE 3,33 avisa TDE-DUAL-SIN-INDICES; con IE e ISE ≥ 5, no; sin la etiqueta, no",
+          (_dsi({"ie": 6.0, "ise": 3.33, "vias": [{"nombre": "ECHADA", "detalle": "configuración dual: referencia"}]}) or {}).get("codigo")
+          == "TDE-DUAL-SIN-INDICES"
+          and _dsi({"ie": 6.81, "ise": 5, "notas": "configuración dual (disciplina 43)"}) is None
+          and _dsi({"ie": 6.0, "ise": 3.33, "notas": "la echada manda"}) is None)
     check("538: ECHADA-PSI con ISE > IE avisa TIPOLOGIA-VS-INDICES; SOB con ISE > IE no",
           (_tvi({"tipologia": "ECHADA-PSI", "ie": 2.94, "ise": 3.33}) or {}).get("codigo") == "TIPOLOGIA-VS-INDICES"
           and _tvi({"tipologia": "SOB-URG", "ie": 2.94, "ise": 3.33}) is None)
