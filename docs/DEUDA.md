@@ -801,22 +801,22 @@ conversación se pierde en la siguiente.
    la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
    herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
    por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
-   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (17/11 03:17 de Lima: rotadas las cuatro
-   —partes 252 mil, veredictos 211 mil, mantenimiento 400 mil y rehacer 675 mil—;
-   la de rotar v8 no se rotó (va por su primera corrida) y las reemplazadas del
-   16/11 quedan desactivadas. Ojo: las sesiones nacen anidadas bajo la de rotar
-   y el límite de anidación es 8; la de rotar v8 está en el nivel 7 y sus hijas
-   en el 8: si la de rotar se rota a sí misma, la nueva quedaría en el 8 y ya
-   no podría crear sesiones, así que esa rotación pide crearla desde una sesión
-   de nivel más bajo):
-   - partes (v15): `session_01WwsfbSGqhVvReQJsjyFejT` · 04:47
-     `trig_01FUkBLLxurm97ogaNQw4aEm`, 09:52 `trig_01NDyd7DfnMzDqWr1CnGpn1x`,
-     14:56 `trig_011cTFd8pzxhYidiQDf6emLg`;
-   - veredictos (v16): `session_01WwsfbSeMkv2W2iXTwoAYsq` · 20:12
-     `trig_01NiSqJnxCtnFPqmkExnVaY2`;
-   - mantenimiento (v17): `session_01WwsfbTEXKomdVrGALd9T9X` · 12:23
-     `trig_01Cd3P8MNNi4LkNLLvV7k35U`, 17:41 `trig_01UZv249XHyuD1AxP5GAE9kh`,
-     21:47 `trig_01NXabHLHRydpEN65LZfSu2C`;
+   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (18/11 03:17 de Lima: rotadas partes 273 mil,
+   veredictos 167 mil y mantenimiento 755 mil; rehacer quedó en 141 mil y NO se
+   rotó; la de rotar v8 tiene 212 mil y NO se rotó a propósito; las reemplazadas
+   del 17/11 quedan desactivadas. Ojo: las sesiones nacen anidadas bajo la de
+   rotar y el límite de anidación es 8; la de rotar v8 está en el nivel 7 y sus
+   hijas en el 8: si la de rotar se rota a sí misma, la nueva quedaría en el 8 y
+   ya no podría crear sesiones, así que esa rotación pide crearla desde una
+   sesión de nivel más bajo —pendiente del usuario—):
+   - partes (v16): `session_01WwsfbVsytLWXeeZYP2SAhk` · 04:47
+     `trig_01DtEzyCVR5vTjSpki6N9BXf`, 09:52 `trig_01SrKuUAEqXUNSKwSDbysjJG`,
+     14:56 `trig_01ScZYYLFajeNeWfm6bKiJTF`;
+   - veredictos (v17): `session_01WwsfbTrNb5C6pHv8euewGb` · 20:12
+     `trig_016RnjXXPqH7jyetPnAE8RhV`;
+   - mantenimiento (v18): `session_01WwsfbScA3kbArdSmFs4VYv` · 12:23
+     `trig_01SZa3krULkPufcSuJzo1xeW`, 17:41 `trig_01ACJ2zLinCnPDgD6nFQwbTc`,
+     21:47 `trig_01NBDRSb1zbdibmC4x6R2Xpo`;
    - rehacer (v19): `session_01WwsfbSKgrVZynXJj3EXLXQ` · :02
      `trig_01FkyxPTpQBEzNu2gZpeMBeW`, :12 `trig_019kqpJoHKWH3bkN16GwUexG`,
      :22 `trig_016vCknxHjkodzo7XJbmG5NW`, :42 `trig_015f3DPnaLsuaVTyah2ohuPC`,
