@@ -241,6 +241,12 @@ _club_sin_sel = [r for r, fn in (("backend/analisis/f1_base.py", "es_seleccion")
                  if fn not in leer(r)]
 check("selecciones: juegan_en_otro y _es_ascendido saltan a las selecciones con la lista única de escala",
       not _club_sin_sel, _club_sin_sel)
+# el banco probable usa la regla única de «se fue» (FALLAS.md clase 4; 1443: el
+# banco probable no miraba ni convocatorias ni salidas, y nombraba a un jugador
+# fallecido del Tenerife y a otro que la tabla F1 daba en otro equipo)
+_banco_src = leer("backend/analisis/banco.py")
+check("banco probable: saca a los idos con f1_base.juegan_en_otro/salidos y a los no convocados (CONVOCATORIAS)",
+      "juegan_en_otro" in _banco_src and "salidos" in _banco_src and "CONVOCATORIAS" in _banco_src)
 
 # 5-sexies · lo que la app SUMA a una fila al leer vuelve en el eco del GET, y
 # el POST lo tiene que aceptar (FALLAS.md clase 5; 1404: `con_filas_del_once`

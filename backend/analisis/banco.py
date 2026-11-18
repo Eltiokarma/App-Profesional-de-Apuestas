@@ -35,6 +35,13 @@ TERMINADOS = ("FT", "AET", "PEN")
 # sube antes de la completa (parte.BANCA_MIN_COMPLETA, 1427)
 BANCA_MIN = 5
 TITULARES_MIN = 7
+# EL BANCO PROBABLE ES DE LOS CONVOCADOS (18/11/2026, incidencia 1443: Jesús de
+# Miguel, del Tenerife, fallecido el 03/11, salía banco probable de Badajoz–
+# Tenerife el 18/11 por sus entradas de octubre). Quien no figura en NINGUNA de
+# las últimas hojas del equipo (ni titular ni suplente) no está convocado hoy
+# —lesión, sanción, salida, o algo que la base no tiene cómo saber— y no es banco
+# probable. Dos hojas y no una: una rotación de copa sola no lo saca.
+CONVOCATORIAS = 2
 
 
 def _q(sql: str, args: tuple) -> list[dict]:
@@ -100,7 +107,7 @@ def historia(team_id: int, fecha: str, fixture_id: int) -> dict[int, dict]:
                 h["golesDesdeBanco"] += sum(1 for g in goles if g["jugador_id"] == pid)
                 h["asistenciasDesdeBanco"] += sum(1 for g in goles if g["asistente_id"] == pid)
     for h in out.values():
-        h.pop("_visto", None)
+        h["hojaMasReciente"] = h.pop("_visto", 0)   # 0 = estuvo en la hoja del último partido
     return out
 
 
@@ -149,11 +156,19 @@ def de_equipo(fixture_id: int, team_id: int, fecha: str) -> dict:
     else:
         aviso = ""
     en_once = {f["player_id"] for f in titulares}
+    candidatos = {pid: h for pid, h in hist.items() if pid not in en_once
+                  and (h["golesDesdeBanco"] or h["asistenciasDesdeBanco"] or h["entradas"] >= ENTRADAS_SEGUIDAS)}
+    # los que la regla única de «se fue» da en otro club (f1_base, la misma de la tabla F1)
+    try:
+        from backend.analisis.f1_base import juegan_en_otro, salidos
+        idos = set(juegan_en_otro(team_id, list(candidatos), fecha)) | salidos(team_id, fecha)
+    except Exception:  # noqa: BLE001 — sin la capa de jugadores: nadie se afirma ido
+        idos = set()
+    sin_convocar = [h["nombre"] for pid, h in candidatos.items()
+                    if h["hojaMasReciente"] >= CONVOCATORIAS and pid not in idos]
     lista = []
-    for pid, h in hist.items():
-        if pid in en_once:
-            continue
-        if not (h["golesDesdeBanco"] or h["asistenciasDesdeBanco"] or h["entradas"] >= ENTRADAS_SEGUIDAS):
+    for pid, h in candidatos.items():
+        if pid in idos or h["hojaMasReciente"] >= CONVOCATORIAS:
             continue
         lista.append({"jugadorId": pid if pid > 0 else None, "nombre": h["nombre"], "posicion": h["posicion"],
                       **{k: h[k] for k in vacio}, "titularHabitual": h["titularidades"] >= HABITUAL,
@@ -164,6 +179,9 @@ def de_equipo(fixture_id: int, team_id: int, fecha: str) -> dict:
                     f"seguido o hicieron goles o asistencias entrando en los últimos {ULTIMOS}. No trae al "
                     "titular habitual que hoy puede rotar ni a la duda que puede ir al banco: eso es de la "
                     "tabla F1 (estado «banco probable»). Con el once, se reescribe con la hoja"
+                    + (f". Fuera por no estar en ninguna de las últimas {CONVOCATORIAS} hojas (no convocado: "
+                       f"baja, sanción o salida; confirmar en prensa): {', '.join(sorted(sin_convocar))}"
+                       if sin_convocar else "")
                     + (f". Ojo: {aviso}" if aviso else "")}
 
 

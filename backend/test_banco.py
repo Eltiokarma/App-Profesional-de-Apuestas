@@ -66,6 +66,13 @@ def montar():
                     "asistente_id) VALUES (?, 70, 'subst', 'Substitution 2', ?, 13, 10)", (f, EQ))
     con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador_id, "
                 "asistente_id) VALUES (10, 80, 'Goal', 'Normal Goal', ?, 13, 12)", (EQ,))
+    # 18 (1443, De Miguel del Tenerife): entró del banco en los partidos 1-8 y no
+    # figura en las hojas 9 y 10 (fallecido; para la base, no convocado)
+    for f in range(1, 9):
+        con.execute("INSERT INTO alineaciones VALUES (?, ?, '4-3-3', 'DT', 18, 'Suplente 18', 18, 'F', NULL, 0)",
+                    (f, EQ))
+        con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador_id, "
+                    "asistente_id) VALUES (?, 75, 'subst', 'Substitution 3', ?, 8, 18)", (f, EQ))
     con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador_id, "
                 "asistente_id) VALUES (8, 70, 'subst', 'Substitution 2', ?, 15, 11)", (EQ,))
     con.execute("INSERT INTO fixture_eventos (fixture_id, minuto, tipo, detalle, equipo_id, jugador_id, "
@@ -111,6 +118,8 @@ def main():
     check("sin once ningún titular habitual es banco probable", not any(x["titularHabitual"] for x in a["lista"]),
           a["lista"])
     check("un lado sin historia sale con la lista vacía, no con un error", b["b"]["lista"] == [], b["b"])
+    check("1443: el que entraba seguido pero no está en ninguna de las 2 últimas hojas no es banco probable "
+          "y la nota lo nombra", 18 not in ids and "Suplente 18" in a["nota"], (ids, a["nota"]))
 
     # el once oficial con la banca PARCIAL: sigue probable, y el que hoy es titular sale de la lista
     hoja_de_hoy([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12], [11, 13])
