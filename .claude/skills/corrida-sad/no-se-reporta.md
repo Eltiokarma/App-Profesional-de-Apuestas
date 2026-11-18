@@ -225,3 +225,13 @@
   banco (1431: Nagelsmann y Stojković en las hojas de octubre de la Liga de
   las Naciones, Klopp y Paunović según la prensa): la disciplina 30 lee la
   hoja y DT-DISCREPANCIA ya avisa; la prensa manda y va en notas.
+  Y desde la pasada del 18/11 (mediodía): el banco probable (sin el once)
+  con alguien que hoy no puede estar porque murió, se retiró o se lesionó
+  hace días, cuando la base NO capturó la hoja del último partido del equipo
+  (1443: De Miguel, del Tenerife, fallecido el 03/11; la hoja del 15/11
+  contra el Ceuta sin capturar). Desde el PR #575 el banco probable deja
+  fuera a quien no está en ninguna de las 2 últimas hojas CAPTURADAS
+  (`banco.CONVOCATORIAS`), y la API no marca a un jugador fallecido: el parte
+  lo saca a mano y lo dice en notas. Se reporta si el jugador sigue en la
+  lista con 2 hojas capturadas posteriores a su ausencia en las que no
+  figura.
