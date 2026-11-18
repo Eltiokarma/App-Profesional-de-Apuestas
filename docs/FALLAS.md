@@ -327,7 +327,7 @@ Tres lugares donde vive una guardia:
 - **Guardia:**
   - **Una lista:** es selección quien juega algún torneo de `extractor.TORNEOS_SELECCIONES` (`escala.es_seleccion`); un torneo de selecciones es `escala.torneos_selecciones()`.
   - El descanso del F2 (`jugadores._congestion`) saca solo los amistosos de CLUBES (`escala.AMISTOSOS_CLUBES`): el de una selección en la fecha FIFA es partido (1432, Malta con 43 días y eran 4; el DTP ya lo contaba). Test en `backend/test_cowork.py`.
-  - `f1_base.juegan_en_otro` devuelve vacío para una selección; `calendario._es_ascendido` no etiqueta ascenso en un torneo de selecciones. Tests en `backend/test_cowork.py` y `backend/test_calendario.py`.
+  - `f1_base.juegan_en_otro` devuelve vacío para una selección, y del lado de un CLUB no cuenta como «otro equipo» la hoja con una selección (1444, 18/11: Ranos, del Tenerife, «en Armenia»; el filtro por nombre contra país no la veía): las dos puntas consultan `escala.es_seleccion`; `calendario._es_ascendido` no etiqueta ascenso en un torneo de selecciones. Tests en `backend/test_cowork.py` y `backend/test_calendario.py`.
   - `backend/test_arquitectura.py` (5-quinquies) verifica que las dos reglas consulten la lista.
 - **Si vuelve:** la regla nueva que mira el club o la categoría consulta `escala.es_seleccion` antes, y se suma a la guardia de arquitectura.
 
