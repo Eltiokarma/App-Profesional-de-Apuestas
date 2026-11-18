@@ -5731,6 +5731,21 @@ def main():
         _esc1395.es_seleccion, _f1m931.saddb.query = _es1395, _q1395
     check("1395: en una selección el convocado con su club después NO va a jueganEnOtroEquipo",
           _o1395 == {}, _o1395)
+    # 1444 (18/11/2026): del lado del CLUB, la hoja posterior con su selección
+    # tampoco es «otro equipo» (Ranos, Tenerife, «en Armenia»), aunque el nombre
+    # de la selección no empiece con el país de la tabla `teams`
+    _esc1395.es_seleccion = lambda tid: tid == 1094   # noqa: E731
+    _f1m931.saddb.query = lambda base, sql, params=(): [  # noqa: E731
+        {"player_id": 280427, "team_id": 2275, "equipo": "Tenerife", "ultima": "2026-11-09 18:00:00"},
+        {"player_id": 280427, "team_id": 1094, "equipo": "Armenia", "ultima": "2026-11-15 17:00:00"},
+        {"player_id": 31, "team_id": 2275, "equipo": "Tenerife", "ultima": "2026-09-01 18:00:00"},
+        {"player_id": 31, "team_id": 77, "equipo": "Otro Club", "ultima": "2026-11-08 18:00:00"}]
+    try:
+        _o1444 = _f1m931.juegan_en_otro(2275, [280427, 31], "2026-11-18")
+    finally:
+        _esc1395.es_seleccion, _f1m931.saddb.query = _es1395, _q1395
+    check("1444: el del club con su última hoja en la SELECCIÓN sigue en el club; el que fue a otro club, no",
+          set(_o1444) == {31} and _o1444[31]["equipo"] == "Otro Club", _o1444)
     import backend.db as _db1395
     _q1395b = _esc1395.saddb.query
     _esc1395.saddb.query = lambda base, sql, params=(): [{"1": 1}] if 9001 in params else []  # noqa: E731

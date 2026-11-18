@@ -1114,11 +1114,24 @@ def juegan_en_otro(team_id: int, ids: list[int], antes: str = "9999") -> dict[in
         corte = (datetime.fromisoformat(str(antes)[:10]) - timedelta(days=OTRO_EQUIPO_DIAS)).strftime("%Y-%m-%d")
     except ValueError:
         corte = ""
+    # LA CONVOCATORIA NO ES UN TRASPASO, TAMPOCO DEL LADO DEL OTRO EQUIPO
+    # (18/11/2026, incidencia 1444: Ranos, del Tenerife, salía «en Armenia» por
+    # la hoja del 15/11 con su selección). El filtro de la consulta (nombre que
+    # empieza con el país) no ve a todas las selecciones: quién es selección lo
+    # dice la lista única, `escala.es_seleccion`, también para el OTRO equipo.
+    _sel: dict[int, bool] = {}
+
+    def _es_sel(tid: int) -> bool:
+        if tid not in _sel:
+            _sel[tid] = es_seleccion(tid)
+        return _sel[tid]
+
     for pid, eqs in por.items():
         propia = eqs.get(team_id)
         if not propia:
             continue
-        otra = max(((u, e, tid) for tid, (u, e) in eqs.items() if tid != team_id), default=None)
+        otra = max(((u, e, tid) for tid, (u, e) in eqs.items() if tid != team_id and not _es_sel(tid)),
+                   default=None)
         # DOS CLUBES EN DOS DÍAS NO ES UN TRASPASO, ES UN ID CHOCADO (incidencia
         # 961: el arquero 81224 de Kifisia, titular el 24/10, «en Leones del
         # Norte» por una hoja del 25/10 de un homónimo)
