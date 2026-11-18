@@ -15,7 +15,7 @@ import { useAsync } from '../services/useAsync'
 
 type Kelly = 'kelly' | 'kellyMedio' | 'kellyCuarto'
 const KELLY_OPC: [Kelly, string][] = [['kelly', 'entero'], ['kellyMedio', '½'], ['kellyCuarto', '¼']]
-const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaCuidada' | 'mixtaFueraMedio', string> = {
+const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaCuidada' | 'mixtaFueraMedio' | 'ganarFijo', string> = {
   proporcional: 'var(--sim-proporcional)', metodoVerde: 'var(--sim-metodo-verde)', plana: 'var(--sim-plana)', plana60: 'var(--sim-plana60)', kelly: 'var(--sim-kelly)', martingala: 'var(--sim-martingala)',
   martingala60: 'var(--sim-martingala60)',
   // el método fuera del medio (13/11/2026) y la martingala de 60 %+ ajustada a la cuota
@@ -24,13 +24,15 @@ const COLOR: Record<'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana
   martingalaFueraMedio: 'var(--sim-martingala-fuera-medio)', mixtaFueraMedio: 'var(--sim-mixta-fuera-medio)',
   // la martingala cuidada (18/11/2026): sin medio, 1 % de la banca por ciclo y corta a 3 derrotas
   martingalaCuidada: 'var(--sim-martingala-cuidada)',
+  // ganar fijo (18/11/2026): cada apuesta busca ganar el 2,5 % de la banca, con sus cuidados
+  ganarFijo: 'var(--sim-ganar-fijo)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', martingalaFueraMedio: 'Martin. sin medio ⅓', martingalaCuidada: 'Martin. cuidada', mixtaFueraMedio: 'Mixta sin medio', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', martingalaFueraMedio: 'Martin. sin medio ⅓', martingalaCuidada: 'Martin. cuidada', mixtaFueraMedio: 'Mixta sin medio', ganarFijo: 'Ganar fijo', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -180,7 +182,7 @@ function ErrorSimulacion({ mensaje, recargar }: { mensaje: string; recargar: () 
 
 function estrategiasVisibles(kelly: Kelly, claves: string[]): { clave: EstrategiaClave; color: string }[] {
   const orden: EstrategiaClave[] = ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'plana', 'plana60', kelly,
-    'martingala', 'martingalaCuidada', 'martingala60', 'martingala60Ajustada', 'martingalaFueraMedio', 'mixtaFueraMedio']
+    'martingala', 'martingalaCuidada', 'martingala60', 'martingala60Ajustada', 'martingalaFueraMedio', 'mixtaFueraMedio', 'ganarFijo']
   return orden.filter((clave) => claves.includes(clave)).map((clave) => ({
     clave, color: COLOR[clave === 'kellyMedio' || clave === 'kellyCuarto' ? 'kelly' : clave],
   }))
@@ -982,7 +984,7 @@ function EstrategiasDePartido({ a, kelly }: { a: ApuestaSimulada; kelly: Kelly }
                   <span style={{ color: 'var(--t3)', minWidth: 0 }}>
                     {r.motivo === 'sin plata libre'
                       ? 'no apuesta: toda la banca está en juego en otros partidos'
-                      : ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'martingalaFueraMedio', 'martingalaCuidada', 'mixtaFueraMedio'].includes(v.clave) ? `no apuesta: ${r.motivo}`
+                      : ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'martingalaFueraMedio', 'martingalaCuidada', 'mixtaFueraMedio', 'ganarFijo'].includes(v.clave) ? `no apuesta: ${r.motivo}`
                       : v.clave === 'plana60' || v.clave === 'martingala60' || v.clave === 'martingala60Ajustada' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                       : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                   </span>

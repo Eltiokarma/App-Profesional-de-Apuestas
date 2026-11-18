@@ -2768,12 +2768,13 @@ export interface HistorialValorDTO extends GananciaValor {
 }
 
 // ── Simulación de apuesta (GET /analisis/simulacion, 28/10/2026) ─────────────
-export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaCuidada' | 'mixtaFueraMedio'
+export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaCuidada' | 'mixtaFueraMedio' | 'ganarFijo'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
 export interface FrenoTramo {
-  tramo: '<40' | '40-49' | '50-59' | '60+'
+  /** en `ganarFijo`, sus dos franjas fuera del medio: sorpresa (casa < 45 %) y favorito (60 %+) */
+  tramo: '<40' | '40-49' | '50-59' | '60+' | 'sorpresa' | 'favorito'
   n: number
   aciertos: number
   /** 0-1 */
