@@ -2465,6 +2465,34 @@ def tipologia_vs_indices(b: dict) -> dict | None:
                        f"el tipo modal es {manda}. O se corrige la tipología, o el índice que no cuadra"}
 
 
+# «configuración dual» escrito en la prosa del bloque (disciplina 43)
+_DUAL_PROSA = re.compile(r"configuraci[oó]n\s+dual", re.I)
+
+
+def dual_sin_indices(b: dict) -> dict | None:
+    """TDE-DUAL-SIN-INDICES (18/11/2026, incidencia 1442, Grecia–Serbia 1528991): la prosa
+    del bloque invoca la «configuración dual» de la disciplina 43 —que cambia cómo se lee
+    el tramo final— con el IE o el ISE CALCULADO por debajo de 5 (Serbia: ISE 3,33). La
+    etiqueta es prosa; los índices son números: el número manda y se avisa, como
+    TIPOLOGIA-VS-INDICES. Tipo dato."""
+    try:
+        ie, ise = float(b.get("ie")), float(b.get("ise"))
+    except (TypeError, ValueError):
+        return None
+    if ie >= DUAL_TDE and ise >= DUAL_TDE:
+        return None
+    textos = [_txt(b.get("notas")), _txt(b.get("tipologia"))]
+    textos += [_txt((v or {}).get("detalle")) + " " + _txt((v or {}).get("nombre"))
+               for v in b.get("vias") or [] if isinstance(v, dict)]
+    textos += [_txt((r or {}).get("nota")) for r in (b.get("reasignacion") or {}).values() if isinstance(r, dict)]
+    if not any(_DUAL_PROSA.search(t) for t in textos):
+        return None
+    return {"codigo": "TDE-DUAL-SIN-INDICES", "tipo": "dato",
+            "detalle": f"el bloque invoca la configuración dual (disciplina 43) con IE {ie:g} e ISE {ise:g}: la dual "
+                       f"es IE ≥ {DUAL_TDE:g} Y ISE ≥ {DUAL_TDE:g}. Con estos índices no aplica: se saca la etiqueta "
+                       "o se corrige el índice que no cuadra"}
+
+
 RELEVANCIA_BAJA_MAX = 0.5
 
 
@@ -2922,7 +2950,7 @@ _CLAVES_ALERTA = {"codigo", "equipo", "tipo", "detalle", "texto", "ligas", "dtBa
 # recalcular igual) en vez de guardarse por duplicado.
 _ALERTAS_CALCULADAS = {"K-EXTREMO", "K-CERCA-EXTREMO", "K-EXTREMO-CONDICION", "K-CERCA-EXTREMO-CONDICION", "FAMILIA-RECORD", "ESPINA-VS-RIESGO", "HERENCIA-DTP", "ESCALA-LIGAS", "HUECO-DOBLE", "F3", "DT-DISCREPANCIA", "DT-SIN-DT", "DT-VS-BANCO",
                         "COLAPSO-EN-CASCADA", "F1-DECISIVO-FUERA", "DTP-REHACER", "DTP-SIN-REFERENCIA",
-                        "TIPOLOGIA-VS-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
+                        "TIPOLOGIA-VS-INDICES", "TDE-DUAL-SIN-INDICES", "ESPINA-SIGUE-EN-EXTREMO", "EFE-EMPATE-TECNICO",
                         "T.54-SIN-DECLARAR", "ELIMINATORIA-AL-REVES", "SANCION-SIN-DECLARAR",
                         "ONCE-SIN-FILA-F1", "TDE-RELEVANCIA-SIN-DECLARAR", "DESCONFIAR",
                         "FUERA-EN-LA-HOJA", "EFE-RECOMPUTO-PENDIENTE", "1X2-CARGA-CONTRA-RIESGO",
@@ -5333,6 +5361,9 @@ def dto(fixture_id: int) -> dict | None:
         alerta = tipologia_vs_indices(b)
         if alerta and b.get("equipo") in LADOS:
             alertas.append({**alerta, "equipo": b["equipo"]})
+        dual = dual_sin_indices(b)
+        if dual and b.get("equipo") in LADOS:
+            alertas.append({**dual, "equipo": b["equipo"]})
     rel = relevancia_tde(parte.get("tde") or {},
                          " ".join(_txt(d.get("cuerpo")) for d in parte.get("documentos") or []
                                   if isinstance(d, dict) and d.get("id") == "tde"))
