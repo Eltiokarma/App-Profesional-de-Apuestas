@@ -385,6 +385,7 @@ se falla. La regla (`simulacion.GANAR_FIJO`, `TOPE_GANAR_FIJO`):
 - cada apuesta busca GANAR el 2,5 % de la banca cobrada: 2,5 % / (cuota − 1),
   sin pasar del doble (5 % de la banca; el tope pega con cuota bajo 1,50);
 - no apuesta en el medio;
+- no apuesta con el semáforo fuera de verde;
 - no apuesta cuando le damos al elegido más de 2 puntos sobre la casa
   (`ALERTA_SOBRE_CASA`: 46 partidos a −14 % ± 17 por unidad contra +9 % de los
   otros 401);
@@ -394,19 +395,41 @@ se falla. La regla (`simulacion.GANAR_FIJO`, `TOPE_GANAR_FIJO`):
 | | orden real | caída real | barajado: típica · 10 % peor | caída 10 % peor | le gana a la mixta (remuestreo por días) | sin ventaja: bajo 50 u |
 |---|---|---|---|---|---|---|
 | mixta 3 % | 207,4 | 15,6 % | 205 · 201 | 27,8 % | — | 32,8 % |
-| **ganar fijo 2,5 %** | 211,7 | 20,3 % | 250 · 225 | 25,7 % | 77,7 % | **7,4 %** |
+| **ganar fijo 2,5 %** | 204,3 | 17,1 % | 253 · 229 | 24,2 % | 78,4 % | **4,6 %** |
 
-Sin el freno gana más (a igual riesgo, 280 u en el orden real) pero sin
+Sin el freno y sin exigir verde gana más (a igual riesgo, 280 u en el orden real) pero sin
 ventaja termina bajo 50 u el 46 % de las veces: mueve más plata. En el orden
-real el freno pausó a destiempo en la primera mitad (128 · 165 por mitades
+real el freno pausó a destiempo en la primera mitad (126 · 162 por mitades
 contra 151 · 138 de la mixta); la mejora está en los remuestreos y en la
 protección. Es la misma muestra donde salieron el medio y la alerta: se mide
 hacia adelante, al lado de la mixta 3 %.
 
-Lo que se miró y NO separa (mismos 447): el semáforo (410 son verdes: casi no
-filtra), el marcador alineado (+5 % contra +7 %), cubrir el empate y apostar
+Lo que se miró y NO separa (mismos 447): el marcador alineado (+5 % contra +7 %), cubrir el empate y apostar
 contra el descarte (−2 %: se paga el margen dos veces) y local contra visitante
 (+2 % contra +16 %, dentro del error).
+
+**Cuándo no apostar** (usuario, 18/11: «lo que buscamos es aumentar el win
+rate y saber cuándo no apostar»). Es lo propio del sistema que separa:
+
+| | n | acierta | la cuota pide | plana |
+|---|---|---|---|---|
+| todos | 447 | 59,7 % | 56,1 % | +6,7 % |
+| apostables (semáforo verde y sin pasarnos de la casa) | 365 | 64,7 % | 58,3 % | +12,0 % ± 4,7 |
+| no apostar (no verde o nos pasamos) | 82 | 37,8 % | 46,6 % | −16,6 % ± 12,2 |
+
+La diferencia es de 2,2 errores, algo inflada: las dos reglas se fijaron con
+datos que se pisan con estos. El semáforo solo (37 no verdes, −15 % ± 19) casi
+no mueve el total; junto con «nos pasamos» sí.
+
+**El control del favorito (18/11).** El elegido coincide con el favorito de la
+casa en 428 de 447 y rinde igual (+6,7 % contra +6,8 %). Apostando siempre al
+favorito de la casa, por unidad: partidos con parte +6,6 % ± 4,4 (441); mismas
+semanas, sin parte, en otras ligas −7,1 % ± 3,0 (862); nuestras 23 ligas antes
+(01/08-27/10) −3,5 % ± 2,7 (1.271). No fue una racha general de favoritos ni
+algo permanente de esas ligas, y no elegimos partidos dentro de la liga (449 de
+497 con parte). La ventaja de base no se puede atribuir al elegido: lo que el
+sistema aporta de forma medible es el «no apostar». Toda serie de la
+Simulación reparte esa ventaja; si se corta, vuelven a perder el margen (7,6 %).
 
 **La liga, como medición (decisión del usuario, 18/11).** Perú (281), Uruguay
 (268), Venezuela (299), Bolivia (344) y Ecuador (242) sumaron 81 partidos a

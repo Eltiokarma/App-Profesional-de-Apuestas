@@ -196,7 +196,9 @@ CORTE_CUIDADA = 3                  # derrotas seguidas tras las que la línea ac
 # poner más donde menos se falla: cada apuesta busca GANAR lo mismo
 # (`GANAR_FIJO` de la banca / (cuota − 1)), con un tope de `TOPE_GANAR_FIJO`
 # veces eso. La mixta ya lo hacía con la sorpresa y dejaba al favorito clavado.
-# Tres cuidados más: no apuesta en el medio; no apuesta cuando le damos al
+# Cuatro cuidados más: no apuesta en el medio; no apuesta con el semáforo fuera
+# de verde (usuario, 18/11: «saber cuándo no apostar»; verde y sin pasarse, 365
+# partidos a +12,0 % por unidad contra −16,6 % de los otros 82); no apuesta cuando le damos al
 # elegido más de `ALERTA_SOBRE_CASA` puntos sobre la casa (46 partidos a −14 %
 # por unidad contra +9 % del resto); y un freno por FRANJA (sorpresa: la casa
 # bajo el medio; favorito: sobre el medio) con la regla del método. Medido sobre
@@ -277,7 +279,7 @@ ESTRATEGIAS = (
     ("ganarFijo", "Ganar fijo",
      f"cada apuesta busca ganar el {100 * GANAR_FIJO:g} % de la banca: apuesta {100 * GANAR_FIJO:g} % / (cuota − 1), "
      f"sin pasar del {100 * GANAR_FIJO * TOPE_GANAR_FIJO:g} %. No apuesta cuando la casa le da al elegido entre "
-     f"{MEDIO[0]:g} % y {MEDIO[1]:g} %, ni cuando le damos más de 2 puntos sobre la casa; sorpresas y favoritos se "
+     f"{MEDIO[0]:g} % y {MEDIO[1]:g} %, ni cuando le damos más de 2 puntos sobre la casa, ni con el semáforo fuera de verde; sorpresas y favoritos se "
      f"pausan por separado si en sus últimos {FRENO_VENTANA} partidos acertaron menos de lo que pedía la cuota"),
 )
 _MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaFueraMedio", "martingalaCuidada")
@@ -825,8 +827,12 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         nuestra, casa = fila["probabilidades"][sel], fila["mercado"][sel]
         fr = _franja(fila)
         f = freno_tramo(e["tramos"].setdefault(fr, deque(maxlen=FRENO_VENTANA)))
+        estado = (fila.get("semaforo") or {}).get("estado") or "sinDato"
         motivo = ""
-        if nuestra - casa > ALERTA_SOBRE_CASA:
+        if estado != "confirma":
+            motivo = {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
+                estado, "semáforo sin dato")
+        elif nuestra - casa > ALERTA_SOBRE_CASA:
             motivo = (f"le damos {nuestra:.1f} % al elegido y la casa {casa:.1f} % (+{nuestra - casa:.1f} pts): "
                       "nos pasamos de la casa")
         elif f["pausado"]:

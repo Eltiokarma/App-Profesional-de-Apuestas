@@ -1313,17 +1313,17 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   {
    "clave": "ganarFijo",
    "nombre": "Ganar fijo",
-   "descripcion": "cada apuesta busca ganar el 2.5 % de la banca: apuesta 2.5 % / (cuota − 1), sin pasar del 5 %. No apuesta cuando la casa le da al elegido entre 45 % y 60 %, ni cuando le damos más de 2 puntos sobre la casa; sorpresas y favoritos se pausan por separado si en sus últimos 50 partidos acertaron menos de lo que pedía la cuota",
-   "banca": 97.57,
-   "ganancia": -2.43,
-   "apostado": 7.01,
-   "apuestas": 2,
-   "ganadas": 1,
-   "roi": -0.3463,
+   "descripcion": "cada apuesta busca ganar el 2.5 % de la banca: apuesta 2.5 % / (cuota − 1), sin pasar del 5 %. No apuesta cuando la casa le da al elegido entre 45 % y 60 %, ni cuando le damos más de 2 puntos sobre la casa, ni con el semáforo fuera de verde; sorpresas y favoritos se pausan por separado si en sus últimos 50 partidos acertaron menos de lo que pedía la cuota",
+   "banca": 95.19,
+   "ganancia": -4.81,
+   "apostado": 4.81,
+   "apuestas": 1,
+   "ganadas": 0,
+   "roi": -1.0,
    "caidaMaxima": 0.0481,
    "quebro": null,
-   "exposicionMaxima": 4.93,
-   "montoMaximo": 4.93,
+   "exposicionMaxima": 4.81,
+   "montoMaximo": 4.81,
    "lineas": null,
    "tramos": [
     {
@@ -1379,32 +1379,32 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     {
      "fixtureId": 900006,
      "pitazo": "2026-10-29 20:00:00",
-     "banca": 102.5
+     "banca": 100.0
     },
     {
      "fixtureId": 900007,
      "pitazo": "2026-11-11 19:00:00",
-     "banca": 102.5
+     "banca": 100.0
     },
     {
      "fixtureId": 900008,
      "pitazo": "2026-11-11 21:00:00",
-     "banca": 97.57
+     "banca": 95.19
     },
     {
      "fixtureId": 900009,
      "pitazo": "2026-11-12 01:00:00",
-     "banca": 97.57
+     "banca": 95.19
     },
     {
      "fixtureId": 900012,
      "pitazo": "2026-11-13 19:45:00",
-     "banca": 97.57
+     "banca": 95.19
     },
     {
      "fixtureId": 900013,
      "pitazo": "2026-11-13 21:00:00",
-     "banca": 97.57
+     "banca": 95.19
     }
    ]
   }
@@ -1597,10 +1597,10 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "roi": 1.2
     },
     "ganarFijo": {
-     "apostado": 2.0833,
-     "ganancia": 2.5,
-     "apuestas": 1,
-     "roi": 1.2
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
     }
    }
   },
@@ -1694,8 +1694,8 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "roi": -1.0
     },
     "ganarFijo": {
-     "apostado": 4.9279,
-     "ganancia": -4.9279,
+     "apostado": 4.8077,
+     "ganancia": -4.8077,
      "apuestas": 1,
      "roi": -1.0
     }
@@ -2276,7 +2276,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 97.57,
+     "banca": 95.19,
      "linea": null,
      "motivo": "la casa le da 50 % al elegido: en el medio (45-60 %)"
     }
@@ -2459,7 +2459,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 97.57,
+     "banca": 95.19,
      "linea": null,
      "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     }
@@ -2834,9 +2834,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 97.57,
+     "banca": 95.19,
      "linea": null,
-     "motivo": "le damos 38.0 % al elegido y la casa 35.9 % (+2.1 pts): nos pasamos de la casa"
+     "motivo": "semáforo en rojo: no apostar"
     }
    }
   },
@@ -3015,9 +3015,9 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     },
     "ganarFijo": {
      "seleccion": "local",
-     "monto": 4.9279,
-     "ganancia": -4.9279,
-     "banca": 97.57,
+     "monto": 4.8077,
+     "ganancia": -4.8077,
+     "banca": 95.19,
      "linea": null,
      "motivo": ""
     }
@@ -3200,7 +3200,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
-     "banca": 102.5,
+     "banca": 100.0,
      "linea": null,
      "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
     }
@@ -3389,12 +3389,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "motivo": ""
     },
     "ganarFijo": {
-     "seleccion": "local",
-     "monto": 2.0833,
-     "ganancia": 2.5,
-     "banca": 102.5,
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
      "linea": null,
-     "motivo": ""
+     "motivo": "semáforo en amarillo"
     }
    }
   },

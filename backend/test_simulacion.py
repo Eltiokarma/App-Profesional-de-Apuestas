@@ -693,6 +693,9 @@ check("ganarFijo frena por franja: tras 15 favoritos fallados el 16 no se apuest
       and _fg[116]["motivo"].startswith("favoritos en pausa: acertó 0 de 15") and _fg[117]["monto"] > 0, _fg[116])
 check("…y el freno de las dos franjas viaja en `tramos` (el pausado anota también el partido sin apuesta)",
       [(t["tramo"], t["n"], t["pausado"]) for t in _eg["tramos"]] == [("sorpresa", 1, False), ("favorito", 16, True)], _eg["tramos"])
+_ag = _apg(77, "2026-12-01 15:00:00", "local", 39, 38, 2.5); _ag["semaforo"] = {"estado": "duda", "motivos": []}
+_fg, _eg = _gf([_ag])
+check("ganarFijo no apuesta con el semáforo fuera de verde", _fg[77]["monto"] == 0 and _fg[77]["motivo"] == "semáforo en amarillo", _fg)
 check("ganar fijo está fijado: 2,5 % de la banca, tope del doble y las dos franjas",
       sim.GANAR_FIJO == 0.025 and sim.TOPE_GANAR_FIJO == 2.0 and sim.FRANJAS_GANAR_FIJO == ("sorpresa", "favorito"))
 from backend import contacto as _ctf  # noqa: E402
