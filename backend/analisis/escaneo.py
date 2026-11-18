@@ -120,6 +120,19 @@ CHEQUEOS: dict[str, dict] = {
                  "lado el motor queda el doble de lejos del mercado y μ baja a fiabilidad «media» "
                  "(Konyaspor 0-4 Galatasaray, 860)",
     },
+    # INFORMATIVO (18/11/2026, mantenimiento de la tarde, prevención 7-bis tras
+    # la incidencia 1443): el banco probable y los onces recientes de la tabla F1
+    # leen las hojas CAPTURADAS. Sin la del último partido del equipo leen la
+    # anterior: De Miguel (Tenerife), fallecido el 03/11, seguía banco probable
+    # el 18/11 porque la hoja del 15/11 contra el Ceuta no estaba capturada. Es
+    # un dato para el parte: confirmar convocados en prensa.
+    "ultima-sin-hoja": {
+        "titulo": "Equipo de la agenda sin la hoja de su último partido",
+        "area": "once", "severidad": "aviso", "informativo": True,
+        "regla": "el banco probable sale de las 2 últimas hojas capturadas (banco.CONVOCATORIAS) y la tabla F1 "
+                 "de los onces recientes: sin la hoja del último partido jugado leen la anterior, y una baja "
+                 "nueva (lesión, sanción, salida) no se ve; los convocados se confirman en prensa",
+    },
     # INFORMATIVO (10/11/2026, incidencia 1333, decisión del usuario): los dos
     # equipos tienen la misma sede de local en la temporada; la localía del
     # motor (0,382) no aplica y /predicciones ya lo avisa en fiabilidadMu.
@@ -221,6 +234,12 @@ def _publicado_tarde(fixture_id: int, fecha_utc) -> bool:
         return False
 
 
+def _ultima_sin_hoja(team_id: int, fecha: str, fixture_id: int) -> str:
+    """La regla vive en `banco.ultima_sin_hoja` (el banco probable la dice en su nota)."""
+    from backend.analisis.banco import ultima_sin_hoja
+    return ultima_sin_hoja(team_id, fecha, fixture_id)
+
+
 def _hallazgo(chequeo: str, item: dict, detalle: str, lado: str | None = None) -> dict:
     return {"chequeo": chequeo, "fixtureId": item["fixtureId"], "partido": item.get("partido", ""),
             "fecha": item.get("fecha", ""), "hora": item.get("hora", ""),
@@ -294,6 +313,14 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
             if c and c["amistosos"] >= ventana_nivel.UMBRAL_AMISTOSOS:
                 out.append(_hallazgo("nivel-con-amistosos", item, ventana_nivel.texto(c), lado))
     except Exception:  # noqa: BLE001 — sin la tabla de ligas: no se cuenta la ventana
+        pass
+    try:
+        fx = saddb.query_one("sad", "SELECT date, home_team_id, away_team_id FROM fixtures WHERE id=?", (fid,))
+        for lado, tid in (("a", fx["home_team_id"]), ("b", fx["away_team_id"])) if fx else ():
+            hoja = _ultima_sin_hoja(tid, str(fx["date"]), fid)
+            if hoja:
+                out.append(_hallazgo("ultima-sin-hoja", item, hoja, lado))
+    except Exception:  # noqa: BLE001 — base sin alineaciones: no se afirma que falte una hoja
         pass
     try:
         from backend import partido_ajeno

@@ -118,6 +118,17 @@ def main():
     check("sin once ningún titular habitual es banco probable", not any(x["titularHabitual"] for x in a["lista"]),
           a["lista"])
     check("un lado sin historia sale con la lista vacía, no con un error", b["b"]["lista"] == [], b["b"])
+    check("con la hoja del último partido capturada la nota no avisa de hoja vieja",
+          "no tiene la hoja" not in a["nota"], a["nota"])
+    _c = sqlite3.connect(os.path.join(_TMP, "sad.db"))
+    _c.execute("INSERT INTO fixtures VALUES (11, '2026-11-10T20:00:00+00:00', 'FT', ?, ?)", (EQ, RIVAL))
+    _c.commit()
+    _a11 = banco.banco_probable(HOY)["a"]
+    _c.execute("DELETE FROM fixtures WHERE id = 11")
+    _c.commit()
+    _c.close()
+    check("prevención 1443: sin la hoja del último partido jugado, la nota lo dice con el fixture",
+          "fixture 11 " in _a11["nota"] and "no tiene la hoja" in _a11["nota"], _a11["nota"])
     check("1443: el que entraba seguido pero no está en ninguna de las 2 últimas hojas no es banco probable "
           "y la nota lo nombra", 18 not in ids and "Suplente 18" in a["nota"], (ids, a["nota"]))
 

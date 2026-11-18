@@ -218,6 +218,21 @@ _ch = {(h["chequeo"], h.get("lado")) for h in _pre}
 check("escaneo: el sancionado, el DT sin confirmar y el doble partido salen como hallazgos",
       ("sancion", "a") in _ch and ("dt-sin-confirmar", "b") in _ch and ("dos-partidos", None) in _ch
       and ("dt-sin-confirmar", "a") not in _ch, _pre)
+# 1443 (18/11/2026): sin la hoja del último partido del equipo, el banco
+# probable lee la anterior (De Miguel, Tenerife). Santos jugó el 11 (25/10) y su
+# hoja no está; con la hoja capturada no suena. Informativo: no se deposita.
+check("1443: `ultima-sin-hoja` suena para el equipo sin la hoja de su último partido, con el fixture",
+      escaneo.CHEQUEOS["ultima-sin-hoja"].get("informativo") and ("ultima-sin-hoja", "a") in _ch
+      and any(h["chequeo"] == "ultima-sin-hoja" and "fixture 11 " in h["detalle"] for h in _pre), _pre)
+con.execute("INSERT INTO alineaciones VALUES (11, ?, '4-3-3', 'DT', 276, 'Neymar', 10, 'F', NULL, 1)", (SAN,))
+con.commit()
+_ch1443 = {(h["chequeo"], h.get("lado")) for h in escaneo._pre(
+    {"fixtureId": 12, "partido": "Santos vs Palmeiras", "fecha": "2026-10-28", "hora": "22:30",
+     "equipoA": "Santos", "equipoB": "Palmeiras"}, _ahora)}
+con.execute("DELETE FROM alineaciones WHERE fixture_id=11")
+con.commit()
+check("1443: con la hoja del último partido capturada, `ultima-sin-hoja` no suena",
+      ("ultima-sin-hoja", "a") not in _ch1443, _ch1443)
 # 1255: sin cuota es hallazgo solo cuando el refresco (<= SAD_REFRESCO_VENTANA_HORAS) ya pasó
 con.execute("CREATE TABLE IF NOT EXISTS odds_history (fixture_id INTEGER, captured_at TEXT)")
 con.commit()

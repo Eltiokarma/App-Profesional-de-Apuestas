@@ -42,6 +42,29 @@ TITULARES_MIN = 7
 # —lesión, sanción, salida, o algo que la base no tiene cómo saber— y no es banco
 # probable. Dos hojas y no una: una rotación de copa sola no lo saca.
 CONVOCATORIAS = 2
+# y si la hoja del ÚLTIMO partido jugado no está capturada, las «2 últimas» son
+# viejas: se dice (prevención del 18/11 tras 1443; chequeo `ultima-sin-hoja`)
+ULTIMA_HOJA_DIAS = 14
+
+
+def ultima_sin_hoja(team_id: int, fecha: str, fixture_id: int) -> str:
+    """El último partido jugado del equipo (de los últimos ULTIMA_HOJA_DIAS)
+    si su hoja no está capturada; "" si la tiene o no hay ninguno reciente."""
+    from datetime import datetime, timedelta
+    try:
+        desde = (datetime.strptime(str(fecha)[:10], "%Y-%m-%d") - timedelta(days=ULTIMA_HOJA_DIAS)).strftime("%Y-%m-%d")
+    except ValueError:
+        return ""
+    marca = ",".join("?" * len(TERMINADOS))
+    ult = _q(f"SELECT id, date FROM fixtures WHERE (home_team_id = ? OR away_team_id = ?) AND id != ? "
+             f"AND date < ? AND date >= ? AND status_short IN ({marca}) ORDER BY date DESC LIMIT 1",
+             (team_id, team_id, fixture_id, fecha, desde, *TERMINADOS))
+    if not ult or _q("SELECT 1 AS x FROM alineaciones WHERE fixture_id = ? AND team_id = ? LIMIT 1",
+                     (ult[0]["id"], team_id)):
+        return ""
+    return (f"el último partido jugado (fixture {ult[0]['id']} del {str(ult[0]['date'])[:10]}) no tiene la hoja "
+            "capturada: el banco probable y los onces recientes de la tabla F1 leen la anterior; confirmar "
+            "convocados y bajas nuevas en prensa")
 
 
 def _q(sql: str, args: tuple) -> list[dict]:
@@ -182,7 +205,8 @@ def de_equipo(fixture_id: int, team_id: int, fecha: str) -> dict:
                     + (f". Fuera por no estar en ninguna de las últimas {CONVOCATORIAS} hojas (no convocado: "
                        f"baja, sanción o salida; confirmar en prensa): {', '.join(sorted(sin_convocar))}"
                        if sin_convocar else "")
-                    + (f". Ojo: {aviso}" if aviso else "")}
+                    + (f". Ojo: {aviso}" if aviso else "")
+                    + (f". Ojo: {vieja}" if (vieja := ultima_sin_hoja(team_id, fecha, fixture_id)) else "")}
 
 
 def banco_probable(fixture_id: int) -> dict | None:
