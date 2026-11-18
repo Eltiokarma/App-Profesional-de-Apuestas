@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las trece estrategias (con el método, en verde, fuera del medio y las martingalas ajustadas)", len(out["estrategias"]) == 13, out.keys())
+check("simulacion() responde con las catorce estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas y la cuidada)", len(out["estrategias"]) == 14, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -642,6 +642,25 @@ check("las cifras fijadas: ⅓ de la deuda y la mixta al 3 %",
       sim.RECUPERA_FUERA_MEDIO == 1 / 3 and sim.MIXTA_FUERA_MEDIO == 0.03 and not hasattr(sim, "PROPORCION_FUERA_MEDIO"))
 check("el criterio está fijado (medio 45-60 %, 30 · 60, 5 pts)",
       sim.MEDIO == (45.0, 60.0) and sim.MEDIO_ESCALONES == (30, 60) and sim.MEDIO_SEPARACION == 0.05)
+# LA MARTINGALA CUIDADA (18/11/2026, usuario: «no sabe en qué partido duplicar y
+# se va a la mierda»): sin medio, unidad = 1 % de la banca al empezar cada ciclo
+# de la línea, se duplica tras perder y a las 3 derrotas acepta la pérdida
+check("martingalaCuidada no apuesta en el medio (el 32 y el 33)",
+      _ef["martingalaCuidada"]["apuestas"] == 3
+      and _ff[32]["porEstrategia"]["martingalaCuidada"]["motivo"].endswith("en el medio (45-60 %)"))
+_oc = sim.simular([_apt(61, "2026-11-14 15:00:00", "visita"), _apt(62, "2026-11-14 18:00:00", "visita"),
+                   _apt(63, "2026-11-14 21:00:00", "visita"), _apt(64, "2026-11-15 15:00:00", "visita"),
+                   _apt(65, "2026-11-15 18:00:00", "local"), _apt(66, "2026-11-15 21:00:00", "local")])
+_fc = {a["fixtureId"]: a["porEstrategia"]["martingalaCuidada"] for a in _oc["apuestas"]}
+_ec = {e["clave"]: e for e in _oc["estrategias"]}["martingalaCuidada"]
+check("cuidada: 1 · 2 · 4 (el 1 % de 100) y a la tercera derrota corta; el ciclo nuevo va por el 1 % de 93",
+      [_fc[k]["monto"] for k in range(61, 67)] == [1.0, 2.0, 4.0, 0.93, 1.86, 0.9393]
+      and all(_fc[k]["linea"] == 1 for k in range(61, 67)), _fc)
+check("…y cuenta el corte, sin línea viniendo de perder al final",
+      _ec["lineas"] == {"abiertas": 1, "perdiendo": 0, "proximoMayor": 0.0, "cortes": 1}
+      and _ec["montoMaximo"] == 4.0, _ec)
+check("la cuidada está fijada: 1 % por ciclo y corte a 3 derrotas",
+      sim.PROPORCION_CUIDADA == 0.01 and sim.CORTE_CUIDADA == 3)
 from backend import contacto as _ctf  # noqa: E402
 check("el informe de los lunes trae «Fuera del medio» con el criterio",
       "Fuera del medio · cuenta desde 2026-11-14" in _ctf.informe_medio(_of)
