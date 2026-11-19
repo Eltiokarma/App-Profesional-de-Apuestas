@@ -5010,6 +5010,21 @@ def main():
           _m1350.get("momento") == "conocido" and _m1350.get("motivosTardios") == ["sistema: la apertura dice '4-4-2' y salió 5-4-1"]
           and "ya estaba en el once del último depósito" in _m1350["detalle"]
           and _m1350b.get("momento") == "tardio", (_m1350, _m1350b))
+    # 1446 (Hungría 1528995): la corrección de después del pitazo también cambió
+    # titulares: el motivo del once no estaba en el último depósito, sigue `tardio`
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (991446, '2026-11-17 19:45:00', 'FT', 'Match Finished', "
+                     "5, 2026, 990481, 990482)")
+        _gal(_con, 991446, _once("4-3-3", 1700), "2026-11-17 19:17:00")
+        _gal(_con, 991446, _once("4-2-3-1", 1701), "2026-11-17 21:41:00")   # otra formación Y otro titular
+    _m1446 = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
+                    "motivos": ["sistema: la apertura dice '4-3-3' y salió 4-2-3-1",
+                                "duelo del M2: R. Sallai arrancó en el banco"]}],
+                  {"id": 991446, "date": "2026-11-17 19:45:00"}, "2026-11-17 19:28:00")[0]
+    check("1446: con la corrección tardía que también cambió titulares, el motivo del once no es `conocido`",
+          _m1446.get("momento") == "tardio" and "también cambió titulares" in _m1446["detalle"]
+          and "motivosTardios" not in _m1446, _m1446)
     # 1403 (Eslovenia 1545654): el rol contra el grid corregido después del pitazo es tardío como el sistema
     _m1403 = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
                     "motivos": ["sistema: la apertura dice '4-4-2' y salió 5-3-2",

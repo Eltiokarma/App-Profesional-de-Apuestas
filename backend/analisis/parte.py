@@ -5117,7 +5117,18 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None,
         # corregido después del pitazo, el `rol:` se mide contra una corrección que nadie
         # tenía: es tan tardío como el sistema.
         otros = [x for x in a.get("motivos") or [] if not str(x).startswith(MOTIVOS_DEL_GRID)]
-        if campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros:
+        # …SALVO QUE LA CORRECCIÓN TAMBIÉN CAMBIARA TITULARES (19/11/2026,
+        # incidencia 1446, Hungría 1528995: la hoja de las 19:17 traía a Sallai
+        # titular y la de las 21:41, después del pitazo, lo dio en el banco; el
+        # motivo «Sallai arrancó en el banco» salía `conocido` sin que ningún
+        # once previo lo dijera). La huella de cada versión guarda los ids de los
+        # titulares: si cambiaron después del último depósito, los motivos del
+        # once son tan tardíos como el sistema.
+        if campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros \
+                and m.get("titularesCorregidos"):
+            texto = (f"{texto}. La corrección de después del pitazo también cambió titulares: "
+                     f"{'; '.join(otros)} tampoco estaba en el once del último depósito")
+        elif campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros:
             campos["momento"] = "conocido"
             campos["motivosTardios"] = [x for x in a.get("motivos") or [] if str(x).startswith(MOTIVOS_DEL_GRID)]
             texto = (f"{texto}. PERO {'; '.join(otros)} ya estaba en el once del último depósito: ese motivo "
@@ -5134,7 +5145,7 @@ def _versiones_once(fixture_id: int) -> list[dict]:
     el parte de las 21:04Z leyendo el once—; con `primera_en` la versión cuenta
     en las dos horas. Base sin las columnas nuevas: como antes (por formación)."""
     try:
-        filas = saddb.query("sad", "SELECT team_id, formacion, capturada_en, huella_grid, primera_en "
+        filas = saddb.query("sad", "SELECT team_id, formacion, capturada_en, huella_grid, primera_en, huella "
                                    "FROM alineaciones_versiones WHERE fixture_id=?", (fixture_id,))
     except Exception:  # noqa: BLE001 — tabla anterior a la 1220 (sin huella del grid): se lee por formación
         filas = saddb.query("sad", "SELECT team_id, formacion, capturada_en FROM alineaciones_versiones "
@@ -5248,7 +5259,12 @@ def _momento_de(filas, pitazo, dep) -> dict | None:
     campos = {**base, "momento": momento, "onceFinalEn": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
               **({"formacionCorregidaEn": t_corr.strftime("%Y-%m-%dT%H:%M:%SZ")}
                  if t_corr and momento == "tardio" and t <= dep and corregida else {})}
-    return {"campos": campos, "texto": texto}
+    # 1446: ¿la corrección de después del pitazo trae OTROS titulares? (la huella
+    # es «formación|ids de los titulares|g…»)
+    titulares = lambda f: (str(f.get("huella") or "").split("|") + ["", ""])[1]  # noqa: E731
+    corr_tit = any(k in finales and _corregida(v, finales[k]) and titulares(v) and titulares(finales[k])
+                   and titulares(v) != titulares(finales[k]) for k, v in despues.items())
+    return {"campos": campos, "texto": texto, "titularesCorregidos": corr_tit}
 
 
 def dto(fixture_id: int) -> dict | None:
