@@ -8,6 +8,7 @@ clase de falla nueva que se pueda verificar leyendo el repo se suma acá.
 
     python -m backend.test_arquitectura
 """
+import ast as _ast
 import glob
 import os
 import re
@@ -270,6 +271,33 @@ _sin_gc = [r for r in ("backend/analisis/f1_base.py", "backend/analisis/dtp_cowo
            if "grid_confiable" not in leer(r)]
 check("grid: la F1 y el rol contra el grid leen la fila solo con ficha_tactica.grid_confiable",
       not _sin_gc, _sin_gc)
+
+# 5-octies · las copas nacionales quedan fuera de TODA métrica (FALLAS.md clase
+# 13; usuario, 29/10/2026: las copas inflaban el tramo de 60 %+). Las tres
+# poblaciones que se miden —el valor contra el mercado, Aprendizaje y la
+# simulación— filtran con `escala.copas_nacionales`; y toda función de
+# `backend/analisis/` que arme una población de veredictos (lee `veredicto_json
+# IS NOT NULL`) también, salvo la huella de una caché, que solo cuenta filas
+# (prevención del mantenimiento, 19/11/2026: una métrica nueva nacía sin el filtro).
+_METRICAS = {("backend/analisis/parte.py", "historial_valor"), ("backend/analisis/lecciones.py", "_casos"),
+             ("backend/analisis/simulacion.py", "_insumos")}
+
+
+def _funciones(rel: str) -> dict[str, str]:
+    src = leer(rel)
+    return {n.name: _ast.get_source_segment(src, n) or "" for n in _ast.walk(_ast.parse(src))
+            if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef))}
+
+
+_sin_copas = [f"{r}:{fn}" for r, fn in sorted(_METRICAS) if "copas_nacionales" not in _funciones(r).get(fn, "")]
+for _r in sorted(glob.glob(os.path.join(RAIZ, "backend", "analisis", "*.py"))):
+    _rel = os.path.relpath(_r, RAIZ)
+    for _fn, _cuerpo in _funciones(_rel).items():
+        if ("veredicto_json IS NOT NULL" in _cuerpo and "huella" not in _fn
+                and "copas_nacionales" not in _cuerpo):
+            _sin_copas.append(f"{_rel}:{_fn}")
+check("métricas: cada población de veredictos saca las copas nacionales con escala.copas_nacionales",
+      not _sin_copas, _sin_copas)
 
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
