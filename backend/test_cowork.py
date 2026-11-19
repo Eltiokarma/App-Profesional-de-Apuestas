@@ -2911,6 +2911,17 @@ def main():
                                                {"nombre": "Diego Alfonzo", "estado": "baja"},
                                                {"nombre": "A. Peñaranda", "estado": "baja", "jugadorId": 18811}]}}},
                   _h1213, {"a": "Táchira"})
+    # 1448 (19/11/2026, Peñarol–Cerro Largo 1650501): «A. Hernández» de banco de
+    # Peñarol (844) en las ramas no es el titular homónimo de Cerro Largo (406656)
+    _h1448 = {"a": _hj([(51756, "M. Arezo")], [(844, "A. Hernández"), (297346, "L. Angulo")]),
+              "b": _hj([(406656, "A. Hernández"), (362495, "A. Segovia")], [(1, "A. Córdoba")])}
+    _p1448 = {"dtp": {"bloques": [{"equipo": "a", "apertura": {"m2": {"veredictoRamas": {
+        "persiguiendo": {"razon": "banco ofensivo: A. Hernández, Angulo"}}}}}]}}
+    _h1448s = {"a": _hj([(51756, "M. Arezo")], [(297346, "L. Angulo")]), "b": _h1448["b"]}
+    check("1448: el homónimo de banco del rival no hace titular de la hoja al del otro equipo; sin él, sí suena",
+          not [x for x in _feh(_p1448, _h1448, {}) if x["caso"] == "dtpBanco"]
+          and [x["caso"] for x in _feh(_p1448, _h1448s, {})] == ["dtpBanco"],
+          (_feh(_p1448, _h1448, {}), _feh(_p1448, _h1448s, {})))
     check("1213 (Táchira): de baja en `fuera` y en el banco de la hoja → FUERA-EN-LA-HOJA con los dos (id y nombre)",
           len(_a1213) == 1 and _a1213[0]["codigo"] == "FUERA-EN-LA-HOJA" and _a1213[0]["tipo"] == "dato"
           and _a1213[0]["caso"] == "fuera"

@@ -370,13 +370,19 @@ def mencion_compartida(nombre: str, otros, frase: str, nombre_suelto: bool = Fal
     """¿La frase nombra a `nombre` pero también podría ser OTRO de `otros` con
     su mismo apellido? «Castillo» suelto con E. Castillo titular y J. Castillo
     en el banco no dice de cuál habla: no se afirma nada (10/11/2026,
-    incidencia 1225, FUERA-EN-LA-HOJA: un titular nombrado de banco)."""
+    incidencia 1225, FUERA-EN-LA-HOJA: un titular nombrado de banco).
+
+    `otros` son OTRAS personas (quien llama no se pone a sí mismo): un nombre
+    IDÉNTICO ahí es un homónimo y también deja la mención sin dueño (19/11/2026,
+    incidencia 1448, Peñarol–Cerro Largo: «A. Hernández» de banco de Peñarol, id
+    844, se avisaba como el «A. Hernández» titular de Cerro Largo, id 406656,
+    porque el nombre igual se salteaba como si fuera el mismo)."""
     t = tokens(nombre)
     if not t:
         return False
     for otro in otros or ():
         o = tokens(otro)
-        if not o or o == t or not menciona(otro, frase, nombre_suelto):
+        if not o or not menciona(otro, frase, nombre_suelto):
             continue
         if o[-1] == t[-1] or apellido_casi(o[-1], t[-1]):
             return True
