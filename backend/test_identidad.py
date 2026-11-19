@@ -261,6 +261,11 @@ check("1225: la mención de un apellido que también es de otro de la hoja queda
       idn.mencion_compartida("E. Castillo", ["J. Castillo"], "Castillo")
       and not idn.mencion_compartida("E. Castillo", ["J. Castillo"], "E. Castillo")
       and not idn.mencion_compartida("V. Adamo", ["J. Castillo"], "Adamo"))
+# 1448 (19/11/2026, Peñarol–Cerro Largo): el homónimo EXACTO del otro equipo
+# («A. Hernández» en las dos hojas, ids 844 y 406656) también deja la mención sin dueño
+check("1448: un nombre idéntico de otra persona en la hoja deja la mención sin dueño",
+      idn.mencion_compartida("A. Hernández", ["A. Hernández"], "banco: A. Hernández, Angulo")
+      and not idn.mencion_compartida("A. Hernández", ["L. Angulo"], "banco: A. Hernández, Angulo"))
 # 1330 (10/11/2026, aprobada): la hoja trae el id de uno con el nombre de OTRO de la plantilla
 _pl1330 = {305596: "Krisztian Paraszhidisz", 527180: "P. Preciado", 64215: "S. Córdoba"}
 check("1330: «P. Preciado» con el id 305596 (Paraszhidisz) es el 527180",
