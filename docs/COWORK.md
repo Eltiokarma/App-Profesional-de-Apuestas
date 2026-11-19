@@ -2048,7 +2048,7 @@ cortó). Por cada una: `{"familia": "noPierde", "ambito": "local",
 frase con el hecho: la ficha, el once, el DT, la pelota parada"}`. Los
 mecanismos son los de `GET /analisis/cowork/reventones/…` (echada,
 bloque_bajo_del_rival, superioridad_rival, roja, balon_parado, bajas_forzadas,
-sistema_propio_nuevo, rival_esteril, varianza…). Si de verdad no hay un hecho, `varianza`: también es dato.
+sistema_propio_nuevo, rival_esteril, error_arquero, error_individual, varianza…). Si de verdad no hay un hecho, `varianza`: también es dato.
 
 SOBRE `seleccion` — es el campo que decide si el caso sirve para calibrar:
   ciega            el partido salió de la agenda, se eligió sin saber nada.
