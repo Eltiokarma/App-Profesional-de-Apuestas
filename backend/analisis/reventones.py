@@ -46,6 +46,11 @@ MECANISMOS = {
     "rival_se_sobreexpuso": "el rival se expuso de más y el de la racha lo castigó",
     "roja": "una expulsión cambió el partido",
     "error_arquero": "un gol pasó por un error del arquero",
+    # 19/11/2026, incidencia 1447: el corte de «recibe total» de Irlanda del
+    # Norte (5 con la valla invicta) fue un cabezazo de Hume hacia su propio
+    # arco, y tuvo que ir como «otro»: error_arquero no lo describe
+    "error_individual": "un gol pasó por el error de un jugador de campo (pase atrás, despeje o cabezazo hacia "
+                        "el propio arco) — Irlanda del Norte–Hungría, Hume",
     "balon_parado": "lo decidió una pelota parada",
     "penal": "lo decidió un penal",
     "rotacion_o_fatiga": "rotación, fatiga o calendario cargado",

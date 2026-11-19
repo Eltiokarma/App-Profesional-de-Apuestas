@@ -7215,6 +7215,8 @@ def main():
           and "arquero_rival" in rv.MECANISMOS and "clasico" in rv.SENALES
           # 1422 (15/11/2026): el sistema propio nuevo y el rival estéril, sin «otro»
           and "sistema_propio_nuevo" in rv.MECANISMOS and "rival_esteril" in rv.MECANISMOS)
+    check("1447: el error de un jugador de campo tiene su mecanismo (no va a «otro»)",
+          "error_individual" in rv.MECANISMOS and "error_arquero" in rv.MECANISMOS)
     # EL ARQUERO ANTES DEL PITAZO (14/10/2026): dato calculado, no regla
     from backend.analisis import arquero as _arq
     # caso propio: el arquero 1 atajó los dos primeros, el 2 el tercero (suplente)
