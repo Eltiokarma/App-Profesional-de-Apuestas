@@ -5022,6 +5022,17 @@ def main():
                     "motivos": ["sistema: la apertura dice '4-3-3' y salió 4-2-3-1",
                                 "duelo del M2: R. Sallai arrancó en el banco"]}],
                   {"id": 991446, "date": "2026-11-17 19:45:00"}, "2026-11-17 19:28:00")[0]
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _gal(_con, 991446, [{**_once("3-4-2-1", 2700)[0], "team": {"id": 990482}}], "2026-11-17 19:17:00")
+        # el rival corregido después del pitazo con los MISMOS titulares (otra etiqueta)
+        _gal(_con, 991446, [{**_once("3-5-2", 2700)[0], "team": {"id": 990482}}], "2026-11-17 21:41:00")
+    _m1446b = _mom([{"codigo": "DTP-REHACER", "equipo": "b", "tipo": "dato", "detalle": "x",
+                     "motivos": ["sistema: la apertura dice '3-4-2-1' y salió 3-5-2",
+                                 "duelo del M2: R. Sallai arrancó en el banco"]}],
+                   {"id": 991446, "date": "2026-11-17 19:45:00", "home_team_id": 990481, "away_team_id": 990482},
+                   "2026-11-17 19:28:00")[0]
+    check("1446: el motivo que nombra al rival tampoco es `conocido` si el RIVAL cambió titulares después del pitazo",
+          _m1446b.get("momento") == "tardio" and "también cambió titulares" in _m1446b["detalle"], _m1446b)
     check("1446: con la corrección tardía que también cambió titulares, el motivo del once no es `conocido`",
           _m1446.get("momento") == "tardio" and "también cambió titulares" in _m1446["detalle"]
           and "motivosTardios" not in _m1446, _m1446)

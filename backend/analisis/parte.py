@@ -5124,8 +5124,13 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None,
         # once previo lo dijera). La huella de cada versión guarda los ids de los
         # titulares: si cambiaron después del último depósito, los motivos del
         # once son tan tardíos como el sistema.
+        # …de CUALQUIERA de los dos lados: un duelo del M2 nombra jugadores del
+        # rival (1446: «Sallai arrancó en el banco» sonaba también en el bloque de
+        # Irlanda del Norte, cuyo once no cambió de titulares)
+        if "todos" not in cache:
+            cache["todos"] = _momento_de(filas, pitazo, dep) or {}
         if campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros \
-                and m.get("titularesCorregidos"):
+                and (m.get("titularesCorregidos") or cache["todos"].get("titularesCorregidos")):
             texto = (f"{texto}. La corrección de después del pitazo también cambió titulares: "
                      f"{'; '.join(otros)} tampoco estaba en el once del último depósito")
         elif campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros:
