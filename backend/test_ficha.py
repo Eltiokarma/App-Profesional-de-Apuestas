@@ -6,6 +6,7 @@ goles) y M6 (rotación) se quedan sin materia prima y el DTP no puede abrir.
     python -m backend.test_ficha
 """
 import os
+import json
 import sqlite3
 import sys
 
@@ -140,6 +141,27 @@ def main():
     guardar_alineaciones(con, 555, LINEUPS)
     check("re-ingestar no duplica filas",
           con.execute("SELECT COUNT(*) FROM alineaciones WHERE fixture_id=555").fetchone()[0] == 5)
+
+    # 1449 (20/11/2026, Coritiba–Santos 1492451): después del partido la API manda
+    # los MISMOS titulares sin formación ni grid: no pisa lo capturado ni es versión nueva
+    _deg = json.loads(json.dumps(LINEUPS))
+    for _l in _deg:
+        _l["formation"] = None
+        for _it in _l["startXI"] + _l["substitutes"]:
+            _it["player"]["grid"] = None
+    _vers = lambda: con.execute("SELECT COUNT(*) FROM alineaciones_versiones WHERE fixture_id=555").fetchone()[0]
+    _v0 = _vers()
+    guardar_alineaciones(con, 555, _deg)
+    _f1449 = con.execute("SELECT formacion, grid FROM alineaciones WHERE fixture_id=555 AND player_id=3").fetchone()
+    check("1449: la respuesta sin formación ni grid con los mismos titulares conserva lo capturado, sin versión nueva",
+          _f1449 == ("4-2-3-1", "4:3") and _vers() == _v0, (_f1449, _v0, _vers()))
+    _otro = json.loads(json.dumps(_deg))
+    _otro[0]["startXI"][2]["player"] = {"id": 4, "name": "Otro Extremo", "number": 11, "pos": "F", "grid": None}
+    guardar_alineaciones(con, 555, _otro)
+    _f1449b = con.execute("SELECT formacion FROM alineaciones WHERE fixture_id=555 AND team_id=100 LIMIT 1").fetchone()
+    check("1449: con otros titulares la respuesta entra como viene (no se inventa la formación)",
+          _f1449b == (None,), _f1449b)
+    guardar_alineaciones(con, 555, LINEUPS)
 
     # ── eventos: minuto+añadido, autor y ASISTENTE (M4) ────────────────────
     n = guardar_eventos(con, {"fixture_id": 555, "eventos": EVENTOS})

@@ -300,7 +300,25 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
     """Un item por equipo: {team, coach, formation, startXI[], substitutes[]}.
     Se reemplaza entero: la alineación de un partido no cambia, pero un XI
     probable puede volverse oficial. Cada versión distinta queda anotada con
-    su hora en `alineaciones_versiones`."""
+    su hora en `alineaciones_versiones`.
+
+    LA RESPUESTA DEGRADADA NO PISA LA BUENA (20/11/2026, incidencia 1449,
+    Coritiba–Santos 1492451, Flamengo–Athletico 1492453, Alcoyano–Mallorca
+    1644334): después del partido la API volvió a mandar los MISMOS titulares
+    sin `formation` y sin ningún `grid`, y el reemplazo entero dejaba la ficha
+    sin sistema ni casillas (el veredicto no podía verificar el M1) y anotaba
+    una «versión nueva» del once sin formación. Con los mismos titulares, sin
+    formación y sin casillas, se conservan la formación y el grid de lo ya
+    capturado; un once distinto entra como venga."""
+    previo: dict[int, dict] = {}
+    for r in con.execute("SELECT team_id, formacion, player_id, grid, titular FROM alineaciones "
+                         "WHERE fixture_id=?", (fixture_id,)):
+        p = previo.setdefault(r[0], {"formacion": None, "grids": {}, "titulares": set()})
+        p["formacion"] = p["formacion"] or r[1]
+        if r[3]:
+            p["grids"][r[2]] = r[3]
+        if r[4]:
+            p["titulares"].add(r[2])
     con.execute("DELETE FROM alineaciones WHERE fixture_id=?", (fixture_id,))
     n = 0
     for lado in respuesta:
@@ -308,6 +326,13 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
         if not tid:
             continue
         formacion = lado.get("formation")
+        conserva = {}
+        ant = previo.get(tid)
+        if ant and not formacion and not any((it.get("player") or {}).get("grid")
+                                             for it in lado.get("startXI") or []):
+            nuevos = {_i((it.get("player") or {}).get("id")) for it in lado.get("startXI") or []}
+            if nuevos == ant["titulares"] and (ant["formacion"] or ant["grids"]):
+                formacion, conserva = ant["formacion"], ant["grids"]
         dt = limpiar_nombre((lado.get("coach") or {}).get("name"))
         # UN PAÍS O UN EQUIPO NO ES UN DT (incidencia 1019, «Bolívia» en la hoja
         # de San Antonio): no se guarda, como en /coachs
@@ -335,11 +360,11 @@ def guardar_alineaciones(con: sqlite3.Connection, fixture_id: int, respuesta: li
                     "entrenador, player_id, jugador, numero, posicion, grid, titular) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (fixture_id, tid, formacion, dt, pid, limpiar_nombre(p.get("name")),
-                     _i(p.get("number")), p.get("pos"), p.get("grid"), titular),
+                     _i(p.get("number")), p.get("pos"), p.get("grid") or conserva.get(pid), titular),
                 )
                 if titular:
                     titulares.append(pid)
-                    grids[pid] = p.get("grid")
+                    grids[pid] = p.get("grid") or conserva.get(pid)
                 n += 1
         if titulares:
             registrar_version(con, fixture_id, tid, formacion, titulares, cuando, grids)
