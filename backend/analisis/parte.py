@@ -1870,6 +1870,15 @@ _DICE_PASA = re.compile(r"clasific[oó]|pas[oó] a (?:la )?(?:final|semi|cuartos
 _ACTIVA = re.compile(r"elimin(?:[oó]|ando|ar|aron)\s+a\b|dej[oó] (?:afuera|fuera) a\b", re.I)
 # «evitó la eliminación», «estuvo a punto de quedar afuera»: no afirma la eliminación
 _NIEGA = re.compile(r"evit|casi|a punto|cerca de|roz[oó]|salv[oó]|sin |no (?:fue|qued|cay)|lejos de|pese a", re.I)
+# LA FRASE QUE CITA EL ERROR DE UNA FUENTE no lo afirma (20/11/2026, incidencia
+# 1456, Recoleta–Guaraní 1632066: «La Nación dio por error el pase de Guaraní
+# ante Libertad»; la ficha y ABC dan que pasó Recoleta y el parte lo decía bien).
+# Hacen falta las DOS marcas —una fuente y que está equivocada—: «cayó por un
+# error del arquero» sigue afirmando la eliminación.
+_FUENTE = re.compile(r"seg[uú]n|prensa|diario|medio|cr[oó]nica|public|report|inform|atribu|titul[oó]|"
+                     r"la naci[oó]n|\babc\b|\bnota de\b", re.I)
+_EQUIVOCA = re.compile(r"por error|err[oó]ne|equivoc|incorrect|confund|desmentid|contradic|\bmal\b|"
+                       r"\berror (?:de|del|en)\b", re.I)
 _ESTE_RIVAL = re.compile(r"\b(?:por|ante|contra|frente a)\s+(?:este|el mismo|su)\s+rival\b", re.I)
 _GENERICAS = {"conmebol", "uefa", "league", "copa", "primera", "division", "liga", "championship", "nacional",
               "national", "torneo", "trophy", "super", "cup"}
@@ -1937,6 +1946,8 @@ def alertas_eliminatoria(parte: dict, fx, nombres: dict) -> list[dict]:
                 activa = _ACTIVA.sub(" ", frase)
                 if not dice.search(activa) or _NIEGA.search(activa):
                     continue
+                if _FUENTE.search(frase) and _EQUIVOCA.search(frase):
+                    continue  # cita el error de una fuente, no lo afirma (1456)
                 # la llave también se nombra por su RIVAL: por su nombre, o «este
                 # rival» cuando el de hoy es el mismo de la llave (1130: Cerro
                 # «eliminado de la copa por este rival», San Lorenzo, que pasó Cerro)
