@@ -258,6 +258,29 @@ finally:
 check("1426: «finalista del Uruguayo» (la liga) no suena por la Copa Uruguay; «finalista de la Copa Uruguay» sí",
       _al1426 == [] and [a["equipo"] for a in _al1426b] == ["b"], (_al1426, _al1426b))
 
+# 1456 (20/11/2026, Recoleta–Guaraní 1632066): Recoleta pasó a Libertad por penales
+# y la nota del parte citaba el error de La Nación. Citar el error de una fuente no
+# es afirmarlo; decirlo sin la fuente equivocada sigue sonando.
+_ll1456 = [{"fixtureId": 1632001, "competicion": "Copa Paraguay", "penales": "5-4", "pasa": True,
+            "texto": "pasó por penales", "rival": "Libertad", "rivalId": 66}]
+try:
+    eliminatoria.recientes = lambda tid, antes, dias=30: _ll1456 if tid == 1 else []
+    _fx1456 = {"home_team_id": 1, "away_team_id": 2, "date": "2026-11-20 23:00:00"}
+    _nom1456 = {"a": "Deportivo Recoleta", "b": "Club Guarani"}
+    _al1456 = parte.alertas_eliminatoria({"equipos": {"a": {"nota": "Ojo: La Nación (20/11) publicó por error "
+                                                                    "que Recoleta quedó afuera ante Libertad por penales; "
+                                                                    "la ficha y ABC dan que pasó Recoleta."}}},
+                                         _fx1456, _nom1456)
+    _al1456b = parte.alertas_eliminatoria({"equipos": {"a": {"nota": "Recoleta quedó afuera ante Libertad "
+                                                                     "por penales."}}}, _fx1456, _nom1456)
+    _al1456c = parte.alertas_eliminatoria({"equipos": {"a": {"nota": "Recoleta quedó afuera por penales por un "
+                                                                     "error del arquero."}}}, _fx1456, _nom1456)
+finally:
+    eliminatoria.recientes = _rec_orig
+check("1456: la nota que cita el error de La Nación no suena; afirmarlo, con o sin «error del arquero», sí",
+      _al1456 == [] and [a["equipo"] for a in _al1456b] == ["a"] and [a["equipo"] for a in _al1456c] == ["a"],
+      (_al1456, _al1456b, _al1456c))
+
 print()
 print("TODO OK" if not fallos else f"{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
