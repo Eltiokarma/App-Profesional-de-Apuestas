@@ -244,3 +244,20 @@
   `dtEquivocado` sale vacío solo cuando el nombre declarado casa con el banco
   de la hoja o cuando la hoja no trae entrenador. Se reporta si un lado
   `disputado` aparece igual en una cuarentena automática.
+  Y desde la pasada del 20/11 (mediodía): la coherencia (Jev) sin evaluar
+  por timeout o falta de red (1451, 894: con varios depósitos a la vez Jev
+  puede no contestar en `jev.TIMEOUT` × 3 intentos; el parte se deposita
+  igual, el recibo trae `coherencia.error` y el revisor lo cuenta en
+  `noEvaluados`). Si querés el guardrail en ese parte, re-depositalo igual
+  al final de la corrida, de a uno, y vuelve a evaluar; no se reporta. Se
+  reporta si `GET /analisis/cowork/revisor` da errores en más de la mitad
+  de los partes de una corrida (Jev caído, no saturado). Y el partido de la
+  agenda sin cuotas prepartido en la app (1453, 1261, 1267: decidido por el
+  usuario en la #1379, dato de la API sin regla nueva): el escaneo del
+  mantenimiento ya lo deposita con su chequeo `sin-cuotas` y el parte usa
+  la casa de la web con fuente y hora. Y el ciclo de amarillas que la prensa
+  da y la base cuenta más corto en una liga con `amarillasSinRegla` (1452,
+  Primera de Uruguay: Queiroz con 5 según la prensa y 2 en la base): sin
+  la regla la base no afirma el ciclo y la prensa manda (1254, 1373, 1263).
+  Se reporta, con el reglamento citado, si conseguís la regla de esa
+  competición: entra a `sanciones.UMBRALES`.
