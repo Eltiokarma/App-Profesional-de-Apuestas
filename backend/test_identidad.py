@@ -312,5 +312,11 @@ check("1386: el trozo «Josep Díaz» (nombre suelto) no menciona a «Ekain Diaz
 check("1386: sin la marca, la frase que arranca con mayúscula se sigue leyendo como antes («Entra Silva»)",
       idn.menciona("K. Silva", "Entra Silva"))
 
+check("1455: con los dos ids el id manda («L. Rodríguez» 634053 no es 51343); con uno solo, el nombre",
+      not idn.misma_persona("L. Rodríguez", 634053, "L. Rodríguez", 51343)
+      and idn.misma_persona("L. Rodríguez", 634053, "Luis Rodríguez", "634053")
+      and idn.misma_persona("L. Rodríguez", None, "L. Rodriguez", 51343)
+      and not idn.misma_persona("L. Rodríguez", None, "M. Rodríguez", 51343))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
