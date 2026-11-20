@@ -242,6 +242,7 @@ Tres lugares donde vive una guardia:
 - **Casos** (279 incidencias): dos fixtures del mismo partido, cuotas incoherentes (Marathonbet), mojibake en los nombres, el grid de la API equivocado, `/coachs` atrasado, alineaciones que no llegan (deuda 5).
 - **Guardia:**
   - **El grid revuelto no dice nada:** con el arquero de la hoja fuera de la fila 1 (o uno de campo en la 1) el grid no se lee como posiciones: UNA regla, `ficha_tactica.grid_confiable`, para la F1 (`f1_base._lineas_por_grid`) y el rol contra el grid (`dtp_cowork`, `casillas`) (1413 y 1415, Nacional–Albion: A. Martín Arias entraba como DEF y «el central en el arco» pedía rehacer). Test en `backend/test_cowork.py` y regla «grid» en `backend/test_arquitectura.py`.
+  - **La respuesta degradada no pisa la buena** (1449, 20/11/2026, Coritiba–Santos, Flamengo–Athletico, Alcoyano–Mallorca): la API volvió a mandar después del partido los mismos titulares sin formación ni grid, y el reemplazo dejaba la ficha sin sistema ni casillas. `ficha_partido.guardar_alineaciones` conserva la formación y el grid ya capturados cuando el once es el mismo y viene sin las dos cosas, y no anota una versión nueva; un once distinto entra como venga. Test en `backend/test_ficha.py`.
   - `cuota_mercados.casas_dos_salidas_incoherentes`;
   - `cuota_mercados.historial_util`: el historial de cuotas es el de ESTE partido (21 días antes del pitazo, desde la primera captura con 3 casas) y una cuota ≤ 1,00 no es cuota (765, 779, 829);
   - `nombres.limpiar_nombre`;
