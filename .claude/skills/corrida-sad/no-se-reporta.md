@@ -235,3 +235,12 @@
   lo saca a mano y lo dice en notas. Se reporta si el jugador sigue en la
   lista con 2 hojas capturadas posteriores a su ausencia en las que no
   figura.
+  Y desde la pasada del 20/11 (noche): el lado que queda en `dtEquivocado`
+  con `disputado: true` después de declarar `dt.banco` con fuente (1450:
+  Alcoyano–Mallorca, la hoja con «Luis Garrido» y la crónica con Fran
+  Alcoy). Es por diseño (`parte.MOTIVOS_BANCO` y `dt_equivocado`): queda a
+  la vista, pero NO aparta el caso, porque `lecciones._casos` pone en
+  cuarentena solo los lados no disputados. No hace falta desmentir el banco.
+  `dtEquivocado` sale vacío solo cuando el nombre declarado casa con el banco
+  de la hoja o cuando la hoja no trae entrenador. Se reporta si un lado
+  `disputado` aparece igual en una cuarentena automática.
