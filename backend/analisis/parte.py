@@ -2085,8 +2085,8 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
             if not isinstance(f, dict) or (f.get("estado") or "baja") != "baja":
                 continue
             pid, nombre = f.get("jugadorId"), _txt(f.get("nombre"))
-            j = next((j for j in en_hoja if pid and j["id"] == pid), None) or \
-                next((j for j in en_hoja if _identidad.mismo_jugador(nombre, j["nombre"])), None)
+            # el id manda cuando lo traen los dos (1455: dos «L. Rodríguez» en Cerro)
+            j = next((j for j in en_hoja if _identidad.misma_persona(nombre, pid, j["nombre"], j.get("id"))), None)
             if j:
                 hallados.append({"nombre": nombre, "enLaHoja": j["nombre"],
                                  "hoja": "titular" if j["titular"] else "banco"})
@@ -2179,8 +2179,8 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
         otros = [j["nombre"] for j in en_hoja] + \
                 [j["nombre"] for k in ("titulares", "banca") for j in (hoja.get(rival) or {}).get(k) or []]
         ausentes = [j for j in (eqs.get(lado) or {}).get("plantel") or [] if isinstance(j, dict) and _txt(j.get("nombre"))
-                    and not any((j.get("jugadorId") and j.get("jugadorId") == x["id"])
-                                or _identidad.mismo_jugador(_txt(j.get("nombre")), x["nombre"]) for x in en_hoja)]
+                    and not any(_identidad.misma_persona(_txt(j.get("nombre")), j.get("jugadorId"),
+                                                         x["nombre"], x.get("id")) for x in en_hoja)]
         hallados, vistos = [], set()
         for foco, donde, texto in textos + textos_tde:
             for trozo in _dtp.nombrados_de_banco(_txt(texto)):
@@ -4165,22 +4165,22 @@ def _sacados_de_fuera_en_la_hoja(antes: dict, ahora: dict, fixture_id: int) -> i
     no una pérdida: `perdido` no los cuenta (06/11/2026, incidencia 1260,
     Hamburger SV–Gladbach: el rehacer sacó a Bornauw, Poulsen, Diks y Honorat,
     que estaban en la hoja, y el recibo avisaba «bajas: 14 → 10»)."""
-    from backend.identidad import mismo_jugador
+    from backend.identidad import misma_persona
     try:
         hoja = saddb.query("sad", "SELECT player_id, jugador FROM alineaciones WHERE fixture_id=?", (fixture_id,))
     except Exception:  # noqa: BLE001 — sin la ficha capturada no hay hoja contra la que descontar
         return 0
     if not hoja:
         return 0
-    ids = {h["player_id"] for h in hoja if h["player_id"]}
     n = 0
     for lado in LADOS:
         quedan = ((ahora.get("equipos") or {}).get(lado) or {}).get("fuera") or []
         for f in ((antes.get("equipos") or {}).get(lado) or {}).get("fuera") or []:
             nom, jid = f.get("nombre") or "", f.get("jugadorId")
-            if any((jid and q.get("jugadorId") == jid) or mismo_jugador(nom, q.get("nombre") or "") for q in quedan):
+            # el id manda cuando lo traen los dos (1455)
+            if any(misma_persona(nom, jid, q.get("nombre") or "", q.get("jugadorId")) for q in quedan):
                 continue  # sigue en fuera
-            if (jid and jid in ids) or any(nom and mismo_jugador(nom, h["jugador"] or "") for h in hoja):
+            if any(misma_persona(nom, jid, h["jugador"] or "", h["player_id"]) for h in hoja):
                 n += 1
     return n
 

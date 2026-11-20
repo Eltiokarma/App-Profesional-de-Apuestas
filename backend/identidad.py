@@ -203,6 +203,28 @@ def mismo_jugador(uno: str, otro: str) -> bool:
             and any(corto[-1] == x or apellido_casi(corto[-1], x) for x in largo[1:] if len(x) > 1))
 
 
+def _id(x) -> int | None:
+    try:
+        return int(x) if x not in (None, "", 0, "0") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def misma_persona(nombre_uno: str, id_uno, nombre_otro: str, id_otro) -> bool:
+    """¿El mismo jugador, con el id cuando lo hay en LOS DOS lados? (20/11/2026,
+    incidencia 1455, Cerro–Nacional 1650503: «L. Rodríguez» 634053, de baja por
+    el cruzado, y el titular «L. Rodríguez» 51343 de la hoja, el volante que
+    volvía de la sanción. FUERA-EN-LA-HOJA los casaba por el nombre). Con los
+    dos ids, el id manda y el nombre no funde a dos personas (como en
+    `id_cruzado`, 1307); con uno solo o ninguno, el nombre (`mismo_jugador`).
+    El mismo jugador con dos registros de la API se casa antes con
+    `ids_equivalentes`, no con el nombre."""
+    a, b = _id(id_uno), _id(id_otro)
+    if a and b:
+        return a == b
+    return mismo_jugador(nombre_uno or "", nombre_otro or "")
+
+
 def id_cruzado(nombre_hoja: str, pid: int, plantel: dict) -> int | None:
     """LA HOJA TRAE EL ID DE UNO CON EL NOMBRE DE OTRO (10/11/2026, incidencia
     1330, aprobada por el usuario): Pasto con 305596 —Paraszhidisz en la

@@ -2927,6 +2927,13 @@ def main():
           and _a1213[0]["caso"] == "fuera"
           and sorted(x["enLaHoja"] for x in _a1213[0]["jugadores"]) == ["D. Alfonzo", "R. Pollero"]
           and "FUERA-EN-LA-HOJA" in _ac, _a1213)
+    # 1455 (20/11/2026, Cerro–Nacional 1650503): «L. Rodríguez» 634053 de baja por el
+    # cruzado y el titular «L. Rodríguez» 51343 de la hoja son dos personas: el id manda
+    _h1455 = {"a": _hj([(51343, "L. Rodríguez"), (2, "M. Otro")], [(3, "J. Banco")])}
+    check("1455: la baja con id y el homónimo de la hoja con OTRO id no suenan; sin el id de la baja, el nombre sí",
+          _feh({"equipos": {"a": {"fuera": [{"nombre": "L. Rodríguez", "estado": "baja", "jugadorId": 634053}]}}},
+               _h1455, {}) == []
+          and len(_feh({"equipos": {"a": {"fuera": [{"nombre": "L. Rodríguez", "estado": "baja"}]}}}, _h1455, {})) == 1)
     check("1213: de baja y fuera de la hoja (Peñaranda), una duda, o sin hoja capturada → nada",
           _feh({"equipos": {"a": {"fuera": [{"nombre": "A. Peñaranda", "estado": "baja", "jugadorId": 18811},
                                             {"nombre": "G. Lozano", "estado": "duda"}]}}}, _h1213, {}) == []
