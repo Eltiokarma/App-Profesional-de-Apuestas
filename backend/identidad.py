@@ -20,6 +20,7 @@ from __future__ import annotations
 import difflib
 import re
 import unicodedata
+from functools import lru_cache
 
 from backend.nombres import limpiar_nombre
 
@@ -52,7 +53,16 @@ def tokens(nombre: str) -> list[str]:
     """Las palabras útiles del nombre, en orden: sin partículas y con las
     iniciales como una letra («A. Campos» → ['a', 'campos']). El nombre se
     limpia antes (entidades HTML y mojibake de la API)."""
-    return [t for t in plano(limpiar_nombre(nombre or "") or "").split() if t and t not in PARTICULAS]
+    return list(_tokens(nombre or ""))
+
+
+# GUARDADO POR NOMBRE (21/11/2026, incidencia 1472: el escaneo preventivo pasó
+# de responder a cortarse a los 200-280 s; la tabla F1 y su deduplicación cruzan
+# cada par del plantel y `tokens` limpiaba el mismo nombre decenas de miles de
+# veces). Es una función pura del texto: el mismo nombre da las mismas palabras.
+@lru_cache(maxsize=65536)
+def _tokens(nombre: str) -> tuple[str, ...]:
+    return tuple(t for t in plano(limpiar_nombre(nombre) or "").split() if t and t not in PARTICULAS)
 
 
 # EL DIMINUTIVO ES LA MISMA PILA (31/10/2026, incidencia 937: el once de Oriente
@@ -181,7 +191,18 @@ _COMPUESTO = re.compile(rf"[^\W_][\w'’]*(?:[{_GUIONES}][^\W_][\w'’]*)+")
 
 def compuestos(nombre: str) -> list[tuple[str, ...]]:
     """Los apellidos con guion del nombre, cada uno como sus palabras planas."""
-    return [tuple(plano(m.group(0)).split()) for m in _COMPUESTO.finditer(limpiar_nombre(nombre or "") or "")]
+    return list(_compuestos(nombre or ""))
+
+
+@lru_cache(maxsize=65536)
+def _compuestos(nombre: str) -> tuple[tuple[str, ...], ...]:
+    return tuple(tuple(plano(m.group(0)).split()) for m in _COMPUESTO.finditer(limpiar_nombre(nombre) or ""))
+
+
+def _puede_tener_guion(nombre: str) -> bool:
+    """El atajo de 1472: sin guion (ni una entidad HTML que lo traiga) no hay
+    compuesto que mirar, y la mayoría de los pares no lo tiene."""
+    return bool(nombre) and ("&" in nombre or any(g in nombre for g in _GUIONES))
 
 
 def mitad_de_compuesto(corto: str, largo: str) -> bool:
@@ -207,7 +228,8 @@ def mismo_jugador(uno: str, otro: str) -> bool:
     a, b = tokens(uno), tokens(otro)
     if len(a) < 2 or len(b) < 2:
         return False
-    if mitad_de_compuesto(uno, otro) or mitad_de_compuesto(otro, uno):   # 1466
+    if ((_puede_tener_guion(uno) or _puede_tener_guion(otro))
+            and (mitad_de_compuesto(uno, otro) or mitad_de_compuesto(otro, uno))):   # 1466
         return False
     if all(len(t) > 1 for t in a + b) and sorted(a) == sorted(b):
         return True
