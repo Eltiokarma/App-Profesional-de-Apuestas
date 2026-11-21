@@ -1092,6 +1092,33 @@ ganó el 16,7 % cuando la casa decía 22,3 % (n 329); la plana igual quedó en
 −0,4 % con el margen: el favorito grande gana algo más de lo que dice la cuota
 sin margen, pero no deja valor a la cuota real.
 
+### 15.4 El margen del favorito: el hándicap y dónde no entrar (21/11/2026)
+
+El usuario, tras Bayern 1-1 Köln: «la gente pierde plata por los hándicaps:
+cree que el favorito va a ganar por 2, 3, 4 goles; una cuota de 1,10 que
+tiene que ganar por 2 se vuelve 1,5 y parece jugosa, y muchos de esos
+partidos terminan con una diferencia mínima». `backend/backtest_margen.py`
+(test: `backend/test_backtest_margen.py`) mide, con el nivel PREVIO de los
+dos lados y sin copas nacionales:
+
+1. **por cuánto gana el favorito** en cada segmento (por nivel y por la cuota
+   de la casa 70, 80 y 85 %+) y la cuota JUSTA del −1,5 y del −2,5. La base
+   no guarda la cuota del hándicap −1,5 (solo ±0,5): la justa se compara a
+   mano con la que da la casa;
+2. **dónde no entrar en el −1,5**: las burbujas del margen (la sequía de
+   «pierde por 2+» del rival en la condición y su récord, la sequía de «gana
+   por 2+» del favorito), el perfil de goleado del rival y la forma de 10,
+   contra los sin señal del mismo tramo de 0,1 de ventaja, por época;
+3. **por liga**: dónde el muy favorito y el gigante cubren el −1,5 menos de
+   lo esperado por su ventaja.
+
+**Primera mirada (73 equipos bajados, sin cuota):** el gigante (nivel 3,5+ y
+1,0+ de ventaja) gana por 2+ el 38,6 % (cuota justa del −1,5: 2,59) y por 3+
+el 23,3 % (4,29); con 1,5+ de ventaja, 44 % (2,26). En el gigante, si el
+rival viene 5+ partidos sin perder por 2+ en su condición, no cubre el −1,5
+el 73 % contra el 55 % sin eso (+13 pts contra el mismo tramo de ventaja,
+separa); con «no perdió por 2+ en 9+ de 10», +12. Falta el padrón.
+
 ## 16. Cuánto separa el riesgo en cada liga (29/10/2026)
 
 La fase 0 de ligas nuevas (`python -m backend.fase0_ligas` y
