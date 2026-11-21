@@ -615,6 +615,55 @@ adelante junto al primero, sin tocar la app): *verde cuyo rival no pierde el
 60 %+ de su historia en la condición de hoy (perfil DC de la tarjeta) →
 amarillo*. Si los dos se sostienen, manda el de mayor diferencia de acierto.
 
+## Las burbujas: cuándo no apostar (21/11/2026)
+
+El usuario, tras Sportivo Ameliano 1-0 Sportivo Luqueño (1632063): «las
+burbujas no tienen que decir quién gana, solamente cuándo no apostar» y «no
+nos importa si la casa ya cobra». `backend/backtest_semaforo_burbujas.py`
+(REVENTON §19) pinta el semáforo con la **tarjeta** de cada lado (la espina
+que da la historia sola, `espinaTarjeta`) en lugar de la espina del
+analista, y mira cuánto más pierde o empata el elegido con cada señal.
+Corrida del padrón (21/11/2026; 71.781 favoritos por nivel 2019-2026, 2.648
+favoritos de la casa desde agosto). Falla = el elegido no gana:
+
+| tramo de la casa | marca no verde | falla con / sin | caza |
+|---|---|---|---|
+| todos | 35,5 % | 50,0 / 42,4 | 39 % |
+| 45-60 % | 32,7 % | 50,3 / 45,1 | 35 % |
+| 60 %+ | 23,8 % | 29,6 / 21,5 | 30 % |
+| 70 %+ | 18,9 % | 18,2 / 17,8 | — |
+
+Por nivel, 2019-2026: no verde 60,7 contra 50,3 % (rojo 61,6 contra 51,0),
+en las dos épocas y en 41 de 55 ligas. En 70 %+ el semáforo de las tarjetas
+no avisa; ahí avisa otra cosa: **el favorito que viene de empatar** (su K
+total en 0, sin burbuja abierta) no ganó el 35,4 % contra 14,4 % (n 48; en
+60 %+, 32,2 contra 21,5). No avisan (el elegido falla igual o menos): su
+racha + en el extremo, que venga de perder, el rival que viene ganando y el
+cruce de las dos burbujas.
+
+Son ~100 combinaciones de señal y tramo con 2.648 favoritos de la casa: se
+congela y se mide hacia adelante, sin tocar la app ni el semáforo.
+
+**Tercer candidato del semáforo, congelado el 22/11/2026**: *elegido de la
+casa por debajo de 70 % con el semáforo de las tarjetas en amarillo o rojo →
+no apostar*. Amarillo o rojo con la misma regla de `analisis/semaforo.py`,
+pero con la tarjeta de cada lado (`reventonCalculado.*.espinaTarjeta` del
+parte, de la K total): rojo = la tarjeta del elegido dice que pierde;
+amarillo = dice empate, o la del rival dice que gana o empata.
+
+**Cuarto candidato del semáforo, congelado el 22/11/2026**: *elegido de la
+casa de 70 %+ que viene de empatar (K total en 0 antes del partido) → no
+apostar*.
+
+**Cómo se miden** (los cuatro candidatos, juntos): en los partes desde el
+22/11/2026 (00:00 de Lima), sin copas nacionales, el acierto del elegido con
+la señal contra sin ella en su tramo, con los escalones de no-verdes del
+semáforo (30 para mirar, 60 para decidir). Se juzga por acierto: cuánto más
+pierde el elegido con la señal y qué parte de los tropiezos caza; nunca
+contra la casa. La tarjeta y la K salen del parte y de
+`/constantes/{id}?antesDe=` (sin fuga): no hace falta tocar la app para
+medirlos.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

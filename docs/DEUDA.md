@@ -1329,8 +1329,11 @@ conversación se pierde en la siguiente.
    en 70 %+, donde avisa el favorito que viene de empatar (35 contra 14 %,
    n 48); el cruce no avisa y el «más empate» con las dos en riesgo no se
    sostiene. Se juzga por acierto, nunca contra la casa (regla en
-   `CLAUDE.md`). **Pendiente del usuario:** qué se congela para medir hacia
-   adelante en el semáforo.
+   `CLAUDE.md`). Congelados el 22/11/2026 como tercer y cuarto candidato del
+   semáforo (`METODO_APUESTA.md`, «Las burbujas: cuándo no apostar»): no
+   verde de las tarjetas con la casa bajo 70 %, y el favorito de 70 %+ que
+   viene de empatar. **Pendiente:** medirlos hacia adelante con los otros
+   dos (30 no-verdes para mirar, 60 para decidir).
 
 ## Siguientes pasos (en orden)
 
