@@ -4360,10 +4360,14 @@ components:
                         items:
                           type: object
                           properties:
-                            jugador: { type: string }
+                            jugador: { type: string, description: 'en un duelo de carril cruzado, los nombres unidos con «y»' }
                             rol: { type: string, description: 'la línea de rolesReasignados' }
                             grid: { type: string }
                             motivo: { type: string }
+                            jugadores:
+                              type: array
+                              items: { type: string }
+                              description: 'solo en el duelo de carril con dos bandas: un motivo por duelo y acá cada jugador (incidencia 1458, 21/11/2026); el carril central no se juzga (1457)'
     Incidencia:
       type: object
       properties:

@@ -1909,12 +1909,22 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
     for d in m2.get("duelosCarril") or []:
         if not isinstance(d, dict):
             continue
+        # EL CARRIL CENTRAL TIENE LAS DOS MITADES (21/11/2026, incidencia 1457,
+        # Racing–Central Español 1650505 y Progreso–Torque 1650502: «dos puntas
+        # contra los centrales», «doble pivote contra doble pivote»): un duelo por
+        # el centro junta siempre a uno de cada lado del grid. Solo se juzga el
+        # carril que nombra una banda.
+        carril = _plano_num(d.get("carril") or "")
+        if not re.search(r"izquierd|derech", carril):
+            continue
         texto = d.get("duelo") or ""
-        plano = _plano_num(texto).split()
         en_duelo = []
         for c in casillas:
-            ap = [w for w in _plano_num(c["nombre"]).split() if len(w) > 2]
-            if ap and ap[-1] in plano and c.get("carril") in ("izquierda", "derecha"):
+            # LA MENCIÓN CON OTRA INICIAL NO ES ÉL (21/11/2026, incidencia 1459,
+            # Liverpool–Wanderers 1650504: «A. Garcia» del duelo, fuera de la hoja,
+            # casaba por el apellido con el titular «M. García»): quién es quién,
+            # identidad.menciona
+            if c.get("carril") in ("izquierda", "derecha") and _identidad.menciona(c["nombre"], texto):
                 en_duelo.append(c)
         bandas = {c["carril"] for c in en_duelo}
         # si la casilla escrita de alguno ya se contradijo (1391/1419), esa es la
@@ -1922,13 +1932,14 @@ def roles_vs_grid(bloque: dict, of: dict) -> list[dict]:
         if len(bandas) < 2 or any(c["nombre"] in vistos for c in en_duelo):
             continue
         resumen = ", ".join(f"{c['nombre']} {c['grid']} ({c['carril']})" for c in en_duelo)
-        for c in en_duelo:
-            if c["nombre"] in vistos:
-                continue
-            vistos.add(c["nombre"])
-            out.append({"jugador": c["nombre"], "rol": texto[:140], "grid": c["grid"],
-                        "motivo": (f"el duelo «{texto[:80]}» junta jugadores de las dos bandas en el grid oficial "
-                                   f"({resumen}): el carril se escribió sobre otra disposición")})
+        vistos.update(c["nombre"] for c in en_duelo)
+        # UN MOTIVO POR DUELO, no uno por jugador (21/11/2026, incidencia 1458,
+        # 1650505: el mismo texto salía cuatro veces y la alerta DTP-REHACER
+        # pesaba 3 KB): `jugadores` lleva a cada uno
+        out.append({"jugador": " y ".join(c["nombre"] for c in en_duelo), "rol": texto[:140],
+                    "grid": ", ".join(c["grid"] for c in en_duelo), "jugadores": [c["nombre"] for c in en_duelo],
+                    "motivo": (f"el duelo «{texto[:80]}» junta jugadores de las dos bandas en el grid oficial "
+                               f"({resumen}): el carril se escribió sobre otra disposición")})
     return out
 
 
