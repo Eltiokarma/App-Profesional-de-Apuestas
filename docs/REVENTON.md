@@ -1006,6 +1006,13 @@ servidor, con todas las cuotas guardadas. **Decisión del usuario (17/10/2026):
 no hace falta correrlo; lo que importa es que esté como narrativa.** El perfil
 se queda como DATO del análisis, y la fórmula del motor no se toca.
 
+**Confirmado en siete años (21/11/2026, `backend/backtest_rival_resiste.py`,
+padrón 2019-2026):** contra el nivel, el favorito no gana +8,5 pts más de lo
+esperado cuando el rival no pierde el 60 %+ de su historia en la condición
+(IC +7,3 a +9,7, n 21.687, 64 de 73 ligas). Contra la cuota, −2,2 pts (IC
+−5,7 a +1,3, n 633): la casa ya lo cobra. Sigue como dato del análisis; vale
+sobre todo donde el motor es la única referencia (sin cuota en la app).
+
 ### 15.2 Narrativa: cuidado antes, causa después (17/10/2026)
 
 Everton 0-2 Chelsea: el Everton llegaba con su doble oportunidad de local
