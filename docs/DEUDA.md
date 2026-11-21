@@ -1323,9 +1323,35 @@ conversación se pierde en la siguiente.
    usuario tras Ameliano 1-0 Luqueño, 1632063). `backend/backtest_semaforo_burbujas.py`
    (REVENTON §19): el semáforo con la tarjeta en vez de la espina del
    analista, probado contra 2019-2026 y contra la casa, y el cruce de las dos
-   burbujas (acuerdan / chocan). **Pendiente:** correrlo en el servidor y
-   decidir con el usuario qué entra (al semáforo de `METODO_APUESTA.md` o al
-   skill, con propuesta).
+   burbujas (acuerdan / chocan). Corrido el 21/11 (REVENTON §19.1): el
+   semáforo de las tarjetas avisa cuándo no apostar (rojo: el elegido no gana
+   61,6 % contra 51,0 % por nivel; 30,6 contra 22,0 en la casa 60 %+), salvo
+   en 70 %+, donde avisa el favorito que viene de empatar (35 contra 14 %,
+   n 48); el cruce no avisa y el «más empate» con las dos en riesgo no se
+   sostiene. Se juzga por acierto, nunca contra la casa (regla en
+   `CLAUDE.md`). Congelados el 22/11/2026 como tercer y cuarto candidato del
+   semáforo (`METODO_APUESTA.md`, «Las burbujas: cuándo no apostar»): no
+   verde de las tarjetas con la casa bajo 70 %, y el favorito de 70 %+ que
+   viene de empatar. **Pendiente:** medirlos hacia adelante con los otros
+   dos (30 no-verdes para mirar, 60 para decidir).
+
+41. **Pendientes que dejó el 21/11/2026** (caso Bayern, v4.7 y las burbujas):
+   - **Medir hacia adelante los cuatro candidatos del semáforo** desde el
+     22/11/2026 (`METODO_APUESTA.md`): rival que no perdió 6+ de 10; rival de
+     perfil DC 60 %+; no verde de las tarjetas con la casa bajo 70 %; favorito
+     de 70 %+ que viene de empatar. 30 no-verdes para mirar, 60 para decidir;
+     por acierto, nunca contra la casa (regla en `CLAUDE.md`).
+   - **Propuesta `sad-analysis` v4.8** (para aprobar): llevar
+     `separacionLiga` al skill (hoy solo está en el prompt de `COWORK.md`)
+     junto con la regla general de las otras familias (el perfil DC pesa, el
+     resto es narrativa), y cerrar en 1.7 (a) el candidato «con las dos
+     burbujas en riesgo, más empate»: medido el 21/11 (REVENTON §19.1), no se
+     sostiene.
+   - **Punto 7 de la v4.7**: las alertas `dato` RIVAL-RESISTE y
+     HANDICAP-APRETADO calculadas por la app, solo si el usuario pide el
+     desarrollo (contrato primero).
+   - **Hándicap por tramo de cuota**: rehacer la tabla del margen (REVENTON
+     §15.4) cuando haya más cuotas acumuladas.
 
 ## Siguientes pasos (en orden)
 

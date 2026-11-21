@@ -117,8 +117,12 @@ def test_detecta_y_no_inventa():
     seg = next(s for s in r["segmentos"] if s["segmento"] == "favorito por nivel (todos)")
     s = next(x for x in seg["senales"] if x["senal"] == "las dos en el extremo, acuerdan CON el elegido")
     check(s.get("separa") and s["diferencia"] > 0.08, f"la señal del elegido lo marca como dónde no entrar ({s.get('diferencia')})")
+    check(s.get("avisaSepara") and s["avisa"] > 0.08 and s["fallaCon"] > s["fallaSin"],
+          f"y avisa en crudo: el elegido falla más con la señal ({s.get('avisa')})")
+    check("vsCasa" not in s, "nada contra la casa: el método apuesta por acierto")
     ruido = next(x for x in seg["senales"] if x["senal"] == "el rival viene ganando (racha +)")
     check(not ruido.get("separa"), f"una señal de ruido no separa ({ruido.get('diferencia')})")
+    check(not ruido.get("avisaSepara"), f"y tampoco avisa en crudo ({ruido.get('avisa')})")
     r0 = sb.evaluar(_sinteticos(plantar=0.0))
     f2 = next(f for f in r0["cruce"] if f["tipo"] == "acuerdan" and f["enExtremo"] == 2)
     check(not f2.get("separa"), f"sin efecto plantado, el cruce no inventa uno ({f2.get('diferencia')})")

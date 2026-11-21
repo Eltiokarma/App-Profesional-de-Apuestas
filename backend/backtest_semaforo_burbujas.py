@@ -17,10 +17,10 @@ Lo que había medido (REVENTON §13-§14): el riesgo dice si una RACHA se corta
    rojo = la tarjeta del elegido dice que pierde; amarillo = la del elegido
    dice empate o la del rival dice que gana o empata; verde = la del elegido
    dice que gana y la del rival no; sin dato = el elegido sin burbuja abierta.
-   Eso se puede medir en 2019-2026 contra el nivel y desde agosto contra la
-   casa. Si el semáforo calculado separa, el analista tiene un piso medible;
-   si no separa, el valor del semáforo de hoy está en lo que el analista
-   agrega a la tarjeta (y se sigue midiendo hacia adelante).
+   Eso se puede medir en 2019-2026: si con rojo o amarillo el elegido pierde
+   más, el semáforo tiene un piso que no depende de cómo escriba el analista;
+   si no, su valor está en lo que el analista agrega a la tarjeta (y se sigue
+   midiendo hacia adelante).
 2. **Señales sueltas del elegido y del rival** (riesgo, extremo, signo).
 3. **El cruce de las dos burbujas** (las totales de los dos, abiertas):
    - ACUERDAN: signos opuestos (uno viene ganando y el otro perdiendo). Un
@@ -32,14 +32,16 @@ Lo que había medido (REVENTON §13-§14): el riesgo dice si una RACHA se corta
      (que corta las dos) que el esperado (1.7 a del skill, candidato v4.5).
    Por cuántas están en el extremo o cerca (0, 1, 2), contra lo esperado por
    el nivel (el mismo tramo de 0,1 de ventaja y condición, en todos los
-   partidos) y contra la casa (su probabilidad sin margen).
+   partidos).
 
 El ELEGIDO es el favorito: por nivel (más nivel previo que el rival, todos
-los años) o por casa (la probabilidad más alta entre local y visita). Lo que
-se mide es lo que el usuario usa para apostar: dónde NO entrar. Por señal:
-cuánto más falla el elegido con ella que lo esperado (sin la señal, mismo
-tramo fino), la parte de los partidos que marca, qué parte de los tropiezos
-caza, por época (se repite o no), contra la casa y por liga.
+los años) o por casa (la probabilidad más alta entre local y visita, que es
+como se elige y en qué tramo se apuesta). Lo que se mide es SOLO lo que el
+usuario usa: **cuándo no apostar** (21/11/2026: «no nos importa si la casa ya
+cobra… solo queremos saber cuándo no apostar»). Por señal y segmento: cuánto
+más pierde o empata el elegido con ella que sin ella (`avisa`, con IC por
+equipos), qué parte de los partidos marca, qué parte de los tropiezos caza,
+si se repite en las dos épocas y en cuántas ligas. Nada contra la casa.
 
 Sin fuga: la burbuja, su riesgo y la tarjeta salen de
 `backtest_burbuja.observar_equipo` (historia anterior, nivel del rival
@@ -206,11 +208,38 @@ def _boot(por_eq: list[list[float]], semilla: int = 7) -> tuple[float, float, fl
     return media, bs[int(0.025 * BOOTSTRAP)], bs[int(0.975 * BOOTSTRAP) - 1]
 
 
+def _boot_dif(con: list[dict], sin: list[dict], semilla: int = 7) -> tuple[float, float, float] | None:
+    """falla con − falla sin, con IC remuestreando EQUIPOS (los dos grupos a la vez)."""
+    if len(con) < 30 or len(sin) < 30:
+        return None
+    eq = defaultdict(lambda: [0, 0, 0, 0])      # [falla con, n con, falla sin, n sin]
+    for c in con:
+        eq[c["team"]][0] += 0 if c["gana"] else 1
+        eq[c["team"]][1] += 1
+    for c in sin:
+        eq[c["team"]][2] += 0 if c["gana"] else 1
+        eq[c["team"]][3] += 1
+    v = list(eq.values())
+    if len(v) < 5:
+        return None
+
+    def d(m):
+        nc, ns = sum(e[1] for e in m), sum(e[3] for e in m)
+        return (sum(e[0] for e in m) / nc - sum(e[2] for e in m) / ns) if nc and ns else 0.0
+    rnd = random.Random(semilla)
+    bs = sorted(d([v[rnd.randrange(len(v))] for _ in v]) for _ in range(BOOTSTRAP))
+    return d(v), bs[int(0.025 * BOOTSTRAP)], bs[int(0.975 * BOOTSTRAP) - 1]
+
+
 def separa(seg: list[dict], senal, semilla: int = 7) -> dict:
-    """Con la señal contra sin ella. `diferencia` = cuánto más NO GANA el elegido con
-    la señal que lo esperado por los sin señal del mismo tramo fino (0,1 de
-    ventaja y condición). Con cuota, además `vsCasa` = no ganó − (1 − p) de los
-    con señal, y la plana a la cuota media."""
+    """Con la señal contra sin ella, DENTRO del segmento: lo que se juzga es
+    `avisa` = falla con − falla sin (cuánto más pierde o empata el elegido
+    cuando la señal aparece), con IC por equipos, la parte de los partidos que
+    marca y la parte de los tropiezos que caza. El método apuesta por ACIERTO:
+    si la casa ya lo cobra no importa (usuario, 21/11/2026: «solo queremos saber
+    cuándo no apostar»). `diferencia` (contra los sin señal del mismo tramo de
+    ventaja) queda como dato: dice si la señal es algo más que «favorito más
+    flojo», no si sirve para no apostar."""
     con = [c for c in seg if senal(c)]
     sin = [c for c in seg if not senal(c)]
     tropiezos = sum(1 for c in seg if not c["gana"])
@@ -218,6 +247,9 @@ def separa(seg: list[dict], senal, semilla: int = 7) -> dict:
            "fallaCon": round(sum(1 for c in con if not c["gana"]) / len(con), 4) if con else None,
            "fallaSin": round(sum(1 for c in sin if not c["gana"]) / len(sin), 4) if sin else None,
            "caza": round(sum(1 for c in con if not c["gana"]) / tropiezos, 4) if tropiezos else None}
+    a = _boot_dif(con, sin, semilla)
+    if a:
+        out.update({"avisa": round(a[0], 4), "avisaIc95": [round(a[1], 4), round(a[2], 4)], "avisaSepara": a[1] > 0 or a[2] < 0})
     base = defaultdict(lambda: [0, 0])
     for c in sin:
         base[_bin(c)][0] += 0 if c["gana"] else 1
@@ -231,17 +263,6 @@ def separa(seg: list[dict], senal, semilla: int = 7) -> dict:
     b = _boot(list(por_eq.values()), semilla)
     if b:
         out.update({"diferencia": round(b[0], 4), "ic95": [round(b[1], 4), round(b[2], 4)], "separa": b[1] > 0 or b[2] < 0})
-    cc = [c for c in con if c["p"] is not None]
-    if cc:
-        eq = defaultdict(lambda: [0.0, 0])
-        for c in cc:
-            eq[c["team"]][0] += (0 if c["gana"] else 1) - (1 - c["p"])
-            eq[c["team"]][1] += 1
-        bc = _boot(list(eq.values()), semilla)
-        roi = sum((1 / (c["p"] * (1 + (c["margen"] or 0))) - 1) if c["gana"] else -1 for c in cc) / len(cc)
-        out["vsCasa"] = {"n": len(cc), "roiPlano": round(roi, 4),
-                         **({"residuo": round(bc[0], 4), "ic95": [round(bc[1], 4), round(bc[2], 4)],
-                             "separa": bc[1] > 0 or bc[2] < 0} if bc else {"sinDato": "menos de 30 casos o de 5 equipos"})}
     return out
 
 
@@ -250,7 +271,7 @@ def _epocas(seg: list[dict], senal) -> tuple[list[dict], bool]:
         return [], False
     corte = sorted(c["fecha"] for c in seg)[len(seg) // 2]
     ep = [separa([c for c in seg if c["fecha"] < corte], senal), separa([c for c in seg if c["fecha"] >= corte], senal)]
-    return ep, all(e.get("separa") and e["diferencia"] > 0 for e in ep)
+    return ep, all(e.get("avisaSepara") and e["avisa"] > 0 for e in ep)
 
 
 def por_liga(seg: list[dict], senal) -> dict:
@@ -274,8 +295,8 @@ def por_liga(seg: list[dict], senal) -> dict:
 
 
 def semaforo_tabla(cs: list[dict]) -> list[dict]:
-    """Por color: n, cuánto gana el elegido, lo esperado por el nivel (todos los
-    del mismo tramo) y, con cuota, lo que pedía la casa."""
+    """Por color: n y cuánto gana el elegido (lo que importa para no apostar), y
+    lo esperado por su nivel (todos los del mismo tramo) como dato."""
     base = defaultdict(lambda: [0, 0])
     for c in cs:
         base[_bin(c)][0] += 1 if c["gana"] else 0
@@ -287,12 +308,8 @@ def semaforo_tabla(cs: list[dict]) -> list[dict]:
             out.append({"color": col, "n": 0})
             continue
         esp = sum(base[_bin(c)][0] / base[_bin(c)][1] for c in sub) / len(sub)
-        conp = [c for c in sub if c["p"] is not None]
         out.append({"color": col, "n": len(sub), "parte": round(len(sub) / len(cs), 4),
-                    "gana": round(sum(c["gana"] for c in sub) / len(sub), 4), "esperadoNivel": round(esp, 4),
-                    "conCuota": len(conp),
-                    "ganaConCuota": round(sum(c["gana"] for c in conp) / len(conp), 4) if conp else None,
-                    "pedia": round(sum(c["p"] for c in conp) / len(conp), 4) if conp else None})
+                    "gana": round(sum(c["gana"] for c in sub) / len(sub), 4), "esperadoNivel": round(esp, 4)})
     return out
 
 
@@ -301,7 +318,7 @@ def semaforo_tabla(cs: list[dict]) -> list[dict]:
 def cruce(ms: list[dict]) -> list[dict]:
     """Partidos con las dos burbujas totales abiertas. ACUERDAN (signos
     opuestos): ¿sale el resultado que sigue las dos (gana el de la racha +) lo
-    que dicen el nivel y la casa? CHOCAN (mismo signo): ¿sale más empate? Por
+    que dice el nivel? CHOCAN (mismo signo): ¿sale más empate? Por
     cuántas están en el extremo o cerca."""
     gana_base = defaultdict(lambda: [0, 0])     # (tramo de ventaja del lado, local) → [ganó, n]
     emp_base = defaultdict(lambda: [0, 0])      # tramo de |ventaja| → [empate, n]
@@ -326,7 +343,6 @@ def cruce(ms: list[dict]) -> list[dict]:
         fila = {"tipo": tipo, "enExtremo": nf, "n": len(sub)}
         por_eq = defaultdict(lambda: [0.0, 0])
         obs = esp = 0.0
-        casa = [0.0, 0.0, 0]
         for m in sub:
             d = m["nL"] - m["nV"]
             if tipo == "acuerdan":
@@ -336,19 +352,11 @@ def cruce(ms: list[dict]) -> list[dict]:
                 e = gana_base[k][0] / gana_base[k][1]
                 o = m["res"] == ("L" if loc else "V")
                 team = m["tL"] if loc else m["tV"]
-                if m["p"]:
-                    casa[0] += o
-                    casa[1] += m["p"][0] if loc else m["p"][2]
-                    casa[2] += 1
             else:
                 ka = min(int(abs(d) / 0.1), 30)
                 e = emp_base[ka][0] / emp_base[ka][1]
                 o = m["res"] == "E"
                 team = m["tL"]
-                if m["p"]:
-                    casa[0] += o
-                    casa[1] += m["p"][1]
-                    casa[2] += 1
             obs += o
             esp += e
             por_eq[team][0] += o - e
@@ -358,8 +366,6 @@ def cruce(ms: list[dict]) -> list[dict]:
         b = _boot(list(por_eq.values()))
         if b:
             fila.update({"diferencia": round(b[0], 4), "ic95": [round(b[1], 4), round(b[2], 4)], "separa": b[1] > 0 or b[2] < 0})
-        if casa[2]:
-            fila["casa"] = {"n": casa[2], "observado": round(casa[0] / casa[2], 4), "pedia": round(casa[1] / casa[2], 4)}
         out.append(fila)
     return out
 
@@ -388,7 +394,7 @@ def evaluar(ms: list[dict]) -> dict:
             if not r["conSenal"]:
                 continue
             r["porEpoca"], r["seRepite"] = _epocas(seg, kf)
-            r["seRepite"] = r["seRepite"] and bool(r.get("separa")) and r["diferencia"] > 0
+            r["seRepite"] = r["seRepite"] and bool(r.get("avisaSepara")) and r["avisa"] > 0
             if p == "nivel" and sn == "favorito por nivel (todos)":
                 r["porLiga"] = por_liga(seg, kf)
             fila["senales"].append({"senal": kn, **r})
@@ -409,10 +415,11 @@ def lectura(r: dict) -> str:
             partes.append(f"{f['tipo']} con las dos en el extremo: {f['mide']} {f['observado']:.1%} contra "
                           f"{f['esperadoNivel']:.1%} por nivel ({f['diferencia']:+.1%}, "
                           + ("SEPARA" if f["separa"] else "no separa") + f", n {f['n']})")
-    seg = next((s for s in r["segmentos"] if s["segmento"] == "favorito por nivel (todos)" and s["senales"]), None)
-    if seg:
-        fuertes = [s["senal"] for s in seg["senales"] if s.get("seRepite")]
-        partes.append("señales que separan y se repiten en las dos épocas: " + (", ".join(fuertes) if fuertes else "ninguna"))
+    for s in r["segmentos"]:
+        avisan = [f"{k['senal']} ({k['fallaCon']:.0%} contra {k['fallaSin']:.0%})" for k in s.get("senales", [])
+                  if k.get("avisaSepara") and k["avisa"] > 0]
+        if avisan:
+            partes.append(f"{s['segmento']}: no apostar con " + "; ".join(avisan))
     return " · ".join(partes)
 
 
@@ -458,33 +465,28 @@ def _imprimir(r: dict) -> None:
         for x in r["semaforo"][p]:
             if not x["n"]:
                 continue
-            casa = (f" · con cuota {x['conCuota']:,}: gana {x['ganaConCuota']:.1%}, la casa pedía {x['pedia']:.1%}"
-                    if x["conCuota"] else "")
-            print(f"    {x['color']:<9} {x['parte']:5.1%} de los partidos (n {x['n']:,}) · gana {x['gana']:.1%}"
-                  f" · esperado por nivel {x['esperadoNivel']:.1%}{casa}")
+            print(f"    {x['color']:<9} {x['parte']:5.1%} de los partidos (n {x['n']:,}) · el elegido gana {x['gana']:.1%}"
+                  f" (por su nivel se esperaba {x['esperadoNivel']:.1%})")
     print("\n2. EL CRUCE DE LAS DOS BURBUJAS (por cuántas en el extremo o cerca: 0, 1, 2)")
     for f in r["cruce"]:
-        casa = (f" · con cuota {f['casa']['n']:,}: {f['casa']['observado']:.1%}, la casa pedía {f['casa']['pedia']:.1%}"
-                if f.get("casa") else "")
         print(f"  {f['tipo']:<9} {f['enExtremo']} en extremo · n {f['n']:>6,} · {f['mide']}: {f['observado']:.1%}"
-              f" contra {f['esperadoNivel']:.1%} por nivel{_x(f)}{casa}")
-    print("\n3. POR SEGMENTO: dónde no entrar (falla con la señal / sin ella; caza = parte de los tropiezos con la señal;"
-          " dif = contra los sin señal del mismo tramo fino de ventaja; casa = no ganó − lo que pedía)")
+              f" contra {f['esperadoNivel']:.1%} por nivel{_x(f)}")
+    print("\n3. POR SEGMENTO: CUÁNDO NO APOSTAR (falla = el elegido no gana; avisa = falla con − falla sin, con IC por"
+          " equipos; caza = parte de los tropiezos que la señal marca; se repite = avisa en las dos épocas)")
     for sg in r["segmentos"]:
         if "falla" not in sg:
             print(f"  {sg['segmento']}: {sg.get('sinDato')}")
             continue
         print(f"  {sg['segmento']} · n {sg['n']:,} · el elegido no gana {sg['falla']:.1%}")
         for k in sg["senales"]:
-            vc = k.get("vsCasa")
-            casa = (f"  casa {vc['residuo']:+.1%} [{vc['ic95'][0]:+.1%}, {vc['ic95'][1]:+.1%}] (n {vc['n']:,}, plana {vc['roiPlano']:+.1%})"
-                    if vc and "residuo" in vc else "")
             lg = k.get("porLiga")
             liga = f"  ligas {lg['enContra']}/{lg['enContra'] + lg['aFavor']} (p {lg['pSigno']})" if lg and lg["ligas"] else ""
-            print(f"    {k['senal']:<50} {k['parte']:5.1%} · falla {k['fallaCon']:5.1%} con, {(k['fallaSin'] or 0):5.1%} sin"
-                  f" · caza {(k['caza'] or 0):4.0%}{_x(k)}" + ("  y se repite" if k.get("seRepite") else "") + casa + liga)
+            av = (f"  avisa {k['avisa']:+.1%} [{k['avisaIc95'][0]:+.1%}, {k['avisaIc95'][1]:+.1%}]"
+                  + ("  SÍ" if k["avisaSepara"] and k["avisa"] > 0 else "  al revés" if k["avisaSepara"] else "")) if "avisa" in k else "  (pocos casos)"
+            print(f"    {k['senal']:<50} marca {k['parte']:5.1%} · falla {k['fallaCon']:5.1%} con, {(k['fallaSin'] or 0):5.1%} sin"
+                  f"{av} · caza {(k['caza'] or 0):4.0%}" + ("  y se repite" if k.get("seRepite") else "") + liga)
     print()
-    print("(dif > 0 = con la señal el elegido NO GANA más de lo esperado: marca dónde no entrar)")
+    print("(avisa > 0 = con la señal el elegido pierde o empata MÁS: no apostar. «al revés» = con la señal falla MENOS)")
     print(r["lectura"])
 
 
