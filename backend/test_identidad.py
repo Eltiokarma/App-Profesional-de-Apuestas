@@ -336,5 +336,21 @@ check("1466: «Thomas-Asante entra» no menciona a «B. Thomas»; sí al compues
 check("1466: la raya «–» separa a dos personas, no arma un compuesto (1347)",
       idn.compuestos("Puerta–Freuler") == [] and idn.compuestos("Thomas-Asante") == [("thomas", "asante")])
 
+# 1472 (21/11/2026): el escaneo preventivo se cortaba a los 200-280 s porque la
+# tabla F1 cruza cada par del plantel. `tokens` va guardado por nombre y el
+# compuesto con guion solo se mira si algún nombre trae guion; el resultado es
+# el mismo, y lo que devuelve `tokens` es una lista nueva (mutarla no ensucia).
+_t = idn.tokens("Ángelo Campos"); _t.append("x")
+check("1472: tokens devuelve una lista nueva cada vez (la caché no se ensucia)",
+      idn.tokens("Ángelo Campos") == ["angelo", "campos"], idn.tokens("Ángelo Campos"))
+idn._compuestos.cache_clear()
+idn.mismo_jugador("Emiliano Griffa", "E. Griffa")
+check("1472: sin guion en ningún nombre, mismo_jugador no busca compuestos",
+      idn._compuestos.cache_info().misses == 0, idn._compuestos.cache_info())
+check("1472: con guion en uno de los dos, sí (y el resultado de 1466 se mantiene)",
+      not idn.mismo_jugador("B. Thomas", "B. Thomas-Asante") and idn._compuestos.cache_info().misses > 0)
+check("1472: una entidad HTML que trae el guion también se mira",
+      idn._puede_tener_guion("B. Thomas&#45;Asante") and not idn._puede_tener_guion("B. Thomas"))
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
