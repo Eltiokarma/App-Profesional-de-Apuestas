@@ -194,6 +194,14 @@ se carga en cada paso de cada agente). Leé la sección del área en
   (`escala.copas_nacionales`).
 - **Rol contra el grid y duelos del M2** piden rehacer el DTP
   (`dtp_cowork.ROLES_GRID_REHACE`).
+- **Apostamos por ACIERTO, no por valor** (usuario, 21/11/2026, repetido
+  porque se olvidaba): lo que se busca es **cuándo NO apostar**. Una señal
+  (burbuja, alerta, semáforo, candidato) se juzga por cuánto más pierde o
+  empata el elegido con ella que sin ella, qué parte de los partidos marca y
+  qué parte de los tropiezos caza, y si se repite. **Nunca** por si la casa ya
+  la cobra, si le saca margen o si leemos mejor que ella: eso no se mide ni se
+  escribe como conclusión. Las burbujas no dicen quién gana: avisan cuándo no
+  apostar.
 - **Simulación de apuesta** (`backend/analisis/simulacion.py`,
   `docs/METODO_APUESTA.md`): el método proporcional va primero; cuenta desde el
   28/10/2026; con cada versión nueva de un skill, anotar la hora en

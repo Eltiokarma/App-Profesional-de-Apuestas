@@ -1448,7 +1448,7 @@ tener un semáforo confiable con información del pasado». Y su hipótesis:
 **Lo que ya se sabía** (§13-§14, §18): el riesgo ordena si una RACHA se corta
 (AUC ~0,63 sin fuga) y las K no agregan al 1X2 del motor. **Lo que nunca se
 midió**: (1) un semáforo calculado SOLO con las burbujas, que se pueda probar
-contra 2019-2026 y contra la casa (el de hoy, `analisis/semaforo.py`, sale de
+en 2019-2026 (el de hoy, `analisis/semaforo.py`, sale de
 las espinas que escribe el analista y solo se mide hacia adelante: 15
 no-verdes en la primera semana); (2) el cruce de las dos burbujas del partido.
 
@@ -1465,15 +1465,61 @@ cada lado de `observar_equipo` (historia anterior, nivel del rival previo):
 
 1. el semáforo de hoy con la **tarjeta** (`espina_tarjeta`) en lugar de la
    espina del analista: verde / amarillo / rojo / sin dato, cuánto gana el
-   elegido (favorito por nivel o de la casa) contra lo esperado por su nivel y
-   contra lo que pedía la casa;
+   elegido (favorito por nivel o de la casa) y lo esperado por su nivel;
 2. el **cruce**: acuerdan / chocan +/ chocan −, por cuántas en el extremo o
    cerca (0, 1, 2), el resultado que sigue las dos (o el empate) contra el
-   nivel del mismo tramo y contra la casa;
+   nivel del mismo tramo;
 3. **señales** del elegido y del rival por segmento (como §15.4): falla con y
-   sin, caza, contra el mismo tramo fino de ventaja, por época, contra la
-   casa y por liga.
+   sin, caza, por época y por liga.
 
-Resultado: pendiente de la corrida en el servidor
-(`python -m backend.backtest_semaforo_burbujas --padron`). Mide; no cambia
-ningún punto, la tarjeta ni el semáforo.
+**Cómo se lee** (usuario, 21/11/2026: «no nos importa si la casa ya cobra…
+solo queremos saber cuándo no apostar»): cada señal por lo que hace al
+elegido —cuánto más pierde o empata con ella (`avisa` = falla con − falla
+sin, IC por equipos), qué parte de los partidos marca y de los tropiezos
+caza—. La primera corrida se leyó contra la casa y se reescribió así; la
+salida del script ya no trae la casa.
+
+### 19.1 Primera corrida (21/11/2026, padrón; 71.781 favoritos por nivel 2019-2026, 2.648 de la casa desde agosto)
+
+**El semáforo de las tarjetas sí avisa cuándo no apostar**, salvo en el
+favorito de 70 %+ (falla = el elegido no gana):
+
+| segmento | marca no verde | falla con / sin | caza | marca rojo | falla con / sin |
+|---|---|---|---|---|---|
+| favorito por nivel (todos) | 27,5 % | 60,7 / 50,3 | 31 % | 20,0 % | 61,6 / 51,0 |
+| favorito por nivel 0,5+ | 13,0 % | 57,9 / 47,1 | 16 % | 8,8 % | 58,3 / 47,6 |
+| favorito de la casa (todos) | 35,5 % | 50,0 / 42,4 | 39 % | 26,7 % | 50,0 / 43,3 |
+| casa 45-60 % | 32,7 % | 50,3 / 45,1 | 35 % | 24,3 % | 48,2 / 46,4 |
+| casa 60 %+ | 23,8 % | 29,6 / 21,5 | 30 % | 16,9 % | 30,6 / 22,0 |
+| casa 70 %+ | 18,9 % | 18,2 / 17,8 | 19 % | 12,7 % | 16,2 / 18,1 |
+
+Por nivel se repite en las dos épocas y va en el mismo sentido en 41 de 55
+ligas (rojo, p 0,0004). Con el favorito por nivel 1,0+ casi nunca sale rojo
+(0,1 %): la tarjeta casi nunca da al grande perdiendo. El rojo es casi la
+misma señal que «el elegido con su racha + en riesgo alto o muy alto».
+
+**Otras señales, en el tramo donde se apuesta:**
+
+- **El favorito de 70 %+ que viene de empatar** (sin burbuja abierta): no
+  ganó el 35,4 % contra 14,4 % (marca 16,5 %, caza un tercio de los
+  tropiezos; n 48). En 60 %+, 32,2 contra 21,5. Es lo más fuerte del tramo
+  alto y la muestra es chica: candidato, no regla.
+- **Las dos burbujas en riesgo alto o muy alto**, casa 60 %+: 28,6 contra
+  21,9 (marca 23 %).
+- **No avisan (el elegido falla igual o MENOS con ellas)**: el elegido con su
+  racha + en el extremo o cerca (casa 70 %+: 10,2 contra 19,4), el rival que
+  viene perdiendo en el extremo (17,1 contra 24,3 en 60 %+), el favorito de
+  70 %+ que viene de perder (13,4 contra 19,2) y el rival que viene ganando.
+
+**El cruce de las dos burbujas no avisa cuándo no apostar.** Cuando ACUERDAN
+(una ganando y otra perdiendo, como Ameliano–Luqueño), el resultado que sigue
+las dos sale algo menos que lo que dice el nivel (−2,2 pts con una en el
+extremo, −3,7 con las dos, n 529, en el borde), pero el elegido que tiene ese
+resultado a favor no pierde más (47,8 contra 53,2 %). Cuando CHOCAN, **no
+sale más empate** (25,9 y 24,9 % con las dos en el extremo, contra 26,3 %
+esperado): el candidato de la v4.5 («con las dos en riesgo, el empate corta
+las dos») no se sostiene.
+
+Advertencia: son ~100 combinaciones de señal y segmento, y el tramo de la
+casa tiene 2.648 favoritos. Lo que entre al semáforo se congela y se mide
+hacia adelante. No cambia ningún punto, la tarjeta ni el semáforo.

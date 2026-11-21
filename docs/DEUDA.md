@@ -1323,9 +1323,14 @@ conversación se pierde en la siguiente.
    usuario tras Ameliano 1-0 Luqueño, 1632063). `backend/backtest_semaforo_burbujas.py`
    (REVENTON §19): el semáforo con la tarjeta en vez de la espina del
    analista, probado contra 2019-2026 y contra la casa, y el cruce de las dos
-   burbujas (acuerdan / chocan). **Pendiente:** correrlo en el servidor y
-   decidir con el usuario qué entra (al semáforo de `METODO_APUESTA.md` o al
-   skill, con propuesta).
+   burbujas (acuerdan / chocan). Corrido el 21/11 (REVENTON §19.1): el
+   semáforo de las tarjetas avisa cuándo no apostar (rojo: el elegido no gana
+   61,6 % contra 51,0 % por nivel; 30,6 contra 22,0 en la casa 60 %+), salvo
+   en 70 %+, donde avisa el favorito que viene de empatar (35 contra 14 %,
+   n 48); el cruce no avisa y el «más empate» con las dos en riesgo no se
+   sostiene. Se juzga por acierto, nunca contra la casa (regla en
+   `CLAUDE.md`). **Pendiente del usuario:** qué se congela para medir hacia
+   adelante en el semáforo.
 
 ## Siguientes pasos (en orden)
 
