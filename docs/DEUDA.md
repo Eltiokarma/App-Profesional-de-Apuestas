@@ -1312,8 +1312,12 @@ conversación se pierde en la siguiente.
    no es «sin señal»; el perfil DC del rival que el motor no ve; el margen del
    favorito y la goleada; el grande que gana apretado en Sudamérica; citar los
    perfiles enteros), la lista cerrada de lo medido que NO es motivo, y dos
-   alertas calculadas para la app. **Pendiente del usuario:** aprobar punto
-   por punto; después se redacta en el SKILL y se sube el zip.
+   alertas calculadas para la app. **Aprobada el 21/11/2026** con todas las
+   recomendaciones y aplicada al SKILL (puntos 1-6; `CORTE_VERSION` v4.7,
+   `references/HISTORIAL.md`, anclas en `scripts/nucleo_reglas.json`).
+   **Pendiente:** el usuario sube el zip y su hora va a `SUBIDA_VERSION`; el
+   punto 7 (alertas RIVAL-RESISTE y HANDICAP-APRETADO) espera que el usuario
+   pida el desarrollo.
 
 ## Siguientes pasos (en orden)
 
