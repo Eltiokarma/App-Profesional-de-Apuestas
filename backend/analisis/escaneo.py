@@ -93,9 +93,13 @@ CHEQUEOS: dict[str, dict] = {
         "regla": "el once de un partido con parte se pide antes del saque (en_vivo.fixtures_para_xi): sin "
                  "él no hay rehacer ni cierre del bloque F antes del partido",
     },
+    # INFORMATIVO desde el 21/11/2026 (mantenimiento, prevención): la familia
+    # #94 se cerró 13 veces `dato_api` por la decisión del usuario en la #1379
+    # (la API publica tarde los eventos; lo cubre su alerta o la prensa). El
+    # mantenimiento no la deposita; la corrida de partes la sigue leyendo.
     "ficha-sin-eventos": {
         "titulo": "Partido con parte jugado hace horas sin eventos en la ficha",
-        "area": "ficha", "severidad": "aviso",
+        "area": "ficha", "severidad": "aviso", "informativo": True,
         "regla": "sin eventos no hay goles con minuto, tarjetas (sanciones) ni veredicto del TDE",
     },
     # EL MERCADO SE ENTERÓ Y LA BASE NO (08/11/2026, incidencia 1332, Santa Fe–
