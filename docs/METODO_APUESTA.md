@@ -497,6 +497,21 @@ no perdió 6+ de sus últimos 10 oficiales* → no apostar. Cuenta desde el
 22/11/2026; se re-corre el script con `--json` al juntar unos 300 casos
 nuevos de ese grupo y se decide con eso. Hasta entonces no entra al semáforo.
 
+**Validación del candidato** (pedido del usuario, 21/11/2026: «¿no hay forma
+de confirmar eso por liga? ¿validar con burbujas?»):
+`backend/backtest_rival_resiste.py` (test: `backend/test_backtest_rival_resiste.py`)
+no cambia la regla: la pone a prueba (1) contra el NIVEL en los años que la
+regla no vio (2019 → agosto 2026, sin cuotas; favorito = 0,5+ de nivel previo,
+lo esperado sale de los casos sin la señal del mismo tramo y condición), (2)
+contra la casa con el tramo 50-70 % aparte, y (3) liga por liga, con la prueba
+del signo. La resistencia del rival se mide de cuatro maneras: la regla
+(no perdió 6+ de 10), su racha sin perder de la condición de 3+, esa racha en
+su récord y su perfil de doble oportunidad (no pierde el 60 %+ en la
+condición). Sobre 73 equipos bajados (sin cuotas), ninguna de las cuatro
+separa contra el nivel (la regla: +0,1 pts, IC −4,4 a +5,5, n 1.089) y las
+ligas no se inclinan. Falta la corrida del padrón:
+`python -m backend.backtest_rival_resiste --padron --json $SAD_DATA_DIR/rival_resiste.json`.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

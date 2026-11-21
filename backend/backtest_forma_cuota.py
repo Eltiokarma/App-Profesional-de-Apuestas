@@ -203,7 +203,12 @@ def correr_padron(ultimos: int = ULTIMOS) -> dict:
     fxs = sorted({f["fixtureId"] for filas in historias.values() for f in filas
                   if f.get("ligaId") not in AMISTOSOS and f.get("golesFavor") is not None})
     cuotas = cuotas_1x2(fxs)
-    excluir = set(copas_nacionales(list(cuotas)))
+    # en lotes: con miles de ids una sola consulta puede pasar el límite de
+    # variables de SQLite, y el except de copas_nacionales devuelve {} callado
+    ids = sorted(cuotas)
+    excluir = set()
+    for i in range(0, len(ids), 500):
+        excluir |= set(copas_nacionales(ids[i:i + 500]))
     r = evaluar(casos(historias, cuotas, excluir, ultimos))
     r.update({"ultimos": ultimos, "equiposPadron": len(historias), "partidosConCuota": len(cuotas),
               "copasNacionalesFuera": len(excluir)})
