@@ -299,6 +299,21 @@ for _r in sorted(glob.glob(os.path.join(RAIZ, "backend", "analisis", "*.py"))):
 check("métricas: cada población de veredictos saca las copas nacionales con escala.copas_nacionales",
       not _sin_copas, _sin_copas)
 
+# ── 5-ter · LA HISTORIA DE UN EQUIPO SIN EL HOMÓNIMO ──────────────────────
+# Incidencias 1371 y 1473: el id 1137 de Atlético Nacional trae partidos de la
+# Copa Perú de otro club; el calendario, el TDE y el DTP los sacaban con
+# partido_ajeno.sql_fuera, pero el banco probable lo tomaba como «último
+# partido». Cada lector de los partidos recientes de un equipo usa la regla.
+_LECTORES_HISTORIA = (("backend/analisis/banco.py", "_previos"), ("backend/analisis/banco.py", "ultima_sin_hoja"),
+                      ("backend/analisis/f1_base.py", "onces_recientes"),
+                      ("backend/analisis/f1_base.py", "_partidos_temporada"),
+                      ("backend/analisis/arquero.py", "perfil"))
+_sin_ajeno = [f"{r}:{fn}" for r, fn in _LECTORES_HISTORIA if "sql_fuera" not in _funciones(r).get(fn, "")]
+_sin_ajeno += [r for r in ("backend/analisis/tde.py", "backend/analisis/dtp_cowork.py", "backend/calendario.py",
+                           "backend/cronologia.py") if "sql_fuera" not in leer(r)]
+check("homónimo: el banco, la F1, el arquero, el TDE, el DTP, el calendario y la cronología usan partido_ajeno.sql_fuera",
+      not _sin_ajeno, _sin_ajeno)
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)

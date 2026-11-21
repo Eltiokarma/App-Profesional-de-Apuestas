@@ -360,6 +360,15 @@ check("1371/1378: el escaneo lo marca (`partido-ajeno`, informativo desde el 12/
           {"fixtureId": 77, "partido": "Once Caldas vs Atletico Nacional", "fecha": "2026-11-10", "hora": "23:00",
            "equipoA": "Once Caldas", "equipoB": "Atletico Nacional"}, _ahora) if h["chequeo"] == "partido-ajeno"]
       == [("partido-ajeno", "b"), ("partido-ajeno", "b")])
+# 1473 (21/11/2026, Once Caldas–Nacional 1650176): el banco probable tomaba el
+# partido de Copa Perú del homónimo como «último partido sin hoja» de Nacional
+from backend.analisis import banco as _banco1473, f1_base as _f1_1473, arquero as _arq1473  # noqa: E402
+partido_ajeno._cache.clear()
+_u1473 = _banco1473.ultima_sin_hoja(NAC, "2026-11-10 23:00:00", 77)
+check("1473: el último partido del banco no es el del homónimo (fixture 75 de Copa Perú)",
+      "fixture 75" not in _u1473 and "fixture 74" in _u1473, _u1473)
+check("1473: los partidos de la temporada de la tabla F1 no cuentan el del homónimo",
+      _f1_1473._partidos_temporada(NAC, 2026) == 5, _f1_1473._partidos_temporada(NAC, 2026))
 
 # ── EL PESO: la base no se recorre de más ────────────────────────────────────
 from backend import db as _dbm  # noqa: E402

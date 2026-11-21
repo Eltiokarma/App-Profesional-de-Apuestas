@@ -53,14 +53,16 @@ def onces_recientes(team_id: int, antes: str) -> dict:
     el del Apertura (corrida del 13/10/2026). Lo que el once de hoy va a ser
     se parece más a los últimos diez onces que al año."""
     from backend.analisis.escala import AMISTOSOS
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)   # el once del homónimo no es del equipo (1371, 1473)
     try:
         crudo = saddb.query(
             "sad", f"""SELECT f.id, f.date FROM fixtures f
                        WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
                          AND COALESCE(f.league_id, 0) NOT IN ({",".join("?" * len(AMISTOSOS))})
-                         AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id=f.id AND a.team_id=?)
+                         AND EXISTS (SELECT 1 FROM alineaciones a WHERE a.fixture_id=f.id AND a.team_id=?){ajeno}
                        ORDER BY f.date DESC LIMIT ?""",
-            (team_id, team_id, antes, *sorted(AMISTOSOS), team_id, ONCES_RECIENTES))
+            (team_id, team_id, antes, *sorted(AMISTOSOS), team_id, *p_ajeno, ONCES_RECIENTES))
         fx = [r["id"] for r in _hasta_el_paron(crudo)]
         if not fx:
             return {"onces": 0, "jugadores": {}, "ultimo": None}
@@ -687,10 +689,12 @@ def _partidos_temporada(team_id: int, temporada) -> int | None:
     competiciones de la base). Sin temporada o sin partidos: None (no se juzga)."""
     if not temporada:
         return None
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)   # el partido del homónimo no cuenta (1473)
     try:
         fila = saddb.query_one(
             "sad", f"SELECT COUNT(*) AS n FROM fixtures f WHERE (f.home_team_id=? OR f.away_team_id=?) "
-                   f"AND f.league_season=? AND {_FIN}", (team_id, team_id, temporada))
+                   f"AND f.league_season=? AND {_FIN}{ajeno}", (team_id, team_id, temporada, *p_ajeno))
     except Exception:  # noqa: BLE001
         return None
     return (fila["n"] or None) if fila else None
