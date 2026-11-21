@@ -573,6 +573,14 @@ def penales_temporada(team_id: int, antes: str, dias: int = PENALES_DIAS, compet
             e["deBaja"] = x["baja"]
         if x.get("titularEnUltimos") is not None:
             e["titularEnUltimos"] = x["titularEnUltimos"]
+        # EL TITULAR DE LOS ÚLTIMOS ONCES ESTÁ EN EL CLUB (21/11/2026, incidencia
+        # 1465, Cerro 1650503: «E. Rodriguez» 674948, titular 5 de los últimos 10
+        # y autor del 2-0, salía «ya no están en el plantel» porque la plantilla de
+        # la API lo trae con otro id —354077—). La plantilla no manda sobre las
+        # hojas de ESTE equipo; solo la hoja con otro club (`juegaEn`) lo da ido.
+        if e.get("enPlantilla") is False and not e.get("juegaEn") and \
+                not str(e.get("titularEnUltimos") or "0/").startswith("0/"):
+            e["enPlantilla"] = True
     # …y con los mismos penales, el titular antes que el suplente (956, Feyenoord:
     # Ueda suplente 1/1 delante de Valente titular 8 de 9)
     def _tit(e) -> int:
