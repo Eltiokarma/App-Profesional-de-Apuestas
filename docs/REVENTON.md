@@ -1437,3 +1437,43 @@ padrón): la próxima corrida del padrón con la llave maestra
 los rehace, junto con estos dos puntos. Lo que asomó y NO se aplicó: la racha
 + de los equipos ≥ 3 siguió 6-8 pts más de lo que pagaba la casa (~800
 partidos, un año de cuotas): para medir con más cuotas.
+
+## 19. El semáforo de las burbujas y el cruce de las dos (21/11/2026)
+
+Pedido del usuario tras Sportivo Ameliano 1-0 Sportivo Luqueño (1632063): «no
+hemos analizado las burbujas como tal y no le hemos vuelto un skill que pueda
+tener un semáforo confiable con información del pasado». Y su hipótesis:
+«cuando se cruzan dos burbujas que están creciendo, una tiene que reventar».
+
+**Lo que ya se sabía** (§13-§14, §18): el riesgo ordena si una RACHA se corta
+(AUC ~0,63 sin fuga) y las K no agregan al 1X2 del motor. **Lo que nunca se
+midió**: (1) un semáforo calculado SOLO con las burbujas, que se pueda probar
+contra 2019-2026 y contra la casa (el de hoy, `analisis/semaforo.py`, sale de
+las espinas que escribe el analista y solo se mide hacia adelante: 15
+no-verdes en la primera semana); (2) el cruce de las dos burbujas del partido.
+
+**El caso.** Ameliano venía perdiendo (K −23, cerca del extremo) y Luqueño
+ganando (K +15, en su récord con 2 partidos). Las dos ACORDABAN: un solo
+resultado (gana Luqueño) seguía las dos, y cualquier otro las reventaba a las
+dos. Ganó Ameliano. Cuando las dos CHOCAN (mismo signo) una revienta por
+definición; ahí la pregunta útil es si sale más empate (1.7 a del skill,
+candidato de la v4.5).
+
+**El script** (`backend/backtest_semaforo_burbujas.py`, test
+`test_backtest_semaforo_burbujas`): sobre el padrón, con la burbuja total de
+cada lado de `observar_equipo` (historia anterior, nivel del rival previo):
+
+1. el semáforo de hoy con la **tarjeta** (`espina_tarjeta`) en lugar de la
+   espina del analista: verde / amarillo / rojo / sin dato, cuánto gana el
+   elegido (favorito por nivel o de la casa) contra lo esperado por su nivel y
+   contra lo que pedía la casa;
+2. el **cruce**: acuerdan / chocan +/ chocan −, por cuántas en el extremo o
+   cerca (0, 1, 2), el resultado que sigue las dos (o el empate) contra el
+   nivel del mismo tramo y contra la casa;
+3. **señales** del elegido y del rival por segmento (como §15.4): falla con y
+   sin, caza, contra el mismo tramo fino de ventaja, por época, contra la
+   casa y por liga.
+
+Resultado: pendiente de la corrida en el servidor
+(`python -m backend.backtest_semaforo_burbujas --padron`). Mide; no cambia
+ningún punto, la tarjeta ni el semáforo.
