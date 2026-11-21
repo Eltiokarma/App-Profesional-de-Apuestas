@@ -1319,6 +1319,14 @@ conversación se pierde en la siguiente.
    **Pendiente:** el punto 7 (alertas RIVAL-RESISTE y HANDICAP-APRETADO) espera que el usuario
    pida el desarrollo.
 
+40. **El semáforo de las burbujas y el cruce de las dos** (21/11/2026,
+   usuario tras Ameliano 1-0 Luqueño, 1632063). `backend/backtest_semaforo_burbujas.py`
+   (REVENTON §19): el semáforo con la tarjeta en vez de la espina del
+   analista, probado contra 2019-2026 y contra la casa, y el cruce de las dos
+   burbujas (acuerdan / chocan). **Pendiente:** correrlo en el servidor y
+   decidir con el usuario qué entra (al semáforo de `METODO_APUESTA.md` o al
+   skill, con propuesta).
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
