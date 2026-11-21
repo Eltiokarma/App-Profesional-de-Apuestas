@@ -87,7 +87,12 @@ casi siempre no hay nada que hacer.
 >    se rehace en el orden de la v1.10 (F1 → bajas de la hoja → B6 → EJE → B y
 >    F → D1 y H), con las filas `delOnceOficial` que sumó la app y sin
 >    borrarlas, y la nota del bloque B dice «recomputado con el once» (eso
->    calla la alerta). Sin ella, no se toca una baja decisiva que no juega ni
+>    calla la alerta SOLO si los puntajes A–E se movieron respecto del depósito
+>    anterior al once: la frase con los mismos puntajes la deja sonando con
+>    `fraseSinRecomputo`, 1467). **Sin sub-scores estructurados** (B1–B6 solo
+>    en la nota, lo común) **B se re-juzga a nivel de bloque**: el `score` y la
+>    nota con la hoja; eso no es inventar (1470). Si con el tope encima no
+>    alcanza, no escribas la frase: la alerta queda y se dice en `notas`. Sin ella, no se toca una baja decisiva que no juega ni
 >    la rama del TDE que dependía de un intérprete. **El hecho de la espina**
 >    (sad-analysis v4.6, 1.6 (i) y 1.7 (g)) que se apoyaba en el once probable
 >    se revisa con la hoja: si el jugador o el sistema que lo sostenía no está,
