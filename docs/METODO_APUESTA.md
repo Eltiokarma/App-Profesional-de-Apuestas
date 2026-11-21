@@ -585,7 +585,35 @@ un rival más cercano en nivel), por época. **Primera mirada, 73 equipos sin
 cuota:** en el total de favoritos la señal no pesa (−1,7 pts); en los
 gigantes falla 43 % con el rival que no perdió 6+ de 10 contra 30 % sin él,
 caza 2 de cada 3 tropiezos, y contra el mismo tramo de ventaja queda en +8
-a +12 pts, con intervalos todavía anchos. Falta el padrón.
+a +12 pts, con intervalos todavía anchos.
+
+**Corrida del padrón (21/11/2026, servidor, 43.167 favoritos por nivel
+2019-2026; «diferencia» = contra el mismo tramo de 0,1 de ventaja):**
+
+| Segmento | Rival que no perdió 6+ de 10 | Rival que no pierde el 60 %+ en la condición (perfil) |
+|---|---|---|
+| favorito (0,5+) | falla 51 / 46 % · +1,2 (no separa) | falla 55 / 41 % · **+7,4** · caza 60 % · se repite |
+| muy favorito (1,0+) | +1,0 (no separa) | falla 51 / 35 % · **+9,4** · caza 57 % · se repite |
+| gigante (nivel 3,5+, 1,0+) | +2,1 (justo en el borde) | falla 45 / 30 % · **+8,2** · caza 67 % |
+| gigante con 1,5+ | +3,8 (separa, no se repite) | falla 40 / 26 % · **+9,6** · caza 62 % |
+| gigante de local | +1,8 (no separa) | falla 35 / 28 % · +3,3 |
+| casa 70 %+ (n 291) | falla 19 / 17 % | falla 19 / 17 % |
+| casa 80 %+ (n 75) | falla 14 / 8 % | falla 13 / 9 % |
+
+- **La señal que sirve no es la forma reciente sino el PERFIL**: el rival que
+  históricamente no pierde en esa condición. Con el control fino de ventaja,
+  la forma queda en 1-4 pts (lo de los 73 equipos se achicó); el perfil queda
+  en 7-10 pts en todos los segmentos de favoritos, en las dos épocas. Lo que
+  la burbuja abierta no ve (§15.1 de REVENTON lo había medido sobre el motor).
+- **Es un punto ciego del NIVEL, no de la casa**: con la cuota de 70 %+ el
+  favorito falla casi igual con y sin el perfil (19 contra 17 %, 291 casos,
+  pocos para cerrar). Donde nuestro número sale del motor (o no hay cuota en
+  la app), el perfil del rival es lo que falta.
+
+**Segundo candidato del semáforo, congelado el 22/11/2026** (se mide hacia
+adelante junto al primero, sin tocar la app): *verde cuyo rival no pierde el
+60 %+ de su historia en la condición de hoy (perfil DC de la tarjeta) →
+amarillo*. Si los dos se sostienen, manda el de mayor diferencia de acierto.
 
 ## Qué falta
 
