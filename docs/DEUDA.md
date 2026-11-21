@@ -1343,8 +1343,9 @@ conversación se pierde en la siguiente.
      por acierto, nunca contra la casa (regla en `CLAUDE.md`).
    - ~~**Propuesta `sad-analysis` v4.8**~~: HECHA el 21/11 junto con el juicio
      «¿entrarías?» del analista (`docs/revisiones/SAD_v4.8_propuesta.md`,
-     `pronostico.entrar`, quinto candidato del semáforo). Falta que el
-     usuario suba el zip y anotar la hora en `SUBIDA_VERSION`. Lo que tenía:
+     `pronostico.entrar`, quinto candidato del semáforo). Zip subido el
+     21/11 a las 08:40 de Lima (`SUBIDA_VERSION`, 13:40 UTC): desde ahí se
+     mide el quinto candidato. Lo que tenía:
      llevar
      `separacionLiga` al skill (hoy solo está en el prompt de `COWORK.md`)
      junto con la regla general de las otras familias (el perfil DC pesa, el

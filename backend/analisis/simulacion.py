@@ -135,6 +135,9 @@ SUBIDA_VERSION = {
     # apretado, lo que no es motivo) el 21/11 a las 04:41 de Lima: lo depositado
     # antes corrió con la v4.6
     ("sad-analysis", "v4.7"): "2026-11-21 09:41:00",
+    # el usuario subió sad v4.8 («¿entrarías?», separacionLiga, cierre de las
+    # burbujas) el 21/11 a las 08:40 de Lima: lo depositado antes corrió con la v4.7
+    ("sad-analysis", "v4.8"): "2026-11-21 13:40:00",
 }
 
 # EL MEDIO: lo que la casa (sin margen) le da al elegido, en % [desde, hasta)
