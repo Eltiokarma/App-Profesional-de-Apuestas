@@ -1066,10 +1066,24 @@ a +17: tampoco separa con esta muestra. Una medición anterior del mismo día,
 con los niveles escritos después del partido, daba 29 % contra 20 %: era la
 fuga del §13.1 y no vale.
 
-**Qué falta:** la corrida del padrón con cuotas en el servidor
-(`python -m backend.backtest_dc_record --padron --json …`, con el token
-maestro). Hasta entonces la racha en récord sigue siendo DESCRIPCIÓN, como
-dice el §15: no es motivo para desconfiar del favorito ni entra al semáforo.
+**Corrida del padrón (21/11/2026, servidor, `--padron`):** 161.810 casos de
+1.135 equipos (2019-05 a 2026-11), 12.187 con la racha en récord.
+Estandarizado por fuerza y condición, el equipo en récord no gana **+0,4 pts**
+más de lo esperado, IC −0,7 a +1,3: **no separa**. En las dos épocas, +0,7 y
+−0,4 (los dos intervalos cruzan el cero). Ningún tramo se aparta: el muy
+favorito de local no gana el 33,9 % con récord y el 33,4 % sin él (n 2.044 y
+9.686); de visita, 49,9 % contra 48,6 %. **Contra la casa** (317 casos con
+cuota 1X2): −3,7 pts, IC −8,3 a +1,6. Si algo, el equipo en récord gana un
+poco MÁS de lo que dice la cuota, y la plana no gana plata en ningún tramo.
+
+**Decisión: queda como DESCRIPCIÓN** (§15). La racha sin perder en récord no
+es motivo para desconfiar del favorito, no entra al semáforo y la etiqueta de
+la tarjeta («no es terreno raro», `familias.IMPROBABLE_BAJO`) estaba bien.
+La diferencia de los 73 equipos (+6 pts en el muy favorito, sin separar) era
+muestra chica. De paso: en la casa 70 %+, el favorito sin racha en récord no
+ganó el 16,7 % cuando la casa decía 22,3 % (n 329); la plana igual quedó en
+−0,4 % con el margen: el favorito grande gana algo más de lo que dice la cuota
+sin margen, pero no deja valor a la cuota real.
 
 ## 16. Cuánto separa el riesgo en cada liga (29/10/2026)
 
