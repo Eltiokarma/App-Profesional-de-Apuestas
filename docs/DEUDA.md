@@ -1346,16 +1346,19 @@ conversación se pierde en la siguiente.
      junto con la regla general de las otras familias (el perfil DC pesa, el
      resto es narrativa), y cerrar en 1.7 (a) el candidato «con las dos
      burbujas en riesgo, más empate»: medido el 21/11 (REVENTON §19.1), no se
-     sostiene.
+     sostiene. Sumar lo de §20 (21/11): el típico por período no avisa mejor
+     que el de toda la historia; la racha larga se sostiene y la de un
+     partido es la frágil; ganar toda la racha por la mínima es un aviso
+     débil (+2-3 pts), y venir anotando 5+ seguidos protege.
    - **Punto 7 de la v4.7**: las alertas `dato` RIVAL-RESISTE y
      HANDICAP-APRETADO calculadas por la app, solo si el usuario pide el
      desarrollo (contrato primero).
    - **Hándicap por tramo de cuota**: rehacer la tabla del margen (REVENTON
      §15.4) cuando haya más cuotas acumuladas.
-   - **Cerrar el capítulo de las burbujas**: correr
-     `backtest_reventon_cruzado --padron` (REVENTON §20: los goles de la racha
-     y la periodicidad, lo único de «cuándo revienta» que faltaba medir) y
-     dejar escrito qué hacen las burbujas y qué no.
+   - ~~Cerrar el capítulo de las burbujas~~: HECHO el 21/11 (REVENTON §20.1
+     y §20.2: no hay periodicidad, los goles de la racha mueven 2-3 pts, las
+     burbujas son lectura y freno; lo que queda son los dos candidatos del
+     semáforo).
 
 ## Siguientes pasos (en orden)
 
