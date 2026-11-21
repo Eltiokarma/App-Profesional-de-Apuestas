@@ -365,11 +365,26 @@ def main():
     _duelos = lambda d1, d2: {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": ""},
                                                           "m2": {"duelosCarril": [
         {"carril": "izquierdo croata", "duelo": d1}, {"carril": "derecho croata", "duelo": d2}]}}}
-    _r1438 = {r["jugador"]: r["motivo"] for r in _dc646.roles_vs_grid(
-        _duelos("Perišić y Gvardiol contra Coufal y Hopi", "Stanišić y Baturina contra Sláma y Kabongo"), _of1438)}
+    _rr1438 = _dc646.roles_vs_grid(
+        _duelos("Perišić y Gvardiol contra Coufal y Hopi", "Stanišić y Baturina contra Sláma y Kabongo"), _of1438)
+    _r1438 = {j: r["motivo"] for r in _rr1438 for j in r.get("jugadores") or [r["jugador"]]}
     check("1438: el duelo con dos del equipo en bandas opuestas del grid sale en rolesVsGrid (los cuatro)",
           set(_r1438) == {"I. Perišić", "J. Gvardiol", "J. Stanišić", "M. Baturina"}
           and "bandas" in _r1438["I. Perišić"], _r1438)
+    # 1458 (21/11/2026, 1650505): UN motivo por duelo, con los jugadores en `jugadores`
+    check("1458: dos duelos cruzados dan dos motivos, no cuatro", len(_rr1438) == 2
+          and _rr1438[0]["jugadores"] == ["J. Gvardiol", "I. Perišić"], _rr1438)
+    # 1457 (21/11/2026, 1650505/1650502): el duelo del carril CENTRO junta siempre
+    # a los dos lados del grid: no se juzga
+    _b1457 = {"equipo": "a", "apertura": {"m1": {"sistema": "4-2-3-1", "xiReferencia": ""}, "m2": {"duelosCarril": [
+        {"carril": "centro", "duelo": "Gvardiol y Stanišić contra los dos puntas"}]}}}
+    check("1457: el duelo del carril centro con un central de cada lado no sale", _dc646.roles_vs_grid(_b1457, _of1438) == [],
+          _dc646.roles_vs_grid(_b1457, _of1438))
+    # 1459 (21/11/2026, 1650504): «A. Gvardiol» (otra inicial, fuera de la hoja) no es J. Gvardiol
+    check("1459: la mención con otra inicial no casa con el titular del grid",
+          _dc646.roles_vs_grid(_duelos("Perišić y A. Gvardiol contra Coufal y Hopi", "Sučić contra Sláma"),
+                               _of1438) == [],
+          _dc646.roles_vs_grid(_duelos("Perišić y A. Gvardiol contra Coufal y Hopi", "Sučić contra Sláma"), _of1438))
     check("1438: con el grid que el parte escribió (Baturina y Gvardiol, Perišić y Stanišić) y un central, nada",
           _dc646.roles_vs_grid(_duelos("Baturina y Gvardiol contra Coufal y Hopi",
                                        "Stanišić, Perišić y Modrić contra Sláma y Kabongo"), _of1438) == [])
