@@ -261,3 +261,10 @@
   la regla la base no afirma el ciclo y la prensa manda (1254, 1373, 1263).
   Se reporta, con el reglamento citado, si conseguís la regla de esa
   competición: entra a `sanciones.UMBRALES`.
+  Y desde la pasada del 21/11 (mediodía): la coherencia (Jev) con **402
+  «Insufficient credits»** (1468, 1471: la cuenta de Jev sin saldo; no es
+  timeout ni saturación, 1451). Es del usuario (recargar) y ya espera en
+  «Decisiones pendientes» como #1468: mientras esa siga en `usuario`, no se
+  reporta otra vez; el parte se deposita igual y el error queda sellado en
+  `coherencia`. Se reporta si el 402 sigue después de que #1468 pasó a
+  `resuelta` (la recarga no alcanzó o la clave es otra).
