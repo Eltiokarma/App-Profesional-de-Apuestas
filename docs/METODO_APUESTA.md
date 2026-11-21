@@ -466,11 +466,36 @@ a +21). Al revés de la intuición: la casa mira la calidad, no solo los último
 resultados (los empates de Bayern venían con xG de 2,5 a 5,1). El rival que no
 pierde o que marca no separó (IC −12 a +7). Sin probar en ningún sentido.
 
-**Qué falta:** la corrida del padrón en el servidor
-(`python -m backend.backtest_forma_cuota --padron --json
-$SAD_DATA_DIR/forma_cuota.json`, con el token maestro; `--ultimos 5` para la
-forma corta). Hasta entonces la forma propia no es motivo de desconfianza ni
-entra al semáforo.
+**Corrida del padrón (21/11/2026, servidor):** 1.249 favoritos de la casa con
+cuota, del 23/08 al 20/11/2026 (las cuotas guardadas no dan para más). Los
+favoritos ganaron el 65,8 % contra el 62,6 % que decía la casa, y la plana
+dio −2,4 % por el margen. **Ninguna señal separa y se repite.**
+
+| Señal | n | Diferencia contra el resto | IC 95 % |
+|---|---|---|---|
+| favorito con la forma 20+ pts debajo de la casa (Bayern) | 411 | −1,9 pts | −7,5 a +3,6 |
+| favorito con la forma arriba de la casa | 316 | +0,9 | −5,3 a +6,2 |
+| favorito que recibió en 7+ de 10 | 697 | −2,6 | −7,9 a +2,3 |
+| **rival que no perdió 6+ de 10** | 682 | **−5,2** | **−10,4 a +0,1** |
+| rival que marcó en 8+ de 10 | 498 | −2,7 | −7,8 a +2,7 |
+| las dos (favorito 20+ debajo y rival que no pierde) | 181 | −4,6 | −11,9 a +3,0 |
+
+- **El favorito contra sí mismo no avisa nada.** Lo de los 385 partes (+12
+  pts, «al revés») era ruido.
+- **El rival que no pierde** es lo único que se acerca, en la dirección del
+  usuario, pero no se repite: −1,8 pts antes del 18/10 (IC −9,7 a +5,4) y
+  −8,4 desde el 18/10 (IC −15,1 a −1,1). Donde pesa es en el favorito MEDIO:
+  con la casa entre 50 y 70 %, contra un rival que no pierde el favorito ganó
+  lo que decía la casa (58,1 contra 58,0 %, n 539, plana −7,0 %); sin ese
+  rival le sacó 6 pts a la casa (64,4 contra 58,4 %, n 421, plana +1,9 %).
+  Con la casa en 70 %+ casi no cambia (+4,0 contra +6,5 pts). Es una de
+  seis señales y el tramo se miró después: un candidato, no una regla.
+
+**Candidato fijado hoy para medir hacia adelante** (como el semáforo: la
+regla no se mueve): *favorito de la casa entre 50 y 70 % contra un rival que
+no perdió 6+ de sus últimos 10 oficiales* → no apostar. Cuenta desde el
+22/11/2026; se re-corre el script con `--json` al juntar unos 300 casos
+nuevos de ese grupo y se decide con eso. Hasta entonces no entra al semáforo.
 
 ## Qué falta
 

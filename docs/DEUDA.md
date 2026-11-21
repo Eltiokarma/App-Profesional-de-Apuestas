@@ -1267,12 +1267,14 @@ conversación se pierde en la siguiente.
    fuera del semáforo.
 
 37. **El equipo contra sí mismo, contra la cuota** (21/11/2026, usuario,
-   tras Bayern 1-1 Köln). Script hecho (`backend/backtest_forma_cuota.py`,
-   `docs/METODO_APUESTA.md`): la forma de los últimos 10 oficiales del
-   favorito y del rival, contra la cuota sin margen. En 385 partes, al revés
-   de la intuición y sin probar. **Pendiente del usuario:** correrlo en el
-   servidor (`python -m backend.backtest_forma_cuota --padron --json
-   $SAD_DATA_DIR/forma_cuota.json`) y decidir con eso.
+   tras Bayern 1-1 Köln). Medido en el padrón (`backend/backtest_forma_cuota.py`,
+   `docs/METODO_APUESTA.md`, 1.249 favoritos con cuota): ninguna señal
+   separa y se repite. La forma del favorito no avisa nada (−1,9 pts); el
+   rival que no pierde se acerca (−5,2 pts, IC −10,4 a +0,1) solo en la
+   segunda mitad. **Candidato fijado para medir hacia adelante desde el
+   22/11/2026:** favorito de la casa entre 50 y 70 % contra un rival que no
+   perdió 6+ de sus últimos 10 → no apostar. **Pendiente:** re-correr con
+   unos 300 casos nuevos de ese grupo y decidir.
 
 ## Siguientes pasos (en orden)
 
