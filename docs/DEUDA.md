@@ -1305,6 +1305,16 @@ conversación se pierde en la siguiente.
    del margen, débiles. **Pendiente:** juntar cuotas para la tabla fina por
    tramo de cuota (hoy 291 casos de 70 %+).
 
+39. **Revisión `sad-analysis` v4.7 desde el caso Bayern 1-1 Köln** (21/11/2026,
+   usuario: «deja bien anotados los aprendizajes, incluso cuando fueron
+   categorizados y cuando no; lo debe leer el analista»). Propuesta en
+   `docs/revisiones/SAD_v4.7_propuesta.md`: lo que entra al skill (riesgo bajo
+   no es «sin señal»; el perfil DC del rival que el motor no ve; el margen del
+   favorito y la goleada; el grande que gana apretado en Sudamérica; citar los
+   perfiles enteros), la lista cerrada de lo medido que NO es motivo, y dos
+   alertas calculadas para la app. **Pendiente del usuario:** aprobar punto
+   por punto; después se redacta en el SKILL y se sube el zip.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
