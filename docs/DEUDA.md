@@ -1280,6 +1280,10 @@ conversación se pierde en la siguiente.
    mayoría de las ligas) pero **la casa ya lo cobra** (−1,0 y −2,2 pts); las
    burbujas del rival no lo ven. El candidato queda sin base contra la casa
    (−0,2 pts en el tramo 50-70 %): se anota como lectura, no como regla.
+   **Leído por acierto** (como apuesta el método), baja de 2 a 6 pts en todos
+   los cortes: queda **candidato del semáforo** desde el 22/11/2026, «verde
+   con rival que no perdió 6+ de 10 → amarillo». **Pendiente:** medirlo con
+   los partes desde esa fecha (unos 150 verdes) y decidir.
 
 ## Siguientes pasos (en orden)
 

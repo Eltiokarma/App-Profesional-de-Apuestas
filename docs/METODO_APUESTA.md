@@ -547,6 +547,33 @@ pts (IC −4,6 a +4,3, n 538). Sigue anotado con su fecha, pero sin esperar
 que separe. Para el análisis, sirve como LECTURA: cuando el motor se aparta
 de la casa (o no hay cuota), el perfil DC del rival es lo que el nivel no ve.
 
+**Leído como lo usa el método (el usuario, 21/11/2026: «nos guiamos del win
+rate y de en qué partido no se puede confiar; no buscamos ventaja sobre la
+casa»).** La pregunta entonces no es si la casa lo cobra sino si el ACIERTO
+baja con la señal. Baja en todos los cortes, siempre en el mismo sentido:
+
+| Grupo | Rival que no perdió 6+ de 10 | Rival que viene perdiendo |
+|---|---|---|
+| nuestros elegidos, todos (385 partes) | 54,8 % (n 217) | 60,2 % (n 171) |
+| semáforo verde | 57,1 % (n 189) | 62,0 % (n 158) |
+| semáforo verde y le dimos 60 %+ | 76,6 % (n 47) | 92,6 % (n 54) |
+| padrón, favorito de la casa 50-70 % | 58,1 % (n 539) | 64,4 % (n 421) |
+| padrón, favorito de la casa 70 %+ | 81,1 % (n 143) | 83,6 % (n 146) |
+
+Siete años contra el nivel dan lo mismo en chico (+2,6 pts de «no gana»). El
+tamaño honesto es de 2 a 6 puntos de acierto; el salto del verde 60 %+ (16
+pts) sale de 101 partes y casi seguro está inflado. Y la señal es común: más
+de la mitad de los elegidos tienen un rival que resiste, así que como «rojo»
+dejaría fuera la mitad de las apuestas.
+
+**Candidato para el semáforo, a medir hacia adelante desde el 22/11/2026**
+(regla congelada; no cambia el semáforo hasta medirlo): *verde con un rival
+que no perdió 6+ de sus últimos 10 oficiales → amarillo*. Se compara el
+acierto del verde puro contra el verde con rival que resiste en los partes
+desde esa fecha; la forma del rival se calcula después con
+`/constantes/{id}?antesDe=` (no tiene fuga), así que no hace falta tocar la
+app para medirlo.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos
