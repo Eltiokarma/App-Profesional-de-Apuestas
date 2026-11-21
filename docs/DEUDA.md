@@ -1274,11 +1274,12 @@ conversación se pierde en la siguiente.
    segunda mitad. **Candidato fijado para medir hacia adelante desde el
    22/11/2026:** favorito de la casa entre 50 y 70 % contra un rival que no
    perdió 6+ de sus últimos 10 → no apostar. **Pendiente:** re-correr con
-   unos 300 casos nuevos de ese grupo y decidir. **Validación hecha en
-   código** (`backend/backtest_rival_resiste.py`: contra el nivel en los años
-   sin cuota, por liga y con las burbujas del rival); **pendiente del
-   usuario:** `python -m backend.backtest_rival_resiste --padron --json
-   $SAD_DATA_DIR/rival_resiste.json`.
+   unos 300 casos nuevos de ese grupo y decidir. **Validado en el padrón el
+   21/11** (`backend/backtest_rival_resiste.py`): el rival que resiste es real
+   contra el nivel (forma +2,6 pts, perfil DC +8,5, en las dos épocas y en la
+   mayoría de las ligas) pero **la casa ya lo cobra** (−1,0 y −2,2 pts); las
+   burbujas del rival no lo ven. El candidato queda sin base contra la casa
+   (−0,2 pts en el tramo 50-70 %): se anota como lectura, no como regla.
 
 ## Siguientes pasos (en orden)
 

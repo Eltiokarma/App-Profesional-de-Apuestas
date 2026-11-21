@@ -509,8 +509,43 @@ del signo. La resistencia del rival se mide de cuatro maneras: la regla
 su récord y su perfil de doble oportunidad (no pierde el 60 %+ en la
 condición). Sobre 73 equipos bajados (sin cuotas), ninguna de las cuatro
 separa contra el nivel (la regla: +0,1 pts, IC −4,4 a +5,5, n 1.089) y las
-ligas no se inclinan. Falta la corrida del padrón:
-`python -m backend.backtest_rival_resiste --padron --json $SAD_DATA_DIR/rival_resiste.json`.
+ligas no se inclinan.
+
+**Corrida del padrón (21/11/2026, servidor):** 43.160 favoritos por nivel
+(2019-01 a 2026-11, 8.954 partidos de copa nacional fuera) y 1.253 por casa.
+Residuo > 0 = con ese rival el favorito no gana MÁS de lo esperado.
+
+| Resistencia del rival | Contra el nivel (años sin cuota) | Épocas | Ligas en el sentido | Contra la casa |
+|---|---|---|---|---|
+| no perdió 6+ de 10 (la regla) | **+2,6 pts** (IC +1,4 a +3,8, n 18.317) | +1,9 y +3,2, las dos separan | **45 de 64** (p 0,002) | −1,0 (IC −4,2 a +2,7, n 681) |
+| racha sin perder de la condición 3+ | +0,7 (IC −0,6 a +2,3) | no | 26 de 48 | −0,7 |
+| esa racha en su récord | −1,5 (IC −4,3 a +1,2) | no | 9 de 19 | +3,7 (n 40) |
+| no pierde el 60 %+ en la condición (perfil DC) | **+8,5 pts** (IC +7,3 a +9,7, n 21.687) | +9,2 y +7,6 | **64 de 73** | −2,2 (IC −5,7 a +1,3, n 633) |
+
+Lectura:
+
+- **El rival que resiste es real en el fútbol**: contra lo que dice el nivel,
+  el favorito gana menos contra un rival que viene sin perder y, mucho más,
+  contra uno que históricamente no pierde en esa condición. Siete años, dos
+  épocas, la mayoría de las ligas. Es lo mismo que el §15.1 de REVENTON ya
+  había medido sobre el motor (el perfil DC lo mejora).
+- **La casa ya lo cobra.** Contra la cuota los dos dan cero (−1,0 y −2,2 pts):
+  el favorito contra ese rival gana lo que la casa dice. No hay valor en
+  dejar de apostarle ni en apostarle en contra; la plana pierde el margen
+  igual que en cualquier favorito.
+- **Las burbujas no lo ven**: la racha sin perder abierta (3+ o en récord) no
+  separa ni contra el nivel. La resistencia está en el perfil largo y en la
+  forma, no en la racha.
+- **Reserva**: lo esperado se estandariza con dos tramos de ventaja (0,5-1,0 y
+  1,0+). Dentro de cada tramo, un rival que no pierde puede estar algo más
+  cerca en nivel, y eso infla el «contra el nivel». Contra la casa no hay ese
+  problema.
+
+**El candidato** (favorito de la casa 50-70 % contra un rival que no perdió
+6+ de 10 → no apostar) **no tiene base contra la casa**: en ese tramo, −0,2
+pts (IC −4,6 a +4,3, n 538). Sigue anotado con su fecha, pero sin esperar
+que separe. Para el análisis, sirve como LECTURA: cuando el motor se aparta
+de la casa (o no hay cuota), el perfil DC del rival es lo que el nivel no ve.
 
 ## Qué falta
 
