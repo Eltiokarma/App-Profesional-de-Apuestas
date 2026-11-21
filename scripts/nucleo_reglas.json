@@ -32,7 +32,13 @@
    "Una racha de un partido no sostiene al elegido",
    "nombra lo que hace imposible el pronóstico",
    "se rehace con el once oficial",
-   "salen de `bancoProbable`"
+   "salen de `bancoProbable`",
+   "Riesgo bajo se escribe como lo que es",
+   "El motor no ve el perfil DC del rival",
+   "el favorito gana por 0 o 1 ocho de cada diez",
+   "con un gol de diferencia salvo un hecho del partido",
+   "Lo medido que no es motivo",
+   "se cita con sus dos mitades"
   ]
  },
  "topeTokens": {

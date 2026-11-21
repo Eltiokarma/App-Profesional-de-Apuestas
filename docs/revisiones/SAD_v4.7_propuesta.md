@@ -1,8 +1,9 @@
 # Propuesta de revisión · `sad-analysis` v4.6 → v4.7
 
-**Estado: PROPUESTA (21/11/2026), para aprobar punto por punto.** No toca
-`docs/skills/sad-analysis/SKILL.md` hasta que el usuario la apruebe. Al
-redactarse: el SKILL, `references/HISTORIAL.md`, `CORTE_VERSION` con la v4.7
+**Estado: APROBADA por el usuario el 21/11/2026, con todas las
+recomendaciones** («aprueba la propuesta v4.7 y aplícala al skill»). Puntos 1-6
+aplicados al SKILL; el 7 queda como desarrollo a pedir; el 8 no es del skill.
+Al redactarse se tocaron: el SKILL, `references/HISTORIAL.md`, `CORTE_VERSION` con la v4.7
 (`backend/analisis/lecciones.py`) y, cuando el usuario suba el zip, su hora en
 `SUBIDA_VERSION`.
 
