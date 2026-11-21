@@ -108,6 +108,35 @@ def main():
     check("sin efecto, contra el nivel no separa (no inventa)", not n0.get("separa"), n0)
     check("sin efecto, las ligas no se inclinan", _s(r0)["porLiga"]["pSigno"] > 0.05, _s(r0)["porLiga"])
 
+    # ── 2-bis · por segmento: controla la ventaja y caza lo plantado ─────────
+    def casos_seg(efecto_gigante: float, semilla: int):
+        rnd = random.Random(semilla)
+        out = []
+        for i in range(30000):
+            v = rnd.uniform(0.5, 2.2)
+            nivel = rnd.uniform(2.0, 4.2)
+            # la señal es MÁS común cuando la ventaja es chica (confusión con el nivel)
+            senal = rnd.random() < (0.75 - 0.3 * (v - 0.5))
+            p = min(0.9, 0.45 + 0.22 * v)
+            if senal and nivel >= 3.5 and v >= 1.0:
+                p -= efecto_gigante
+            out.append({"team": i % 400, "fecha": f"{2019 + i // 5000}-01-01", "local": i % 2 == 0, "gana": rnd.random() < p,
+                        "empata": False, "ventaja": v, "porNivel": True, "nivel": nivel, "porCasa": False, "p": None,
+                        "riv": {"formaNoPierde": 0.7 if senal else 0.3, "perfilNoPierde": 0.5, "racha": 0, "record": 0}})
+        return out
+    sin_ef = casos_seg(0.0, 21)
+    todos = [c for c in sin_ef]
+    k = rr.separa_en(todos, rr.SENALES["forma"])
+    check("la señal pegada a la ventaja chica falla más «a lo crudo»…", k["fallaCon"] > k["fallaSin"] + 0.02, k)
+    check("…pero contra el mismo tramo fino de ventaja no separa (no confunde señal con nivel)", not k.get("separa"), k)
+    con_ef = casos_seg(0.15, 22)
+    seg = {x["segmento"]: x for x in rr.segmentos(con_ef)}
+    g = next(x for x in seg["gigante: nivel 3,5+ y 1,0+ de ventaja"]["senales"] if x["senal"] == "forma 6+")
+    check("efecto plantado solo en los gigantes: en ese segmento separa y caza más de la mitad de los tropiezos",
+          g.get("separa") and g["diferencia"] > 0.08 and g["caza"] > 0.5, g)
+    f = next(x for x in seg["favorito por nivel (0,5+)"]["senales"] if x["senal"] == "forma 6+")
+    check("y en el total de favoritos pesa bastante menos", f["diferencia"] < g["diferencia"] / 2, (f["diferencia"], g["diferencia"]))
+
     # ── 3 · las copas se consultan en lotes ──────────────────────────────────
     import backend.analisis.escala as escala
     lotes = []

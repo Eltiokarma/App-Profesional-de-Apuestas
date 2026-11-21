@@ -1283,7 +1283,9 @@ conversación se pierde en la siguiente.
    **Leído por acierto** (como apuesta el método), baja de 2 a 6 pts en todos
    los cortes: queda **candidato del semáforo** desde el 22/11/2026, «verde
    con rival que no perdió 6+ de 10 → amarillo». **Pendiente:** medirlo con
-   los partes desde esa fecha (unos 150 verdes) y decidir.
+   los partes desde esa fecha (unos 150 verdes) y decidir. **Por segmento**
+   (gigantes tipo Bayern o Arsenal, casa 70 %+): sumado al mismo script;
+   **pendiente del usuario** correrlo en el padrón.
 
 ## Siguientes pasos (en orden)
 
