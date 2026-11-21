@@ -3,7 +3,7 @@
 > **Actualizado el 21/11/2026.** La copia del repo está en **sad-analysis v4.7**
 > (`docs/revisiones/SAD_v4.7_propuesta.md`, aprobada el 21/11: el caso Bayern–Köln,
 > el perfil DC del rival, el margen apretado y la lista de lo que no es motivo).
-> La cuenta sigue con la v4.6 hasta que el usuario suba el zip.
+> Zip subido a la cuenta el 21/11 a las 04:41 de Lima.
 
 > **Actualizado el 17/11/2026.** La copia del repo estaba en **sad-analysis v4.6**,
 > **teorema-del-echado v0.1.27**, **efe-clasificador v1.11** (rúbrica en

@@ -131,6 +131,10 @@ SUBIDA_VERSION = {
     ("diagnostico-tactico", "v1.9"): "2026-11-17 13:20:00",
     ("efe-clasificador", "v1.11"): "2026-11-17 13:20:00",
     ("sad-analysis", "v4.6"): "2026-11-17 13:20:00",
+    # el usuario subió sad v4.7 (caso Bayern–Köln: perfil DC del rival, margen
+    # apretado, lo que no es motivo) el 21/11 a las 04:41 de Lima: lo depositado
+    # antes corrió con la v4.6
+    ("sad-analysis", "v4.7"): "2026-11-21 09:41:00",
 }
 
 # EL MEDIO: lo que la casa (sin margen) le da al elegido, en % [desde, hasta)

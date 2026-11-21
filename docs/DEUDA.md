@@ -1315,8 +1315,8 @@ conversación se pierde en la siguiente.
    alertas calculadas para la app. **Aprobada el 21/11/2026** con todas las
    recomendaciones y aplicada al SKILL (puntos 1-6; `CORTE_VERSION` v4.7,
    `references/HISTORIAL.md`, anclas en `scripts/nucleo_reglas.json`).
-   **Pendiente:** el usuario sube el zip y su hora va a `SUBIDA_VERSION`; el
-   punto 7 (alertas RIVAL-RESISTE y HANDICAP-APRETADO) espera que el usuario
+   Zip subido el 21/11 a las 04:41 de Lima (`SUBIDA_VERSION`, 09:41 UTC).
+   **Pendiente:** el punto 7 (alertas RIVAL-RESISTE y HANDICAP-APRETADO) espera que el usuario
    pida el desarrollo.
 
 ## Siguientes pasos (en orden)
