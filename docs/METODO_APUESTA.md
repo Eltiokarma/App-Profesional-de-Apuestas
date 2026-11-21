@@ -574,6 +574,19 @@ desde esa fecha; la forma del rival se calcula después con
 `/constantes/{id}?antesDe=` (no tiene fuga), así que no hace falta tocar la
 app para medirlo.
 
+**Por segmento** (usuario, 21/11/2026: «segmentar para equipos fuertes como
+Bayern o Arsenal, donde la cuota está desbalanceada, para ampliar lo que
+cazamos»). `backtest_rival_resiste` mide ahora, dentro de cada segmento
+(favorito, muy favorito, gigante —nivel 3,5+ y 1,0+ de ventaja—, gigante con
+1,5+, gigante de local, casa 70 %+ y 80 %+), cuánto falla el favorito con la
+señal y sin ella, qué parte de los tropiezos caza, y la diferencia contra los
+sin señal del MISMO tramo de 0,1 de ventaja (para no confundir la señal con
+un rival más cercano en nivel), por época. **Primera mirada, 73 equipos sin
+cuota:** en el total de favoritos la señal no pesa (−1,7 pts); en los
+gigantes falla 43 % con el rival que no perdió 6+ de 10 contra 30 % sin él,
+caza 2 de cada 3 tropiezos, y contra el mismo tramo de ventaja queda en +8
+a +12 pts, con intervalos todavía anchos. Falta el padrón.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

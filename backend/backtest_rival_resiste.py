@@ -150,6 +150,7 @@ def casos(historias: dict[int, dict], cuotas: dict | None = None, excluir: set |
                 continue
             out.append({"fixtureId": fx, "team": team, "fecha": yo["fecha"], "liga": yo["liga"], "local": yo["local"],
                         "gana": yo["gana"], "empata": yo["empata"], "ventaja": ventaja, "porNivel": por_nivel,
+                        "nivel": yo["nivel"],
                         "p": p, "porCasa": por_casa, "cuota": (1 / (p * (1 + c[4]))) if por_casa else None,
                         "riv": otro})
     out.sort(key=lambda x: (x["fecha"], x["fixtureId"]))
@@ -254,6 +255,89 @@ def por_liga(cs: list[dict], senal) -> dict:
             "nota": "residuo > 0 = con el rival que resiste el favorito no gana MÁS de lo esperado en esa liga (el sentido del candidato)"}
 
 
+# ── por segmento: dónde NO entrar (21/11/2026) ───────────────────────────────
+# El usuario apuesta por ACIERTO, no por valor: «aprovechamos que un partido se
+# vaya a dar con seguridad; si no estamos seguros, no apostamos». La pregunta
+# por segmento es entonces: dentro de un grupo de favoritos (los gigantes tipo
+# Bayern o Arsenal, la casa 70 %+…), ¿la señal del rival separa a los que
+# fallan? Se mide la PRECISIÓN (cuánto falla el favorito con la señal contra
+# sin ella, en el mismo segmento) y la COBERTURA (qué parte de los tropiezos
+# del segmento caza). Para no confundir la señal con la ventaja, el «sin la
+# señal» se toma del MISMO tramo fino de ventaja (0,1) y condición. Con
+# tramos de 0,25 quedaba un sesgo de ~0,7 pts cuando la señal va pegada a la
+# ventaja chica (lo encontró el test con 30.000 casos sintéticos).
+
+SEGMENTOS = {
+    "favorito por nivel (0,5+)": lambda c: c["porNivel"],
+    "muy favorito por nivel (1,0+)": lambda c: c["porNivel"] and c["ventaja"] >= 1.0,
+    "gigante: nivel 3,5+ y 1,0+ de ventaja": lambda c: c["porNivel"] and c["ventaja"] >= 1.0 and (c["nivel"] or 0) >= 3.5,
+    "gigante con 1,5+ de ventaja": lambda c: c["porNivel"] and c["ventaja"] >= 1.5 and (c["nivel"] or 0) >= 3.5,
+    "gigante de local": lambda c: c["porNivel"] and c["ventaja"] >= 1.0 and (c["nivel"] or 0) >= 3.5 and c["local"],
+    "casa 70 %+": lambda c: c["porCasa"] and c["p"] >= 0.70,
+    "casa 80 %+": lambda c: c["porCasa"] and c["p"] >= 0.80,
+}
+SENALES_SEG = {
+    "forma 6+": SENALES["forma"],
+    "forma 7+": lambda r: r["formaNoPierde"] is not None and r["formaNoPierde"] >= 0.7,
+    "perfil 60 %+": SENALES["perfil"],
+    "perfil 70 %+": lambda r: r["perfilNoPierde"] is not None and r["perfilNoPierde"] >= 0.7,
+    "forma 6+ y perfil 60 %+": lambda r: SENALES["forma"](r) and SENALES["perfil"](r),
+}
+
+
+def _bin(c: dict) -> tuple:
+    v = c["ventaja"] if c["ventaja"] is not None else -9.0
+    return (min(int(v / 0.1), 30), c["local"])
+
+
+def separa_en(seg: list[dict], senal, semilla: int = 7) -> dict:
+    """Con la señal contra sin ella, dentro del segmento. `diferencia` = cuánto más
+    falla el favorito con la señal que lo esperado por los SIN señal de su mismo
+    tramo fino de ventaja y condición (> 0 = la señal marca dónde no entrar)."""
+    con = [c for c in seg if senal(c["riv"])]
+    sin = [c for c in seg if not senal(c["riv"])]
+    tropiezos = sum(1 for c in seg if not c["gana"])
+    out = {"n": len(seg), "conSenal": len(con), "parte": round(len(con) / len(seg), 4) if seg else None,
+           "fallaCon": round(sum(1 for c in con if not c["gana"]) / len(con), 4) if con else None,
+           "fallaSin": round(sum(1 for c in sin if not c["gana"]) / len(sin), 4) if sin else None,
+           "caza": round(sum(1 for c in con if not c["gana"]) / tropiezos, 4) if tropiezos else None}
+    base = defaultdict(lambda: [0, 0])
+    for c in sin:
+        base[_bin(c)][0] += 0 if c["gana"] else 1
+        base[_bin(c)][1] += 1
+    esp = {k: s / n for k, (s, n) in base.items() if n >= 10}
+    por_eq = defaultdict(lambda: [0.0, 0])
+    for c in con:
+        if _bin(c) in esp:
+            por_eq[c["team"]][0] += (0 if c["gana"] else 1) - esp[_bin(c)]
+            por_eq[c["team"]][1] += 1
+    b = _boot(list(por_eq.values()), semilla)
+    if b:
+        out.update({"diferencia": round(b[0], 4), "ic95": [round(b[1], 4), round(b[2], 4)], "separa": b[1] > 0 or b[2] < 0})
+    return out
+
+
+def segmentos(cs: list[dict]) -> list[dict]:
+    nv = [c for c in cs if c["porNivel"]]
+    corte = sorted(c["fecha"] for c in nv)[len(nv) // 2] if nv else ""
+    out = []
+    for sn, sf in SEGMENTOS.items():
+        seg = [c for c in cs if c["ventaja"] is not None and sf(c)]
+        if len(seg) < 50:
+            out.append({"segmento": sn, "n": len(seg), "sinDato": "menos de 50 favoritos"})
+            continue
+        fila = {"segmento": sn, "n": len(seg), "falla": round(sum(1 for c in seg if not c["gana"]) / len(seg), 4), "senales": []}
+        for kn, kf in SENALES_SEG.items():
+            r = separa_en(seg, kf)
+            r["porEpoca"] = [separa_en([c for c in seg if c["fecha"] < corte], kf),
+                             separa_en([c for c in seg if c["fecha"] >= corte], kf)]
+            r["seRepite"] = bool(r.get("separa")) and all(
+                e.get("separa") and e["diferencia"] > 0 for e in r["porEpoca"]) and r["diferencia"] > 0
+            fila["senales"].append({"senal": kn, **r})
+        out.append(fila)
+    return out
+
+
 def evaluar(cs: list[dict]) -> dict:
     if not cs:
         return {"casos": 0, "lectura": "sin casos"}
@@ -274,6 +358,7 @@ def evaluar(cs: list[dict]) -> dict:
             "casaPorTramo": [{"tramo": tn, **residuo_casa(cs, f, (a, b))} for a, b, tn in TRAMOS_CASA],
             "porLiga": por_liga(cs, f),
         })
+    out["segmentos"] = segmentos(cs)
     out["lectura"] = lectura(out)
     return out
 
@@ -351,6 +436,20 @@ def _imprimir(r: dict) -> None:
         for f in lg["ligas"][:12]:
             print(f"    liga {f['liga']:<6} n {f['n']:>5}  {f['residuo']:+.1%}")
         print()
+    print("POR SEGMENTO: dónde no entrar (falla con la señal / sin ella; caza = parte de los tropiezos con la señal;"
+          " diferencia = contra los sin señal del mismo tramo fino de ventaja)")
+    for sg in r.get("segmentos", []):
+        if "falla" not in sg:
+            print(f"  {sg['segmento']}: {sg.get('sinDato')}")
+            continue
+        print(f"  {sg['segmento']} · n {sg['n']:,} · el favorito no gana {sg['falla']:.1%}")
+        for k in sg["senales"]:
+            d = (f"  diferencia {k['diferencia']:+.1%} IC [{k['ic95'][0]:+.1%}, {k['ic95'][1]:+.1%}]"
+                 + ("  SEPARA" if k["separa"] else "") + ("  y se repite" if k["seRepite"] else "")) if "diferencia" in k else ""
+            if k["conSenal"]:
+                print(f"    {k['senal']:<24} {k['parte']:4.0%} de los partidos · falla {k['fallaCon']:5.1%} con, "
+                      f"{(k['fallaSin'] or 0):5.1%} sin · caza {(k['caza'] or 0):4.0%} de los tropiezos{d}")
+    print()
     print("(residuo > 0 = con ese rival el favorito NO GANA más de lo esperado: el sentido del candidato)")
     print(r["lectura"])
 
