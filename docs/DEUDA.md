@@ -1274,7 +1274,11 @@ conversación se pierde en la siguiente.
    segunda mitad. **Candidato fijado para medir hacia adelante desde el
    22/11/2026:** favorito de la casa entre 50 y 70 % contra un rival que no
    perdió 6+ de sus últimos 10 → no apostar. **Pendiente:** re-correr con
-   unos 300 casos nuevos de ese grupo y decidir.
+   unos 300 casos nuevos de ese grupo y decidir. **Validación hecha en
+   código** (`backend/backtest_rival_resiste.py`: contra el nivel en los años
+   sin cuota, por liga y con las burbujas del rival); **pendiente del
+   usuario:** `python -m backend.backtest_rival_resiste --padron --json
+   $SAD_DATA_DIR/rival_resiste.json`.
 
 ## Siguientes pasos (en orden)
 
