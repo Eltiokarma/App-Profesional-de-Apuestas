@@ -3,7 +3,7 @@
 > **Actualizado el 21/11/2026 (tarde).** La copia del repo está en **sad-analysis v4.8**
 > (`docs/revisiones/SAD_v4.8_propuesta.md`: el juicio «¿entrarías?» del analista,
 > `separacionLiga` y el cierre de las burbujas). La cuenta sigue con la v4.7 hasta
-> que el usuario suba el zip.
+> Zip subido a la cuenta el 21/11 a las 08:40 de Lima.
 
 > **Actualizado el 21/11/2026.** La copia del repo estaba en **sad-analysis v4.7**
 > (`docs/revisiones/SAD_v4.7_propuesta.md`, aprobada el 21/11: el caso Bayern–Köln,
