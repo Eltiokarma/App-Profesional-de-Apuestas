@@ -4268,6 +4268,22 @@ def main():
           and "ya no están en el plantel: A. Pinamonti" in _pen718["nota"], _pen718)
     check("718: si ninguno sigue, la nota manda a la prensa",
           "ninguno de los que tiraron" in _pen718b["nota"], _pen718b)
+    # 1465 (21/11/2026, Cerro 1650503): fuera de la plantilla de la API pero titular en
+    # los últimos onces de ESTE equipo → está en el club; el de 0 titularidades, no
+    _eee = _d15._estado_ejecutores
+    try:
+        _d15._ids_plantel = lambda tid: {7002, 7003}
+        _d15._estado_ejecutores = lambda tid, antes, comp=None: {7001: {"titularEnUltimos": "5/10"}}
+        _pen1465 = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+        _d15._estado_ejecutores = lambda tid, antes, comp=None: {7001: {"titularEnUltimos": "0/10"}}
+        _pen1465b = _d15.penales_temporada(990491, "2026-10-25 20:00:00")
+    finally:
+        _d15._ids_plantel, _d15._estado_ejecutores = _ipl, _eee
+    check("1465: el titular de los últimos onces fuera de la plantilla de la API sigue en el plantel; con 0/10, no",
+          [(e["nombre"], e["enPlantilla"]) for e in _pen1465["ejecutores"]][0] == ("A. Pinamonti", True)
+          and "ya no están" not in _pen1465["nota"]
+          and ("A. Pinamonti", False) in [(e["nombre"], e["enPlantilla"]) for e in _pen1465b["ejecutores"]],
+          (_pen1465, _pen1465b))
     # 1029 (Táchira): el que la tabla F1 da en otro club no está en el plantel para los penales
     import backend.analisis.f1_base as _f1m1029
     _jeo = _f1m1029.juegan_en_otro
