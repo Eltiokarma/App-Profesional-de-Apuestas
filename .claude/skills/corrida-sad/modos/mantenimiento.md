@@ -53,7 +53,7 @@ compara.
    DT sin confirmar, dos partidos el mismo día, sin cuotas, once tarde, ficha
    sin eventos). Los chequeos con `informativo: true` (`nivel-con-amistosos`
    y, desde el 02/11/2026, `sancion`, `sin-plantel` y `dt-sin-confirmar`, que
-   se cerraban siempre por diseño, y desde el 12/11 `partido-ajeno`, 1378) NO se depositan: son datos para el parte, no fallas.
+   se cerraban siempre por diseño, desde el 12/11 `partido-ajeno`, 1378, y desde el 21/11 `ficha-sin-eventos`, familia #94 con la decisión de la #1379) NO se depositan: son datos para el parte, no fallas.
    Por CADA otro chequeo con hallazgos depositá UNA incidencia
    (`POST …/incidencias`, `origen: "escaneo"`, el `area` y la `severidad` del
    chequeo, `titulo` = el del chequeo, `detalle` = los partidos y hallazgos,

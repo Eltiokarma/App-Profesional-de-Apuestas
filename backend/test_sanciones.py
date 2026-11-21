@@ -246,6 +246,8 @@ check("1255: a 7,5 h el refresco de cuotas todavía no lo pidió (no es hallazgo
       and escaneo.HORAS_CUOTAS < int(_app.REFRESCO_VENTANA_H), (_c7, _c4, escaneo.HORAS_CUOTAS))
 # 1333: el clásico con estadio compartido es un chequeo INFORMATIVO (no se deposita);
 # sin la sede en la base (esta no tiene venue_id) no se afirma
+check("prevención 21/11: `ficha-sin-eventos` es informativo (familia #94, dato_api por la decisión de la #1379)",
+      escaneo.CHEQUEOS["ficha-sin-eventos"].get("informativo") is True)
 check("1333: `sede-compartida` es informativo y sin la sede en la base no suena",
       escaneo.CHEQUEOS["sede-compartida"].get("informativo") and ("sede-compartida", None) not in _ch)
 from backend.analisis import ventana_nivel as _vn  # noqa: E402
