@@ -59,11 +59,13 @@ def titular_de(fixture_id: int, team_id: int) -> dict | None:
 def perfil(team_id: int, antes: str, fixture_id: int | None = None) -> dict:
     """El arquero del equipo con la historia cortada ESTRICTAMENTE antes de
     `antes` (anti-hindsight). Con `fixture_id`, el titular de ese partido."""
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)   # el arquero del homónimo no es el del equipo (1473)
     try:
         fxs = saddb.query(
             "sad", f"""SELECT f.id, f.home_team_id, f.goals_home, f.goals_away, f.league_id FROM fixtures f
-                       WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}
-                       ORDER BY f.date DESC LIMIT ?""", (team_id, team_id, antes, VENTANA))
+                       WHERE (f.home_team_id=? OR f.away_team_id=?) AND f.date < ? AND {_FIN}{ajeno}
+                       ORDER BY f.date DESC LIMIT ?""", (team_id, team_id, antes, *p_ajeno, VENTANA))
     except Exception:  # noqa: BLE001
         return {"sinDato": "sin partidos en la base"}
     if not fxs:

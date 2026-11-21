@@ -56,9 +56,15 @@ def ultima_sin_hoja(team_id: int, fecha: str, fixture_id: int) -> str:
     except ValueError:
         return ""
     marca = ",".join("?" * len(TERMINADOS))
+    # EL PARTIDO DEL HOMÓNIMO NO ES EL ÚLTIMO (21/11/2026, incidencia 1473, Once
+    # Caldas–Atlético Nacional 1650176: el 2-0 de Copa Perú de otro club con el id
+    # 1137 salía como «último partido sin hoja» de Nacional). La regla es UNA:
+    # partido_ajeno.sql_fuera, como en el calendario, el TDE y el DTP (1371).
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id, alias="")
     ult = _q(f"SELECT id, date FROM fixtures WHERE (home_team_id = ? OR away_team_id = ?) AND id != ? "
-             f"AND date < ? AND date >= ? AND status_short IN ({marca}) ORDER BY date DESC LIMIT 1",
-             (team_id, team_id, fixture_id, fecha, desde, *TERMINADOS))
+             f"AND date < ? AND date >= ? AND status_short IN ({marca}){ajeno} ORDER BY date DESC LIMIT 1",
+             (team_id, team_id, fixture_id, fecha, desde, *TERMINADOS, *p_ajeno))
     if not ult or _q("SELECT 1 AS x FROM alineaciones WHERE fixture_id = ? AND team_id = ? LIMIT 1",
                      (ult[0]["id"], team_id)):
         return ""
@@ -77,10 +83,12 @@ def _q(sql: str, args: tuple) -> list[dict]:
 def _previos(team_id: int, fecha: str, fixture_id: int) -> list[int]:
     """Los últimos partidos jugados del equipo con hoja capturada, del más nuevo al más viejo."""
     marca = ",".join("?" * len(TERMINADOS))
+    from backend.partido_ajeno import sql_fuera
+    ajeno, p_ajeno = sql_fuera(team_id)   # la hoja del homónimo no es convocatoria (1473)
     filas = _q(f"SELECT DISTINCT f.id, f.date FROM fixtures f JOIN alineaciones a ON a.fixture_id = f.id "
                f"WHERE a.team_id = ? AND a.titular = 1 AND f.id != ? AND f.date < ? "
-               f"AND f.status_short IN ({marca}) ORDER BY f.date DESC LIMIT ?",
-               (team_id, fixture_id, fecha, *TERMINADOS, ULTIMOS))
+               f"AND f.status_short IN ({marca}){ajeno} ORDER BY f.date DESC LIMIT ?",
+               (team_id, fixture_id, fecha, *TERMINADOS, *p_ajeno, ULTIMOS))
     return [f["id"] for f in filas]
 
 
