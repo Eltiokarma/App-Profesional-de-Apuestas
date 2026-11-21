@@ -1117,7 +1117,53 @@ dos lados y sin copas nacionales:
 el 23,3 % (4,29); con 1,5+ de ventaja, 44 % (2,26). En el gigante, si el
 rival viene 5+ partidos sin perder por 2+ en su condición, no cubre el −1,5
 el 73 % contra el 55 % sin eso (+13 pts contra el mismo tramo de ventaja,
-separa); con «no perdió por 2+ en 9+ de 10», +12. Falta el padrón.
+separa); con «no perdió por 2+ en 9+ de 10», +12.
+
+**Corrida del padrón (21/11/2026, servidor, 43.167 favoritos por nivel
+2019-2026; los de casa, desde agosto):**
+
+| Segmento | Gana por 2+ | Por 3+ | Justa −1,5 | Justa −2,5 |
+|---|---|---|---|---|
+| muy favorito (1,0+) | 33,0 % | 16,9 % | 3,03 | 5,92 |
+| gigante (nivel 3,5+, 1,0+) | 37,1 % | 19,7 % | 2,70 | 5,07 |
+| gigante con 1,5+ | 41,5 % | 23,1 % | 2,41 | 4,34 |
+| gigante de local | 45,2 % | 25,5 % | 2,21 | 3,92 |
+| casa 70 %+ (decía 77 %, n 291) | 55,3 % | 35,0 % | 1,81 | 2,85 |
+| casa 80 %+ (decía 85 %, n 75) | 64,0 % | 46,7 % | 1,56 | 2,14 |
+| casa 85 %+ (decía 88 %, n 32) | 78,1 % | 62,5 % | 1,28 | 1,60 |
+
+**Dónde no entrar en el −1,5** (contra el mismo tramo de 0,1 de ventaja,
+siete años; «se repite» = en las dos épocas):
+
+| Señal previa | Favorito | Muy favorito | Gigante |
+|---|---|---|---|
+| rival que casi nunca golean en la condición (≤ 15 %) | +5,7 se repite | +7,2 se repite | +7,1 se repite |
+| favorito que ganó por 2+ en 3 o menos de sus últimos 10 | +4,5 se repite | +5,6 se repite | +6,2 se repite |
+| **las dos juntas** | **+6,8** (no cubre 83 % contra 69 %) | **+8,9** (80 contra 64) | **+7,9** (76 contra 61) |
+| perfil DC del rival 60 %+ | +4,5 se repite | +5,9 se repite | +6,2 |
+| rival 5+ sin perder por 2+ (la burbuja) | +2,0 | +2,4 | +3,2 |
+| esa racha en su récord | no separa | no separa | no separa |
+
+Como con el 1X2 (§15.3, `backtest_rival_resiste`): lo que avisa es el PERFIL
+largo y la forma, no la burbuja abierta.
+
+**Por liga, el patrón es geográfico.** El gigante cubre el −1,5 mucho menos
+de lo que dice su ventaja en Sudamérica y México: Brasil Serie B 15 % (−19,5
+pts), Uruguay 25 % (−12), Sudamericana 23 % (−12), Chile 23 % (−12), Colombia
+25 % (−10), Argentina 26 % (−10), Perú 28 % (−9), Ecuador 32 % (−8), Brasil 27 %
+(−7), Libertadores 28 % (−7), Liga MX 29 % (−6), y la Conference 29 % (−6). En
+Europa pasa al revés: Premier 44 % (+6), Bundesliga 45 % (+8), Portugal 49 %
+(+10), Eredivisie 50 % (+12); España, Italia y Francia en el medio. Las
+eliminatorias y la Eurocopa de selecciones, +20.
+
+**Lectura para el método:** el hándicap del favorito grande es «dónde no
+entrar» en las ligas sudamericanas y cuando el rival casi nunca es goleado en
+su condición y el favorito no viene goleando. Con cuota de la casa 80 %+ el
+−1,5 se cubre el 64 % (justa ≈ 1,56): si la casa lo paga 1,5 no hay ganancia;
+con 85 %+ (justa ≈ 1,28, solo 32 casos) habría que juntar más cuotas para
+saber. Bayern–Köln no tenía ninguna de las señales encendida (Köln goleado de
+visita el 21 %; Bayern había ganado por 2+ en 5 de 10, en la Bundesliga, donde
+el gigante cubre más).
 
 ## 16. Cuánto separa el riesgo en cada liga (29/10/2026)
 
