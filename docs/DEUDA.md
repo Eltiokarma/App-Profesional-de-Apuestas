@@ -1266,6 +1266,14 @@ conversación se pierde en la siguiente.
    (IC −8,3 a +1,6, n 317). No separa: queda como descripción, sin peso y
    fuera del semáforo.
 
+37. **El equipo contra sí mismo, contra la cuota** (21/11/2026, usuario,
+   tras Bayern 1-1 Köln). Script hecho (`backend/backtest_forma_cuota.py`,
+   `docs/METODO_APUESTA.md`): la forma de los últimos 10 oficiales del
+   favorito y del rival, contra la cuota sin margen. En 385 partes, al revés
+   de la intuición y sin probar. **Pendiente del usuario:** correrlo en el
+   servidor (`python -m backend.backtest_forma_cuota --padron --json
+   $SAD_DATA_DIR/forma_cuota.json`) y decidir con eso.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
