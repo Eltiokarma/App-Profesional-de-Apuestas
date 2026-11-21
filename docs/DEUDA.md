@@ -1258,15 +1258,13 @@ conversación se pierde en la siguiente.
    el texto de ONCE-SIN-FILA-F1, la medición A6 del EFE, `EJE-DEBUTANTE-SIN-
    DECLARAR`/`onceTardio` y los avisos del grid del DTP.
 
-36. **¿El favorito gana menos con su racha sin perder en récord?** (21/11/2026,
-   usuario, tras Bayern 1-1 Köln: «la burbuja de doble oportunidad hablaba»).
-   El backtest está hecho (`backend/backtest_dc_record.py`, REVENTON §15.3) y
-   sobre 73 equipos bajados, sin cuotas, NO separa (+2,8 pts, IC −1,6 a
-   +6,7). **Pendiente del usuario:** correrlo en el servidor sobre el padrón
-   con cuotas (`python -m backend.backtest_dc_record --padron --json
-   $SAD_DATA_DIR/dc_record.json`) y decidir con eso. Si separa y la casa no lo
-   cobra, se propone como señal del semáforo; si no, se cierra como
-   descripción.
+36. **¿El favorito gana menos con su racha sin perder en récord?** CERRADA
+   (21/11/2026, usuario, tras Bayern 1-1 Köln: «la burbuja de doble
+   oportunidad hablaba»). `backend/backtest_dc_record.py` corrido en el
+   servidor sobre el padrón (REVENTON §15.3): 161.810 casos, 12.187 con
+   récord, +0,4 pts de «no gana» (IC −0,7 a +1,3) y contra la casa −3,7 pts
+   (IC −8,3 a +1,6, n 317). No separa: queda como descripción, sin peso y
+   fuera del semáforo.
 
 ## Siguientes pasos (en orden)
 
