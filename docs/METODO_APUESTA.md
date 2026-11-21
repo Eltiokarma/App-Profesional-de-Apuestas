@@ -664,6 +664,16 @@ contra la casa. La tarjeta y la K salen del parte y de
 `/constantes/{id}?antesDe=` (sin fuga): no hace falta tocar la app para
 medirlos.
 
+**Primera mirada hacia atrás** (21/11/2026, a pedido del usuario; no decide
+nada): los candidatos 3 y 4 salieron del padrón histórico, así que los partes
+del 13 al 21/11 (99 sin copas nacionales) son datos que no vieron. Elegido de
+la casa bajo 70 % (87): con las tarjetas en amarillo o rojo ganó **14 de 22
+(64 %)**, en verde **18 de 39 (46 %)** y sin dato 11 de 26: **al revés** de lo
+que dice el candidato 3, con un margen de error de ±20 pts. Elegido de 70 %+
+que venía de empatar: 2 de 2 ganados (Lituania, Alemania en Serbia). Muestra
+mínima: la regla queda congelada y se decide con los 60 marcados desde el
+22/11; si en 30 sigue al revés, el escalón la da por `no_se_sostiene`.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos
