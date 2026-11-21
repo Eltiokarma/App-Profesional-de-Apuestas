@@ -441,6 +441,37 @@ sirven para sostenerlo. Queda como hipótesis con el grupo FIJO (esas cinco
 ligas) y cuenta desde los partidos del 18/11/2026: no cambia ninguna apuesta.
 Todavía no tiene tabla en la pantalla.
 
+## El equipo contra sí mismo, contra la cuota (21/11/2026)
+
+El usuario, tras Bayern 1-1 Köln: «si sabés que Bayern pierde 1 de cada 8,
+en esos 8 decime cuál es el más bajo: el equipo puede compararse contra sí»,
+y «no se consideraba que fuese a responder el equipo rival». Bayern venía
+ganando 6 de sus últimos 10 oficiales y la casa le daba 87 %; Köln venía
+marcando en 8 de 10.
+
+`backend/backtest_forma_cuota.py` (test: `backend/test_backtest_forma_cuota.py`)
+lo mide contra la CUOTA, no contra el motor: para el favorito de la casa
+(≥ 50 % sin margen), su forma de los últimos 10 oficiales y la del rival,
+solo con partidos anteriores, y el residuo ganó − probabilidad de la casa, con
+intervalo por bootstrap de equipos y la plana a la cuota media. Señales: la
+forma del favorito 20+ pts debajo de lo que le da la casa (o arriba), el
+favorito que viene recibiendo, el rival que no pierde o que marca seguido, y
+las dos a la vez. Una señal cuenta como firme solo si separa en todo el
+período y también en cada mitad, en el mismo sentido. Sin copas nacionales.
+
+**Primera mirada (21/11, 385 partes acreditables, dos meses):** el favorito
+con la forma 14+ pts debajo de la casa ganó el 69,5 % contra el 57,6 % que
+decía la casa (n 128; la diferencia contra el grupo de forma arriba, IC −0,2
+a +21). Al revés de la intuición: la casa mira la calidad, no solo los últimos
+resultados (los empates de Bayern venían con xG de 2,5 a 5,1). El rival que no
+pierde o que marca no separó (IC −12 a +7). Sin probar en ningún sentido.
+
+**Qué falta:** la corrida del padrón en el servidor
+(`python -m backend.backtest_forma_cuota --padron --json
+$SAD_DATA_DIR/forma_cuota.json`, con el token maestro; `--ultimos 5` para la
+forma corta). Hasta entonces la forma propia no es motivo de desconfianza ni
+entra al semáforo.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

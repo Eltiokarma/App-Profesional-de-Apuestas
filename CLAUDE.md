@@ -52,6 +52,7 @@ python -m backend.test_backtest_1x2  # el método detecta un efecto real y no in
 python -m backend.backtest_familias --padron # ¿las burbujas de doble oportunidad, márgenes (1+…4+) y goles predicen el partido siguiente mejor que la frecuencia del equipo? (REVENTON §15; --desde-json para historias bajadas de /constantes)
 python -m backend.test_backtest_familias  # detecta un reventón plantado y no inventa uno
 python -m backend.backtest_dc_record --padron # ¿el favorito gana MENOS con su racha sin perder de la condición en récord? estandarizado por fuerza y contra la cuota (REVENTON §15.3, 21/11/2026; --desde-dir para c/ y n/ bajados) · test_backtest_dc_record
+python -m backend.backtest_forma_cuota --padron # el equipo contra sí mismo: ¿la forma de los últimos 10 oficiales del favorito o del rival avisa algo que la CUOTA no cobra? (METODO_APUESTA, 21/11/2026; --ultimos 5) · test_backtest_forma_cuota
 python -m backend.backtest_unxdos_motor --padron # el 1X2 del motor desde μ: logística calibrada contra frecuencia y contra el Poisson sobre μ (MOTOR §5.6; --desde-dir para historias bajadas de /constantes y /niveles) · test_backtest_unxdos_motor
 python -m backend.seed_demo       # DBs demo con esquemas reales (./demo_data)
 python -m backend.backtest_gap    # backtest §5 muestreado (--muestra/--liga/--horizonte/--calibrar/--por-liga)
