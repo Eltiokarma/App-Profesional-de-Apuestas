@@ -1297,8 +1297,13 @@ conversación se pierde en la siguiente.
    usuario). `backend/backtest_margen.py` (REVENTON §15.4): por cuánto gana el
    favorito por segmento y por liga, la cuota justa del −1,5 y del −2,5, y si
    las burbujas del margen del rival y del favorito marcan dónde no entrar.
-   **Pendiente del usuario:** `python -m backend.backtest_margen --padron
-   --json $SAD_DATA_DIR/margen.json`.
+   **Medido en el padrón el 21/11** (REVENTON §15.4): el gigante gana por 2+
+   el 37 %; con cuota 80 %+, el 64 % (justa del −1,5 ≈ 1,56). No cubre el −1,5
+   el 76-83 % cuando el rival casi nunca es goleado en su condición y el
+   favorito no viene goleando (+7 a +9 pts, se repite); en Sudamérica y
+   México el gigante cubre 6-20 pts menos que en Europa. Las burbujas abiertas
+   del margen, débiles. **Pendiente:** juntar cuotas para la tabla fina por
+   tramo de cuota (hoy 291 casos de 70 %+).
 
 ## Siguientes pasos (en orden)
 
