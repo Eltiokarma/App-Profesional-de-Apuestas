@@ -140,6 +140,10 @@
 >   `perfilDc` (no pierde / no gana en la condición de hoy) SÍ agrega al 1X2
 >   del motor (§15.1): miralo antes de fijar las probabilidades y contalo en el
 >   párrafo de las burbujas del ensayo. Sin copiar números.
+> - **¿Entrarías?** (21/11/2026, sad-analysis v4.8, 6-F): `pronostico.entrar`
+>   con tu juicio del partido (entraria · dudo · noEntraria), y con dudo o
+>   noEntraria, un motivo de la lista cerrada y el hecho de este partido. No
+>   mueve el número; el recibo lo pide si falta.
 > - **La matriz de escenarios va estructurada en `matriz`** (desde el 15/10):
 >   por equipo, `ganar` / `empatar` / `perder` con las filas del skill y la
 >   `probabilidad` estimada de cada escenario, que tiene que cuadrar con tu 1X2

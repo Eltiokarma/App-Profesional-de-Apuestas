@@ -12,6 +12,7 @@
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
 import { GolesAcotadosPartido } from './GolesAcotados'
 import { SemaforoChip } from './SemaforoChip'
+import { MOTIVO_ENTRAR, titleEntrar } from './LecturaListaChips'
 import { getDataSource } from '../services/datasource'
 import { useEffect, useMemo, useState } from 'react'
 import type { MatrizParte,
@@ -1474,6 +1475,15 @@ export function ParteCowork({ parte, matchId, equipoAKey, equipoBKey, onParte, i
               <div style={{ marginTop: 10, padding: '9px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
                 <span style={{ font: '700 9.5px var(--mono)', color: 'var(--mark)', letterSpacing: '.5px' }}>FALSADOR · </span>
                 <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}>{p.falsador}</span>
+              </div>
+            )}
+            {p.entrar && (
+              <div title={titleEntrar(p.entrar)} style={{ marginTop: 8, padding: '9px 12px', borderRadius: 10, background: 'var(--bg3)' }}>
+                <span style={{ font: '700 9.5px var(--mono)', color: p.entrar.decision === 'noEntraria' ? 'var(--down)' : p.entrar.decision === 'dudo' ? 'var(--mark)' : 'var(--up)', letterSpacing: '.5px' }}>
+                  ¿ENTRARÍA? · {p.entrar.decision === 'noEntraria' ? 'NO ENTRARÍA' : p.entrar.decision === 'dudo' ? 'DUDA' : 'ENTRARÍA'}
+                  {p.entrar.motivos.length > 0 && ` · ${p.entrar.motivos.map((m) => MOTIVO_ENTRAR[m] ?? m).join(' · ')}`}
+                </span>
+                {p.entrar.porque && <span style={{ font: '500 11.5px var(--sans)', color: 'var(--t1)' }}> — {p.entrar.porque}</span>}
               </div>
             )}
           </section>

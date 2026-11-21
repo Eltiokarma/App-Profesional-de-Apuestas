@@ -1341,7 +1341,11 @@ conversación se pierde en la siguiente.
      perfil DC 60 %+; no verde de las tarjetas con la casa bajo 70 %; favorito
      de 70 %+ que viene de empatar. 30 no-verdes para mirar, 60 para decidir;
      por acierto, nunca contra la casa (regla en `CLAUDE.md`).
-   - **Propuesta `sad-analysis` v4.8** (para aprobar): llevar
+   - ~~**Propuesta `sad-analysis` v4.8**~~: HECHA el 21/11 junto con el juicio
+     «¿entrarías?» del analista (`docs/revisiones/SAD_v4.8_propuesta.md`,
+     `pronostico.entrar`, quinto candidato del semáforo). Falta que el
+     usuario suba el zip y anotar la hora en `SUBIDA_VERSION`. Lo que tenía:
+     llevar
      `separacionLiga` al skill (hoy solo está en el prompt de `COWORK.md`)
      junto con la regla general de las otras familias (el perfil DC pesa, el
      resto es narrativa), y cerrar en 1.7 (a) el candidato «con las dos

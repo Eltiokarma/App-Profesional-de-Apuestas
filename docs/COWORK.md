@@ -1250,6 +1250,15 @@ Escribís vos (es juicio, no se puede calcular):
   acotado nombrando la ventana (`notaVentana`) es legítimo. No mueve el 1X2. No copies los números al parte (se calculan
   al leer en `lecturaSad.golesAcotados`) y NO es señal de apuesta: contra el
   mercado de goles no hay ventaja.
+- **¿Entrarías?** (21/11/2026, sad-analysis v4.8, 6-F): después del 1X2 y del
+  falsador, `pronostico.entrar` = `{"decision": "entraria" | "dudo" |
+  "noEntraria", "motivos": [...], "porque": "…"}`. Es TU juicio de si el
+  partido se puede leer, aparte del número (no lo mueve): con «dudo» o
+  «noEntraria», al menos un motivo de la lista cerrada (`ONCE-INCIERTO`,
+  `NADA-EN-JUEGO`, `LECTURA-CONTRA-EL-NUMERO`, `FALTAN-DATOS`,
+  `CONTEXTO-RARO`, `OTRO`) y el hecho de este partido en el porqué. No repitas
+  como motivo lo que la app ya calcula (riesgo, DESCONFIAR, F3, extremo). Sin
+  el bloque, el recibo lo pide en `faltan`; la lista de Partidos lo pinta.
 - **Los sancionados de la base van en `fuera`** (30/10/2026, incidencias 772, 778
   y 835: Neymar disponible con una roja encima). `GET /analisis/cowork/f1/{id}`
   trae por lado `sancionados` (roja directa o doble amarilla en el último
@@ -1698,7 +1707,9 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     "probabilidades": {"local": 52, "empate": 27, "visita": 21},
     "marcador": "2-1",
     "falsador": "si el visitante abre el marcador antes del 20', la lectura de bloque bajo queda fallada",
-    "descarte": "la visita no gana: sin su 9 y con dos centrales nuevos no tiene vía contra el bloque bajo"
+    "descarte": "la visita no gana: sin su 9 y con dos centrales nuevos no tiene vía contra el bloque bajo",
+    "entrar": {"decision": "dudo", "motivos": ["ONCE-INCIERTO"],
+               "porque": "el 9 y el central titular están en duda y el DTP se leyó con los dos"}
   },
   "matriz": {
     "a": {"ganar": {"probabilidad": 52, "tactica": "acumula por fuera y carga el segundo palo",

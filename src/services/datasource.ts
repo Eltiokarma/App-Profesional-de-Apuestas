@@ -958,6 +958,10 @@ class MockDataSource implements SadDataSource {
       out[fid] = {
         desconfiar: { activa, motivos: activa ? [motivo] : [], elegido: 'local', lectura: activa ? 'la visita no gana: local o empate' : null },
         marcadores: { masProbables: MARC.slice(ini, ini + 3).map(([marcador, prob]) => ({ marcador, prob })), porVentana: fid % 5 === 0 },
+        // el juicio del analista (v4.8): uno de cada cuatro no entraría, otro duda
+        entrar: fid % 4 === 1 ? { decision: 'noEntraria', motivos: ['ONCE-INCIERTO'], porque: 'el once depende de tres dudas sin confirmar' }
+          : fid % 4 === 2 ? { decision: 'dudo', motivos: ['NADA-EN-JUEGO'], porque: 'el local ya está clasificado y puede rotar' }
+          : { decision: 'entraria', motivos: [], porque: '' },
       }
     }
     return out

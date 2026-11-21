@@ -766,6 +766,52 @@ def _lista(v, rechazos: list, donde: str) -> list:
     return []
 
 
+# ¿ENTRARÍA? EL JUICIO PROPIO DEL ANALISTA (21/11/2026, sad-analysis v4.8; usuario:
+# «sería bueno que también el analista diga: en este partido creo que no entro»).
+# Hasta acá su duda solo llegaba al semáforo si la espina iba contra su elegido;
+# lo que veía raro sin cambiar la espina quedaba en la prosa. Es SU juicio, no el
+# semáforo (que sigue sin verse): se guarda tal cual, la lista de Partidos lo pinta
+# y se mide hacia adelante como un candidato (`docs/METODO_APUESTA.md`).
+ENTRAR_DECISIONES = ("entraria", "dudo", "noEntraria")
+ENTRAR_MOTIVOS = {
+    "ONCE-INCIERTO": "no se sabe qué once sale, o el que sale no es el que se leyó",
+    "NADA-EN-JUEGO": "el partido no le importa a uno o a los dos",
+    "LECTURA-CONTRA-EL-NUMERO": "la lectura propia (espina, TDE, DTP, EFE) va contra el elegido",
+    "FALTAN-DATOS": "faltan datos para leer el partido (sin ficha, sin once, sin historia)",
+    "CONTEXTO-RARO": "algo fuera de lo normal: sede, clima, cancha, suspensión, conflicto",
+    "OTRO": "otro motivo, escrito en el porqué",
+}
+ENTRAR_ESPERADO = ('{"decision": "entraria" | "dudo" | "noEntraria", '
+                   '"motivos": ["ONCE-INCIERTO", …], "porque": "…"}')
+
+
+def _entrar(v, rechazos: list) -> dict | None:
+    """`pronostico.entrar` normalizado, o None si no vino (o vino roto, con su rechazo)."""
+    if v is None:
+        return None
+    if not isinstance(v, dict):
+        rechazos.append({"donde": "pronostico.entrar", "porque": f"tiene que ser un objeto, llegó {type(v).__name__}",
+                         "esperado": ENTRAR_ESPERADO})
+        return None
+    d = _txt(v.get("decision"))
+    if d not in ENTRAR_DECISIONES:
+        rechazos.append({"donde": "pronostico.entrar.decision",
+                         "porque": f"«{d}» no es una decisión: entraria, dudo o noEntraria",
+                         "esperado": ENTRAR_ESPERADO})
+        return None
+    motivos = []
+    for m in _lista(v.get("motivos"), rechazos, "pronostico.entrar.motivos"):
+        c = _txt(m).upper()
+        if c in ENTRAR_MOTIVOS:
+            if c not in motivos:
+                motivos.append(c)
+        else:
+            rechazos.append({"donde": "pronostico.entrar.motivos",
+                             "porque": f"«{c}» no está en la lista cerrada",
+                             "esperado": " · ".join(ENTRAR_MOTIVOS)})
+    return {"decision": d, "motivos": motivos, "porque": _txt(v.get("porque"))}
+
+
 def _dict(v, rechazos: list, donde: str, esperado: str = "{…}") -> dict:
     """Lo que tiene que ser un objeto y no lo es se DICE, no revienta.
 
@@ -3604,6 +3650,8 @@ def normalizar_parte(payload: dict) -> dict:
         # descartado lo calcula la app (`desconfianza.descarte`, el menos probable del 1X2); el
         # parte escribe solo por qué, con un hecho de este partido. Vacío si no lo escribe.
         "descarte": _txt(p.get("descarte")),
+        # ¿ENTRARÍA? (21/11/2026, v4.8): el juicio propio del analista; None si no vino
+        "entrar": _entrar(p.get("entrar"), rechazos),
     }
     return parte
 
@@ -4003,6 +4051,24 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": "una condición OBSERVABLE que, si ocurre, declara fallado "
                              "el pronóstico",
         })
+    # ¿ENTRARÍA? (21/11/2026, v4.8): con 1X2, el analista dice si entraría; si duda o
+    # no entraría, con qué motivo de la lista y por qué
+    ent = pron.get("entrar")
+    if any(v is not None for v in (pron.get("probabilidades") or {}).values()):
+        if not ent:
+            faltan.append({
+                "bloque": "pronostico.entrar",
+                "costara": "sin tu juicio de entrada la lista de Partidos no muestra si entrarías, y no se "
+                           "puede medir si tus «no entraría» pierden más",
+                "comoSeArregla": '"entrar": ' + ENTRAR_ESPERADO + ' — tu juicio del partido, no el número',
+            })
+        elif ent["decision"] != "entraria" and (not ent["motivos"] or not ent["porque"]):
+            faltan.append({
+                "bloque": "pronostico.entrar",
+                "costara": "«dudo» o «no entraría» sin motivo de la lista o sin porqué no se puede auditar",
+                "comoSeArregla": "al menos un motivo de " + " · ".join(ENTRAR_MOTIVOS)
+                                 + " y una frase con el hecho de este partido",
+            })
     # la matriz por equipo: un lado sin escenarios es una narrativa a medias
     m_ = parte.get("matriz") or {}
     lados_sin = [l for l in LADOS if not m_.get(l)]

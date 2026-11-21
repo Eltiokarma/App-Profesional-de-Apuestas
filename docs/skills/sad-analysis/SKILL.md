@@ -1,11 +1,11 @@
 ---
 name: sad-analysis
-description: "Skill de la SÍNTESIS del sistema SAD (v4.7): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
+description: "Skill de la SÍNTESIS del sistema SAD (v4.8): lee las constantes K de cada equipo (la espina y el reventón de la burbuja, 60 % de la lectura), la Regresión al Nivel (μ_partido, gap), la doble oportunidad trampa, goles por fecha y condición y rivales futuros, y arma el pronóstico con sus tres fuentes a la vista —el 1X2 del motor calculado, la matriz y el mercado—, el marcador declarado y el falsador. Activar en todo análisis pre-partido de fútbol o de apuestas, al escribir la lectura SAD o el pronóstico de un parte, al leer las K o las burbujas de un equipo, y al cerrar un veredicto. Lee los datos de la API de la app SAD, no CSV."
 ---
 
-# SAD — Análisis Deportivo (v4.7)
+# SAD — Análisis Deportivo (v4.8)
 
-Versión vigente: **v4.7 (21.11.2026)**. Las notas de cada versión, los casos que motivaron cada regla y las mediciones están en `references/HISTORIAL.md`: **no hace falta leerlo para analizar un partido**; se lee al revisar el skill.
+Versión vigente: **v4.8 (21.11.2026)**. Las notas de cada versión, los casos que motivaron cada regla y las mediciones están en `references/HISTORIAL.md`: **no hace falta leerlo para analizar un partido**; se lee al revisar el skill.
 
 ---
 
@@ -280,7 +280,7 @@ Una línea por equipo en `lecturaSad.reventon`, tras leer `/burbujas` de los dos
 
 - **(a) El riesgo frena la carga, no elige el lado del 1X2.** Con riesgo alto o muy alto, el 1X2 **no carga a favor de la racha** (Auxerre, América de Cali, City con 47 % a que siguiera: reventaron). Tampoco se da vuelta contra el favorito del mercado solo por el riesgo (Palmeiras, Chelsea, Feyenoord, Cúcuta: siguieron). Con riesgo muy alto la racha sigue el 28 % de las veces, no nunca.
   - **Qué es «cargar»** *(v4.4)*: poner al lado de la racha **por encima del mercado**. Quedarse en el número del mercado no es cargar (6-B). Con riesgo alto o muy alto, el número del lado de la racha **no sube sobre el mercado** y el `porque` del 1X2 **nombra el riesgo**. Así seguir al mercado y frenar la carga dejan de chocar: Villarreal (1570442, 67 %) y Genk (1558666, 49 % del mercado) estaban en el mercado y ahí se quedan, con el riesgo escrito. Se siguió la racha con riesgo alto y reventó en Villarreal, Genk, Real Potosí (1645526, 63 % con la K de local en muy alto), Palmeiras (1492438) y en Coventry–Sunderland y Kocaelispor–Rizespor (1557451, 1584454: las dos burbujas en riesgo alto y el 1X2 a que seguían las dos); se respetó el riesgo y se cumplió en Santa Fe, Jaguares, Lecce y Alianza Lima. Medido con riesgo alto o muy alto (`respetoRiesgo`): el 1X2 que apostó a que la racha sigue acertó el 49 % (Brier 0,598, 169 lados) y el que apostó al corte el 53 % (0,591, 244): la diferencia existe y es chica, el riesgo vale como freno, no como lado (REVENTON §13.3).
-  - **Riesgo alto o muy alto (o K-EXTREMO / K-CERCA-EXTREMO) en las DOS burbujas totales** *(v4.5)*: el `porque` del 1X2 **nombra el empate como la salida que corta las dos** (es descripción, no un hecho de 6-B: el empate sigue partiendo del mercado); el elegido **no sube sobre el mercado** si su victoria hace seguir la racha en riesgo del otro lado; y la espina no dice «sigue» en los dos lados a la vez sin un hecho de la lista de 1.6 (i). Chivas–León (1551037) y Barcelona SC–LDU (1639804) cargaron a que siguiera una y salió el empate. «Más empate» **sigue sin ser regla**: es candidato hasta medir el empate de esos partidos contra el del mercado (n ≥ 100). La casa calibra el empate (6-B).
+  - **Riesgo alto o muy alto (o K-EXTREMO / K-CERCA-EXTREMO) en las DOS burbujas totales** *(v4.5)*: el `porque` del 1X2 **nombra el empate como la salida que corta las dos** (es descripción, no un hecho de 6-B: el empate sigue partiendo del mercado); el elegido **no sube sobre el mercado** si su victoria hace seguir la racha en riesgo del otro lado; y la espina no dice «sigue» en los dos lados a la vez sin un hecho de la lista de 1.6 (i). Chivas–León (1551037) y Barcelona SC–LDU (1639804) cargaron a que siguiera una y salió el empate. «Más empate» **no es regla**: medido *(v4.8)* sobre el padrón, con las dos burbujas en el extremo sale el empate de siempre (25-26 % contra 26 % esperado, REVENTON §19.1). La casa calibra el empate (6-B).
 - **(b) El tramo del rival se sobreestima cuando el rival rota** por otra competición (São Paulo–Vasco, Torque).
 - **(c) Con ESCALA-LIGAS** el tramo del rival compara niveles de dos bases: el riesgo se lee con la confianza bajada (Bodø, Porto, Sporting Cristal, U. Católica, West Ham, Elversberg).
 - **(d) FAMILIA-RECORD se sostiene:** una burbuja en su récord no se corta por estar en récord (Inter Bogotá, Ameliano, Brest, Central Córdoba, Tolima, Cajamarca). El corte necesita algo más que el récord.
@@ -288,6 +288,9 @@ Una línea por equipo en `lecturaSad.reventon`, tras leer `/burbujas` de los dos
 - **(f) El origen de la burbuja: inflada o construida** *(v4.5)*. La línea de `lecturaSad.reventon` dice de dónde viene la burbuja de cada equipo, con el dato que lo prueba **tomado de la app** (`origen` de `/burbujas`, alertas BURBUJA-INFLADA y BURBUJA-CONSTRUIDA). Sin ese dato no se declara origen: no se cuenta a mano ni se adivina desde el Elo. **Inflada**: ganó como gran no-favorito (≤ 25 % sin margen) en uno de sus dos partidos anteriores. Con el elegido inflado, el 1X2 **no sube sobre el mercado** a ese lado, y el `porque` lo nombra («viene de ganar con 18 % al Bayern: burbuja inflada»). **Construida**: 10+ partidos sin perder. Con el elegido construido, el riesgo del reventón **no es razón para bajarlo del mercado** (6-B), y el `porque` lo nombra **sin sumar puntos sobre el mercado**. Las dos mueven la **confianza** y la carga, como la estabilidad: nunca el 1X2 sobre ni bajo el mercado. Se reabre con 100+ apuestas por grupo sobre nuestro win rate contra lo que pide la cuota (`docs/METODO_APUESTA.md`).
 - **(g) DESCONFIAR, la alerta de la app** *(v4.6; usuario, 10/11)*. La tira del parte trae la alerta `dato` DESCONFIAR sobre el elegido del 1X2, con sus motivos: `SOBRE-LA-CASA` (le damos 2+ puntos sobre la casa sin margen) o `BURBUJA-DE-UN-PARTIDO` (su racha + es de un solo partido con riesgo alto o muy alto). La calcula la app; no se calcula a mano ni se copia. Si aparece: se **nombra** en el `porque` del 1X2 y en la espina del elegido; el elegido **no sube** sobre el mercado (1.7 a); y la lectura del 1X2 se escribe con el descarte (6-B). **No mueve el 1X2 y no se retoca el número para apagarla**: es confianza, no número (usuario, 03/11). Si el número está 2+ sobre la casa, lo que lo sostiene es el dato con su cifra de 6-B, escrito antes; la alerta no lo agrega ni lo quita. Qué se juega con ella lo decide el método con 100+ partidos (`docs/METODO_APUESTA.md`), no el parte.
 - **(h) Riesgo bajo se escribe como lo que es: la racha suele seguir** *(v4.7)*. No se escribe «sin señal de reventón» ni «seguro»: el riesgo bajo revienta uno de cada tres (66 de 177 en producción), y el favorito de 85 %+ no gana uno de cada ocho a diez. El número del favorito enorme puede estar bien (el elegido de 70 %+ ganó 47 de 52) y la frase, mal (Bayern–Köln 1575221, 1-1).
+- **(i) La separación de la liga** *(v4.8; antes solo en el prompt)*. `separacionLiga` de `/burbujas` dice cuánto separa el riesgo en la liga del equipo. Con nivel `baja` (Argentina, Colombia, Brasil y otras ligas de paridad: las rachas se cortan casi al azar) el riesgo **pesa menos** en la lectura y en la carga; con `alta`, como está escrito. Se dice en la línea del reventón. **No mueve puntos.** En una copa trae la de la copa (`competicion: copa`).
+- **(j) Las otras familias** *(v4.8)*: de `otrasFamilias`, lo que pesa es el **perfil DC de la condición de hoy** (6-A, 6-B); el resto (márgenes, goles) es narrativa, y un récord de esas familias se sostiene, no revienta. FAMILIA-RECORD es cuidado con la carga (d), no un corte.
+- **(k) Cuándo revienta, medido** *(v4.8, REVENTON §20)*: la racha de **un partido** es la frágil y la **larga se sostiene** (inercia); **no hay un largo típico** en que «toque» reventar, y el típico de la temporada o del último año no lee mejor que el de toda la historia (la gráfica los dibuja; no son guía). Ganar toda la racha **por la mínima** es un aviso débil (+2-3 puntos de corte): se nombra, no mueve nada.
 - La estabilidad (DT, ventana, bajas) mueve la **confianza**, nunca el riesgo.
 
 ---
@@ -470,6 +473,20 @@ Rúbrica de las 24 lecciones de la Copa del Rey (29/10). Las copas nacionales ti
 
 ---
 
+### 6-F — ¿Entrarías? Tu juicio del partido *(v4.8)*
+
+Después del 1X2 y del falsador, `pronostico.entrar`: **si entrarías a este partido**, con tu juicio, aparte del número. El número sigue a las tres fuentes (6-A, 6-B); esto **no lo mueve** ni lo retoca.
+
+```json
+"entrar": {"decision": "entraria" | "dudo" | "noEntraria", "motivos": ["ONCE-INCIERTO"], "porque": "…"}
+```
+
+- **No es la probabilidad.** Un elegido de 40 % puede ser «entraría» y uno de 70 %, «no entraría». La pregunta es si el partido se puede leer, no quién gana.
+- **«Dudo» o «noEntraria» llevan motivo de la lista cerrada y el hecho de ESTE partido en el `porque`**: `ONCE-INCIERTO` (no se sabe qué once sale, o el que sale no es el que se leyó) · `NADA-EN-JUEGO` (al partido no le importa a uno o a los dos) · `LECTURA-CONTRA-EL-NUMERO` (lo que leíste en la espina, el TDE, el DTP o el EFE va contra el elegido) · `FALTAN-DATOS` (sin ficha, sin once, sin historia) · `CONTEXTO-RARO` (sede, clima, cancha, suspensión, conflicto) · `OTRO` (dicho en el porqué).
+- **Lo que la app ya calcula no se repite como motivo**: el riesgo de la burbuja, DESCONFIAR, F3 o el extremo ya están en la tira. Tu juicio es lo que ves del partido que el número y las alertas no dicen. Si no ves nada así, es `entraria`.
+- **Es honesto, no un refugio**: no se escribe «dudo» por cubrirse. Se mide solo, contra lo que pasó.
+- Con el once oficial, si el motivo era el once, se rehace (como el hecho de 1.6 g e i).
+
 ## Auditoría 2 (antes de la conclusión)
 
 1. ¿Estoy concluyendo desde una posición cómoda o desde las leyes?
@@ -481,6 +498,7 @@ Rúbrica de las 24 lecciones de la Copa del Rey (29/10). Las copas nacionales ti
 7. *(v4.4)* ¿La espina de cada lado tiene lectura propia (tarjeta fuerte, un hecho, o los skills con la tarjeta débil)? Si no, ¿va con guía `pronostico`? ¿Un `cero` sale de la lista cerrada de 1.6 (a)? ¿La espina y el marcador declarado dicen lo mismo?
 8. *(v4.4)* ¿Cada cláusula del falsador se puede comprobar en la ficha, es una sola condición, y entre todas cubren las vías del DTP, el penal, el banco y la vulnerabilidad propia, sin un corte de reloj antes de la palanca escrita? *(v4.5)* ¿Cada cláusula dice si refuta el 1X2 o el marcador, ninguna del 1X2 es de volumen, y el banco del rival que nombra está también en el `porque` del 1X2? *(v4.6)* ¿Alguna cláusula "(1X2)" es un gol suelto del débil?
 9. *(v4.5)* ¿Alguna espina dice «sigue» contra riesgo alto o muy alto, o en el extremo (de la total o de la condición que guía)? ¿Con qué hecho de la lista de 1.6 (i)? ¿El once oficial lo desmiente?
+10. *(v4.8)* ¿Escribí si entraría (6-F)? Si dudo o no entraría, ¿con un motivo de la lista y el hecho de este partido, y no con algo que la app ya calcula?
 
 **Regla de inversión:** si la Auditoría 1 dijo «las K no respaldan victoria» y concluyo «gana» → justificar con una ley primaria o invertir.
 

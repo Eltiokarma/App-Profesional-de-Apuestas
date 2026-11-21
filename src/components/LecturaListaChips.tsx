@@ -1,4 +1,4 @@
-import type { LecturaListaPartido } from '../api/types'
+import type { EntrarAnalista, LecturaListaPartido, MotivoEntrar } from '../api/types'
 
 /** LA LECTURA EN LA TARJETA DE PARTIDOS (13/11/2026, usuario: «tendría que estar
  *  al costado del semáforo… y los dos marcadores más probables, tres si nos da el
@@ -9,8 +9,12 @@ import type { LecturaListaPartido } from '../api/types'
  *  - los marcadores más probables del modelo de goles (REVENTON §17): lectura del
  *    marcador, no una señal de apuesta. */
 
+/** de quién se desconfía (21/11/2026, usuario: «salía "desconfiar", no sé de quién
+ *  desconfiar»): siempre del ELEGIDO, y el chip lo dice sin pasar el mouse */
+const DE_QUIEN: Record<string, string> = { local: 'del local', visita: 'de la visita', empate: 'del empate' }
+
 export function titleDesconfiar(d: NonNullable<LecturaListaPartido['desconfiar']>): string {
-  return `Desconfiar del elegido: ${d.motivos.map((m) => m.detalle).join(' · ')}`
+  return `Desconfiar del elegido (${d.elegido}): ${d.motivos.map((m) => m.detalle).join(' · ')}`
     + (d.lectura ? `. La lectura que restringe: ${d.lectura}` : '')
     + '. No mueve el 1X2 (se mide en la Simulación).'
 }
@@ -22,7 +26,7 @@ export function DesconfiarChip({ l, corta = false }: { l?: LecturaListaPartido |
   return (
     <span title={t} aria-label={t}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: corta ? '1px 4px' : '1px 6px', borderRadius: 6, background: 'var(--down-soft)', border: '1px solid color-mix(in oklch, var(--down), transparent 55%)', font: `700 ${corta ? 8.5 : 9.5}px var(--sans)`, color: 'var(--down)', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
-      ⚠{!corta && ' desconfiar'}
+      ⚠{!corta && ` desconfiar ${DE_QUIEN[d.elegido] ?? ''}`.trimEnd()}
     </span>
   )
 }
@@ -46,6 +50,39 @@ export function MarcadoresProbables({ l, n = 3, corta = false }: { l?: LecturaLi
         </span>
       ))}
       {m.porVentana && <span style={{ color: 'var(--mark)' }}>*</span>}
+    </span>
+  )
+}
+
+/** ¿ENTRARÍA? EL JUICIO DEL ANALISTA (21/11/2026, sad-analysis v4.8; usuario: «sería
+ *  bueno que también el analista diga: en este partido creo que no entro… debería
+ *  verse en los partidos»). Es SU juicio, escrito en `pronostico.entrar`: no es el
+ *  semáforo (que sale de sus espinas y él no ve) ni mueve el 1X2. Solo se pinta
+ *  cuando duda o no entraría: «entraría» es lo normal y no agrega ruido. */
+export const MOTIVO_ENTRAR: Record<MotivoEntrar, string> = {
+  'ONCE-INCIERTO': 'el once es incierto',
+  'NADA-EN-JUEGO': 'no hay nada en juego',
+  'LECTURA-CONTRA-EL-NUMERO': 'su lectura va contra el número',
+  'FALTAN-DATOS': 'faltan datos',
+  'CONTEXTO-RARO': 'contexto fuera de lo normal',
+  OTRO: 'otro motivo',
+}
+
+export function titleEntrar(e: EntrarAnalista): string {
+  const que = e.decision === 'noEntraria' ? 'El analista no entraría' : e.decision === 'dudo' ? 'El analista duda' : 'El analista entraría'
+  const mot = e.motivos.map((m) => MOTIVO_ENTRAR[m] ?? m).join(' · ')
+  return `${que}${mot ? `: ${mot}` : ''}${e.porque ? `. ${e.porque}` : ''}. Es su juicio, no el semáforo; no mueve el 1X2.`
+}
+
+export function AnalistaChip({ e, corta = false }: { e?: EntrarAnalista | null; corta?: boolean }) {
+  if (!e || e.decision === 'entraria') return null
+  const no = e.decision === 'noEntraria'
+  const color = no ? 'var(--down)' : 'var(--mark)'
+  const t = titleEntrar(e)
+  return (
+    <span title={t} aria-label={t}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: corta ? '1px 4px' : '1px 6px', borderRadius: 6, background: `color-mix(in oklch, ${color}, transparent 88%)`, border: `1px solid color-mix(in oklch, ${color}, transparent 55%)`, font: `700 ${corta ? 8.5 : 9.5}px var(--sans)`, color, whiteSpace: 'nowrap', lineHeight: 1.3 }}>
+      ✋{!corta && (no ? ' analista: no entra' : ' analista: duda')}
     </span>
   )
 }

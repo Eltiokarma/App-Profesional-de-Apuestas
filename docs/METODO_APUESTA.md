@@ -664,6 +664,16 @@ contra la casa. La tarjeta y la K salen del parte y de
 `/constantes/{id}?antesDe=` (sin fuga): no hace falta tocar la app para
 medirlos.
 
+**Quinto candidato del semáforo: el juicio del analista** (21/11/2026,
+sad-analysis v4.8, 6-F; usuario: «sería bueno que también el analista diga: en
+este partido creo que no entro»). El analista escribe en el parte
+`pronostico.entrar` (entraria · dudo · noEntraria, con motivo de una lista
+cerrada). *Elegido con «dudo» o «noEntraria» → no apostar.* La lista de
+Partidos lo pinta (✋), así que el usuario lo ve; el analista sigue sin ver el
+semáforo. Se mide desde la hora de subida de la v4.8 (`SUBIDA_VERSION`) con
+los mismos escalones, por acierto: cuánto más pierde el elegido con su «no
+entraría» que con su «entraría».
+
 **Primera mirada hacia atrás** (21/11/2026, a pedido del usuario; no decide
 nada): los candidatos 3 y 4 salieron del padrón histórico, así que los partes
 del 13 al 21/11 (99 sin copas nacionales) son datos que no vieron. Elegido de
