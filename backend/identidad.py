@@ -169,6 +169,35 @@ def apellido_truncado(corto: str, largo: str) -> bool:
             and largo[len(corto):] not in ("ez", "es", "is", "iz", "ss"))
 
 
+# EL APELLIDO CON GUION ES UNO SOLO (21/11/2026, incidencia 1466, Coventry–Palace:
+# «B. Thomas», central titular, y «B. Thomas-Asante», punta del banco, casaban por
+# la regla del primer apellido de 893 y FUERA-EN-LA-HOJA sonaba con el banco
+# correcto). La mitad de un compuesto con guion no nombra al compuesto; el mismo
+# compuesto pegado o con espacio sí («Asta-Buruaga» = «Astaburuaga», 1331). Solo
+# el guion: la raya «–» separa a dos personas (1347).
+_GUIONES = "-\u2010\u2011"
+_COMPUESTO = re.compile(rf"[^\W_][\w'’]*(?:[{_GUIONES}][^\W_][\w'’]*)+")
+
+
+def compuestos(nombre: str) -> list[tuple[str, ...]]:
+    """Los apellidos con guion del nombre, cada uno como sus palabras planas."""
+    return [tuple(plano(m.group(0)).split()) for m in _COMPUESTO.finditer(limpiar_nombre(nombre or "") or "")]
+
+
+def mitad_de_compuesto(corto: str, largo: str) -> bool:
+    """¿`corto` lleva como apellido solo una PARTE de un apellido con guion de
+    `largo` («B. Thomas» contra «B. Thomas-Asante»)? Entonces no es él."""
+    tc = tokens(corto)
+    resto = set(tc[1:]) if len(tc) > 1 else set(tc)
+    propios = set(compuestos(corto))
+    for g in compuestos(largo):
+        if g in propios or set(g) <= set(tc):
+            continue
+        if resto & set(g):
+            return True
+    return False
+
+
 def mismo_jugador(uno: str, otro: str) -> bool:
     """¿Dos nombres de la API son la misma persona? El mismo apellido (o casi:
     `apellido_casi`) y la misma pila o su inicial: «S. Peña»/«S. Pena»,
@@ -177,6 +206,8 @@ def mismo_jugador(uno: str, otro: str) -> bool:
     Un nombre de una sola palabra no alcanza para afirmarlo."""
     a, b = tokens(uno), tokens(otro)
     if len(a) < 2 or len(b) < 2:
+        return False
+    if mitad_de_compuesto(uno, otro) or mitad_de_compuesto(otro, uno):   # 1466
         return False
     if all(len(t) > 1 for t in a + b) and sorted(a) == sorted(b):
         return True
@@ -359,6 +390,15 @@ def menciona(nombre: str, frase: str, nombre_suelto: bool = False) -> bool:
     palabras = [plano(w).replace(" ", "") for w in crudo]
     for k, w in enumerate(palabras):
         if w not in apell:
+            continue
+        # la mitad de un apellido con guion de OTRO no lo nombra (1466:
+        # «Thomas-Asante entra» no es «B. Thomas»)
+        i0, i1 = k, k
+        while i0 > 0 and limpio[hallados[i0 - 1].end():hallados[i0].start()] in tuple(_GUIONES):
+            i0 -= 1
+        while i1 + 1 < len(crudo) and limpio[hallados[i1].end():hallados[i1 + 1].start()] in tuple(_GUIONES):
+            i1 += 1
+        if i1 > i0 and not set(palabras[i0:i1 + 1]) <= set(t):
             continue
         j = k - 1
         while j >= 0 and (palabras[j] in PARTICULAS or palabras[j] in t[1:]):
