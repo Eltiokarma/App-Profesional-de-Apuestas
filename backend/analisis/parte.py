@@ -122,7 +122,11 @@ _COLUMNAS_NUEVAS = (("veredicto_json", "TEXT"), ("cohorte", "TEXT"), ("cuarenten
                     # DESCONFIAR del PRIMER depósito (17/11/2026, sad-analysis v4.6, decisión 4
                     # del usuario): verla antes del cierre invitaría a bajar el número para
                     # apagarla; se sella la primera, como la cadena, y la Simulación mide esa
-                    ("desconfianza_primera_json", "TEXT"))
+                    ("desconfianza_primera_json", "TEXT"),
+                    # los puntajes A–E de cada lado en el último depósito ANTES de su once
+                    # (21/11/2026, incidencia 1467): «recomputado con el once» con los mismos
+                    # puntajes no es un recómputo (EFE v1.11, cambio 4 de la v1.9)
+                    ("efe_antes_once_json", "TEXT"))
 # el registro del revisor nació sin `via`; se añade en caliente igual
 _COLUMNAS_LOG = (("via", "TEXT"),)
 
@@ -3729,9 +3733,11 @@ def guardar(payload: dict) -> dict:
         if b and b.get("nombre"):
             dt_base[lado] = b["nombre"]
     with _conectar() as con:
-        previo = con.execute("SELECT creado_en, xi_json, parte_json, cierres_json FROM parte_cowork "
+        previo = con.execute("SELECT creado_en, actualizado_en, xi_json, parte_json, cierres_json, "
+                             "efe_antes_once_json FROM parte_cowork "
                              "WHERE fixture_id=?", (parte["fixtureId"],)).fetchone()
         cierres_originales = cierres_primeros(previo, parte)
+        efe_antes_once = efe_antes_del_once(previo)
         con.execute(
             "INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, estado, version, "
             "parte_json, xi_json, creado_en, actualizado_en, cohorte, dt_base_json, deposito_previo_en) "
@@ -3756,6 +3762,9 @@ def guardar(payload: dict) -> dict:
         if cierres_originales:
             con.execute("UPDATE parte_cowork SET cierres_json=? WHERE fixture_id=?",
                         (json.dumps(cierres_originales, ensure_ascii=False), parte["fixtureId"]))
+        if efe_antes_once:
+            con.execute("UPDATE parte_cowork SET efe_antes_once_json=? WHERE fixture_id=?",
+                        (json.dumps(efe_antes_once, ensure_ascii=False), parte["fixtureId"]))
     # COHERENCIA (Jev): se evalúa AQUÍ y se guarda sellada, no al leer —Jev no
     # es determinista y dos lecturas darían hallazgos distintos—. Nunca tumba
     # el depósito: un fallo se declara dentro del propio JSON.
@@ -4569,19 +4578,56 @@ RECOMPUTO_MIN_TITULARES = 3
 _RECOMPUTO_HECHO = re.compile(r"recomputad[oa]s?\s+con\s+el\s+once", re.I)
 
 
-def alerta_recomputo_efe(lado: str, equipo: dict, disp: dict) -> dict | None:
+def puntajes_efe(equipo: dict) -> dict:
+    """Los puntajes declarados A–E de un lado (score y exclusión): lo que un
+    recómputo con el once tiene que mover para ser un recómputo."""
+    bl = equipo.get("bloques") or {}
+    return {l: [bl[l].get("score"), bool(bl[l].get("excluido"))]
+            for l in LETRAS if isinstance(bl.get(l), dict) and bl[l].get("declarado")}
+
+
+def efe_antes_del_once(previo) -> dict:
+    """Los puntajes A–E de cada lado en el último depósito hecho ANTES de que
+    llegara el once de ese lado (21/11/2026, incidencia 1467: Tottenham–Ipswich y
+    Coventry–Palace escribieron «recomputado con el once» con los puntajes de
+    antes de la hoja, y la frase sola callaba la alerta). Se toma del depósito
+    que este POST reemplaza si ese depósito es anterior al once (o no hay once);
+    un depósito posterior al once deja la foto como estaba."""
+    if not previo:
+        return {}
+    try:
+        guardado = json.loads(previo["efe_antes_once_json"] or "{}")
+        antes = json.loads(previo["parte_json"] or "{}")
+        xi = json.loads(previo["xi_json"] or "{}")
+    except (ValueError, TypeError, IndexError, KeyError):
+        return {}
+    dep = previo["actualizado_en"] or ""
+    for lado in LADOS:
+        capturado = ((xi.get(lado) or {}).get("capturadoEn") or "") if isinstance(xi, dict) else ""
+        if (not capturado or dep <= capturado) and isinstance((antes.get("equipos") or {}).get(lado), dict):
+            guardado[lado] = puntajes_efe(antes["equipos"][lado])
+    return guardado
+
+
+def alerta_recomputo_efe(lado: str, equipo: dict, disp: dict, antes_once: dict | None = None) -> dict | None:
     """Pide rehacer el EFE de un lado cuando el once oficial ya resolvió el
     bloque F y (a) 3 o más titulares fijos (🔴 TF) de la tabla no arrancan y el
     parte no los declaró en `fuera`, o el parte declaró en `fuera` a titulares
     (TF/TH) que la hoja pone en el once —el condicionado se levanta en las dos
     direcciones—, o (b) el arquero TF no arranca y el parte no lo declaró. Se
-    calla cuando la nota del bloque B dice «recomputado con el once»."""
+    calla cuando la nota del bloque B dice «recomputado con el once» Y los
+    puntajes A–E se movieron respecto del último depósito anterior al once
+    (`antes_once`, 1467): la frase con los mismos puntajes es el incumplimiento
+    que la rúbrica describe («no cambió B ni F con ≥ 3 rotados», EFE v1.11)."""
     if not disp.get("resuelto"):
         return None
     nota_b = ((equipo.get("bloques") or {}).get("B") or {})
     nota_b = nota_b.get("nota") if isinstance(nota_b, dict) else ""
+    frase_sin_cambio = False
     if _RECOMPUTO_HECHO.search(_txt(nota_b)):
-        return None
+        if not antes_once or puntajes_efe(equipo) != antes_once:
+            return None
+        frase_sin_cambio = True
     jugadores = [j for j in disp.get("jugadores") or []
                  if j.get("estado") != "duplicado" and not j.get("agregadaPorLaApp") and _txt(j.get("nombre"))]
     # quién de la tabla declaró el parte en `fuera`: el nombre exacto primero y,
@@ -4623,7 +4669,12 @@ def alerta_recomputo_efe(lado: str, equipo: dict, disp: dict) -> dict | None:
                    + ". Con el once oficial, B y F se recomputan con el once que salió (EFE v1.10): "
                      "rehacer el EFE de este lado en el orden F1 → bajas de la hoja → B6 → EJE → B y F → D1 "
                      "y H (con las filas `delOnceOficial`, sin borrarlas), y escribir «recomputado con el "
-                     "once» en la nota del bloque B.",
+                     "once» en la nota del bloque B."
+                   + (" La nota del bloque B ya dice «recomputado con el once», pero los puntajes A–E "
+                      "son los mismos del depósito anterior al once: la frase sin recómputo no la calla "
+                      "(1467). Sin sub-scores estructurados, B se re-juzga a nivel de bloque (score y "
+                      "nota) con la hoja." if frase_sin_cambio else ""),
+        **({"fraseSinRecomputo": True} if frase_sin_cambio else {}),
         "titulares": salieron, "volvieron": volvieron, **({"arquero": arquero} if arquero else {}),
     }
 
@@ -5355,7 +5406,8 @@ def dto(fixture_id: int) -> dict | None:
         fila = con.execute(
             "SELECT fixture_id, fecha, equipo_a, equipo_b, estado, version, parte_json, "
             "xi_json, creado_en, actualizado_en, cohorte, cuarentena_json, coherencia_json, "
-            "banco_desmentido_json, deposito_previo_en, desconfianza_primera_json FROM parte_cowork WHERE fixture_id=?",
+            "banco_desmentido_json, deposito_previo_en, desconfianza_primera_json, efe_antes_once_json "
+            "FROM parte_cowork WHERE fixture_id=?",
             (fixture_id,),
         ).fetchone()
     if not fila:
@@ -5363,6 +5415,10 @@ def dto(fixture_id: int) -> dict | None:
     parte = json.loads(fila["parte_json"])
     xi = json.loads(fila["xi_json"]) if fila["xi_json"] else {}
     xi = _formacion_al_dia(fixture_id, xi)
+    try:
+        efe_antes_once = json.loads(fila["efe_antes_once_json"] or "{}")
+    except (ValueError, TypeError):
+        efe_antes_once = {}
     alertas = list(parte["alertas"])
     equipos = {}
     base_f1: dict = {}
@@ -5430,7 +5486,7 @@ def dto(fixture_id: int) -> dict | None:
                            "y F lo pide EFE-RECOMPUTO-PENDIENTE.",
                 "titulares": sin_fila,
             })
-        recomputo = alerta_recomputo_efe(lado, eq, disp)
+        recomputo = alerta_recomputo_efe(lado, eq, disp, efe_antes_once.get(lado))
         if recomputo:
             alertas.append(recomputo)
         equipos[lado] = {**eq, **tot, "disponibilidad": disp}

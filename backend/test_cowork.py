@@ -1857,7 +1857,29 @@ def main():
     _pb = _parte(sin_ficha)
     _pb["equipos"]["b"]["notas"] = {"B": "recomputado con el once oficial: tres centrales rotados, B baja a 1"}
     c.post(f"{A}/analisis/cowork", json=_pb)
-    check("1068: la nota del bloque B «recomputado con el once» la calla", not _recomputo(), _recomputo())
+    # 1467 (21/11/2026, Tottenham–Ipswich y Coventry–Palace): la frase con los MISMOS
+    # puntajes del depósito anterior al once no es un recómputo y ya no calla la alerta
+    _rc = _recomputo()
+    check("1467: «recomputado con el once» con los puntajes de antes del once NO calla la alerta",
+          len(_rc) == 1 and _rc[0].get("fraseSinRecomputo") is True and "1467" in _rc[0]["detalle"], _rc)
+    _pb["equipos"]["b"]["bloques"]["B"] = 1
+    c.post(f"{A}/analisis/cowork", json=_pb)
+    check("1068: la nota del bloque B «recomputado con el once» con B movido la calla", not _recomputo(), _recomputo())
+    from backend.analisis import parte as _p1467
+    _eq = {"bloques": {"B": {"score": 2, "declarado": True, "nota": "recomputado con el once"}}}
+    _disp = {"resuelto": True, "jugadores": [{"nombre": f"X{n}", "rol": "TF", "zona": "DEF", "hoja": ""}
+                                             for n in range(3)]}
+    check("1467: sin foto de antes del once (primer depósito ya con la hoja) la frase calla",
+          _p1467.alerta_recomputo_efe("a", _eq, _disp, None) is None)
+    check("1467: con la foto igual a los puntajes de ahora la frase no calla",
+          _p1467.alerta_recomputo_efe("a", _eq, _disp, {"B": [2, False]}) is not None)
+    _prev = {"actualizado_en": "2026-11-21 09:00:00", "efe_antes_once_json": None,
+             "xi_json": json.dumps({"a": {"capturadoEn": "2026-11-21 10:00:00"},
+                                    "b": {"capturadoEn": "2026-11-21 08:00:00"}}),
+             "parte_json": json.dumps({"equipos": {"a": _eq, "b": _eq}})}
+    _foto = _p1467.efe_antes_del_once(_prev)
+    check("1467: la foto se toma del depósito anterior al once de ESE lado, no del posterior",
+          _foto == {"a": {"B": [2, False]}}, _foto)
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
     _pb = _parte(sin_ficha)
     _pb["equipos"]["b"]["fuera"] = [{"nombre": f"B Jugador{n}", "estado": "descanso", "motivo": "rotación"}
