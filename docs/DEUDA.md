@@ -1284,8 +1284,14 @@ conversación se pierde en la siguiente.
    los cortes: queda **candidato del semáforo** desde el 22/11/2026, «verde
    con rival que no perdió 6+ de 10 → amarillo». **Pendiente:** medirlo con
    los partes desde esa fecha (unos 150 verdes) y decidir. **Por segmento**
-   (gigantes tipo Bayern o Arsenal, casa 70 %+): sumado al mismo script;
-   **pendiente del usuario** correrlo en el padrón.
+   (gigantes tipo Bayern o Arsenal, casa 70 %+): medido en el padrón el
+   21/11. La forma reciente se achica a 1-4 pts con el control fino de
+   ventaja; **el perfil DC del rival** (no pierde el 60 %+ en la condición)
+   queda en 7-10 pts en todos los segmentos de favoritos y caza ~60 % de los
+   tropiezos. Contra la cuota 70 %+ casi no cambia (n 291). **Segundo
+   candidato del semáforo** desde el 22/11/2026: «verde con rival de perfil
+   DC 60 %+ → amarillo». **Pendiente:** medir los dos con los partes desde
+   esa fecha.
 
 ## Siguientes pasos (en orden)
 
