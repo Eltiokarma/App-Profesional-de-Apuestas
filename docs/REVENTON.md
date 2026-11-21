@@ -1035,6 +1035,42 @@ récord grande pero habitual lo dice en su línea («una racha así es
 esperable»). Es regla de narrativa, no un número calibrado: no mueve ningún
 riesgo. Espejo TS y vectores dorados («Sequía habitual»).
 
+### 15.3 ¿El favorito gana menos con su racha sin perder en récord? (21/11/2026)
+
+Bayern 1-1 Köln (1575221): Bayern llegaba con 21 partidos de local sin
+perder, sobre su récord de 20, y la tarjeta lo daba «no es terreno raro». El
+usuario: «la burbuja de doble oportunidad hablaba». El §15 midió si esa
+burbuja SIGUE (y sigue algo más en su récord); esto pregunta otra cosa: si el
+equipo GANA. Un empate no corta la racha sin perder y sí la victoria.
+
+`backend/backtest_dc_record.py` (test: `backend/test_backtest_dc_record.py`,
+detecta un efecto plantado, no lo inventa sin él, no mira el resultado del
+partido que evalúa y separa «la casa lo cobra» de «la casa no lo cobra»):
+
+- el récord es el de `perfil_dc` (iguala o supera el máximo previo, con ≥ 3
+  rachas sin perder ya cortadas en la condición de hoy), calculado incremental;
+- los niveles de los dos lados son los ANTERIORES al partido (`/niveles`, o
+  `nivel_rival_previo` en el servidor), no el `nivelRival` de la fila (§13.1);
+- estandarizado por tramo de ventaja de nivel y condición: el residuo (no
+  ganó − lo esperado) del grupo con récord, con intervalo por bootstrap de
+  equipos; por época y por tramo;
+- con `--padron`, contra la cuota 1X2 sin margen: el residuo contra lo que la
+  casa le daba a ese equipo y la plana a la cuota media, por tramo de cuota.
+
+**Primera corrida (21/11/2026, 73 equipos de Bundesliga y rivales europeos
+bajados de /constantes y /niveles, sin cuotas):** 7.028 casos, 511 con
+récord. Estandarizado, el equipo con la racha en récord no gana +2,8 pts más
+de lo esperado (IC −1,6 a +6,7): **no separa**. En el muy favorito (≥ 1,0 de
+nivel), 46 % contra 39 % sin récord (n 134 y 671), residuo +6 pts con IC −5
+a +17: tampoco separa con esta muestra. Una medición anterior del mismo día,
+con los niveles escritos después del partido, daba 29 % contra 20 %: era la
+fuga del §13.1 y no vale.
+
+**Qué falta:** la corrida del padrón con cuotas en el servidor
+(`python -m backend.backtest_dc_record --padron --json …`, con el token
+maestro). Hasta entonces la racha en récord sigue siendo DESCRIPCIÓN, como
+dice el §15: no es motivo para desconfiar del favorito ni entra al semáforo.
+
 ## 16. Cuánto separa el riesgo en cada liga (29/10/2026)
 
 La fase 0 de ligas nuevas (`python -m backend.fase0_ligas` y

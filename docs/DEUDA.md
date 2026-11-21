@@ -1258,6 +1258,16 @@ conversación se pierde en la siguiente.
    el texto de ONCE-SIN-FILA-F1, la medición A6 del EFE, `EJE-DEBUTANTE-SIN-
    DECLARAR`/`onceTardio` y los avisos del grid del DTP.
 
+36. **¿El favorito gana menos con su racha sin perder en récord?** (21/11/2026,
+   usuario, tras Bayern 1-1 Köln: «la burbuja de doble oportunidad hablaba»).
+   El backtest está hecho (`backend/backtest_dc_record.py`, REVENTON §15.3) y
+   sobre 73 equipos bajados, sin cuotas, NO separa (+2,8 pts, IC −1,6 a
+   +6,7). **Pendiente del usuario:** correrlo en el servidor sobre el padrón
+   con cuotas (`python -m backend.backtest_dc_record --padron --json
+   $SAD_DATA_DIR/dc_record.json`) y decidir con eso. Si separa y la casa no lo
+   cobra, se propone como señal del semáforo; si no, se cierra como
+   descripción.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
