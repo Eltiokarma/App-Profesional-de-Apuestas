@@ -1438,7 +1438,7 @@ paths:
                   partes: { type: object, additionalProperties: { $ref: '#/components/schemas/SemaforoElegido' } }
   /analisis/lista-partidos:
     get:
-      summary: La lectura de la tarjeta en Partidos (DESCONFIAR y los marcadores más probables; web, NO abierto a Cowork)
+      summary: La lectura de la tarjeta en Partidos (DESCONFIAR, los marcadores más probables y el juicio del analista; web, NO abierto a Cowork)
       description: >
         13/11/2026, usuario: «tendría que estar al costado del semáforo… se deberían ver los dos marcadores más
         probables, tres si nos da el tamaño». Por partido con parte: `desconfiar`, la alerta del elegido con la MISMA
@@ -1982,6 +1982,10 @@ components:
           properties:
             masProbables: { type: array, maxItems: 3, items: { type: object, properties: { marcador: { type: string }, prob: { type: number } } } }
             porVentana: { type: boolean, description: 'el nivel que entra a los goles sale de una ventana poco fiable (igual que fiabilidadMu)' }
+        entrar:
+          allOf: [{ $ref: '#/components/schemas/EntrarAnalista' }]
+          nullable: true
+          description: 'el juicio propio del analista (21/11/2026, v4.8), tal cual lo escribió en `pronostico.entrar`; null si no lo dijo'
     SemaforoElegido:
       type: object
       description: >
@@ -4620,6 +4624,25 @@ components:
         marcador: { type: string }
         falsador: { type: string, description: 'la condición observable que declara fallado el pronóstico' }
         descarte: { type: string, description: 'la frase que sostiene el descarte (17/11/2026, sad-analysis v4.6, 6-B): el resultado descartado lo calcula la app (`desconfianza.descarte`, el menos probable del 1X2) y el parte escribe solo por qué, con un hecho de este partido. Opcional; vacío si no viene' }
+        entrar: { $ref: '#/components/schemas/EntrarAnalista' }
+    EntrarAnalista:
+      type: object
+      nullable: true
+      description: >
+        ¿ENTRARÍA? El juicio propio del analista sobre el partido (21/11/2026, sad-analysis v4.8, 6-F; usuario:
+        «sería bueno que también el analista diga: en este partido creo que no entro»). Es SU juicio, no el
+        semáforo (que sigue sin verse): no mueve el 1X2. Con 1X2 declarado y sin este bloque, el recibo lo pide en
+        `faltan`; con `dudo` o `noEntraria` pide además un motivo de la lista y el porqué. Una decisión que no
+        existe se rechaza y el bloque no se guarda; un motivo fuera de la lista se rechaza y los demás quedan.
+        null si no vino.
+      required: [decision, motivos, porque]
+      properties:
+        decision: { type: string, enum: [entraria, dudo, noEntraria] }
+        motivos:
+          type: array
+          description: 'lista cerrada: ONCE-INCIERTO (no se sabe qué once sale) · NADA-EN-JUEGO (al partido no le importa a uno o a los dos) · LECTURA-CONTRA-EL-NUMERO (espina, TDE, DTP o EFE van contra el elegido) · FALTAN-DATOS · CONTEXTO-RARO (sede, clima, cancha, suspensión, conflicto) · OTRO'
+          items: { type: string, enum: [ONCE-INCIERTO, NADA-EN-JUEGO, LECTURA-CONTRA-EL-NUMERO, FALTAN-DATOS, CONTEXTO-RARO, OTRO] }
+        porque: { type: string, description: 'el hecho de este partido que lo sostiene; vacío si no lo escribió' }
     DocumentoParte:
       type: object
       required: [id, cuerpo]

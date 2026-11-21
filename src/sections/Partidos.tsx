@@ -5,7 +5,7 @@ import { fixtureNum, loadLigasAnalizadas, loadListaPartidos, loadMarcasCowork, l
 import { COLOR_TRAMO, SEL_CORTA, SEL_LARGA } from '../lib/confianza'
 import type { LecturaListaPartido, MarcaCoworkDTO, SemaforoElegido } from '../api/types'
 import { SemaforoChip } from '../components/SemaforoChip'
-import { DesconfiarChip, MarcadoresProbables } from '../components/LecturaListaChips'
+import { AnalistaChip, DesconfiarChip, MarcadoresProbables } from '../components/LecturaListaChips'
 import type { Match, MatchStatus } from '../data/types'
 import { LatidoCowork } from '../components/LatidoCowork'
 import { RevisorDiario } from '../components/RevisorDiario'
@@ -327,6 +327,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                       {marcas[fixtureNum(m.id)]?.confianza && <SemaforoChip s={semaforos[fixtureNum(m.id)]} />}
                       {marcas[fixtureNum(m.id)]?.confianza && <DesconfiarChip l={lecturas[fixtureNum(m.id)]} />}
                     </span>
+                    <AnalistaChip e={lecturas[fixtureNum(m.id)]?.entrar} />
                     <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={3} />
                   </span>
                 )}
@@ -347,6 +348,7 @@ export function Partidos({ store, matches, loading, error, reload, isMobile }: P
                     <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                       <SemaforoChip s={semaforos[fixtureNum(m.id)]} corta />
                       <DesconfiarChip l={lecturas[fixtureNum(m.id)]} corta />
+                      <AnalistaChip e={lecturas[fixtureNum(m.id)]?.entrar} corta />
                     </span>
                   )}
                   {isMobile && <MarcadoresProbables l={lecturas[fixtureNum(m.id)]} n={2} corta />}

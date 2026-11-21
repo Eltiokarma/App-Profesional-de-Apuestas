@@ -1,6 +1,7 @@
 """La lectura de la tarjeta en Partidos (13/11/2026): la alerta DESCONFIAR con
-la MISMA regla que el parte y los tres marcadores más probables del modelo de
-goles; solo para los partidos con parte, y cerrado al token de Cowork.
+la MISMA regla que el parte, los tres marcadores más probables del modelo de
+goles y (21/11/2026, v4.8) el juicio propio del analista, «¿entraría?»; solo
+para los partidos con parte, y cerrado al token de Cowork.
 
     python -m backend.test_lista_partidos
 """
@@ -89,6 +90,43 @@ def main():
           d2 is not None and not any(m["codigo"] == "SOBRE-LA-CASA" for m in d2["motivos"]), d2)
     check("sin ids válidos, vacío y sin error",
           c.get(f"{A}/analisis/lista-partidos", params={"ids": "a,b"}).json() == {"partes": {}})
+
+    # ── ¿ENTRARÍA? el juicio propio del analista (21/11/2026, sad-analysis v4.8) ──
+    p["pronostico"].pop("entrar", None)
+    c.post(f"{A}/analisis/cowork", json=p)
+    check("sin `pronostico.entrar`, la lista lo trae en null",
+          c.get(f"{A}/analisis/lista-partidos", params={"ids": str(fid)}).json()["partes"][str(fid)]["entrar"] is None)
+    rec = c.post(f"{A}/analisis/cowork", json=p).json()
+    check("…y el recibo lo pide en `faltan` (con 1X2 declarado)",
+          any(f.get("bloque") == "pronostico.entrar" for f in rec.get("faltan") or []), rec.get("faltan"))
+    p["pronostico"]["entrar"] = {"decision": "noEntraria", "motivos": ["ONCE-INCIERTO", "once-incierto", "INVENTADO"],
+                                 "porque": "el once depende de tres dudas que no se confirmaron"}
+    rec = c.post(f"{A}/analisis/cowork", json=p).json()
+    check("un motivo fuera de la lista cerrada se rechaza con motivo",
+          any(r.get("donde") == "pronostico.entrar.motivos" and "INVENTADO" in r.get("porque", "")
+              for r in rec.get("rechazos") or []), rec.get("rechazos"))
+    check("con decisión, motivo y porqué ya no falta",
+          not any(f.get("bloque") == "pronostico.entrar" for f in rec.get("faltan") or []), rec.get("faltan"))
+    gp = c.get(f"{A}/analisis/cowork/{fid}").json()
+    check("el parte lo guarda tal cual (motivos sin repetir, en mayúsculas)",
+          gp["pronostico"]["entrar"] == {"decision": "noEntraria", "motivos": ["ONCE-INCIERTO"],
+                                         "porque": "el once depende de tres dudas que no se confirmaron"},
+          gp["pronostico"].get("entrar"))
+    e = c.get(f"{A}/analisis/lista-partidos", params={"ids": str(fid)}).json()["partes"][str(fid)]["entrar"]
+    check("la lista de Partidos lo trae para pintarlo", e and e["decision"] == "noEntraria" and e["motivos"] == ["ONCE-INCIERTO"], e)
+    p["pronostico"]["entrar"] = {"decision": "dudo"}
+    rec = c.post(f"{A}/analisis/cowork", json=p).json()
+    check("«dudo» sin motivo ni porqué: entra, pero el recibo lo pide",
+          any(f.get("bloque") == "pronostico.entrar" for f in rec.get("faltan") or []), rec.get("faltan"))
+    p["pronostico"]["entrar"] = {"decision": "quizas"}
+    rec = c.post(f"{A}/analisis/cowork", json=p).json()
+    check("una decisión que no existe se rechaza y no se guarda",
+          any(r.get("donde") == "pronostico.entrar.decision" for r in rec.get("rechazos") or [])
+          and c.get(f"{A}/analisis/cowork/{fid}").json()["pronostico"].get("entrar") is None, rec.get("rechazos"))
+    p["pronostico"]["entrar"] = {"decision": "entraria"}
+    rec = c.post(f"{A}/analisis/cowork", json=p).json()
+    check("«entraria» no pide motivo",
+          not any(f.get("bloque") == "pronostico.entrar" for f in rec.get("faltan") or []), rec.get("faltan"))
 
     # ── las ligas que analizamos: las que tuvieron parte en los últimos días ──
     liga = dbmod.query_one("sad", "SELECT league_id FROM fixtures WHERE id=?", (fid,))["league_id"]

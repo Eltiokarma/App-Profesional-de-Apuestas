@@ -2302,6 +2302,8 @@ export interface ParteCoworkDTO {
     falsador: string
     /** la frase que sostiene el descarte (sad-analysis v4.6); el resultado lo calcula la app */
     descarte?: string
+    /** ¿entraría? el juicio propio del analista (21/11/2026, sad-analysis v4.8); null si no lo dijo */
+    entrar?: EntrarAnalista | null
   }
   /** La matriz de escenarios por equipo (vacía en partes anteriores al 15/10/2026). */
   matriz?: MatrizParte
@@ -2870,11 +2872,23 @@ export interface TrasFallos {
 
 /** LA LECTURA DE LA TARJETA EN PARTIDOS (13/11/2026, GET /analisis/lista-partidos): la alerta
  *  DESCONFIAR con la regla del parte y los tres marcadores más probables del modelo de goles. */
+/** ¿ENTRARÍA? El juicio propio del analista sobre el partido (21/11/2026,
+ *  sad-analysis v4.8, `pronostico.entrar`). Es SU juicio, no el semáforo: no mueve
+ *  el 1X2 y se mide hacia adelante como candidato (docs/METODO_APUESTA.md). */
+export type MotivoEntrar = 'ONCE-INCIERTO' | 'NADA-EN-JUEGO' | 'LECTURA-CONTRA-EL-NUMERO' | 'FALTAN-DATOS' | 'CONTEXTO-RARO' | 'OTRO'
+export interface EntrarAnalista {
+  decision: 'entraria' | 'dudo' | 'noEntraria'
+  motivos: MotivoEntrar[]
+  porque: string
+}
+
 export interface LecturaListaPartido {
   /** null sin 1X2 completo en el parte */
   desconfiar: (AlertaConfianza & { elegido: Resultado1x2; lectura: string | null }) | null
   /** null sin modelo de goles o sin historia suficiente */
   marcadores: { masProbables: { marcador: string; prob: number }[]; porVentana: boolean } | null
+  /** el juicio propio del analista (v4.8), tal cual lo escribió; null si no lo dijo */
+  entrar: EntrarAnalista | null
 }
 
 /** Las ligas que analizamos normalmente (13/11/2026, GET /analisis/ligas-analizadas):

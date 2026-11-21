@@ -65,7 +65,8 @@ def _parte(fixture_id: int, nombre_a: str = "", nombre_b: str = "") -> dict:
                     "h2a": "verde", "h2b": "verde", "h2c": "inventado"},
         "pronostico": {"motor": "gap §5 a favor de A", "matriz": "55/25/20", "mercado": "1.85 / 3.4 / 4.2",
                        "probabilidades": {"local": 52, "empate": 26, "visita": 22},
-                       "marcador": "2-1", "falsador": "si B abre el marcador antes del 20'"},
+                       "marcador": "2-1", "falsador": "si B abre el marcador antes del 20'",
+                       "entrar": {"decision": "entraria", "motivos": [], "porque": ""}},
         "matriz": {
             "a": {"ganar": {"tactica": "presión alta los primeros 25'", "pelota_parada": "córner al primer palo",
                             "gestionReloj": "doble pivote desde el 70'", "base": "Lago-Peñas 2014"},
@@ -1686,7 +1687,8 @@ def main():
     lleno = _parte(sin_ficha)
     lleno["cadena"] = {"a": {"pronostico": "A domina el balón parado"}}
     lleno["pronostico"] = {"probabilidades": {"local": 50, "empate": 30, "visita": 20},
-                           "falsador": "si el visitante abre antes del 20', la lectura falla"}
+                           "falsador": "si el visitante abre antes del 20', la lectura falla",
+                           "entrar": {"decision": "entraria"}}
     rec0 = c.post(f"{A}/analisis/cowork", json=lleno).json()
     check("26/10: brecha del EFE con T.54 sin decir «empate técnico» → el recibo lo avisa",
           [x.get("codigo") for x in rec0["faltan"]] == ["EFE-EMPATE-TECNICO"], rec0["faltan"])

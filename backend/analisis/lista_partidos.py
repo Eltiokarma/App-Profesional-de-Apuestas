@@ -9,6 +9,9 @@ Dos cosas por partido con parte, calculadas, para la tarjeta de Partidos:
   SOBRE-LA-CASA y BURBUJA-DE-UN-PARTIDO) y la misma burbuja del elegido «al
   día del partido» (`simulacion._burbuja_elegido`). Lleva la lectura que
   restringe («X no gana: Y o empate») de `desconfianza.leer`. No mueve el 1X2.
+- **entrar** (21/11/2026, sad-analysis v4.8): el juicio propio del analista
+  —entraría, dudo o no entraría, con sus motivos de la lista cerrada y su
+  porqué—, tal cual lo escribió en `pronostico.entrar`; null si no lo dijo.
 - **marcadores**: los tres marcadores más probables del modelo de goles
   calibrado (`goles.acotar_fixture`, REVENTON §17), con su probabilidad. Es
   lectura del marcador, no una señal de apuesta; `porVentana` avisa cuando el
@@ -72,7 +75,7 @@ def _desconfiar(fx, parte: dict, mercado: dict | None) -> dict | None:
 
 
 def de_partidos(ids) -> dict[int, dict]:
-    """{fixtureId: {desconfiar, marcadores}} de los partidos con parte."""
+    """{fixtureId: {desconfiar, marcadores, entrar}} de los partidos con parte."""
     from backend import db as saddb
     from backend.analisis.lecciones import cuotas_mercado
     from backend.analisis.parte import _conectar
@@ -108,7 +111,9 @@ def de_partidos(ids) -> dict[int, dict]:
             desc = _desconfiar(fx, parte, mercado)
         except Exception:  # noqa: BLE001 — sin la alerta la tarjeta no la pinta; los marcadores siguen
             desc = None
-        out[f["fixture_id"]] = {"desconfiar": desc, "marcadores": _marcadores(fx)}
+        ent = (parte.get("pronostico") or {}).get("entrar")
+        out[f["fixture_id"]] = {"desconfiar": desc, "marcadores": _marcadores(fx),
+                                "entrar": ent if isinstance(ent, dict) and ent.get("decision") else None}
     return out
 
 
