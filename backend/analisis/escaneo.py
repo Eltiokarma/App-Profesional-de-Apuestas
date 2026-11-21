@@ -268,11 +268,16 @@ def _duplicados(candidatos: list[dict], juntos=None) -> list[str]:
                 continue
             if a.get("posibleMismoQue") == b.get("jugadorId") or b.get("posibleMismoQue") == a.get("jugadorId"):
                 continue
+            # EL NOMBRE PRIMERO, LA BASE DESPUÉS (21/11/2026, incidencia 1472: `juntos`
+            # es una consulta por PAR del plantel —~250 por partido— y el escaneo se
+            # cortaba a los 200-280 s). Solo el par cuyos nombres casan pregunta a la
+            # base si compartieron hoja; el resultado es el mismo.
+            if not mismo_jugador(a.get("nombre") or "", b.get("nombre") or ""):
+                continue
             if (juntos and a.get("jugadorId") is not None and b.get("jugadorId") is not None
                     and juntos(a["jugadorId"], b["jugadorId"])):
                 continue
-            if mismo_jugador(a.get("nombre") or "", b.get("nombre") or ""):
-                out.append(f"«{a['nombre']}» {a.get('jugadorId')} y «{b['nombre']}» {b.get('jugadorId')}")
+            out.append(f"«{a['nombre']}» {a.get('jugadorId')} y «{b['nombre']}» {b.get('jugadorId')}")
     return out
 
 

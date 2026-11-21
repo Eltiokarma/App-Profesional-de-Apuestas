@@ -246,6 +246,14 @@ check("1255: a 7,5 h el refresco de cuotas todavía no lo pidió (no es hallazgo
       and escaneo.HORAS_CUOTAS < int(_app.REFRESCO_VENTANA_H), (_c7, _c4, escaneo.HORAS_CUOTAS))
 # 1333: el clásico con estadio compartido es un chequeo INFORMATIVO (no se deposita);
 # sin la sede en la base (esta no tiene venue_id) no se afirma
+# 1472 (21/11/2026): `juntos` es una consulta a la base por par; solo se pregunta
+# para el par cuyos nombres casan (antes, para todos los pares del plantel)
+_pares1472 = []
+_dup1472 = escaneo._duplicados([{"jugadorId": 1, "nombre": "Y. Guzmán"}, {"jugadorId": 2, "nombre": "Y. Guzman"},
+                                {"jugadorId": 3, "nombre": "K. Silva"}, {"jugadorId": 4, "nombre": "N. Pérez"}],
+                               lambda a, b: _pares1472.append((a, b)) or False)
+check("1472: _duplicados consulta `juntos` solo para el par que casa por nombre, y el hallazgo es el mismo",
+      _pares1472 == [(1, 2)] and len(_dup1472) == 1, (_pares1472, _dup1472))
 check("prevención 21/11: `ficha-sin-eventos` es informativo (familia #94, dato_api por la decisión de la #1379)",
       escaneo.CHEQUEOS["ficha-sin-eventos"].get("informativo") is True)
 check("1333: `sede-compartida` es informativo y sin la sede en la base no suena",
