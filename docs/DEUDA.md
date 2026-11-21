@@ -1293,6 +1293,13 @@ conversación se pierde en la siguiente.
    DC 60 %+ → amarillo». **Pendiente:** medir los dos con los partes desde
    esa fecha.
 
+38. **El margen del favorito: el hándicap −1,5 y dónde no entrar** (21/11/2026,
+   usuario). `backend/backtest_margen.py` (REVENTON §15.4): por cuánto gana el
+   favorito por segmento y por liga, la cuota justa del −1,5 y del −2,5, y si
+   las burbujas del margen del rival y del favorito marcan dónde no entrar.
+   **Pendiente del usuario:** `python -m backend.backtest_margen --padron
+   --json $SAD_DATA_DIR/margen.json`.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
