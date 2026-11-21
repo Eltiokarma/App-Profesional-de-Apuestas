@@ -1560,6 +1560,44 @@ predecir cuándo revienta».
    su burbuja reviente es que no gane—: falla con y sin cada señal, qué marca
    y qué caza. Por acierto, nunca contra la casa.
 
-Resultado: pendiente de la corrida en el servidor. Mide; no cambia puntos ni
-la tarjeta.
+### 20.1 La corrida (21/11/2026, padrón; 284.429 burbujas abiertas de las tres familias, 2019-2026)
+
+La racha de goles tuvo el largo de la burbuja de la K en el 100 % de los casos.
+
+**No hay periodicidad.** Revienta más la racha de un partido y menos cuanto
+más larga (inercia, como el récord): «en su largo típico» revienta 60-65 %
+porque la mayoría de los típicos son de 1 partido, y de 1,5× a 2× del típico
+revienta 47-52 %. Toda la historia, la temporada en curso y los últimos 365
+días dan lo mismo (separan +9,3, +7,6 y +8,5 pts en la total +): **la
+referencia por período (§10-bis) no avisa mejor que la global**; queda como
+dibujo, no como guía.
+
+**Los goles de la racha, contra el mismo nivel de riesgo:** ganar toda la
+racha por la mínima revienta +2,4 pts (se repite en las dos épocas); perder
+toda la racha por la mínima, +1,7 (se repite); venir anotando 5+ seguidos
+revienta −2,6 (protege); ganar recibiendo +0,7; la valla invicta y no anotar
+en los dos últimos, nada.
+
+**Cuándo no apostar** (el favorito de 0,5+ que viene ganando, n 35.503;
+falla = no gana): ganó toda la racha por la mínima, falla 47,7 contra 44,9 %
+(marca 28 %); viene anotando 5+ seguidos, 43,6 contra 47,4 (al revés); la
+racha en o sobre su típico marca el 80 % (46,8 contra 41,2): no elige. Nada
+alcanza para frenar una apuesta.
+
+### 20.2 El cierre: qué hacen las burbujas y qué no (21/11/2026)
+
+1. **Dicen, con poca fuerza, si una RACHA sigue o se corta**: con riesgo bajo
+   se corta ~45 de cada 100 y con muy alto ~72 (§13.2). Las de un partido son
+   las más frágiles; las largas se sostienen (inercia).
+2. **No tienen periodicidad**, y ni el récord, ni el extremo, ni el tamaño de
+   la K adelantan el corte (§8, §12, §15, §20.1).
+3. **No dicen quién gana**: lo que traen ya está en el nivel (§13.3-§13.4).
+4. **Sirven para leer al equipo y como FRENO de la carga**, no como gatillo de
+   «no apostar» por sí solas: lo más fuerte medido es el semáforo de las
+   tarjetas (8-10 pts en siete años, al revés en su primera semana, §19.1).
+5. **Para la plata quedan en prueba dos candidatos** del semáforo
+   (`METODO_APUESTA.md`, desde el 22/11/2026): tarjetas en amarillo o rojo
+   con la casa bajo 70 %, y el favorito de 70 %+ que viene de empatar. Si con
+   60 marcados el elegido no pierde más con ellos, las burbujas quedan solo
+   como lectura.
 
