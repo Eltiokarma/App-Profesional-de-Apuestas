@@ -1352,6 +1352,10 @@ conversación se pierde en la siguiente.
      desarrollo (contrato primero).
    - **Hándicap por tramo de cuota**: rehacer la tabla del margen (REVENTON
      §15.4) cuando haya más cuotas acumuladas.
+   - **Cerrar el capítulo de las burbujas**: correr
+     `backtest_reventon_cruzado --padron` (REVENTON §20: los goles de la racha
+     y la periodicidad, lo único de «cuándo revienta» que faltaba medir) y
+     dejar escrito qué hacen las burbujas y qué no.
 
 ## Siguientes pasos (en orden)
 

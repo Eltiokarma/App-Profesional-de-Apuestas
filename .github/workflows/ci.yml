@@ -87,6 +87,7 @@ jobs:
           python -m backend.test_backtest_rival_resiste
           python -m backend.test_backtest_margen
           python -m backend.test_backtest_semaforo_burbujas
+          python -m backend.test_backtest_reventon_cruzado
           python -m backend.test_backtest_forma
           python -m backend.test_backtest_culebra
       - name: Jev (adaptador, coherencia del parte y modo de fallo; sin clave corre simulado)

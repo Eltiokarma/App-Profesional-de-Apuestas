@@ -1523,3 +1523,43 @@ las dos») no se sostiene.
 Advertencia: son ~100 combinaciones de señal y segmento, y el tramo de la
 casa tiene 2.648 favoritos. Lo que entre al semáforo se congela y se mide
 hacia adelante. No cambia ningún punto, la tarjeta ni el semáforo.
+
+## 20. ¿Cuándo revienta? Los goles de la racha y la periodicidad (21/11/2026)
+
+El usuario, para cerrar el capítulo: «¿lo hiciste con las constantes generales
+o también con las específicas de local y visita? La de goles anotados o
+recibidos puede influir en la otra. Y a que las burbujas revientan se le
+añaden consideraciones de periodicidad. El frontend nunca estuvo orientado a
+predecir cuándo revienta».
+
+**Lo que ya estaba medido sobre cuándo revienta:**
+
+| pregunta | dónde | resultado |
+|---|---|---|
+| el riesgo, con las tres familias (total, local, visita) | §12.2, §14.1, §18 | separa poco: AUC ~0,63 limpio; revienta 45 % en bajo y ~72 % en muy alto |
+| el tamaño de la K | §8, §12.2 | no puntúa: una K grande no revienta más |
+| el récord y el extremo | §10, §12.1, §15 | no adelantan el corte (se sostienen algo más) |
+| el largo de la racha contra su mediana GLOBAL | §12.2 | +1 punto: revienta algo más pasada la mediana |
+| las K de goles para el 1X2 | §13.4 | no agregan al motor |
+| las burbujas de goles (anota, recibe…) para su propio partido siguiente | §15 | no agregan a la frecuencia |
+| el típico por período (temporada, año, DT, últimos 20) | §10-bis | solo se DIBUJA: nunca se midió |
+
+**Lo que faltaba**, y mide `backend/backtest_reventon_cruzado.py` (test
+`test_backtest_reventon_cruzado`, también sobre la demo):
+
+1. **Periodicidad**: cuánto revienta según el largo de la racha contra su
+   largo típico (mediana de las del mismo signo ya cerradas), con tres
+   referencias: toda la historia, la temporada en curso y los últimos 365
+   días; en las tres familias y los dos signos.
+2. **Los goles de la racha de resultado**: viene ganando recibiendo gol en
+   toda la racha, por la mínima en toda la racha, con la valla invicta en el
+   último, anotando 5+ seguidos; viene perdiendo por la mínima, sin anotar en
+   los dos últimos, anotando en toda la racha. Contra los sin señal de la
+   misma familia, signo y nivel de riesgo (lo que el riesgo de hoy ya dice).
+3. **Cuándo no apostar**: el favorito (0,5+ de nivel) que viene ganando —que
+   su burbuja reviente es que no gane—: falla con y sin cada señal, qué marca
+   y qué caza. Por acierto, nunca contra la casa.
+
+Resultado: pendiente de la corrida en el servidor. Mide; no cambia puntos ni
+la tarjeta.
+
