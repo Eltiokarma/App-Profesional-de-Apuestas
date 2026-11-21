@@ -318,5 +318,23 @@ check("1455: con los dos ids el id manda («L. Rodríguez» 634053 no es 51343);
       and idn.misma_persona("L. Rodríguez", None, "L. Rodriguez", 51343)
       and not idn.misma_persona("L. Rodríguez", None, "M. Rodríguez", 51343))
 
+# 1466 (21/11/2026, Coventry–Palace 1557471): «B. Thomas», central titular, no es
+# «B. Thomas-Asante», punta del banco; la mitad de un apellido con guion no lo nombra
+check("1466: «B. Thomas» no es «B. Thomas-Asante» ni «Brandon Thomas-Asante»",
+      not idn.mismo_jugador("B. Thomas", "B. Thomas-Asante")
+      and not idn.mismo_jugador("Brandon Thomas-Asante", "B. Thomas")
+      and not idn.misma_persona("B. Thomas", 1, "B. Thomas-Asante", None))
+check("1466: el mismo compuesto con guion sigue casando (inicial, pegado o con espacio)",
+      idn.mismo_jugador("B. Thomas-Asante", "Brandon Thomas-Asante")
+      and idn.mismo_jugador("T. Asta-Buruaga", "Tomas Astaburuaga")
+      and idn.mismo_jugador("J. Pérez-García", "Juan Pérez García")
+      and idn.mismo_jugador("A. Torrez", "A. W. Torrez Suarez"))
+check("1466: «Thomas-Asante entra» no menciona a «B. Thomas»; sí al compuesto y «Thomas» suelto a Thomas",
+      not idn.menciona("B. Thomas", "Thomas-Asante entra desde el banco", nombre_suelto=True)
+      and idn.menciona("B. Thomas-Asante", "Thomas-Asante entra", nombre_suelto=True)
+      and idn.menciona("B. Thomas", "Thomas cierra atrás"))
+check("1466: la raya «–» separa a dos personas, no arma un compuesto (1347)",
+      idn.compuestos("Puerta–Freuler") == [] and idn.compuestos("Thomas-Asante") == [("thomas", "asante")])
+
 print("\nTODO OK" if not fallos else f"\n{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
