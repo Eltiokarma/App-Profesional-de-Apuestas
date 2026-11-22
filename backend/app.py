@@ -3389,7 +3389,7 @@ def cowork_ciego(fixture_id: int, body: dict = Body(...)):
     del partido al token de Cowork. docs/METODO_APUESTA.md, «El 1X2 ciego»."""
     from backend.analisis import ciego as _ciego, parte as cowork
     try:
-        return _ciego.sellar(fixture_id, body, hay_parte=cowork.existe(fixture_id))
+        return _ciego.sellar(fixture_id, body, hay_parte=cowork.existe_vigente(fixture_id))
     except _ciego.CiegoYaSellado as e:
         raise HTTPException(409, {"detail": str(e), "ciego": e.existente})
     except _ciego.CiegoInvalido as e:

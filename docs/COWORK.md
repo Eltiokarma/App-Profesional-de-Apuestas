@@ -871,7 +871,10 @@ margen a los números de la casa** (usuario, 22/11/2026).
 2. Sellá tu 1X2 con lo que leíste: `POST {base}/analisis/cowork/{id}/ciego`
    con `{"local": 48, "empate": 27, "visita": 25, "porque": "…"}` (en %, que
    sumen 100; el `porque` dice qué de lo leído sostiene el número). Se sella
-   UNA vez, antes del parte y antes del pitazo: no se corrige después.
+   UNA vez, antes del parte y antes del pitazo: no se corrige después. Un
+   partido de `aRehacer` (el parte es de otra fecha: aplazado) cuenta como
+   sin parte: se sella el ciego antes del parte nuevo y, hasta el sello, la
+   casa vuelve a taparse (1491).
 3. Recién ahí abrí `cuotas/{id}`. Antes del sello, con tu token, las cuotas de
    un partido por jugarse responden 409 y la `ventajaPorFuerza` del TDE viene
    tapada (`pendienteCiego`): volvé a pedir el TDE después del sello.

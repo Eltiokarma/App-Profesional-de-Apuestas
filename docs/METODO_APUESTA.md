@@ -715,7 +715,8 @@ pasados por `simulacion.simular`; la pantalla tenía 539):
 
 **El ciego** (`backend/analisis/ciego.py`): el 1X2 del analista ANTES de ver
 la cuota, sellado con `POST /analisis/cowork/{id}/ciego` (`{local, empate,
-visita, porque}`), una vez, antes del parte y del pitazo. Con el token de
+visita, porque}`), una vez, antes del parte y del pitazo (un parte de otra
+fecha, el aplazado de `aRehacer`, no cuenta: `parte.existe_vigente`, 1491). Con el token de
 Cowork, las cuotas de un partido por jugarse dan 409 hasta el sello y la
 `ventajaPorFuerza` del TDE viaja tapada (sale de la cuota). El maestro y la web
 leen todo como siempre. La prensa puede traer cuotas: el prompt pide no

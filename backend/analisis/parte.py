@@ -5441,6 +5441,24 @@ def existe(fixture_id: int) -> bool:
         return con.execute("SELECT 1 FROM parte_cowork WHERE fixture_id=?", (fixture_id,)).fetchone() is not None
 
 
+def existe_vigente(fixture_id: int) -> bool:
+    """¿Hay parte depositado PARA ESTA FECHA del partido? Un parte escrito para
+    otra fecha (aplazado y sin veredicto: la agenda lo manda a `aRehacer`, con
+    el mismo `dias_movido`) no cuenta: el ciego se sella igual antes del parte
+    nuevo y, hasta sellarlo, la casa se tapa (1491, 22/11/2026: Huancayo–
+    Universitario y Cristal–Cienciano, con parte del 14/11 y jugados el 22/11,
+    quedaron sin ciego por el parte viejo)."""
+    with _conectar() as con:
+        r = con.execute("SELECT fecha, veredicto_json FROM parte_cowork WHERE fixture_id=?",
+                        (fixture_id,)).fetchone()
+    if r is None:
+        return False
+    if r["veredicto_json"]:
+        return True
+    f = saddb.query_one("sad", "SELECT date FROM fixtures WHERE id=?", (fixture_id,))
+    return dias_movido(r["fecha"], f["date"] if f else None) is None
+
+
 def dto(fixture_id: int) -> dict | None:
     """Todo lo que la pantalla necesita, con lo calculable ya calculado."""
     with _conectar() as con:

@@ -168,17 +168,19 @@ def sellar(fixture_id: int, body: dict, hay_parte: bool) -> dict:
 
 
 def _hay_parte(fixture_id: int) -> bool:
-    with _conectar() as con:
-        try:
-            return con.execute("SELECT 1 FROM parte_cowork WHERE fixture_id=?", (fixture_id,)).fetchone() is not None
-        except sqlite3.OperationalError:
-            return False   # sin la tabla todavía no hay ningún parte
+    """Un parte de ESTA fecha del partido (parte.existe_vigente): el de una fecha
+    vieja (aplazado, `aRehacer`) no abre la casa ni impide sellar (1491)."""
+    from backend.analisis import parte as _parte   # parte importa este módulo
+    try:
+        return _parte.existe_vigente(fixture_id)
+    except sqlite3.OperationalError:
+        return False   # sin la tabla todavía no hay ningún parte
 
 
 def tapado(fixture_id: int) -> bool:
     """¿La casa de este partido se le tapa a Cowork? Sí mientras el partido no
-    empezó, no hay ciego sellado y no hay parte depositado: con el parte ya
-    depositado la casa ya se vio (el modo `rehacer` vuelve sobre partes de antes
+    empezó, no hay ciego sellado y no hay parte depositado para esta fecha: con
+    el parte ya depositado la casa ya se vio (el modo `rehacer` vuelve sobre partes de antes
     del ciego y necesita la cuota). Un fixture que no está en la base no se tapa
     (su endpoint dará 404 o vacío por su cuenta)."""
     pitazo = _pitazo(fixture_id)
