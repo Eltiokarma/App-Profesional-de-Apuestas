@@ -380,6 +380,23 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
     return out
 
 
+def _plan_agotado(_parte) -> dict:
+    """{día UTC: (agotado_en «YYYY-MM-DD HH:MM:SS», hora de Lima)} de hoy y ayer.
+
+    22/11/2026: 18 partidos del 21/11 salieron once-tarde y la causa (el plan
+    agotado a las 13:50 de Lima por una fuga del ciclo en vivo, #1492) solo se
+    veía cruzando con el latido. El hallazgo la dice al lado: 0 requests."""
+    try:
+        p = _parte.presupuesto_api()
+    except Exception:  # noqa: BLE001 — sin el marcador de la ingesta no hay causa que sumar
+        return {}
+    out = {}
+    for r in (p.get("hoy"), p.get("ayer")):
+        if r and r.get("agotadoEn") and r.get("dia"):
+            out[str(r["dia"])] = (str(r["agotadoEn"])[:19].replace("T", " "), r.get("agotadoEnLima") or "")
+    return out
+
+
 def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
     """Las partes de partidos jugados en las últimas `horas`."""
     from backend.analisis import parte as _parte
@@ -396,6 +413,7 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
         return [], 0
     if not ids:
         return [], 0
+    agotado = _plan_agotado(_parte)
     out, n = [], 0
     for k in range(0, len(ids), 500):
         lote = ids[k:k + 500]
@@ -424,8 +442,13 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
                 # el chequeo es para el once que existió y llegó tarde.
                 if (not previa and _ficha_sellada(f["id"]) and not _nunca_publicado(f["id"])
                         and not _publicado_tarde(f["id"], f["date"])):
+                    causa = ""
+                    tope = agotado.get(item["fecha"])
+                    if tope and str(f["date"])[:19].replace("T", " ") >= tope[0]:
+                        causa = (f" · el plan de API-Football estaba agotado desde las {tope[1]} de Lima "
+                                 "de ese día (latido presupuestoApi): sin requests no entró el once")
                     out.append(_hallazgo("once-tarde", item, f"pitazo {item['hora']} UTC: ninguna versión del "
-                                                             "once capturada antes"))
+                                                             "once capturada antes" + causa))
             except Exception:  # noqa: BLE001 — base sin la tabla de versiones
                 pass
             try:

@@ -328,6 +328,20 @@ _post4, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc)
 check("1248: sin la ficha post-partido sellada el once-tarde no se juzga (nunca publicado y tarde no se distinguen)",
       ("once-tarde", 9033) not in {(h["chequeo"], h["fixtureId"]) for h in _post4}
       and ("once-tarde", 9032) in {(h["chequeo"], h["fixtureId"]) for h in _post4}, _post4)
+# 22/11/2026 (#1492): con el plan agotado ese día antes del pitazo, el hallazgo
+# dice la causa (antes había que cruzarlo a mano con el latido)
+_pa = _parte.presupuesto_api
+_dia9032 = str(_base_fx[_cols.index("date")])[:10]
+_parte.presupuesto_api = lambda: {"hoy": None, "ayer": {"dia": _dia9032, "agotadoEn": f"{_dia9032}T00:00:00Z",
+                                                       "agotadoEnLima": "19:00"}}
+try:
+    _post5, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
+finally:
+    _parte.presupuesto_api = _pa
+_h5 = [h for h in _post5 if h["chequeo"] == "once-tarde" and h["fixtureId"] == 9032]
+check("1492: once-tarde con el plan agotado antes del pitazo dice la causa; sin plan agotado, no",
+      _h5 and "plan de API-Football estaba agotado" in _h5[0]["detalle"]
+      and all("agotado" not in h["detalle"] for h in _post4 if h["chequeo"] == "once-tarde"), (_h5, _post4))
 check("1230: el hallazgo del escaneo trae la hora de Lima al lado de la UTC",
       bool(_post) and all(h.get("horaLima") for h in _post), _post[:1])
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
