@@ -118,6 +118,7 @@ Tres lugares donde vive una guardia:
   - Un motivo que no es del grid sale `conocido` con la corrección tardía del sistema (1350) SOLO si los titulares no cambiaron: si la versión de después del pitazo de CUALQUIERA de los dos lados trae otros titulares (la huella guarda sus ids; un duelo del M2 nombra al rival), sigue `tardio` (1446, Hungría 1528995: Sallai titular en la hoja de las 19:17 y en el banco en la de las 21:41). Test en `test_cowork`.
   - Sin once capturado del último partido (de liga o de copa) viaja `ultimoOnceDeLiga` con la nota de que no es el del último, y `faltan` dice en qué se apoya el M1 (1117, 1125).
   - El caso del bloque que nombra al rival de otro partido toma la fecha de ese partido, no la del último con parte (`_partido_del_caso`, 1116).
+  - **El motivo del M2 se mide con el once del rival** (1478, 22/11/2026, Utrecht–Cambuur): un duelo o una pieza rival del M2 nombra al otro equipo; si el once del rival cambió de titulares después del pitazo, ese motivo es tardío aunque el once propio ya estuviera depositado (`parte.momento_rehacer`). Test en `backend/test_cowork.py`.
 - **Si vuelve:** mirar primero si el partido entró en la cola, y recién después la rutina.
 
 ### 4. Quién no puede jugar

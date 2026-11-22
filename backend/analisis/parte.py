@@ -5257,6 +5257,28 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None,
         # Irlanda del Norte, cuyo once no cambió de titulares)
         if "todos" not in cache:
             cache["todos"] = _momento_de(filas, pitazo, dep) or {}
+        # EL MOTIVO DEL M2 SE MIDE CON EL ONCE DEL RIVAL (22/11/2026, incidencia 1478,
+        # Utrecht–Cambuur 1552233: el DTP-REHACER de Cambuur salía `conocido` por su
+        # propio once de las 17:17, pero su único motivo era Vesterlund —de Utrecht—
+        # en el banco, que llegó con la corrección de Utrecht de las 18:13, después
+        # del pitazo). Un duelo o una pieza rival del M2 nombra al otro equipo: si
+        # el once del rival cambió de titulares después del pitazo, ese motivo es tardío.
+        rival_tid = equipo_de.get("b" if a.get("equipo") == "a" else "a")
+        if campos.get("momento") != "tardio" and rival_tid is not None:
+            clave_r = ("rival", rival_tid)
+            if clave_r not in cache:
+                cache[clave_r] = _momento_de([f for f in filas if f["team_id"] == rival_tid], pitazo, dep) or {}
+            del_m2 = [x for x in a.get("motivos") or []
+                      if str(x).startswith(("duelo del M2", "pieza del M2 (rival"))]
+            if del_m2 and cache[clave_r].get("titularesCorregidos"):
+                if len(del_m2) == len(a.get("motivos") or []):
+                    campos["momento"] = "tardio"
+                    texto = (f"{texto}. PERO el motivo es del M2 ({'; '.join(del_m2)}) y el once del rival cambió "
+                             "de titulares después del pitazo: nadie podía rehacer con esa corrección")
+                else:
+                    campos["motivosTardios"] = del_m2
+                    texto = (f"{texto}. Los motivos del M2 ({'; '.join(del_m2)}) llegaron con la corrección del "
+                             "once del rival, después del pitazo: esos son tardíos")
         if campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros \
                 and (m.get("titularesCorregidos") or cache["todos"].get("titularesCorregidos")):
             texto = (f"{texto}. La corrección de después del pitazo también cambió titulares: "
