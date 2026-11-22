@@ -6215,6 +6215,16 @@ def main():
           _t854[-1]["desde"] == 118 and _t854[-1]["hasta"] == 120
           and all(t["hasta"] >= t["desde"] for t in _t854), [(t["desde"], t["hasta"]) for t in _t854])
     check("854: sin prórroga el último tramo sigue cerrando en el 90", _tr2[-1]["hasta"] == 90, _tr2[-1])
+    # 1486 (Vélez–Belgrano 1649571): el gol de la prórroga no se cobra a la ventana del tramo (disciplina 23)
+    _tde1486 = {"ventana": "60-75'", "reasignacion": {"siMarcaPrimero": {"ventana": "desde el gol +15"},
+                                                     "siLeEmpatan": {"ventana": "desde el empate +15"}}}
+    _t1486 = tramos_por_marcador(_tde1486, [{"minuto": 11, "lado": "b"}, {"minuto": 59, "lado": "a"},
+                                            {"minuto": 100, "lado": "b"}, {"minuto": 110, "lado": "a"}], "b")
+    _p1486 = [t for t in _t1486 if t["desde"] >= 90]
+    check("1486: los tramos de la prórroga van marcados y su gol no es golEnVentana",
+          _p1486 and all(t.get("prorroga") and t["golEnVentana"] is None for t in _p1486)
+          and not any(t.get("prorroga") for t in _t1486 if t["desde"] < 90),
+          [(t["desde"], t["hasta"], t["golEnVentana"], t.get("prorroga")) for t in _t1486])
     # incidencia 453: el gol del añadido (45+5 guardado como 50) corta el tramo en el 45
     _ta = tramos_por_marcador({"reasignacion": {"siMarcaPrimero": {"ventana": "desde el gol +15"}}},
                               [{"minuto": 50, "lado": "a", "enAnadido": True, "baseAnadido": 45}], "a")

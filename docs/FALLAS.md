@@ -200,6 +200,7 @@ Tres lugares donde vive una guardia:
   - **El nombre de la ronda se lee por su número** (1200): la API escribe «1/128-finals» y la palabra «final» la metía a la agenda de la Coupe de France (Guadalupe) y a la fase decisiva. `separacion_liga.equipos_de_ronda` da los equipos de la ronda y la usan `entra_desde`, `es_desde_cuartos`, `parte.es_fase_decisiva` y `tde._semi_o_final`; tests en `test_api` con el caso.
   - (11/11/2026) la prórroga que la API inventa copiando el marcador de los 90 en `score.extratime` no es prórroga (`eliminatoria._alargue_copiado`: el alargue repite el de los 90, no es 0-0 y el total no lo suma; 1384, Copa AUF) y la Copa AUF pasa a `PARTIDO_UNICO` (1383). Tests en `backend/test_eliminatoria.py`.
   - **La fase final de una liga a partido único** (1485, 22/11/2026, Defensa y Justicia 0-1 Barracas, octavos del Clausura argentino): `eliminatoria.FASE_FINAL_UNICA` lista las ligas, aparte de las copas, cuyas rondas de eliminación son un partido; quien gana a los 90 pasa. Solo las verificadas: las demás siguen con `avanza` null. Test en `backend/test_eliminatoria.py`.
+  - **El gol de la prórroga no se cobra a ninguna ventana** (disciplina 23; 1486, 22/11/2026, Vélez–Belgrano): `veredicto.tramos_por_marcador` marca los tramos de la prórroga (`prorroga: true`) y su `golEnVentana` es null, como ya hacía el bloque. Test en `backend/test_cowork.py`.
 - **Si vuelve:** toda regla de competición (llaves, sanciones, desempates) sale de la base con su fuente, nunca del texto.
 
 ### 8. La fuga del resultado (mirar el futuro sin querer)

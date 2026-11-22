@@ -1215,11 +1215,18 @@ def tramos_por_marcador(tde: dict, goles: list[dict], foco: str, rojas: list[dic
         concedio = ([eventos[i][4]] if i < len(eventos) and eventos[i][3] == "gol"
                     and eventos[i][4]["lado"] == contra else [])
         en_ventana = None
-        if rango:
+        # LOS GOLES DE LA PRÓRROGA NO SE COBRAN A NINGUNA VENTANA (disciplina 23;
+        # 22/11/2026, incidencia 1486, Vélez–Belgrano 1649571: el tramo 100-110 de
+        # Belgrano salía `golEnVentana: true` por el gol del 110', aunque el bloque
+        # no lo cobraba). Con el reloj pasado el 90 y fuera del añadido, es prórroga.
+        en_prorroga = final == 120 and inicio >= 90
+        cobrables = [g for g in concedio if not (reloj(g) > 90 and not g.get("enAnadido"))]
+        if rango and not en_prorroga:
             a, b = max(rango[0], inicio), min(rango[1], fin)
-            en_ventana = (any(a <= reloj(g) <= b and not g.get("enAnadido") for g in concedio)
+            en_ventana = (any(a <= reloj(g) <= b and not g.get("enAnadido") for g in cobrables)
                           if a <= b else None)
         tramo = {"desde": inicio, "hasta": fin, "marcador": f"{gf}-{gc}", "estado": estado, "rama": rama,
+                 **({"prorroga": True} if en_prorroga else {}),
                  "declarada": lo is not None if rama != "base" else bool(texto),
                  "ventana": texto, "rango": list(rango) if rango else None,
                  "concedio": [g["minuto"] for g in concedio], "golEnVentana": en_ventana,
