@@ -7493,6 +7493,36 @@ def main():
          "fixtureId": 1558999}]}).json()
     check("el mismo partido ya clasificado dato_api no se reabre (yaClasificadas); otro partido sí entra",
           _ya2["yaClasificadas"] == [{"id": _ya, "fixtureId": 1558667}] and len(_ya2["nuevas"]) == 1, _ya2)
+    # EL PARTIDO JUGADO ANTES DEL PARCHE NO REABRE (1494, 22/11/2026: los 18
+    # once-tarde del 21/11 volvieron con la 1492 ya resuelta por el PR #627)
+    import sqlite3 as _sq
+    from backend import db as _sdb
+    _sc = _sq.connect(os.path.join(_sdb.BASE_DIR, "sad.db"))
+    _vie, _fut = _sc.execute("SELECT id FROM fixtures ORDER BY id LIMIT 2").fetchall()
+    _sc.execute("UPDATE fixtures SET date='2026-01-01 20:00:00' WHERE id=?", _vie)
+    _sc.execute("UPDATE fixtures SET date='2099-01-01 20:00:00' WHERE id=?", _fut)
+    _sc.commit()
+    _sc.close()
+    _tt = "Partido con parte sin cuota antes del pitazo (prueba 1494)"
+    _r1 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": _tt, "area": "once", "fixtureId": _vie[0]}]}).json()["nuevas"][0]
+    c.post(f"{A}/analisis/cowork/incidencias/{_r1}/estado",
+           json={"estado": "resuelta", "resolucion": "fuga del ciclo en vivo", "pr": "#627"})
+    _r2 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": _tt, "area": "once", "fixtureId": _vie[0]}]}).json()
+    check("1494: el escaneo no reabre un partido jugado ANTES del parche (yaClasificadas)",
+          _r2["yaClasificadas"] == [{"id": _r1, "fixtureId": _vie[0]}] and not _r2["nuevas"], _r2)
+    from backend.analisis import incidencias as _ci_
+    with _ci_._con() as _cx:
+        _fx = json.dumps([_vie[0], _fut[0]])
+        _cx.execute("UPDATE incidencia SET fixtures=? WHERE id=?", (_fx, _r1))
+    _r3 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": _tt, "area": "once", "fixtureId": _fut[0]}]}).json()
+    _r4 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
+        {"titulo": _tt, "area": "once", "fixtureId": _vie[0]}]}).json()
+    check("1494: jugado DESPUÉS del parche entra nuevo (el parche no alcanzó); y fuera del escaneo, como siempre",
+          len(_r3["nuevas"]) == 1 and not _r3["yaClasificadas"] and (_r4["nuevas"] or _r4["repetidas"])
+          and not _r4["yaClasificadas"], (_r3, _r4))
     # LA MISMA CAUSA EN OTRO PARTIDO NO ES OTRA INCIDENCIA (20/10/2026: 254 abiertas)
     _g1 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "items": [
         {"titulo": "Titular de la ficha sin jugadorId (Rayo)", "area": "once", "fixtureId": 111},
