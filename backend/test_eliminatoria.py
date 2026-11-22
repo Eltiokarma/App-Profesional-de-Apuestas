@@ -79,6 +79,10 @@ def montar():
         (1017, "2026-11-10 23:00:00", "PEN", 930, "Quarter-finals", X, Y, 1, 1, 1, 1, 1, 1, 0, 3),
         # 1383: Copa AUF a partido único, cuartos resueltos a 90' (Boston River 1-2 Torque)
         (1018, "2026-11-10 19:30:00", "FT", 930, "Quarter-finals", X, Y, 1, 2, 1, 2, None, None, None, None),
+        # 1485: Liga Profesional Argentina (128), octavos del Clausura a partido único (0-1 a 90')
+        (1485, "2026-11-21 20:00:00", "FT", 128, "Round of 16", X, Y, 0, 1, 0, 1, None, None, None, None),
+        # …y una fecha de la fase regular de la misma liga no es eliminatoria
+        (1486, "2026-11-01 20:00:00", "FT", 128, "Clausura - 14", X, Y, 0, 1, 0, 1, None, None, None, None),
         # 1384: prórroga real con goles: 1-1 a 90', 1-1 en el alargue (2-2 en total), penales
         (1019, "2026-11-10 23:00:00", "PEN", 143, "Round of 32", X, Y, 2, 2, 1, 1, 1, 1, 4, 2),
         # fase de grupos: nunca es una llave
@@ -138,6 +142,10 @@ check("1384: el «alargue» que copia el 1-1 de los 90 sin sumarlo al total no e
       eliminatoria.desenlace(1017))
 check("1384: un 1-1 en el alargue que SÍ suma al total (2-2) es prórroga de verdad",
       eliminatoria.desenlace(1019)["prorroga"] is True, eliminatoria.desenlace(1019))
+check("1485: Liga Profesional Argentina, octavos a partido único resueltos a 90': avanza Barracas (la visita)",
+      eliminatoria.desenlace(1485)["avanza"] == Y, eliminatoria.desenlace(1485))
+check("1485: una fecha de la fase regular de la misma liga no es una llave",
+      eliminatoria.desenlace(1486) is None, eliminatoria.desenlace(1486))
 check("1383: la Copa AUF es a partido único: cuartos 1-2 a 90' → avanza la visita",
       eliminatoria.desenlace(1018)["avanza"] == Y, eliminatoria.desenlace(1018))
 check("1017: Copa Paraguay a partido único resuelta a 90': pasa la visita",

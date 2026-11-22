@@ -152,11 +152,19 @@ FORMATO_SIN_AFIRMAR = {
     199: "Copa de Grecia: cambió de formato en 2024-25 (fase liga y llaves a ida y vuelta)",
     206: "Copa de Turquía: fase de grupos desde 2024-25; las llaves, sin confirmar",
 }
+# LIGAS CON FASE FINAL A PARTIDO ÚNICO (22/11/2026, incidencia 1485, Defensa y
+# Justicia 0-1 Barracas, octavos del Clausura de la Liga Profesional Argentina:
+# `avanza` salía null 7 h después). No son copas (no van a PARTIDO_UNICO ni a la
+# regla de las copas nacionales): sus rondas de eliminación (octavos, cuartos,
+# semis, final) son un partido, con penales si empatan. Solo las verificadas.
+FASE_FINAL_UNICA = {128: "Liga Profesional Argentina: octavos a final a partido único (Apertura y Clausura)"}
 _SEMI = re.compile(r"semi", re.I)
 
 
 def _ronda_unica(f) -> bool:
     liga = _g(f, "league_id")
+    if liga in FASE_FINAL_UNICA:
+        return es_eliminatoria(_g(f, "league_round"))
     if liga not in PARTIDO_UNICO:
         return False
     return not (liga in SEMIS_IDA_Y_VUELTA and _SEMI.search(_g(f, "league_round") or ""))
