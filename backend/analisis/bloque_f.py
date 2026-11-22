@@ -380,6 +380,7 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
                              "motivo": "no figura en la hoja del partido", "hoja": "fuera"})
 
     diag = evaluar([j for j in resuelto if j["estado"] != "duplicado"])
+    _zona_gk_del_dia(diag, resuelto)
     # F4 · rotación voluntaria: titulares del XI tipo que hoy arrancan en banca
     rotados = [j["nombre"] for j in resuelto
                if j.get("hoja") == "banca" and (j.get("rol") or "").upper() in ("TF", "TH")]
@@ -405,6 +406,30 @@ def resolver(plantel: list[dict], fuera: list[dict], once: list[str],
     diag["duplicados"] = [plantel[i].get("nombre", "") for i in [*duplicados, *posibles] if i not in estados]
     diag["once"] = len(once)
     return diag
+
+
+def _zona_gk_del_dia(diag: dict, jugadores: list[dict]) -> None:
+    """LA ZONA GK SE CALCULA SOBRE EL ARQUERO QUE ATAJA HOY (rúbrica EFE v1.9,
+    «Pendiente de la app»; 22/11/2026, incidencia 1488, Amed–Rizespor 1584466: Fofana,
+    🟠 TH, fuera, y Görgen titular en la hoja; la zona GK salía 🔴 al 66,7 % y
+    crítica). Con dos arqueros que se alternan, la ausencia del que no es el titular
+    del día no reduce la zona. Solo con el once: si un arquero de la tabla es titular
+    en la hoja, los arqueros ausentes que NO son 🔴 TF no cuentan en la zona (el TF
+    ausente sí: v1.8, la zona «cubierta» con su rodaje). El IP y el ×1,5 no cambian."""
+    gks = [j for j in jugadores if (j.get("zona") or "").upper() == "GK" and j.get("estado") != "duplicado"]
+    if not any(str(j.get("hoja") or "").startswith("titular") for j in gks):
+        return
+    total = sum(_peso(j) for j in gks)
+    perdido = sum(_peso(j) * FACTOR_ESTADO.get((j.get("estado") or "disponible").lower(), 0.0)
+                  for j in gks if (j.get("rol") or "").upper() == "TF")
+    pct = round((perdido / total) * 100, 1) if total else 0.0
+    if pct == diag["reduccion"].get("GK"):
+        return
+    diag["reduccion"]["GK"] = pct
+    diag["reduccionNivel"]["GK"] = nivel_zona(pct)
+    diag["zonasCriticas"] = [z for z in ZONAS if diag["reduccionNivel"][z] == "rojo"]
+    diag["zonaGkDelDia"] = ("zona GK sobre el arquero que ataja hoy (EFE v1.9): la ausencia de un arquero que "
+                            "no es titular fijo no reduce la zona; el IP no cambia")
 
 
 def titulares_fijos_fuera(jugadores: list[dict]) -> list[str]:
