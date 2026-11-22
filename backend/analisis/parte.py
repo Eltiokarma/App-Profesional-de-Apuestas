@@ -35,6 +35,7 @@ from datetime import date as date_t, datetime, timedelta, timezone
 
 from backend import identidad as _identidad
 from backend import db as saddb
+from backend.analisis import ciego as _ciego
 from backend.analisis import desconfianza as _desconfianza
 from backend.analisis import bloque_f, db as efedb, veredicto as vered
 from backend.analisis import coherencia as _coherencia
@@ -401,7 +402,9 @@ _LADOS_ALIAS_MATCHUP = {"a", "b", "local", "visita", "visitante"}
 # falsos y escondería los de verdad.
 _ECO_PARTE = {"partido", "estado", "creadoEn", "actualizadoEn", "xi", "veredicto",
               "timeline", "rechazos", "perdido", "aviso", "entrada", "cohorte", "cuarentena", "bancoDesmentido",
-              "xiConservados", "coherencia", "vsMercado", "desconfianza", "desconfianzaSellada"}
+              "xiConservados", "coherencia", "vsMercado", "desconfianza", "desconfianzaSellada",
+              # el 1X2 ciego se sella en su endpoint antes del parte; en el eco se ignora
+              "ciego"}
 _ECO_EQUIPO = {"total", "maximoAlcanzable", "porcentaje", "clasificacion", "disponibilidad",
                "sinBloques", "bloquesSinDeclarar", "notaTotales"}
 # LAS FILAS QUE LA APP SUMA AL LEER (14/11/2026, incidencia 1404, rehacer de
@@ -4060,6 +4063,16 @@ def guardar(payload: dict) -> dict:
             "comoSeArregla": "una condición OBSERVABLE que, si ocurre, declara fallado "
                              "el pronóstico",
         })
+    # EL 1X2 CIEGO (22/11/2026): la lectura propia, sellada antes de ver la cuota
+    if _ciego.de(parte["fixtureId"]) is None:
+        faltan.append({
+            "bloque": "ciego",
+            "costara": "este partido no tiene 1X2 ciego: tu lectura sin la casa no queda anotada y no se "
+                       "puede medir si leemos mejor o peor que ella. Ya no se puede sellar (el parte "
+                       "trae la casa a la vista)",
+            "comoSeArregla": "en el próximo partido, `POST analisis/cowork/{id}/ciego` ANTES de abrir las "
+                             "cuotas y antes del parte: " + _ciego.ESPERADO,
+        })
     # ¿ENTRARÍA? (21/11/2026, v4.8): con 1X2, el analista dice si entraría; si duda o
     # no entraría, con qué motivo de la lista y por qué
     ent = pron.get("entrar")
@@ -5422,6 +5435,12 @@ def _momento_de(filas, pitazo, dep) -> dict | None:
     return {"campos": campos, "texto": texto, "titularesCorregidos": corr_tit}
 
 
+def existe(fixture_id: int) -> bool:
+    """¿Hay parte depositado para el partido? (el 1X2 ciego va antes)."""
+    with _conectar() as con:
+        return con.execute("SELECT 1 FROM parte_cowork WHERE fixture_id=?", (fixture_id,)).fetchone() is not None
+
+
 def dto(fixture_id: int) -> dict | None:
     """Todo lo que la pantalla necesita, con lo calculable ya calculado."""
     with _conectar() as con:
@@ -5654,6 +5673,9 @@ def dto(fixture_id: int) -> dict | None:
         "dtp": dtp_leido,
         "timeline": timeline,
         "pronostico": parte["pronostico"],
+        # EL 1X2 CIEGO (22/11/2026): la lectura sellada antes de ver la cuota; no
+        # viene del depósito ni se reescribe (backend/analisis/ciego.py)
+        "ciego": _ciego.de(fila["fixture_id"]),
         # la ventaja sobre el mercado (26/10/2026): calculada al leer, nunca declarada
         "vsMercado": _ventaja_o_nada(fila["fixture_id"], parte["pronostico"], fila["parte_json"]),
         "desconfianza": desconfianza,

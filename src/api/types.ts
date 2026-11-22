@@ -2315,6 +2315,8 @@ export interface ParteCoworkDTO {
   vsMercado?: VentajaMercado | null
   /** En quién desconfiar, calculado al leer (10/11/2026): no mueve el 1X2. */
   desconfianza?: DesconfianzaParte | null
+  /** el 1X2 CIEGO sellado antes de ver la cuota (22/11/2026); null si no hay */
+  ciego?: Ciego1x2 | null
   /** DESCONFIAR del primer depósito, sellada (sad-analysis v4.6): la que mide la Simulación */
   desconfianzaSellada?: { alerta?: unknown; elegido?: string; descarte?: unknown; selladaEn?: string } | null
   fuentes: string[]
@@ -2838,6 +2840,8 @@ export interface ApuestaSimulada {
   semaforo?: SemaforoElegido
   /** la casa (sin margen) le da al elegido entre 45 % y 60 % (13/11/2026) */
   enElMedio?: boolean
+  /** el 1X2 ciego del partido (22/11/2026); null si no hay */
+  ciego?: Ciego1x2 | null
   /** el marcador más probable del modelo de goles contra el elegido (13/11/2026); null sin modelo */
   marcador?: { masProbable: string; prob: number; signo: Resultado1x2 | null; alineado: boolean } | null
   porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
@@ -2970,6 +2974,37 @@ export interface ResumenSemaforo {
   nota: string
 }
 
+/** El 1X2 del analista ANTES de ver la cuota, sellado (22/11/2026). */
+export interface Ciego1x2 {
+  local: number
+  empate: number
+  visita: number
+  elegido: Resultado1x2
+  porque: string
+  pitazo: string | null
+  selladoEn: string
+}
+export interface GrupoCiego { n: number; aciertos: number; tasa: number | null; intervalo: [number, number] | null }
+/** El 1X2 ciego contra la casa, en los mismos partidos y por acierto (22/11/2026). */
+export interface ResumenCiego {
+  desde: string
+  n: number
+  /** cerradas del período sin ciego (no entran) */
+  sinCiego: number
+  ciego: GrupoCiego
+  publicado: GrupoCiego
+  casa: GrupoCiego
+  brier: { ciego: number; publicado: number; casa: number } | null
+  /** pts entre el ciego y la casa en el elegido del ciego */
+  distanciaCasa: number | null
+  /** donde el ciego no eligió al favorito de la casa: quién acertó */
+  desacuerdo: { n: number; ciego: number; casa: number; ninguno: number }
+  /** donde el publicado eligió otro resultado que el ciego */
+  publicadoCambio: { n: number; ciego: number; publicado: number }
+  calibracion: { tramo: string; n: number; dijo: number | null; paso: number | null; intervalo: [number, number] | null }[]
+  texto: string
+}
+
 /** Las puntas contra el medio de lo que la casa le da al elegido (13/11/2026). */
 export interface GruposMedio { puntaBaja: GrupoSemaforo; medio: GrupoSemaforo; puntaAlta: GrupoSemaforo; puntas: GrupoSemaforo }
 export interface ResumenMedio {
@@ -3076,6 +3111,8 @@ export interface SimulacionApuesta {
   marcador?: ResumenMarcador
   /** las puntas contra el medio (13/11/2026) */
   medio?: ResumenMedio
+  /** el 1X2 ciego contra la casa, por acierto (22/11/2026) */
+  ciego?: ResumenCiego
   porVersion: { version: string; partidos: number; aciertos: number; estrategias: Partial<Record<EstrategiaClave, { apostado: number; ganancia: number; apuestas: number; roi: number | null }>> }[]
   apuestas: ApuestaSimulada[]
   excluidos: { fixtureId: number; pitazo: string; partido: { local: string; visita: string; liga: string }; motivo: string }[]

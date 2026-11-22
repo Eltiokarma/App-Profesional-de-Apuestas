@@ -684,6 +684,58 @@ que venía de empatar: 2 de 2 ganados (Lituania, Alemania en Serbia). Muestra
 mínima: la regla queda congelada y se decide con los 60 marcados desde el
 22/11; si en 30 sigue al revés, el escalón la da por `no_se_sostiene`.
 
+## El 1X2 ciego: nuestra lectura sin la casa (22/11/2026)
+
+El usuario, al ver la banca caer 15 días seguidos: «no tenemos porcentaje
+propio anotado y calibrándose. El analista se manda sus páginas de análisis,
+se mete sus horas de feedback, para seguir a la casa… Tenemos como prioridad
+mejorar el acierto, NO SACARLE MARGEN A LOS NÚMEROS DE LA CASA».
+
+**Lo medido ese día** (393 partes 28/10-22/11 bajados con el token de Cowork y
+pasados por `simulacion.simular`; la pantalla tenía 539):
+
+| | partidos | acierto | la cuota pedía | plana | siempre al favorito de la casa |
+|---|---|---|---|---|---|
+| 28/10-07/11 | 150 | 61,3 % | 51,5 % | +11,4 % | +16,0 % |
+| 08/11-22/11 | 243 | 53,1 % | 53,6 % | −9,2 % | −7,2 % |
+
+- El elegido fue el favorito de la casa en el **97,5 %** de los partidos y
+  quedó en promedio a **1 punto** de su probabilidad. La curva de la banca fue
+  la curva de los favoritos: subieron de más hasta el 07/11 (no ganaron 37 de
+  cada 100) y después se cayeron (no ganaron 46 de cada 100).
+- Las reglas de anclaje del sad-analysis (v4.1 «el empate parte del mercado»,
+  «el favorito no se recorta»; v4.5 «no restan bajo el mercado») corrigen el
+  número HACIA la casa después de leerla, y la lectura propia no quedaba
+  guardada: **no se podía saber si leemos bien o mal**. Los 10 partidos en que
+  el elegido no fue el favorito (acertó 2) son los pocos donde la lectura
+  sobrevivió a esas reglas, no una medición de la lectura.
+- Lo que sí separó en los 15 días malos: el semáforo en duda o no apostar (28
+  partidos, 32 % contra 56 % en «confirma») y el tramo de 60 %+ de la casa
+  (+7 % y +8,5 % por unidad, las dos mitades).
+
+**El ciego** (`backend/analisis/ciego.py`): el 1X2 del analista ANTES de ver
+la cuota, sellado con `POST /analisis/cowork/{id}/ciego` (`{local, empate,
+visita, porque}`), una vez, antes del parte y del pitazo. Con el token de
+Cowork, las cuotas de un partido por jugarse dan 409 hasta el sello y la
+`ventajaPorFuerza` del TDE viaja tapada (sale de la cuota). El maestro y la web
+leen todo como siempre. La prensa puede traer cuotas: el prompt pide no
+buscarlas, y eso no se puede verificar.
+
+**Cómo se mide** (`ciego.resumen`, campo `ciego` de `GET /analisis/simulacion`,
+tabla «Nuestro 1X2 ciego» arriba en Simulación, sección «1X2 ciego» de
+`python -m backend.contacto` los lunes): desde los partidos del **23/11/2026**,
+en las cerradas con ciego, el acierto del elegido del ciego, del publicado y
+del favorito de la casa **en los mismos partidos**, con su IC; el desacuerdo
+(el ciego no eligió al favorito: quién acertó); y la calibración del ciego por
+tramo (lo que dijo contra lo que pasó). El Brier y la distancia a la casa van
+como información. Con menos de 60 partidos es observación.
+
+**Lo que decide**: si el ciego acierta más que la casa en algún grupo de
+partidos (sobre todo donde no coinciden), ahí se apuesta a nuestro lado
+aunque la casa diga otra cosa. Si no, sabremos que leemos mal y qué arreglar
+en la lectura. Y se revisan con eso las reglas de anclaje v4.1-v4.5 (DEUDA
+42), que se justificaron por el error de los números, no por el acierto.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

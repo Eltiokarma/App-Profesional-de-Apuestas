@@ -76,6 +76,8 @@ for (const t of ['Buscar caso', 'Métricas', 'Derrotas del favorito', 'Cuarenten
 }
 // la simulación de apuesta (28/10/2026) y su botonera de Kelly
 await nav('Simula'); await medir('10-simulacion')
+// el resumen (la gráfica de la banca y las tablas: el 1X2 ciego, el semáforo, el medio), 22/11/2026
+{ const r = p.locator('button', { hasText: 'Resumen y gráfica' }).first(); if (await r.count()) { await r.click({ timeout: 5000 }).catch(() => {}); await medir('10-simulacion-resumen') } }
 { const k = p.locator('button', { hasText: '¼' }).first(); if (await k.count()) { await k.click({ timeout: 5000 }).catch(() => {}); await medir('10-simulacion-kelly-cuarto') } }
 // página de equipo vía buscador
 await nav('Partidos')

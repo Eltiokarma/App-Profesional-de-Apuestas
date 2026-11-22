@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenMarcador, ResumenMedio, ResumenSemaforo, SimulacionResumen, TrasFallos } from '../api/types'
+import type { ApuestaSimulada, EstrategiaClave, EstrategiaSimulada, FrenoTramo, GrupoAlerta, GrupoSemaforo, Resultado1x2, ResumenAlerta, ResumenCiego, ResumenMarcador, ResumenMedio, ResumenSemaforo, SimulacionResumen, TrasFallos } from '../api/types'
 import { SemaforoChip } from '../components/SemaforoChip'
 import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
@@ -227,6 +227,8 @@ function ResumenSimulacion({ d, kelly, setKelly, isMobile }: { d: SimulacionResu
           </div>
         )}
       </div>
+
+      {d.ciego && <TablaCiego r={d.ciego} isMobile={isMobile} />}
 
       {d.porVersion.length > 0 && <PorVersion d={d} visibles={visibles.map((v) => v.clave)} isMobile={isMobile} />}
 
@@ -637,6 +639,98 @@ function TablaSemaforo({ r, isMobile }: { r: ResumenSemaforo; isMobile: boolean 
       </div>
       <div style={{ marginTop: 8, font: '600 11px var(--sans)', color: est.color, lineHeight: 1.45, overflowWrap: 'anywhere' }}>
         {c.texto}
+      </div>
+    </div>
+  )
+}
+
+// EL 1X2 CIEGO (22/11/2026, usuario: «no tenemos porcentaje propio anotado y
+// calibrándose… la prioridad es mejorar el acierto, no sacarle margen a los
+// números de la casa»): la lectura sellada ANTES de ver la cuota, contra el
+// publicado y el favorito de la casa en los mismos partidos, por acierto
+function TablaCiego({ r, isMobile }: { r: ResumenCiego; isMobile: boolean }) {
+  const tasa = (x: number | null | undefined) => (x == null ? '—' : `${num(100 * x, 1)} %`)
+  const ic = (i: [number, number] | null) => (i ? `${num(100 * i[0], 0)}-${num(100 * i[1], 0)} %` : '—')
+  const celda: React.CSSProperties = { padding: '5px 6px', textAlign: 'right' }
+  const filas: [string, keyof Pick<ResumenCiego, 'ciego' | 'publicado' | 'casa'>][] = [['nuestro ciego', 'ciego'], ['nuestro publicado', 'publicado'], ['favorito de la casa', 'casa']]
+  const mejor = Math.max(...filas.map(([, k]) => r[k].tasa ?? -1))
+  const d = r.desacuerdo
+  return (
+    <div style={{ ...tarjeta, marginBottom: 12 }}>
+      <div style={{ ...rotulo, marginBottom: 4 }}>Nuestro 1X2 ciego · contra la casa, por acierto</div>
+      <div style={{ font: '500 11px var(--sans)', color: 'var(--t3)', marginBottom: 8, lineHeight: 1.45 }}>
+        El ciego es el 1X2 que el analista sella antes de ver la cuota: lo que dicen las K, las burbujas, el EFE, el TDE, el DTP y la prensa.
+        Hasta el 22/11 nuestro elegido fue el favorito de la casa en el 97,5 % de los partidos y no se sabía si leíamos bien o mal.
+        Acá se ve: quién acierta más en los mismos partidos, y sobre todo cuando el ciego no elige al favorito de la casa.
+        Cuenta desde los partidos del {fecha(r.desde).split(' ').slice(0, 2).join(' ')}.
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          <thead>
+            <tr style={{ color: 'var(--t3)' }}>
+              <th style={{ ...celda, textAlign: 'left', fontWeight: 600 }}></th>
+              <th style={{ ...celda, fontWeight: 600 }}>partidos</th>
+              <th style={{ ...celda, fontWeight: 600 }}>acierta</th>
+              <th style={{ ...celda, fontWeight: 600 }}>IC 95 %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map(([nombre, k]) => {
+              const g = r[k]
+              const lider = r.n > 0 && g.tasa != null && g.tasa === mejor
+              return (
+                <tr key={k} style={{ borderTop: '1px solid var(--line)' }}>
+                  <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: 700, fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>{nombre}</td>
+                  <td style={celda}>{g.n}</td>
+                  <td style={{ ...celda, fontWeight: 700, color: lider ? 'var(--up)' : 'var(--t2)' }}>{g.aciertos} · {tasa(g.tasa)}</td>
+                  <td style={celda}>{ic(g.intervalo)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
+        <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg3)', font: '700 10.5px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+          ciego ≠ favorito de la casa: {d.n} · ciego {d.ciego} · casa {d.casa} · ninguno {d.ninguno}
+        </span>
+        {r.distanciaCasa != null && (
+          <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg3)', font: '700 10.5px var(--mono)', color: 'var(--t3)', fontVariantNumeric: 'tabular-nums' }}>
+            distancia media a la casa: {num(r.distanciaCasa, 1)} pts
+          </span>
+        )}
+        {r.sinCiego > 0 && (
+          <span style={{ padding: '3px 9px', borderRadius: 6, background: 'var(--bg3)', font: '700 10.5px var(--mono)', color: 'var(--down)', fontVariantNumeric: 'tabular-nums' }}>
+            {r.sinCiego} cerrados sin ciego
+          </span>
+        )}
+      </div>
+      {r.calibracion.some((t) => t.n > 0) && (
+        <div style={{ overflowX: 'auto', marginTop: 9 }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', font: isMobile ? '500 10px var(--mono)' : '500 11px var(--mono)', color: 'var(--t2)', fontVariantNumeric: 'tabular-nums' }}>
+            <thead>
+              <tr style={{ color: 'var(--t3)' }}>
+                <th style={{ ...celda, textAlign: 'left', fontWeight: 600 }}>el ciego le dio</th>
+                <th style={{ ...celda, fontWeight: 600 }}>partidos</th>
+                <th style={{ ...celda, fontWeight: 600 }}>dijo</th>
+                <th style={{ ...celda, fontWeight: 600 }}>ganó</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.calibracion.filter((t) => t.n > 0).map((t) => (
+                <tr key={t.tramo} style={{ borderTop: '1px solid var(--line)' }}>
+                  <td style={{ ...celda, textAlign: 'left', color: 'var(--t1)', fontWeight: 700 }}>{t.tramo} %</td>
+                  <td style={celda}>{t.n}</td>
+                  <td style={celda}>{t.dijo == null ? '—' : `${num(t.dijo, 1)} %`}</td>
+                  <td style={celda}>{t.paso == null ? '—' : `${num(t.paso, 1)} %`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div style={{ marginTop: 8, font: '600 11px var(--sans)', color: 'var(--t2)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+        {r.texto}
       </div>
     </div>
   )

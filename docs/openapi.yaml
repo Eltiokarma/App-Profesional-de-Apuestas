@@ -358,6 +358,11 @@ paths:
   /cuotas/{fixtureId}:
     get:
       summary: Cuotas del fixture por mercado y selección
+      description: >
+        Con el token de Cowork, las cuotas de un partido por jugarse (esta ruta y sus subrutas)
+        responden 409 `{detail, pendienteCiego: true}` hasta que el 1X2 ciego del partido esté
+        sellado (`POST /analisis/cowork/{fixtureId}/ciego`, 22/11/2026). El maestro y la web leen
+        como siempre.
       parameters:
         - { name: fixtureId, in: path, required: true, schema: { type: integer } }
       responses:
@@ -366,6 +371,7 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: '#/components/schemas/Cuota' } }
+        '409': { description: 'token de Cowork, partido por jugarse y sin 1X2 ciego sellado' }
   /cuotas/{fixtureId}/casas:
     get:
       summary: Cuotas por casa de apuestas (última foto) para comparar dónde paga más
@@ -1680,6 +1686,58 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
         '422': { description: la revisión no está disparada }
+  /analisis/cowork/{fixtureId}/ciego:
+    post:
+      summary: Sellar el 1X2 CIEGO del analista, antes de ver la cuota (abierto a Cowork)
+      description: >
+        EL 1X2 CIEGO (22/11/2026, usuario: «no tenemos porcentaje propio anotado y calibrándose»).
+        La lectura propia del partido SIN la casa: K, burbujas, EFE, TDE, DTP y prensa. Se sella
+        antes del pitazo y antes del parte (con el parte depositado, 422: el parte trae la casa a la
+        vista); el primero manda (409 con el sellado). Abre al token de Cowork las cuotas del partido
+        y la `ventajaPorFuerza` del TDE. Se mide contra la casa por acierto en `ciego` de
+        `GET /analisis/simulacion` (docs/METODO_APUESTA.md, «El 1X2 ciego»).
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [local, empate, visita, porque]
+              properties:
+                local: { type: number, description: '% (los tres suman 100; se aceptan 95-105 y se normalizan)' }
+                empate: { type: number }
+                visita: { type: number }
+                porque: { type: string, description: 'lo leído que sostiene el número, sin la cuota (20+ caracteres)' }
+      responses:
+        '200':
+          description: sellado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fixtureId: { type: integer }
+                  ciego: { $ref: '#/components/schemas/Ciego1x2' }
+                  siguiente: { type: string }
+        '409': { description: 'ya hay un ciego sellado: `{detail: {detail, ciego}}`' }
+        '422': { description: 'no suma 100, empate arriba, sin porqué, después del pitazo o con el parte ya depositado' }
+    get:
+      summary: El 1X2 ciego sellado del partido
+      parameters:
+        - { name: fixtureId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fixtureId: { type: integer }
+                  ciego: { $ref: '#/components/schemas/Ciego1x2' }
+        '404': { description: sin ciego sellado }
   /analisis/cowork/{fixtureId}/dt:
     post:
       summary: Corregir SOLO el DT de un parte ya depositado (abierto a Cowork)
@@ -2281,6 +2339,7 @@ components:
                 estado: { type: string, enum: [en_observacion, prometedor, no_se_sostiene, confirmado, sin_contacto] }
                 texto: { type: string }
             nota: { type: string }
+        ciego: { $ref: '#/components/schemas/ResumenCiego' }
         alertaConfianza:
           type: object
           description: >
@@ -2358,6 +2417,10 @@ components:
                         codigo: { type: string, enum: [SOBRE-LA-CASA, BURBUJA-DE-UN-PARTIDO] }
                         detalle: { type: string }
               semaforo: { $ref: '#/components/schemas/SemaforoElegido' }
+              ciego:
+                allOf: [{ $ref: '#/components/schemas/Ciego1x2' }]
+                nullable: true
+                description: 'el 1X2 ciego del partido (22/11/2026), null si no hay'
               enElMedio: { type: boolean, description: 'la casa (sin margen) le da al elegido entre 45 % y 60 % (13/11/2026)' }
               marcador:
                 type: object
@@ -4782,6 +4845,62 @@ components:
         sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
         d3: { type: string, enum: [si, parcial, 'no', sin dato], description: 'solo si el parte lo declaró' }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
+    Ciego1x2:
+      type: object
+      description: 'el 1X2 del analista ANTES de ver la cuota, sellado (22/11/2026)'
+      properties:
+        local: { type: number }
+        empate: { type: number }
+        visita: { type: number }
+        elegido: { type: string, enum: [local, empate, visita] }
+        porque: { type: string }
+        pitazo: { type: string, nullable: true }
+        selladoEn: { type: string, description: 'UTC' }
+    GrupoCiego:
+      type: object
+      properties:
+        n: { type: integer }
+        aciertos: { type: integer }
+        tasa: { type: number, nullable: true }
+        intervalo: { type: array, nullable: true, items: { type: number }, description: 'Wilson 95 %' }
+    ResumenCiego:
+      type: object
+      description: >
+        EL 1X2 CIEGO CONTRA LA CASA (22/11/2026). En las cerradas desde `desde` con ciego sellado, el
+        acierto del elegido del ciego, del 1X2 publicado y del favorito de la casa, en LOS MISMOS
+        partidos. Se juzga por acierto (decisión del usuario: «la prioridad es mejorar el acierto, no
+        sacarle margen a los números de la casa»); el Brier y la distancia a la casa son información.
+      properties:
+        desde: { type: string, description: 'UTC; 00:00 de Lima del 23/11/2026' }
+        n: { type: integer }
+        sinCiego: { type: integer, description: 'cerradas del período sin ciego (no entran)' }
+        ciego: { $ref: '#/components/schemas/GrupoCiego' }
+        publicado: { $ref: '#/components/schemas/GrupoCiego' }
+        casa: { $ref: '#/components/schemas/GrupoCiego' }
+        brier:
+          type: object
+          nullable: true
+          properties: { ciego: { type: number }, publicado: { type: number }, casa: { type: number } }
+        distanciaCasa: { type: number, nullable: true, description: 'pts entre el ciego y la casa en el elegido del ciego' }
+        desacuerdo:
+          type: object
+          description: 'partidos donde el elegido del ciego no es el favorito de la casa: quién acertó'
+          properties: { n: { type: integer }, ciego: { type: integer }, casa: { type: integer }, ninguno: { type: integer } }
+        publicadoCambio:
+          type: object
+          description: 'partidos donde el publicado eligió otro resultado que el ciego'
+          properties: { n: { type: integer }, ciego: { type: integer }, publicado: { type: integer } }
+        calibracion:
+          type: array
+          items:
+            type: object
+            properties:
+              tramo: { type: string }
+              n: { type: integer }
+              dijo: { type: number, nullable: true, description: '% medio que el ciego le dio a su elegido' }
+              paso: { type: number, nullable: true, description: '% en que ganó el elegido' }
+              intervalo: { type: array, nullable: true, items: { type: number } }
+        texto: { type: string }
     ParteCowork:
       type: object
       required: [fixtureId, estado, partido, equipos]
@@ -4820,6 +4939,10 @@ components:
             partidos calculados. Se arma AL LEER, no al depositar, para que una corrección
             de la ingesta se refleje sin re-depositar nada.
         pronostico: { $ref: '#/components/schemas/PronosticoParte' }
+        ciego:
+          allOf: [{ $ref: '#/components/schemas/Ciego1x2' }]
+          nullable: true
+          description: 'el 1X2 CIEGO sellado antes de ver la cuota (22/11/2026); no viene del depósito ni se reescribe'
         desconfianzaSellada:
           type: object
           nullable: true

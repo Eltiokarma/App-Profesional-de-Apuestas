@@ -2089,6 +2089,80 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   },
   "nota": "lo que la casa le da al elegido, sin margen. La ventaja es el acierto menos lo que pedía la cuota: acá el criterio SÍ mira la cuota, porque el hallazgo es dónde le sacamos algo"
  },
+ "ciego": {
+  "desde": "2026-11-23 05:00:00",
+  "n": 0,
+  "sinCiego": 0,
+  "ciego": {
+   "n": 0,
+   "aciertos": 0,
+   "tasa": null,
+   "intervalo": null
+  },
+  "publicado": {
+   "n": 0,
+   "aciertos": 0,
+   "tasa": null,
+   "intervalo": null
+  },
+  "casa": {
+   "n": 0,
+   "aciertos": 0,
+   "tasa": null,
+   "intervalo": null
+  },
+  "brier": null,
+  "distanciaCasa": null,
+  "desacuerdo": {
+   "n": 0,
+   "ciego": 0,
+   "casa": 0,
+   "ninguno": 0
+  },
+  "publicadoCambio": {
+   "n": 0,
+   "ciego": 0,
+   "publicado": 0
+  },
+  "calibracion": [
+   {
+    "tramo": "<40",
+    "n": 0,
+    "dijo": null,
+    "paso": null,
+    "intervalo": null
+   },
+   {
+    "tramo": "40-49",
+    "n": 0,
+    "dijo": null,
+    "paso": null,
+    "intervalo": null
+   },
+   {
+    "tramo": "50-59",
+    "n": 0,
+    "dijo": null,
+    "paso": null,
+    "intervalo": null
+   },
+   {
+    "tramo": "60-69",
+    "n": 0,
+    "dijo": null,
+    "paso": null,
+    "intervalo": null
+   },
+   {
+    "tramo": "70+",
+    "n": 0,
+    "dijo": null,
+    "paso": null,
+    "intervalo": null
+   }
+  ],
+  "texto": "Todavía no hay partidos cerrados con 1X2 ciego: cuenta desde los del 23/11/2026. Se juzga por acierto contra la casa en los mismos partidos."
+ },
  "apuestas": [
   {
    "fixtureId": 900013,

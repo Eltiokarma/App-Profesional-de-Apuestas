@@ -1365,6 +1365,23 @@ conversación se pierde en la siguiente.
      burbujas son lectura y freno; lo que queda son los dos candidatos del
      semáforo).
 
+42. **El 1X2 ciego** (22/11/2026, usuario: «la prioridad es mejorar el
+   acierto, no sacarle margen a los números de la casa»;
+   `docs/METODO_APUESTA.md`, «El 1X2 ciego»): HECHO el sello y la medición
+   (`backend/analisis/ciego.py`, `backend/test_ciego.py`). Pendientes:
+   - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 23/11):
+     ciego contra publicado contra favorito de la casa, y el desacuerdo.
+   - **Revisar las reglas de anclaje del sad-analysis** (v4.1 «el empate
+     parte del mercado», «el favorito no se recorta»; v4.2 «el mercado que se
+     mueve»; v4.5 «no restan bajo el mercado») con el ciego a la vista: se
+     justificaron por el Brier, no por el acierto.
+   - **Llevar el paso del ciego al skill** (`sad-analysis`, «Orden
+     anti-anclaje»): hoy vive en el prompt (`COWORK.md` 3-bis) y en el
+     encargo de la corrida; el skill no lo nombra.
+   - **Frenar la plata en la copia de la casa** (propuesto el 22/11, sin
+     decisión del usuario todavía): el método apostando solo con el semáforo
+     en «confirma» y la casa en 60 %+.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

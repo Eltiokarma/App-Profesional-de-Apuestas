@@ -68,6 +68,7 @@ from datetime import date, datetime, timedelta, timezone
 from threading import Lock
 
 from backend import db as saddb
+from backend.analisis import ciego as _ciego
 from backend.analisis import semaforo as _sem, veredicto as _vered
 from backend.analisis.escala import copas_nacionales
 from backend.analisis.lecciones import CORTE_VERSION, TRAMOS_CONFIANZA, cuotas_mercado, tramo_confianza
@@ -1058,6 +1059,8 @@ def simular(apuestas: list[dict]) -> dict:
         "marcador": resumen_marcador(cerradas),
         # las puntas contra el medio de lo que la casa le da al elegido (13/11/2026)
         "medio": resumen_medio(cerradas),
+        # el 1X2 CIEGO (22/11/2026): la lectura sin la casa contra la casa, por acierto
+        "ciego": _ciego.resumen(cerradas),
         # lo más nuevo arriba en la pantalla
         "apuestas": list(reversed(filas)),
     }
@@ -1267,6 +1270,7 @@ def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | N
     reales = _vered.resultados(ids)
     mercados = cuotas_mercado(ids)
     copas = copas_nacionales(ids)
+    ciegos = _ciego.de_varios(ids)
     apuestas, excluidos = [], []
     for f in filas:
         fid = f["fixture_id"]
@@ -1321,6 +1325,8 @@ def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | N
             "resultado": reales.get(fid),
             # el semáforo del elegido con el mercado SIN redondear (11/11/2026)
             "semaforo": _sem.del_parte(parte, m["prob"]),
+            # el 1X2 ciego, sellado antes de ver la cuota (22/11/2026); None si no hay
+            "ciego": ciegos.get(fid),
         })
     return apuestas, excluidos, fx
 
