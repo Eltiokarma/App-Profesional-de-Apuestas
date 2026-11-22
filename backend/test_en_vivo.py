@@ -21,6 +21,7 @@ from backend.ingesta.en_vivo import (
     capturar_xi,
     fixtures_para_xi,
     ligas_de_vivos,
+    fixtures_marcados_en_juego,
     ligas_marcadas_en_juego,
     orden_por_antiguedad,
     preparar_consultas,
@@ -930,6 +931,7 @@ def main():
         (6, hace(50), "1H", PREMIER),     # marcado en juego
         (7, hace(20), "NS", 282),         # liga menor: fuera del ciclo en vivo
         (8, hace(200), "FT", PERU),       # terminado
+        (9, hace(60 * 24 * 83), "SUSP", PERU),  # suspendido del 31/08 que la API dejó en SUSP
     ]
     con.executemany("INSERT INTO fixtures (id, date, status_short, league_id) VALUES (?,?,?,?)", filas)
     con.commit()
@@ -944,6 +946,19 @@ def main():
     check("liga menor NO entra al ciclo en vivo", 7 not in ids, ids)
     check("terminado NO entra", 8 not in ids, ids)
     check("agrupa candidatos por liga", cand[PREMIER] == {6}, cand)
+    # 22/11/2026: Coquimbo–Huachipato (31/08) y Everton–U. de Chile (27/09) en
+    # SUSP eran candidatos perpetuos: el ciclo nunca salía con 0 requests y cada
+    # minuto pagaba el feed + el /fixtures?ids= de «terminados» (el 21/11 el plan
+    # se agotó a las 13:50 de Lima con 4.890 de «fixtures»)
+    check("SUSP de hace meses NO es candidato del ciclo en vivo", 9 not in ids, ids)
+    check("SUSP de hace meses NO se re-pide como «terminado»",
+          9 not in fixtures_marcados_en_juego(con) and 6 in fixtures_marcados_en_juego(con),
+          fixtures_marcados_en_juego(con))
+    con.execute("DELETE FROM fixtures WHERE id = 6")
+    con.commit()
+    check("SUSP de hace meses NO marca su liga en juego",
+          ligas_marcadas_en_juego(con, {PERU, PREMIER}) == set(),
+          ligas_marcadas_en_juego(con, {PERU, PREMIER}))
 
     # /fixtures?live=: con la lista real de ligas hay que ir por live=all
     check(f"con {len(ligas_vivo())} ligas nuestras se pide live=all (el filtro por ids no da)",

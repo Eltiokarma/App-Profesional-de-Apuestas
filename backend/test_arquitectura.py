@@ -314,6 +314,17 @@ _sin_ajeno += [r for r in ("backend/analisis/tde.py", "backend/analisis/dtp_cowo
 check("homónimo: el banco, la F1, el arquero, el TDE, el DTP, el calendario y la cronología usan partido_ajeno.sql_fuera",
       not _sin_ajeno, _sin_ajeno)
 
+# ── 5-quater · «EN JUEGO» TIENE FECHA ─────────────────────────────────────
+# 22/11/2026: dos partidos de agosto y septiembre en SUSP eran candidatos
+# perpetuos del ciclo en vivo (cada minuto, feed + /fixtures?ids=) y el 21/11
+# el plan se agotó a las 13:50 de Lima. Cada consulta del ciclo que pregunta
+# por los estados EN_JUEGO lleva el piso de fecha (en_vivo.piso_en_juego).
+_vivo = leer(os.path.join("backend", "ingesta", "en_vivo.py"))
+_con_en_juego = len(re.findall(r"\*EN_JUEGO\b", _vivo))
+_con_piso = len(re.findall(r"\*EN_JUEGO, piso_en_juego\(\)", _vivo))
+check("costo: cada consulta del ciclo en vivo por estados EN_JUEGO lleva el piso de fecha (piso_en_juego)",
+      _con_en_juego >= 4 and _con_en_juego == _con_piso, (_con_en_juego, _con_piso))
+
 # ── 6 · CADA CLASE DE FALLA TIENE SU GUARDIA ESCRITA ────────────────────────
 fallas = leer(os.path.join("docs", "FALLAS.md"))
 clases = re.findall(r"^### ", fallas, re.M)

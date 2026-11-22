@@ -62,6 +62,20 @@ VENTANA_PREVIA_MIN = 15  # y hasta 15' ANTES: cubre saques adelantados y horas d
 RETENCION_DIAS = 30  # la curva en vivo de un partido terminado es material de estudio
 EN_JUEGO = ("1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT", "SUSP")
 PREVIOS = ("NS", "TBD")  # estados de "aún no empezó" en esta DB (ver diagnostico.py)
+# Un partido «en juego» cuyo saque fue hace más de esto NO está en juego: es un
+# suspendido o interrumpido que la API dejó en SUSP/INT para siempre (22/11/2026:
+# Coquimbo–Huachipato del 31/08 y Everton–U. de Chile del 27/09, ambos 0-1 en
+# SUSP, eran candidatos perpetuos del ciclo: nunca salía con 0 requests, y cada
+# minuto pagaba el feed live + el /fixtures?ids= de «terminados» para ellos; el
+# 21/11 «fixtures» se comió 4.890 requests y el plan se agotó a las 13:50 de
+# Lima: 18 partidos con parte quedaron sin once). Un suspendido que se reanuda
+# vuelve por la ventana por fecha del extractor, no por el ciclo en vivo.
+EN_JUEGO_TOPE_H = 12
+
+
+def piso_en_juego() -> str:
+    """Saque más viejo que todavía puede estar en juego (ver EN_JUEGO_TOPE_H)."""
+    return (datetime.now(timezone.utc) - timedelta(hours=EN_JUEGO_TOPE_H)).strftime("%Y-%m-%d %H:%M:%S")
 
 # /fixtures?live= acepta lista de ligas, pero el parámetro hermano `ids` está
 # documentado con tope de 20 y de `live` no hay tope publicado: con 37 ligas
@@ -511,8 +525,8 @@ def fixtures_vip(con: sqlite3.Connection, ruta: str = VIP_PATH) -> set[int]:
         fila[0] for fila in con.execute(
             f"""SELECT id FROM fixtures WHERE ({' OR '.join(filtros)})
                 AND ((status_short IN ({previos}) AND date BETWEEN ? AND ?)
-                     OR status_short IN ({marcas}))""",
-            (*args, *PREVIOS, desde, hasta, *EN_JUEGO))
+                     OR (status_short IN ({marcas}) AND date >= ?))""",
+            (*args, *PREVIOS, desde, hasta, *EN_JUEGO, piso_en_juego()))
     }
 
 
@@ -738,9 +752,9 @@ def candidatos_por_liga(con: sqlite3.Connection, ligas: "set[int]") -> dict[int,
             f"""SELECT id, league_id FROM fixtures
                 WHERE league_id IN ({ligas_marcas})
                   AND ((status_short IN ({previos_marcas}) AND date BETWEEN ? AND ?)
-                       OR status_short IN ({marcas}))
+                       OR (status_short IN ({marcas}) AND date >= ?))
                 ORDER BY date""",
-            (*sorted(ligas), *PREVIOS, desde, hasta, *EN_JUEGO)):
+            (*sorted(ligas), *PREVIOS, desde, hasta, *EN_JUEGO, piso_en_juego())):
         por_liga.setdefault(lid, set()).add(fid)
     return por_liga
 
@@ -752,11 +766,14 @@ def fixtures_en_ventana(con: sqlite3.Connection, ligas: "set[int]") -> list[int]
 
 def fixtures_marcados_en_juego(con: sqlite3.Connection) -> set[int]:
     """Los que sad.db cree que siguen en juego: si ya no aparecen en el feed
-    live es que terminaron y hay que cerrarlos (estado + marcador final)."""
+    live es que terminaron y hay que cerrarlos (estado + marcador final).
+    Solo los de saque en las últimas EN_JUEGO_TOPE_H: un SUSP de hace meses no
+    se vuelve a pedir cada minuto."""
     marcas = ",".join("?" * len(EN_JUEGO))
     return {
         fila[0]
-        for fila in con.execute(f"SELECT id FROM fixtures WHERE status_short IN ({marcas})", EN_JUEGO)
+        for fila in con.execute(f"SELECT id FROM fixtures WHERE status_short IN ({marcas}) AND date >= ?",
+                                (*EN_JUEGO, piso_en_juego()))
     }
 
 
@@ -778,8 +795,8 @@ def ligas_marcadas_en_juego(con: sqlite3.Connection, ligas: "set[int]") -> set[i
         fila[0]
         for fila in con.execute(
             f"SELECT DISTINCT league_id FROM fixtures "
-            f"WHERE league_id IN ({ligas_marcas}) AND status_short IN ({marcas})",
-            (*sorted(ligas), *EN_JUEGO))
+            f"WHERE league_id IN ({ligas_marcas}) AND status_short IN ({marcas}) AND date >= ?",
+            (*sorted(ligas), *EN_JUEGO, piso_en_juego()))
     }
 
 
