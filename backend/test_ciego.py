@@ -166,6 +166,19 @@ def http():
     r = c.post(f"{A}/analisis/cowork/{otro}/ciego", json=body, headers=cw)
     check("con el parte ya depositado el ciego no se sella (422)", r.status_code == 422 and "parte" in r.text,
           r.text[:200])
+    # 1491 (22/11/2026): Huancayo–Universitario y Cristal–Cienciano tenían parte
+    # del 14/11 y se jugaban el 22/11 (aRehacer); el parte viejo bloqueaba el
+    # ciego y dejaba la casa a la vista. Un parte de OTRA fecha no cuenta.
+    movido = (datetime.now(timezone.utc) + timedelta(days=8)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    sad = sqlite3.connect(os.path.join(tmp, "sad.db"))
+    sad.execute("UPDATE fixtures SET date=? WHERE id=?", (movido, otro))
+    sad.commit()
+    sad.close()
+    check("aplazado (parte de otra fecha): la agenda lo manda a rehacer y la casa se tapa otra vez",
+          c.get(f"{A}/cuotas/{otro}", headers=cw).status_code == 409)
+    r = c.post(f"{A}/analisis/cowork/{otro}/ciego", json=body, headers=cw)
+    check("aplazado: el ciego se sella antes del parte nuevo (200)", r.status_code == 200, r.text[:300])
+    check("aplazado: con el ciego sellado la casa se abre", c.get(f"{A}/cuotas/{otro}", headers=cw).status_code == 200)
     check("la simulación trae el bloque del ciego",
           "ciego" in c.get(f"{A}/analisis/simulacion", headers=ma).json())
 
