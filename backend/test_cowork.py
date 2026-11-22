@@ -5660,6 +5660,19 @@ def main():
     check("423: la copia con las mismas stats deja su id en idsAlternos de la que queda",
           _q2 and set([_q2[0]["id"], *(_q2[0].get("idsAlternos") or [])]) == {538162, 64215}, _q2)
     from backend.analisis import bloque_f as _bf423
+    # 1488 (Amed–Rizespor 1584466): la zona GK se calcula sobre el arquero que ataja hoy (EFE v1.9)
+    _pl1488 = [{"nombre": "Y. Fofana", "zona": "GK", "rol": "TH"}, {"nombre": "Z. Görgen", "zona": "GK", "rol": "ROT"},
+               *[{"nombre": f"R{k} Campo", "zona": "DEF", "rol": "TF"} for k in range(10)]]
+    _r1488 = _bf423.resolver(_pl1488, [{"nombre": "Y. Fofana", "estado": "baja", "motivo": "lesión"}],
+                             ["Z. Görgen", *[f"R{k} Campo" for k in range(10)]])
+    check("1488: el TH ausente con el otro arquero titular en la hoja no reduce la zona GK ni la hace crítica",
+          _r1488["reduccion"]["GK"] == 0.0 and "GK" not in _r1488["zonasCriticas"] and _r1488.get("zonaGkDelDia"),
+          (_r1488["reduccion"], _r1488["zonasCriticas"]))
+    _pl1488b = [{**_pl1488[0], "rol": "TF"}, *_pl1488[1:]]
+    _r1488b = _bf423.resolver(_pl1488b, [{"nombre": "Y. Fofana", "estado": "baja", "motivo": "lesión"}],
+                              ["Z. Görgen", *[f"R{k} Campo" for k in range(10)]])
+    check("1488: el arquero TF ausente sigue reduciendo la zona (v1.8: la zona «cubierta» la dice gkCubierta)",
+          _r1488b["reduccion"]["GK"] > 40 and "GK" in _r1488b["zonasCriticas"], _r1488b["reduccion"])
     _r423 = _bf423.resolver([{"nombre": "S. Córdoba", "jugadorId": 64215, "idsAlternos": [538162], "zona": "ATK", "rol": "TF"},
                              {"nombre": "S. Cordoba", "jugadorId": 538162, "zona": "ATK", "rol": "TF"},
                              {"nombre": "Emmanuel Benítez", "zona": "ATK", "rol": "ROT"}],
