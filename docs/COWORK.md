@@ -858,6 +858,31 @@ Cada partido se trabaja en su propia sesión. Nunca arrastres el contexto de un
 partido al siguiente: los datos de un equipo no deben contaminar el scoring
 del otro. Si un partido falla, seguís con el próximo.
 
+### 3-bis. EL 1X2 CIEGO, ANTES DE LA CASA (22/11/2026)
+
+Hasta el 22/11 el elegido fue el favorito de la casa en el 97,5 % de los
+partidos: el número se corregía hacia la cuota y tu lectura propia no quedaba
+anotada. Ahora se anota y se mide. **La prioridad es acertar más, no sacarle
+margen a los números de la casa** (usuario, 22/11/2026).
+
+1. Leé todo lo que NO es la cuota: K y burbujas, `predicciones/{id}` (el
+   motor), el TDE, el DTP, la F1, el banco, la prensa (DT, bajas, once). No
+   busques cuotas ni pronósticos de casas en la prensa.
+2. Sellá tu 1X2 con lo que leíste: `POST {base}/analisis/cowork/{id}/ciego`
+   con `{"local": 48, "empate": 27, "visita": 25, "porque": "…"}` (en %, que
+   sumen 100; el `porque` dice qué de lo leído sostiene el número). Se sella
+   UNA vez, antes del parte y antes del pitazo: no se corrige después.
+3. Recién ahí abrí `cuotas/{id}`. Antes del sello, con tu token, las cuotas de
+   un partido por jugarse responden 409 y la `ventajaPorFuerza` del TDE viene
+   tapada (`pendienteCiego`): volvé a pedir el TDE después del sello.
+
+El ciego no es un borrador: es tu lectura. No lo acerques a lo que creés que
+dirá la casa. Si después de ver la cuota tu `pronostico.probabilidades` se
+aparta del ciego, decí en la lectura del 1X2 qué te movió. Lo que se mide es
+quién acierta más en los mismos partidos —el ciego, el publicado o el favorito
+de la casa— y sobre todo cuando el ciego no elige al favorito
+(`docs/METODO_APUESTA.md`, «El 1X2 ciego»).
+
 ## 4. QUÉ ESCRIBIR (y qué NO)
 
 Leé la rúbrica de `efe-clasificador` ANTES de puntuar nada.
@@ -1832,6 +1857,8 @@ hechos. No los escribas vos.
   oficial vs la prensa) → documentás LAS DOS y declarás la contradicción en
   `notas`. No la resuelvas en silencio.
 - Nada de revisiones con el resultado puesto.
+- El 1X2 ciego va ANTES de abrir las cuotas y antes del parte (3-bis). Un
+  parte sin ciego queda fuera de la medición de nuestra lectura.
 - `timelineEventos` solo acepta `institucional`, `tecnico`, `sancion` e `hito`.
   Un evento de tipo `resultado`, `derrota` o `empate` se descarta al depositar:
   esos los pone la app con el marcador de su propia ingesta.

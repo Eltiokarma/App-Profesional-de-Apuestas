@@ -101,6 +101,8 @@ def armar(datos: dict) -> tuple[list[dict], list[dict]]:
             "semaforo": semaforo.del_parte(parte, {k: 100 * inv[k] / tot for k in sim.CLAVES}),
             # el marcador más probable (13/11/2026): el que el GET del parte calcula con la historia anterior
             "marcador": _marcador(parte, probs),
+            # el 1X2 ciego (22/11/2026): el GET del parte lo trae sellado
+            "ciego": parte.get("ciego"),
         })
     return apuestas, excluidos
 
@@ -165,7 +167,27 @@ def informe(out: dict) -> str:
     if m:
         lineas.append(f"  martingala: banca {m['banca']:.2f}, caída máx. {100 * m['caidaMaxima']:.1f} %, "
                       f"apuesta máx. {m['montoMaximo']:.0f} u")
-    lineas += ["", informe_semaforo(out), "", informe_marcador(out), "", informe_medio(out)]
+    lineas += ["", informe_ciego(out), "", informe_semaforo(out), "", informe_marcador(out), "", informe_medio(out)]
+    return "\n".join(lineas)
+
+
+def informe_ciego(out: dict) -> str:
+    """La sección «1X2 ciego» del informe de los lunes (22/11/2026): la lectura
+    sellada antes de ver la cuota contra la casa, en los mismos partidos."""
+    s = out.get("ciego")
+    if not s:
+        return "1X2 ciego · sin datos"
+    pct = lambda x: "—" if x is None else f"{100 * x:.1f} %"  # noqa: E731
+    ic = lambda i: "—" if not i else f"{100 * i[0]:.0f}-{100 * i[1]:.0f} %"  # noqa: E731
+    lineas = [f"1X2 ciego · cuenta desde {s['desde'][:10]} (sellado antes de ver la cuota; se juzga el acierto)"]
+    for nom, k in (("ciego", "ciego"), ("publicado", "publicado"), ("favorito de la casa", "casa")):
+        g = s[k]
+        lineas.append(f"  {nom}: {g['aciertos']} de {g['n']} ({pct(g['tasa'])}, IC {ic(g['intervalo'])})")
+    d = s["desacuerdo"]
+    lineas.append(f"  donde el ciego no eligió al favorito de la casa: {d['n']} · ciego {d['ciego']} · "
+                  f"casa {d['casa']} · ninguno {d['ninguno']}")
+    lineas.append(f"  partidos cerrados sin ciego en el período: {s['sinCiego']}")
+    lineas.append(f"  → {s['texto']}")
     return "\n".join(lineas)
 
 

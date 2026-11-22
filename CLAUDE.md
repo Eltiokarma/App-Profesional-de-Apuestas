@@ -40,6 +40,7 @@ python -m backend.test_jev       # adaptador de Jev (System One): sin clave corr
 python -m backend.test_coherencia # guardrail semántico del parte (Jev): etiqueta la prosa, el código compara con el número
 python -m backend.test_simulacion # simulación de apuesta: plana (control), Kelly entero/½/¼ y martingala desde el 28/10/2026, con la versión de cada skill
 python -m backend.test_semaforo   # el semáforo del elegido por las ESPINAS (13/11/2026; antes 11/11): dónde no meter plata, no la cuota; la regla vive en docs/METODO_APUESTA.md y no entra al parte
+python -m backend.test_ciego      # el 1X2 ciego: sellado antes de ver la cuota (las cuotas tapadas a Cowork hasta el sello) y medido contra la casa por acierto (22/11/2026)
 python -m backend.test_lista_partidos # la lista de Partidos: DESCONFIAR con la regla del parte, los 3 marcadores más probables y las ligas que analizamos (con parte en 30 días; el resto al desplegable) (13/11/2026)
 python -m backend.contacto        # criterio de contacto (acierto tras 3 fallos seguidos) desde la API con el token de Cowork; lo corre la rutina del lunes (docs/METODO_APUESTA.md)
 python -m backend.test_velocidad   # Aprendizaje y Simulación con caché: mismos números que sin caché, y solo se rehace lo que cambió (10/11/2026)
@@ -203,6 +204,9 @@ se carga en cada paso de cada agente). Leé la sección del área en
   la cobra, si le saca margen o si leemos mejor que ella: eso no se mide ni se
   escribe como conclusión. Las burbujas no dicen quién gana: avisan cuándo no
   apostar.
+- **El 1X2 ciego** (`backend/analisis/ciego.py`): el analista sella su 1X2
+  ANTES de ver la cuota; con el token de Cowork la cuota de un partido por
+  jugarse se abre después del sello. Se mide por acierto contra la casa.
 - **Simulación de apuesta** (`backend/analisis/simulacion.py`,
   `docs/METODO_APUESTA.md`): el método proporcional va primero; cuenta desde el
   28/10/2026; con cada versión nueva de un skill, anotar la hora en

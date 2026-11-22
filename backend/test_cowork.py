@@ -1690,11 +1690,14 @@ def main():
                            "falsador": "si el visitante abre antes del 20', la lectura falla",
                            "entrar": {"decision": "entraria"}}
     rec0 = c.post(f"{A}/analisis/cowork", json=lleno).json()
+    # el aviso del 1X2 CIEGO (22/11/2026) se prueba en backend/test_ciego.py: este
+    # partido ya tenía parte y su ciego no se puede sellar
+    _sin_ciego = lambda fs: [x for x in fs if x.get("bloque") != "ciego"]  # noqa: E731
     check("26/10: brecha del EFE con T.54 sin decir «empate técnico» → el recibo lo avisa",
-          [x.get("codigo") for x in rec0["faltan"]] == ["EFE-EMPATE-TECNICO"], rec0["faltan"])
+          [x.get("codigo") for x in _sin_ciego(rec0["faltan"])] == ["EFE-EMPATE-TECNICO"], rec0["faltan"])
     lleno["notas"] = "la brecha del EFE es empate técnico de formación (T.54 en el visitante)"
     rec = c.post(f"{A}/analisis/cowork", json=lleno).json()
-    check("un parte completo no inventa avisos", rec["faltan"] == [], rec["faltan"])
+    check("un parte completo no inventa avisos", _sin_ciego(rec["faltan"]) == [], rec["faltan"])
     c.post(f"{A}/analisis/cowork", json=_parte(sin_ficha))
 
     # ── lectura: lo calculado ───────────────────────────────────────────────

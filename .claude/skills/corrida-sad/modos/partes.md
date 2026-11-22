@@ -83,8 +83,12 @@
 >   del DTP (banco ofensivo), B5 y la palanca de la matriz; con `fuente: hoja` son los
 >   suplentes reales y ningún titular va de banco; el titular habitual de
 >   `titularesHabitualesEnElBanco` se nombra primero— →
->   `equipos/{id}/burbujas?proximo={id}` de los dos → `cuotas/{id}`
->   → prensa (DT de ESTA semana, bajas, once probable) → el JSON del parte
+>   `equipos/{id}/burbujas?proximo={id}` de los dos → `predicciones/{id}`
+>   → prensa (DT de ESTA semana, bajas, once probable; sin buscar cuotas) →
+>   **EL 1X2 CIEGO: `POST analisis/cowork/{id}/ciego` con tu 1X2 y su
+>   `porque` ANTES de abrir las cuotas** (docs/COWORK.md 3-bis; una vez, no se
+>   corrige; antes del sello `cuotas/{id}` da 409 y la `ventajaPorFuerza` del
+>   TDE viene tapada) → `cuotas/{id}` y el TDE de nuevo → el JSON del parte
 >   EXACTO al punto 7 (a = local).
 >   El gap, la μ y el 1X2 del motor (`unXDos`) están en `GET predicciones/{id}`
 >   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ;
@@ -184,7 +188,8 @@
 > - Reloj: `TZ=America/Lima date` seguido. Depositá antes de la hora tope; si
 >   15 minutos antes no está completo, depositá lo que tengas con lo faltante
 >   en `pendientes`. Después del pitazo NO deposites: decilo.
-> - Respuesta final breve (sin el token): hora del depósito; recibo
+> - Respuesta final breve (sin el token): hora del depósito; el 1X2 ciego
+>   sellado (y si el publicado se apartó de él, por qué); recibo
 >   (rechazos, faltan, aviso/perdido); EFE % de cada lado según el GET; 1X2 y
 >   marcador; alertas (tuyas y del backend); DT de cada lado y si hubo
 >   DT-DISCREPANCIA; qué quedó pendiente o roto.

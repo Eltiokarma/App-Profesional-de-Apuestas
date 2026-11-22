@@ -96,6 +96,9 @@ _COWORK_PERMITIDO = tuple(
         # corregir SOLO el DT de un parte: sin esto, el único camino era
         # re-depositar el parte entero y un cuerpo recortado lo vaciaba
         ("POST", r"/analisis/cowork/\d+/dt"),
+        # EL 1X2 CIEGO (22/11/2026): la lectura propia, sellada ANTES de ver la
+        # cuota. Escribe SOLO su tabla, una vez por partido: 0 tokens, 0 cuota
+        ("POST", r"/analisis/cowork/\d+/ciego"),
         # el estudio de un reventón hacia atrás: escribe SOLO su tabla, 0 cuota
         ("POST", r"/analisis/cowork/reventones/\d+/\d+/estudio"),
         # APERTURA DELIBERADA (18/10/2026): las corridas depositan lo que vieron
@@ -108,6 +111,11 @@ _COWORK_PERMITIDO = tuple(
                 r"|niveles|predicciones|analisis-prepartido)(?:/.*)?"),
     )
 )
+
+
+# las cuotas de UN partido (y sus subrutas): con el token de Cowork, tapadas
+# hasta que el 1X2 ciego de ese partido esté sellado
+_CUOTAS_FIXTURE = re.compile(re.escape(API) + r"/cuotas/(\d+)(?:/.*)?$")
 
 
 # lo único que el token de la web NO puede leer: la calibración pesada
@@ -152,6 +160,17 @@ async def auth_bearer(request: Request, call_next):
     # arrancar en vez de fingir que protege algo
     if TOKEN_COWORK and TOKEN_COWORK != API_TOKEN and _igual(presentado, TOKEN_COWORK):
         if _cowork_puede(request.method, request.url.path):
+            request.state.cowork = True
+            # LA CASA SE ABRE DESPUÉS DEL CIEGO (22/11/2026): las cuotas de un
+            # partido por jugarse no se le muestran a quien escribe el parte
+            # hasta que su 1X2 ciego esté sellado (backend/analisis/ciego.py)
+            m_ = _CUOTAS_FIXTURE.match(request.url.path)
+            if m_ and request.method == "GET":
+                from backend.analisis import ciego as _ciego
+                fid_ = int(m_.group(1))
+                if _ciego.tapado(fid_):
+                    return JSONResponse({"detail": _ciego.mensaje_tapado(fid_), "pendienteCiego": True},
+                                        status_code=409)
             return await call_next(request)
         return JSONResponse(
             {"detail": f"El token de Cowork no puede {request.method} {request.url.path}. "
@@ -3335,7 +3354,7 @@ def cowork_f1(fixture_id: int):
 
 
 @app.get(API + "/analisis/cowork/tde/{fixture_id}")
-def cowork_tde(fixture_id: int):
+def cowork_tde(fixture_id: int, request: Request):
     """Los insumos del TDE que salen de NUESTRA base, ya calculados.
 
     No devuelve el IE: devuelve lo que el skill manda tomar del motor —P1a es
@@ -3348,7 +3367,42 @@ def cowork_tde(fixture_id: int):
     d = tdemod.ficha(fixture_id)
     if not d:
         raise HTTPException(404, f"el fixture {fixture_id} no está en nuestra base")
+    # la ventaja por fuerza sale de la probabilidad de la casa: para Cowork viaja
+    # tapada hasta que el 1X2 ciego esté sellado (22/11/2026)
+    if getattr(request.state, "cowork", False):
+        from backend.analisis import ciego as _ciego
+        if _ciego.tapado(fixture_id):
+            ref = d.get("referencias") or {}
+            ref["ventajaPorFuerza"] = {"a": None, "b": None, "pendienteCiego": True,
+                                       "nota": "sale de la cuota: se abre cuando sellás el 1X2 ciego "
+                                               f"(POST analisis/cowork/{fixture_id}/ciego); volvé a "
+                                               "pedir este TDE antes de escribir la rama de ventaja"}
+            d["referencias"] = ref
     return _con_banco(d, fixture_id)
+
+
+@app.post(API + "/analisis/cowork/{fixture_id}/ciego")
+def cowork_ciego(fixture_id: int, body: dict = Body(...)):
+    """EL 1X2 CIEGO: la lectura propia del analista ANTES de ver la cuota
+    (`{local, empate, visita, porque}`, en %). Antes del pitazo y antes del
+    parte; el primero manda (409 con el sellado si ya hay uno). Abre las cuotas
+    del partido al token de Cowork. docs/METODO_APUESTA.md, «El 1X2 ciego»."""
+    from backend.analisis import ciego as _ciego, parte as cowork
+    try:
+        return _ciego.sellar(fixture_id, body, hay_parte=cowork.existe(fixture_id))
+    except _ciego.CiegoYaSellado as e:
+        raise HTTPException(409, {"detail": str(e), "ciego": e.existente})
+    except _ciego.CiegoInvalido as e:
+        raise HTTPException(422, str(e))
+
+
+@app.get(API + "/analisis/cowork/{fixture_id}/ciego")
+def cowork_ciego_leer(fixture_id: int):
+    from backend.analisis import ciego as _ciego
+    c = _ciego.de(fixture_id)
+    if not c:
+        raise HTTPException(404, f"el partido {fixture_id} no tiene 1X2 ciego sellado")
+    return {"fixtureId": fixture_id, "ciego": c}
 
 
 @app.get(API + "/analisis/cowork/veredictos/pendientes")

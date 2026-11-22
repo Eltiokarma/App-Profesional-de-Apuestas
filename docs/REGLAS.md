@@ -359,6 +359,16 @@
   también (1239): un protagonista de `m2.duelosCarril` que arrancó en el banco
   (de cualquier lado) es un motivo «duelo del M2»; `veredictoRamas` y las
   palancas del M3 no, porque nombrar un recambio es legítimo.
+- **El 1X2 ciego** (22/11/2026, usuario: «la prioridad es mejorar el
+  acierto, no sacarle margen a los números de la casa»;
+  `backend/analisis/ciego.py`, `docs/METODO_APUESTA.md`): el analista sella su
+  1X2 ANTES de ver la cuota con `POST /analisis/cowork/{id}/ciego`, una vez,
+  antes del parte y del pitazo. Con el token de Cowork, `cuotas/{id}` de un
+  partido por jugarse da 409 hasta el sello y la `ventajaPorFuerza` del TDE
+  viaja tapada; una ruta nueva que muestre la cuota de un partido a ese token
+  se tapa igual. Se mide por acierto contra el publicado y el favorito de la
+  casa en los mismos partidos (`ciego` de `/analisis/simulacion`). Test:
+  `backend/test_ciego.py`.
 - **Simulación de apuesta** (28/10/2026, pedido del usuario;
   `backend/analisis/simulacion.py`, `GET /analisis/simulacion`, sección
   **Simulación**): una banca de 100 unidades sobre los 1X2 declarados en los
