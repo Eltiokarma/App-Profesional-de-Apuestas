@@ -5094,6 +5094,31 @@ def main():
     check("1446: con la corrección tardía que también cambió titulares, el motivo del once no es `conocido`",
           _m1446.get("momento") == "tardio" and "también cambió titulares" in _m1446["detalle"]
           and "motivosTardios" not in _m1446, _m1446)
+    # 1478 (Utrecht–Cambuur 1552233): el once propio ya estaba en el depósito, pero el
+    # único motivo es un duelo del M2 con un jugador del RIVAL, cuyo once cambió de
+    # titulares después del pitazo: no es `conocido`
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (991478, '2026-11-21 17:30:00', 'FT', 'Match Finished', "
+                     "5, 2026, 990481, 990482)")
+        _gal(_con, 991478, _once("4-3-3", 3700), "2026-11-21 17:10:00")            # Utrecht, antes
+        _gal(_con, 991478, [{**_once("4-4-2", 4700)[0], "team": {"id": 990482}}], "2026-11-21 17:17:00")  # Cambuur
+    _fx1478 = {"id": 991478, "date": "2026-11-21 17:30:00", "home_team_id": 990481, "away_team_id": 990482}
+    _al1478 = [{"codigo": "DTP-REHACER", "equipo": "b", "tipo": "dato", "detalle": "x",
+                "motivos": ["duelo del M2: N. Vesterlund arrancó en el banco"]}]
+    _m1478a = _mom(_al1478, _fx1478, "2026-11-21 17:25:00")[0]
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _gal(_con, 991478, _once("4-2-3-1", 3701), "2026-11-21 18:13:00")          # Utrecht corrige titulares
+    _m1478 = _mom(_al1478, _fx1478, "2026-11-21 17:25:00")[0]
+    _m1478c = _mom([{**_al1478[0], "motivos": [*_al1478[0]["motivos"], "once: 3 titulares que no estaban en el XI"]}],
+                   _fx1478, "2026-11-21 17:25:00")[0]
+    check("1478: sin corrección del rival, el motivo del M2 con el once propio depositado es `conocido`",
+          _m1478a.get("momento") == "conocido", _m1478a)
+    check("1478: con el rival corregido de titulares después del pitazo, el motivo del M2 solo es `tardio`",
+          _m1478.get("momento") == "tardio" and "once del rival" in _m1478["detalle"], _m1478)
+    check("1478: con otro motivo propio que ya estaba, sigue `conocido` y el del M2 va en motivosTardios",
+          _m1478c.get("momento") == "conocido"
+          and _m1478c.get("motivosTardios") == ["duelo del M2: N. Vesterlund arrancó en el banco"], _m1478c)
     # 1403 (Eslovenia 1545654): el rol contra el grid corregido después del pitazo es tardío como el sistema
     _m1403 = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
                     "motivos": ["sistema: la apertura dice '4-4-2' y salió 5-3-2",
