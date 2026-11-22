@@ -268,3 +268,12 @@
   reporta otra vez; el parte se deposita igual y el error queda sellado en
   `coherencia`. Se reporta si el 402 sigue después de que #1468 pasó a
   `resuelta` (la recarga no alcanzó o la clave es otra).
+  Y desde la pasada del 22/11 (noche): **la ficha incompleta o incoherente que
+  trae la API** —eventos cortados o sin cambios, ficha sin eventos de un
+  partido demorado o suspendido, posesión invertida respecto de los pases, la
+  plantilla con el jugador en otro club— (1481-1484, 1490; familias #27, #94,
+  #447 y #2, decididas por el usuario en la #1379: dato de la API, cubierto
+  por su alerta o por la prensa, sin regla nueva). El veredicto se cierra con
+  la prensa y lo dice en `notas`; no se reporta. Se reporta si la app CALCULA
+  algo mal con esa ficha (un `avanza`, una ventana del TDE, una sanción) o si
+  la misma ficha sigue incompleta 48 h después del partido.
