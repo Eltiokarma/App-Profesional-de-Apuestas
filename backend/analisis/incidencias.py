@@ -205,6 +205,15 @@ def clave_de(titulo: str, area: str = "") -> str:
     return " ".join(t.split())[:160]
 
 
+def _jugado_antes(fixture_id: int, cuando: str) -> bool:
+    """¿El saque del partido fue antes de `cuando` (UTC, «YYYY-MM-DD HH:MM:SS»)?"""
+    try:
+        f = efedb.saddb.query_one("sad", "SELECT date FROM fixtures WHERE id=?", (fixture_id,))
+    except Exception:  # noqa: BLE001 — sin sad.db no se sabe: entra nueva, como siempre
+        return False
+    return bool(f) and str(f["date"])[:19].replace("T", " ") < str(cuando)[:19]
+
+
 def depositar(payload: dict) -> dict:
     """`{origen, corrida?, items: [{titulo, area, severidad?, detalle?, fixtureId?}]}`.
     Devuelve qué entró nuevo, qué se sumó a una abierta y qué se rechazó."""
@@ -251,6 +260,16 @@ def depositar(payload: dict) -> dict:
                 previa = next((r for r in con.execute(
                     "SELECT id, fixture_id, fixtures FROM incidencia WHERE clave=? AND estado IN "
                     "('dato_api','por_diseno','descartada')", (clave,)) if fid in _fixtures(r)), None)
+                # EL PARTIDO JUGADO ANTES DEL PARCHE NO DICE QUE EL PARCHE NO ALCANZÓ
+                # (22/11/2026: los 18 once-tarde del 21/11 volvieron como 1494 con
+                # la 1492 ya `resuelta` por el PR #627: el escaneo mira 48 h de
+                # jugados y los redeposita en cada pasada). Solo el escaneo, y solo
+                # si el saque fue antes del cierre: lo que pasa después sí entra.
+                if not previa and origen == "escaneo":
+                    previa = next((r for r in con.execute(
+                        "SELECT id, fixture_id, fixtures, cerrado_en FROM incidencia WHERE clave=? "
+                        "AND estado='resuelta' AND cerrado_en IS NOT NULL", (clave,))
+                        if fid in _fixtures(r) and _jugado_antes(fid, r["cerrado_en"])), None)
                 if previa:
                     ya_clasificadas.append({"id": previa["id"], "fixtureId": fid})
                     continue
