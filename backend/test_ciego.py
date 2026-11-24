@@ -331,6 +331,9 @@ def espejo_puro():
           cr["cruzadas"] == {"n": 3, "elegidoGano": 3}
           and {x["tramo"]: x for x in cr["ganaLocal"]}["60-79"]["n"] == 3, (cr["cruzadas"], cr["ganaLocal"]))
     v = ciego.espejo([])
+    check("espejo: trae la curva de cada lado aprendida de los resultados",
+          set(e["curvas"]) == {"local", "visita"} and e["curvas"]["local"]["n"] == 12
+          and "lectura" in e["curvas"]["local"], e["curvas"])
     check("espejo vacío: n 0, sin avisos y con texto", v["n"] == 0 and not v["avisos"] and v["texto"], v)
 
 

@@ -499,7 +499,13 @@ def espejo(filas: list[dict]) -> dict:
                       f"{cruz['elegidoGano']}.")
         if n < 60:
             texto += " Con menos de 60 partidos es una guía, no una regla: movete con la lectura, no con la tabla."
-    return {"desde": DESDE, "n": n, "aciertos": k, "ganaLocal": t_gl, "ganaVisita": t_gv,
+    # la CURVA aprendida de los resultados (24/11/2026, calibracion_lecturas):
+    # lo que valen tus lecturas en realidad, con el previo que la sostiene si hay pocos
+    from backend.analisis import calibracion_lecturas as _cal
+    curvas = _cal.ajuste_de([{"ganaLocal": u["ganaLocal"], "ganaVisita": u["ganaVisita"], "resultado": u["resultado"]}
+                             for u in ultimos])
+    curvas = {lado: {**cf, "lectura": _cal.lectura(cf)} for lado, cf in curvas.items()}
+    return {"desde": DESDE, "n": n, "aciertos": k, "ganaLocal": t_gl, "ganaVisita": t_gv, "curvas": curvas,
             "calibracion": calibracion, "empate": empate, "cruzadas": cruz,
             "avisos": avisos, "ultimos": list(reversed(ultimos[-ESPEJO_ULTIMOS:])), "texto": texto,
             "nota": "Sin la casa a propósito: son tus lecturas contra lo que pasó. No es una regla que "

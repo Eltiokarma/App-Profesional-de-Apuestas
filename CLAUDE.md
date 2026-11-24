@@ -41,6 +41,7 @@ python -m backend.test_coherencia # guardrail semántico del parte (Jev): etique
 python -m backend.test_simulacion # simulación de apuesta: plana (control), Kelly entero/½/¼ y martingala desde el 28/10/2026, con la versión de cada skill
 python -m backend.test_semaforo   # el semáforo del elegido por las ESPINAS (13/11/2026; antes 11/11): dónde no meter plata, no la cuota; la regla vive en docs/METODO_APUESTA.md y no entra al parte
 python -m backend.test_ciego      # el 1X2 ciego: sellado antes de ver la cuota (las cuotas tapadas a Cowork hasta el sello) y medido contra la casa por acierto (22/11/2026)
+python -m backend.backtest_calibracion_lecturas --api --guardar partes.json # las dos lecturas (¿gana el local?, ¿gana el visitante?) calibradas contra los resultados: corte 80/20 por previo, semana a semana y la curva del publicado sobre el ciego (24/11/2026; --desde-json para rehacer) · test_backtest_calibracion_lecturas
 python -m backend.test_lista_partidos # la lista de Partidos: DESCONFIAR con la regla del parte, los 3 marcadores más probables y las ligas que analizamos (con parte en 30 días; el resto al desplegable) (13/11/2026)
 python -m backend.contacto        # criterio de contacto (acierto tras 3 fallos seguidos) desde la API con el token de Cowork; lo corre la rutina del lunes (docs/METODO_APUESTA.md)
 python -m backend.test_velocidad   # Aprendizaje y Simulación con caché: mismos números que sin caché, y solo se rehace lo que cambió (10/11/2026)

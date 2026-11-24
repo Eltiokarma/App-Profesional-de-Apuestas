@@ -1718,6 +1718,15 @@ paths:
                     type: array
                     description: 'lo mismo con la lectura del visitante'
                     items: { $ref: '#/components/schemas/TramoEspejo' }
+                  curvas:
+                    type: object
+                    description: >
+                      la curva de cada lado aprendida de los resultados (24/11/2026,
+                      backend/analisis/calibracion_lecturas.py): logit(calibrada) = a + b · logit(dicha),
+                      con un previo en la identidad; `lectura` la dice en castellano
+                    properties:
+                      local: { $ref: '#/components/schemas/CurvaLectura' }
+                      visita: { $ref: '#/components/schemas/CurvaLectura' }
                   cruzadas:
                     type: object
                     description: 'los partidos con las dos lecturas sumando más de 100'
@@ -4936,6 +4945,13 @@ components:
         sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
         d3: { type: string, enum: [si, parcial, 'no', sin dato], description: 'solo si el parte lo declaró' }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
+    CurvaLectura:
+      type: object
+      properties:
+        a: { type: number }
+        b: { type: number, description: '> 1: el analista se queda corto; < 1: exagera' }
+        n: { type: integer }
+        lectura: { type: string }
     TramoEspejo:
       type: object
       description: 'un tramo de la calibración propia: lo que se dijo contra lo que pasó (sin la casa)'
