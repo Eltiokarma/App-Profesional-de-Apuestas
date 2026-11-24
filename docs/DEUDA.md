@@ -1426,9 +1426,15 @@ conversación se pierde en la siguiente.
    crédito (402 desde el 22/11 01:31 UTC). Escaneo `jev-caido` y
    `POST /analisis/jev/reetiquetar` (maestro; docs/JEV.md, FALLAS clase 5).
    **Pendiente del usuario**: recargar el crédito de Jev y, con `jev/ping` en
-   verde, correr el `reetiquetar?aplicar=true`. **Paso 2 aprobado**: TDE
-   v0.1.28, DTP v1.10, EFE v1.12. Sin decidir: el recibo que frena y los
-   datos por sede (§5 del README).
+   verde, correr el `reetiquetar?aplicar=true`. Ojo: producción habla con
+   `jevtypesafeai.com` (intermediario no afiliado, `oficial: false`); el
+   revisor de coherencia costó 0,12 USD en 12 días (180 partes, 23 marcados,
+   16 corregidos) y la etiqueta del modo de fallo coincide con el estudio en
+   la mitad de lo que etiqueta: propuesto que el veredicto declare su clase.
+   **Paso 2 hecho (propuestas, sin aplicar)**: `docs/revisiones/TDE_v0.1.28_propuesta.md`,
+   `DTP_v1.10_propuesta.md` y `EFE_v1.12_propuesta.md` (+ efe-dashboard
+   v1.15). Esperan la aprobación punto por punto. Sin decidir: el recibo que
+   frena y los datos por sede (§5 del README).
 
 ## Siguientes pasos (en orden)
 
