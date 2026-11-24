@@ -1369,7 +1369,14 @@ conversación se pierde en la siguiente.
    acierto, no sacarle margen a los números de la casa»;
    `docs/METODO_APUESTA.md`, «El 1X2 ciego»): HECHO el sello y la medición
    (`backend/analisis/ciego.py`, `backend/test_ciego.py`). Pendientes:
-   - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 23/11):
+   - HECHO el 24/11: el `DESDE` pasó al 22/11 (los 31 primeros ciegos son de
+     ese domingo y la tabla los dejaba fuera) y el ESPEJO
+     (`GET /analisis/cowork/ciego/espejo`): la calibración propia sin la casa,
+     que la corrida de partes pasa a cada subagente antes de sellar y la
+     rutina de los lunes informa. Medido ese día en 31: los tres 21 de 31, el
+     ciego comprime hacia el medio (50-59 ganó 10 de 10) y le da de más al
+     empate (METODO_APUESTA, «El 1X2 ciego»).
+   - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 22/11):
      ciego contra publicado contra favorito de la casa, y el desacuerdo.
    - **Revisar las reglas de anclaje del sad-analysis** (v4.1 «el empate
      parte del mercado», «el favorito no se recorta»; v4.2 «el mercado que se

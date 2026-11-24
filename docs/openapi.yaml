@@ -1686,6 +1686,64 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
         '422': { description: la revisión no está disparada }
+  /analisis/cowork/ciego/espejo:
+    get:
+      summary: El espejo del 1X2 ciego — lo que le diste a tu elegido contra lo que ganó, sin la casa
+      description: >
+        El historial propio del analista (24/11/2026), para leerlo ANTES de sellar: por tramo de
+        lo que el ciego le dio a su elegido (<40, 40-49, 50-59, 60-69, 70+), cuántos partidos, el
+        promedio dicho, cuánto ganó y su intervalo, con `lectura` corto / largo / bien desde 5
+        partidos y 10 puntos de desvío; el empate (lo dicho contra cuántos hubo); `avisos` en
+        castellano y los últimos casos. Mismas cerradas que la simulación (sin copas nacionales ni
+        cuarentenas), desde el 22/11/2026. NO trae cuotas, mercado ni plata: verlos antes del
+        sello es lo que el ciego evita. Se recalcula en cada llamada (cada veredicto cerrado ya
+        entra) y es una guía, no corrige ningún número solo. 0 tokens.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [desde, n, aciertos, calibracion, empate, avisos, ultimos, texto]
+                properties:
+                  desde: { type: string }
+                  n: { type: integer }
+                  aciertos: { type: integer }
+                  calibracion:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tramo: { type: string }
+                        n: { type: integer }
+                        dijo: { type: number, nullable: true }
+                        paso: { type: number, nullable: true }
+                        intervalo: { type: array, nullable: true, items: { type: number } }
+                        lectura: { type: string, nullable: true, enum: [corto, largo, bien, null] }
+                  empate:
+                    type: object
+                    properties:
+                      dijo: { type: number, nullable: true }
+                      paso: { type: number, nullable: true }
+                      empates: { type: integer }
+                      n: { type: integer }
+                  avisos: { type: array, items: { type: string } }
+                  ultimos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fixtureId: { type: integer }
+                        pitazo: { type: string }
+                        partido: { type: string, nullable: true }
+                        elegido: { type: string, enum: [local, empate, visita] }
+                        leDiste: { type: number }
+                        empate: { type: number }
+                        resultado: { type: string, enum: [local, empate, visita] }
+                        acerto: { type: boolean }
+                  texto: { type: string }
+                  nota: { type: string }
   /analisis/cowork/{fixtureId}/ciego:
     post:
       summary: Sellar el 1X2 CIEGO del analista, antes de ver la cuota (abierto a Cowork)

@@ -35,8 +35,10 @@ CLAVES = ("local", "empate", "visita")
 SUMA_MIN, SUMA_MAX = 95.0, 105.0
 # tramos de lo que el ciego le da a su elegido, para la calibración
 TRAMOS = ((0, 40, "<40"), (40, 50, "40-49"), (50, 60, "50-59"), (60, 70, "60-69"), (70, 101, "70+"))
-# desde cuándo cuenta (00:00 de Lima del 23/11/2026): la medición es hacia adelante
-DESDE = "2026-11-23 05:00:00"
+# desde cuándo cuenta (00:00 de Lima del 22/11/2026): el primer sello es de ese
+# domingo a las 09:57 de Lima, antes de ver la cuota; con el 23/11 la tabla
+# arrancaba vacía y los 31 primeros ciegos no se veían (usuario, 24/11/2026)
+DESDE = "2026-11-22 05:00:00"
 
 DDL = """
 CREATE TABLE IF NOT EXISTS parte_ciego (
@@ -268,7 +270,7 @@ def resumen(filas: list[dict]) -> dict:
                     "paso": round(100 * v["aciertos"] / v["n"], 1) if v["n"] else None,
                     "intervalo": _wilson(v["aciertos"], v["n"])} for t, v in tramos.items()]
     if not n:
-        texto = ("Todavía no hay partidos cerrados con 1X2 ciego: cuenta desde los del 23/11/2026. "
+        texto = ("Todavía no hay partidos cerrados con 1X2 ciego: cuenta desde los del 22/11/2026. "
                  "Se juzga por acierto contra la casa en los mismos partidos.")
     else:
         texto = (f"En {n} partidos el ciego acertó {k_ciego} ({100 * k_ciego / n:.1f} %), el publicado "
@@ -292,3 +294,92 @@ def resumen(filas: list[dict]) -> dict:
         "calibracion": calibracion,
         "texto": texto,
     }
+
+
+# ── el espejo: el historial propio, SIN la casa (24/11/2026) ───────────────
+# El usuario: «tenemos que sacar nuestras propias probabilidades y afinar el
+# modelo… feedback inmediato y empezar a calibrar esos porcentajes». El espejo
+# es lo que el analista lee ANTES de sellar: lo que dijo contra lo que pasó.
+# No trae ningún número de la casa (verla antes del sello es lo que el ciego
+# evita) ni plata: solo su propio 1X2 y los resultados. Se recalcula en cada
+# llamada (feedback inmediato: cada veredicto cerrado ya entra) y la rutina de
+# los lunes lo informa. Es una GUÍA para la lectura, no corrige ningún número
+# sola: el analista decide cuánto mover y lo dice en el `porque`.
+
+# un tramo dice algo desde 5 partidos y si se aparta 10+ puntos de lo que se dijo
+ESPEJO_MIN_TRAMO = 5
+ESPEJO_DESVIO = 10.0
+# los últimos casos que se muestran, para leer el patrón a mano
+ESPEJO_ULTIMOS = 12
+
+
+def espejo(filas: list[dict]) -> dict:
+    """Las filas: {fixtureId, pitazo, ciego {local, empate, visita} | None,
+    resultado | None, local?, visita?}. Solo las cerradas con ciego desde DESDE.
+    Devuelve la calibración propia por tramo (lo que se le dio al elegido contra
+    lo que ganó), el empate (lo que se le dio contra cuántos hubo) y avisos en
+    castellano. Nada de la casa entra ni sale."""
+    desde = _utc(DESDE)
+    con = sorted((f for f in filas if f.get("ciego") and f.get("resultado") in CLAVES
+                  and (_utc(f.get("pitazo")) or desde) >= desde),
+                 key=lambda f: str(f.get("pitazo") or ""))
+    n = len(con)
+    tramos = {t: {"n": 0, "dijo": 0.0, "aciertos": 0} for _, _, t in TRAMOS}
+    emp_dijo, emp_real, k = 0.0, 0, 0
+    ultimos = []
+    for f in con:
+        c = {kk: float(f["ciego"][kk]) for kk in CLAVES}
+        el = max(CLAVES, key=lambda kk: c[kk])
+        r = f["resultado"]
+        k += el == r
+        emp_dijo += c["empate"]
+        emp_real += r == "empate"
+        for lo, hi, t in TRAMOS:
+            if lo <= c[el] < hi:
+                tramos[t]["n"] += 1
+                tramos[t]["dijo"] += c[el]
+                tramos[t]["aciertos"] += el == r
+                break
+        ultimos.append({"fixtureId": f.get("fixtureId"), "pitazo": f.get("pitazo"),
+                        "partido": " - ".join(x for x in (f.get("local"), f.get("visita")) if x) or None,
+                        "elegido": el, "leDiste": round(c[el], 1), "empate": round(c["empate"], 1),
+                        "resultado": r, "acerto": el == r})
+    calibracion, avisos = [], []
+    for _, _, t in TRAMOS:
+        v = tramos[t]
+        dijo = round(v["dijo"] / v["n"], 1) if v["n"] else None
+        paso = round(100 * v["aciertos"] / v["n"], 1) if v["n"] else None
+        lectura = None
+        if v["n"] >= ESPEJO_MIN_TRAMO:
+            if paso - dijo >= ESPEJO_DESVIO:
+                lectura = "corto"
+                avisos.append(f"Cuando le diste {t} % a tu elegido (en promedio {dijo:g} %), ganó el "
+                              f"{paso:g} % ({v['aciertos']} de {v['n']}): te quedás CORTO. Si la lectura "
+                              "sostiene a ese favorito, animate a darle más.")
+            elif dijo - paso >= ESPEJO_DESVIO:
+                lectura = "largo"
+                avisos.append(f"Cuando le diste {t} % a tu elegido (en promedio {dijo:g} %), ganó el "
+                              f"{paso:g} % ({v['aciertos']} de {v['n']}): te pasás. En esos partidos "
+                              "parejos tu elegido gana menos de lo que decís.")
+            else:
+                lectura = "bien"
+        calibracion.append({"tramo": t, "n": v["n"], "dijo": dijo, "paso": paso,
+                            "intervalo": _wilson(v["aciertos"], v["n"]), "lectura": lectura})
+    empate = {"dijo": round(emp_dijo / n, 1) if n else None,
+              "paso": round(100 * emp_real / n, 1) if n else None, "empates": emp_real, "n": n}
+    if n >= 2 * ESPEJO_MIN_TRAMO and empate["dijo"] - empate["paso"] >= ESPEJO_DESVIO:
+        avisos.append(f"Al empate le diste en promedio {empate['dijo']:g} % y hubo {emp_real} en {n} "
+                      f"({empate['paso']:g} %): le das de más.")
+    elif n >= 2 * ESPEJO_MIN_TRAMO and empate["paso"] - empate["dijo"] >= ESPEJO_DESVIO:
+        avisos.append(f"Al empate le diste en promedio {empate['dijo']:g} % y hubo {emp_real} en {n} "
+                      f"({empate['paso']:g} %): le das de menos.")
+    if not n:
+        texto = "Todavía no hay partidos cerrados con tu 1X2 ciego: sellá con tu lectura."
+    else:
+        texto = (f"Tu 1X2 ciego en {n} partidos cerrados: tu elegido ganó {k} ({100 * k / n:.1f} %).")
+        if n < 60:
+            texto += " Con menos de 60 partidos es una guía, no una regla: movete con la lectura, no con la tabla."
+    return {"desde": DESDE, "n": n, "aciertos": k, "calibracion": calibracion, "empate": empate,
+            "avisos": avisos, "ultimos": list(reversed(ultimos[-ESPEJO_ULTIMOS:])), "texto": texto,
+            "nota": "Sin la casa a propósito: es tu lectura contra lo que pasó. No es una regla que "
+                    "corrija el número sola; decí en el `porque` si la usaste."}

@@ -188,6 +188,21 @@ def informe_ciego(out: dict) -> str:
                   f"casa {d['casa']} · ninguno {d['ninguno']}")
     lineas.append(f"  partidos cerrados sin ciego en el período: {s['sinCiego']}")
     lineas.append(f"  → {s['texto']}")
+    # la calibración propia, la misma que lee el analista antes de sellar (24/11/2026)
+    from backend.analisis import ciego as _ciego
+    e = _ciego.espejo([{"fixtureId": a.get("fixtureId"), "pitazo": a.get("pitazo"), "ciego": a.get("ciego"),
+                        "resultado": a.get("resultado")}
+                       for a in out.get("apuestas") or [] if a.get("estado") == "cerrada"])
+    if e["n"]:
+        lineas.append("  calibración propia (lo que el ciego le dio a su elegido → lo que ganó):")
+        for t in e["calibracion"]:
+            if t["n"]:
+                lineas.append(f"    {t['tramo']}: {t['n']} partidos · dijo {t['dijo']:g} % → ganó {t['paso']:g} %"
+                              f" (IC {ic(t['intervalo'])})" + (f" · {t['lectura']}" if t["lectura"] else ""))
+        em = e["empate"]
+        lineas.append(f"    empate: dijo {em['dijo']:g} % → hubo {em['paso']:g} % ({em['empates']} de {em['n']})")
+        for a in e["avisos"]:
+            lineas.append(f"    ! {a}")
     return "\n".join(lineas)
 
 

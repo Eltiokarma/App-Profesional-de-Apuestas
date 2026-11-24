@@ -1122,6 +1122,18 @@ def _resultado_simulacion() -> dict:
         return out
 
 
+def espejo_ciego() -> dict:
+    """El espejo del 1X2 ciego (24/11/2026): el historial propio del analista
+    sin la casa, sobre las mismas cerradas que mide la simulación (copas,
+    cuarentenas y depósitos tardíos ya quedaron fuera). Lo lee Cowork antes de
+    sellar: no lleva cuotas, mercado ni plata."""
+    filas = [{"fixtureId": a["fixtureId"], "pitazo": a["pitazo"], "ciego": a.get("ciego"),
+              "resultado": a.get("resultado"),
+              "local": (a.get("partido") or {}).get("local"), "visita": (a.get("partido") or {}).get("visita")}
+             for a in _resultado_simulacion()["apuestas"] if a.get("estado") == "cerrada"]
+    return _ciego.espejo(filas)
+
+
 def _sin_tildes(texto: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if not unicodedata.combining(c))
 
