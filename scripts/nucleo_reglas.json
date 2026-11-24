@@ -1,12 +1,15 @@
 {
- "nota": "núcleo de los skills (NUCLEO_SKILLS_propuesta.md, aplicado el 17/11/2026 con TDE v0.1.27, DTP v1.9, EFE v1.11, efe-dashboard v1.14 y sad-analysis v4.6): por skill, frases ancla literales que tienen que estar en el núcleo (SKILL.md o una referencia que no sea HISTORIAL.md) y el tope de tokens del núcleo (caracteres/4, +10 % sobre lo medido). Una regla nueva suma su ancla acá.",
+ "nota": "núcleo de los skills (NUCLEO_SKILLS_propuesta.md, aplicado el 17/11/2026 con TDE v0.1.27, DTP v1.9, EFE v1.11, efe-dashboard v1.14 y sad-analysis v4.6; anclas sumadas el 24/11/2026 con TDE v0.1.28, DTP v1.10, EFE v1.12 y efe-dashboard v1.15): por skill, frases ancla literales que tienen que estar en el núcleo (SKILL.md o una referencia que no sea HISTORIAL.md) y el tope de tokens del núcleo (caracteres/4, +10 % sobre lo medido). Una regla nueva suma su ancla acá.",
  "anclas": {
   "teorema-del-echado": [
    "La rama copia la lista entera, en una línea, por rol y sin el arquero suplente",
    "La referencia también se parte por la fuerza",
    "La plantilla de `siExpulsion`",
    "`SOB1` dice la necesidad, no el régimen",
-   "La ventana modal se declara para la vía del índice que manda"
+   "La ventana modal se declara para la vía del índice que manda",
+   "La vía del empate se copia del DTP del rival",
+   "El relevo de la pieza",
+   "RELEVANCIA BAJA no anuncia que el partido se resuelva antes"
   ],
   "diagnostico-tactico": [
    "intervenciones fallidas con gol en el torneo en curso",
@@ -14,7 +17,11 @@
    "La presión alta, con su vuelta",
    "El reconvertido también ataca",
    "se escribe siempre aparte",
-   "Candidatos abiertos (no regla)"
+   "Candidatos abiertos (no regla)",
+   "dice cuánto concede mientras espera",
+   "Figurar en otro renglón no saca a nadie de este",
+   "La 5 se responde con el DT de hoy",
+   "El rearme del doble pivote o del contenedor cuenta como el de la línea"
   ],
   "efe-clasificador": [
    "Una fila por titular, sin umbral; el 3 es del recómputo",
@@ -22,10 +29,18 @@
    "clasificado o eliminado en la última fecha",
    "El suplente con impacto documentado desde el banco",
    "Bloque F sin XI confirmado",
-   "recomputado con el once"
+   "recomputado con el once",
+   "la vía de gol la fija el DTP",
+   "condicional **sobre la línea**",
+   "La nota de C4 dice sobre cuántos casos se apoya",
+   "cubierta por la segunda línea",
+   "«otro» se escribe **con nombre**"
   ],
   "efe-dashboard": [
-   "El arco no es gatillo de gol en «Para perder»"
+   "El arco no es gatillo de gol en «Para perder»",
+   "EJE-DEBUTANTE tampoco es gatillo de gol",
+   "Sin once oficial va condicional sobre la línea",
+   "«cubierta por la segunda línea» o «por el banco»"
   ],
   "sad-analysis": [
    "DESCONFIAR, la alerta de la app",

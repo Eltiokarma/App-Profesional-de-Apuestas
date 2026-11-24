@@ -4,6 +4,33 @@ Lo que el usuario ya aprobó para una revisión que todavía no se escribió. La
 revisión de cada skill empieza por acá (y por su dossier en Aprendizaje): un
 pendiente que solo vive en una incidencia cerrada se pierde.
 
+## Aprobado el 24/11/2026 — TDE v0.1.28, DTP v1.10, EFE v1.12 (+ efe-dashboard v1.15)
+
+Las tres propuestas (`TDE_v0.1.28_propuesta.md`, `DTP_v1.10_propuesta.md`,
+`EFE_v1.12_propuesta.md`), desde el estudio `estudio_lecciones_2026-11-24/`,
+aprobadas por el usuario con TODAS las recomendaciones y aplicadas el mismo
+día en `docs/skills/`. sad-analysis no entró (v4.8 del 21/11). Lo de «Para la
+app» de cada una queda acá hasta hacerse:
+
+- **TDE** (§ «Para la app», A1-A9): primero `seExponeSi` / `SOB-SIN-GATILLO`
+  (10 partidos) y la línea del choque de `S1` con sus amarillas en `tde/{id}`
+  (7); después lo que el rehacer no revisa (`porqueDesenlace`, la pieza del
+  seguro), `motivoTipologia` de lista cerrada y el texto del aviso de
+  RELEVANCIA BAJA.
+- **DTP** (§5): la referencia de volumen y los córners que concede el rival
+  por sede con su `n`, el perfil de posesión con sede y DT, el veredicto con
+  condición que publica la línea menos favorable (el parte hoy no tiene el
+  campo), las piezas de cada línea con sus amarillas, el aviso del banco con
+  un minuto fijo y quién queda atrás por rama.
+- **EFE** (§7): el depósito rehecho se rechaza con FUERA-EN-LA-HOJA o
+  EFE-RECOMPUTO-PENDIENTE sonando (y el B5 que nombra un titular de la hoja),
+  `parejasNuevas` sobre el once oficial, el aviso del bloque H con un sistema
+  distinto del grid, todos los arqueros convocables en la F1 y en
+  `bancoProbable` con el arco sin dueño, `onceTardio` (aprobado el 10/11) y
+  las mediciones A6-A8.
+- **Transversal, sin decidir** (§5 del README del estudio): el recibo que
+  frena en vez de avisar y los datos por sede.
+
 ## Aprobado el 17/11/2026 — TDE v0.1.27, DTP v1.9, EFE v1.11 (+ efe-dashboard v1.14) y sad-analysis v4.6
 
 Las cuatro propuestas (`TDE_v0.1.27_propuesta.md`, `DTP_v1.9_propuesta.md`,

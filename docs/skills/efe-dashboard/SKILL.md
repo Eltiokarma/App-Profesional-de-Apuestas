@@ -1,11 +1,11 @@
 ---
 name: efe-dashboard
-description: "Genera dashboards visuales EFE v1.11 (skill v1.14) (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
+description: "Genera dashboards visuales EFE v1.12 (skill v1.15) (Estabilidad de Formacion del Equipo) pre-partido de futbol. Produce React JSX interactivo con gauges, barras de bloques A-E, caja de sensibilidad, alertas estructurales y por fecha, impacto ponderado de disponibilidad, minutos compartidos y matchup tactico. Activar cuando el usuario pida un EFE de cualquier equipo o partido, dashboard visual de formacion o estabilidad, comparativa pre-partido, o variantes como haceme el EFE de X vs Y, dashboard EFE, EFE visual o plantilla EFE. Activar tambien si menciona bloques A-E, la clasificacion SIN FORMACION / EN FORMACION / FORMADO, o pide evaluar estabilidad institucional, tactica o de plantel. Activar tambien para analisis tactico, escenarios de resultado, recomendaciones pre-partido, que deben hacer para ganar o empatar o perder, y matriz de escenarios."
 ---
 
-# EFE Dashboard — Skill de Visualización v1.14
+# EFE Dashboard — Skill de Visualización v1.15
 
-> Versión vigente: **v1.14 (17.11.2026)**, alineada con el clasificador EFE v1.11. Las notas de cada versión, los casos que motivaron cada regla y lo que se movió a otro skill están en `references/HISTORIAL.md`: **no hace falta leerlo para analizar un partido**; se lee al revisar el skill.
+> Versión vigente: **v1.15 (24.11.2026)**, alineada con el clasificador EFE v1.12. Las notas de cada versión, los casos que motivaron cada regla y lo que se movió a otro skill están en `references/HISTORIAL.md`: **no hace falta leerlo para analizar un partido**; se lee al revisar el skill.
 
 ## Qué hace
 Dashboard React (JSX) interactivo y comparativo pre-partido aplicando **EFE v1.6**. Opcionalmente genera **Matriz de Escenarios Tácticos v2.0** (Visualizer inline) cruzando EFE con recomendaciones tácticas calibradas con casos a favor/en contra y controles anti-sesgo.
@@ -65,7 +65,7 @@ Dashboard React (JSX) interactivo y comparativo pre-partido aplicando **EFE v1.6
    - F2c: multiplicador GK ×1.5 si el titular fijo está ausente
    - F4: rotación voluntaria respecto del partido anterior
    - F5: jugador emergente / Factor X. *(v1.8)* Mira la nómina completa, no el once probable: **un suplente con impacto documentado desde el banco en la temporada en curso es factor X por derecho propio**, se proyecte titular o no
-   - **F6 (v1.6, umbral v1.10): minutos compartidos** — buscar los partidos que arrancaron juntos la dupla de pivotes, la dupla central y la línea completa (posiciones del grid del once). Si hay ≥2 titulares de la misma línea con **≤ 1 partido juntos como titulares** → `EJE-DEBUTANTE` (regla del clasificador EFE v1.7). *(v1.12)* Sin once oficial va condicional («si repiten X–Y»); con el once se rehace sobre el grid y se marca su origen: `calculado` (de `parejasNuevas` de la app, hoy solo sobre el XI de referencia) o `declarado`
+   - **F6 (v1.6, umbral v1.10): minutos compartidos** — buscar los partidos que arrancaron juntos la dupla de pivotes, la dupla central y la línea completa (posiciones del grid del once). Si hay ≥2 titulares de la misma línea con **≤ 1 partido juntos como titulares** → `EJE-DEBUTANTE` (regla del clasificador EFE v1.7). *(v1.12)* Sin once oficial va condicional sobre la línea («si la línea de fondo no repite 3 de 4»), no sobre una pareja *(v1.15; clasificador v1.12, punto 2)*; con el once se rehace sobre el grid y se marca su origen: `calculado` (de `parejasNuevas` de la app, hoy solo sobre el XI de referencia) o `declarado`
    - **Máximo goleador disponible y fuera del XI** → `GOLEADOR-AL-BANCO`
 7. **Bloque G** — Próximos 4 rivales con **columna FECHA obligatoria**, etiquetas (incluida 🪤 TRAMO TRAMPA), posición
 8. **Bloque H** — Matchup: sistema rival, estilo, fortaleza, vulnerabilidad, H2a/H2b/H2c. **H2c exige clasificación previa del bloque rival: improvisado (55-65') o estructural (80-90')**
@@ -160,7 +160,7 @@ Con `E-CUARENTENA` activo, la caja se aplica también a la elección de denomina
 | GK-DOWNGRADE | Estructural | GK reemplazado por **nivel inferior** |
 | **GK-SIN-CATEGORÍA** *(v1.6)* | Estructural | GK reemplazado por nivel igual/superior sin minutos en la liga |
 | CRISIS-EX | Estructural | Crisis extra-cancha |
-| F3 / F3-COND | Por fecha | IP > 7, ≥ 2 titulares fijos ausentes o una zona > 40 %; la nota dice qué anuncia la zona (DEF: la vía del rival o el volumen concedido, y el arquero; ATK: volumen, dónde se remata o conversión) y quién la cubre *(v1.13)* |
+| F3 / F3-COND | Por fecha | IP > 7, ≥ 2 titulares fijos ausentes o una zona > 40 %; la nota dice qué anuncia la zona (DEF: la vía del rival o el volumen concedido, y el arquero; ATK: volumen, dónde se remata o conversión) y quién la cubre *(v1.13)*; en ATK o MID, «cubierta por la segunda línea» o «por el banco» la deja como confianza en la K *(v1.15)* |
 | FACTOR-X | Por fecha | Jugador emergente fuera de las K |
 | **EJE-DEBUTANTE** *(v1.6, umbral v1.10)* | Por fecha | ≥2 titulares de la misma línea con ≤ 1 partido juntos como titulares |
 | **GOLEADOR-AL-BANCO** *(v1.6)* | Por fecha | Máximo goleador disponible y fuera del XI |
@@ -200,6 +200,8 @@ Después del dashboard, **solo si el usuario lo pide**, generar con `visualize:s
 *(v1.13)* **La palanca del reloj y el banco de la matriz salen del banco probable de la tabla F1** (B5 por rol), no de los dos nombres más conocidos (Independiente: el que decidió, Tempone, no estaba en la palanca). *(v1.14)* Esa lista es `bancoProbable` de `GET /analisis/cowork/f1/{id}` (antes del once, `fuente: probable`; con el once y la banca completa, la hoja), **condicionada al once** con la rama «once alternativo» abierta.
 
 *(v1.14)* **El arco no es gatillo de gol en «Para perder»** sin GK-FALLA-ACTIVA o errores documentados: B6 🔶, la zona GK en rojo y GK-DOWNGRADE miden continuidad o ausencia y van a la caja como rango, no a la matriz como vía «pelota sucia contra el arquero» (clasificador v1.11; Albania 1528963, Chequia 1528985, Inglaterra 1528984).
+
+*(v1.15)* **EJE-DEBUTANTE tampoco es gatillo de gol en «Para perder»**: anuncia volumen concedido y va a la caja como rango; la vía la nombra la matriz solo si el DTP la fijó con un hecho del partido (clasificador v1.12, punto 1; Atlante 1551038, Racing Santander 1570459, Millonarios 1650174).
 
 **Principios v2.0 (anti-sesgo):**
 1. Cruzar EFE (D3, B5, B6, F2, **F6**, Bloque H) con tácticas concretas

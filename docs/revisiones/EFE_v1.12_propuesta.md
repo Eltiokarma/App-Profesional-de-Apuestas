@@ -1,5 +1,7 @@
 # Propuesta de revisión · `efe-clasificador` v1.11 → v1.12 (+ `efe-dashboard` v1.14 → v1.15)
 
+> **APROBADA por el usuario el 24/11/2026, con todas las recomendaciones.** 1. (a) F3 de ATK o MID «cubierta» también por la segunda línea o por el banco de la casilla, solo confianza en la K, sin prometer volumen intacto ni extenderse a DEF · 2. (a) entra la frase «“otro” lleva nombre» y el pedido a la app de cargar los arqueros convocables · 3. (a) «campeón consagrado» queda fuera · 4. (a) el freno del recibo: FUERA-EN-LA-HOJA (`fuera` y `efeB5`) y EFE-RECOMPUTO-PENDIENTE pasan a rechazo del depósito rehecho, con la salida declarada «once tardío: EFE sin recomputar». Lo demás, como recomienda la propuesta (puntos 1, 2 y 4 aprobados; rúbrica a `rubrica-efe-v1.12.md`; con efe-dashboard v1.15).
+
 **Estado:** PROPUESTA (24/11/2026), para aprobar punto por punto. No se tocó
 ningún skill, ni código, ni lección.
 

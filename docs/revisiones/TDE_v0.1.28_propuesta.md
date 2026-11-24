@@ -1,5 +1,7 @@
 # Propuesta de revisión · `teorema-del-echado` v0.1.27 → v0.1.28
 
+> **APROBADA por el usuario el 24/11/2026, con todas las recomendaciones.** D1 (a) la rama de ventaja copia todos los renglones de `viasGol` del rival, cada uno con su intérprete, empezando por la vía principal en juego abierto · D2 (a) la rama nombra el relevo del mismo rol (o «sin relevo de rol») y el cierre lee por rol · D3 (b) `C3` no se suma al texto de la 44 (b); lo hace A5 en la app. Aplicados los puntos 1, 2, 3 y 5 (v0.1.28, 24.11.2026); el 4 no entra al texto; C1-C9 siguen candidatos.
+
 **Estado: PROPUESTA (24/11/2026), para aprobar punto por punto.** No se tocó
 el skill, ni el código, ni otros docs. Lo que se apruebe se aplica después,
 con su entrada en `references/HISTORIAL.md` y sus anclas en

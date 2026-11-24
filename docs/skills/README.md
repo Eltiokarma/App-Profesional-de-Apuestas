@@ -1,3 +1,10 @@
+> **Actualizado el 24/11/2026.** La copia del repo está en **teorema-del-echado
+> v0.1.28**, **diagnostico-tactico v1.10**, **efe-clasificador v1.12** (rúbrica en
+> `references/rubrica-efe-v1.12.md`) y **efe-dashboard v1.15** (propuestas aprobadas
+> el 24/11 en `docs/revisiones/*_propuesta.md`, desde
+> `docs/revisiones/estudio_lecciones_2026-11-24/`); sad-analysis sigue en v4.8. La
+> cuenta sigue con la versión anterior hasta que el usuario suba los zips.
+
 # Snapshot de los skills — material de referencia, no fuente de verdad
 
 > **Actualizado el 21/11/2026 (tarde).** La copia del repo está en **sad-analysis v4.8**

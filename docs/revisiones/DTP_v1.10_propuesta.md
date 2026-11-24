@@ -1,5 +1,7 @@
 # Propuesta de revisión · `diagnostico-tactico` v1.9 → v1.10
 
+> **APROBADA por el usuario el 24/11/2026, con todas las recomendaciones.** 1. el segundo de la lista de penales sigue candidato, con los casos nuevos · 2. el candidato nuevo «con la condición sostenida por el propio parte, manda la condición» entra al bloque de candidatos (no como excepción a la línea menos favorable) · 3. la frase del renglón 6 se agrega. Lo demás, como recomienda la propuesta (puntos 1 a 4 entran; 6 y 7 a medición; 8 a la app). Aplicada en la v1.10.
+
 **Estado: PROPUESTA (24/11/2026), pendiente de aprobación punto por punto.**
 No se tocó `docs/skills/diagnostico-tactico/SKILL.md`, su `references/` ni
 código. Las líneas citadas son de la **v1.9 de hoy (425 líneas, ya con el
