@@ -1422,8 +1422,13 @@ conversación se pierde en la siguiente.
    con EFE-RECOMPUTO-PENDIENTE sonando y depositado igual). En el DTP, M5 es la
    única regla que falla en volumen (50 de 119). **Incidencia**: Jev dejó de
    etiquetar el modo de fallo desde el 21/11 (0 de 39 lados fallados el 22/11).
-   **Pendiente del usuario**: decidir el §5 del README (Jev, recibo que frena,
-   datos por sede) y aprobar el paso 2: TDE v0.1.28, DTP v1.10, EFE v1.12.
+   **Jev (decidido el 24/11, hecho)**: la causa era la cuenta de Jev sin
+   crédito (402 desde el 22/11 01:31 UTC). Escaneo `jev-caido` y
+   `POST /analisis/jev/reetiquetar` (maestro; docs/JEV.md, FALLAS clase 5).
+   **Pendiente del usuario**: recargar el crédito de Jev y, con `jev/ping` en
+   verde, correr el `reetiquetar?aplicar=true`. **Paso 2 aprobado**: TDE
+   v0.1.28, DTP v1.10, EFE v1.12. Sin decidir: el recibo que frena y los
+   datos por sede (§5 del README).
 
 ## Siguientes pasos (en orden)
 

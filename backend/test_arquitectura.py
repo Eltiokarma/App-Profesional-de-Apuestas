@@ -289,12 +289,19 @@ def _funciones(rel: str) -> dict[str, str]:
             if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef))}
 
 
+# LO QUE LEE VEREDICTOS SIN MEDIRLOS, con su motivo (una entrada nueva acá se
+# justifica igual que una métrica: por escrito)
+_NO_METRICA = {
+    ("backend/analisis/modo_fallo.py", "reetiquetar"):
+        "etiqueta el modo de fallo que Jev no selló (402, 24/11/2026); no mide nada y las lecciones de copa "
+        "también van al dossier con su etiqueta",
+}
 _sin_copas = [f"{r}:{fn}" for r, fn in sorted(_METRICAS) if "copas_nacionales" not in _funciones(r).get(fn, "")]
 for _r in sorted(glob.glob(os.path.join(RAIZ, "backend", "analisis", "*.py"))):
     _rel = os.path.relpath(_r, RAIZ)
     for _fn, _cuerpo in _funciones(_rel).items():
         if ("veredicto_json IS NOT NULL" in _cuerpo and "huella" not in _fn
-                and "copas_nacionales" not in _cuerpo):
+                and "copas_nacionales" not in _cuerpo and (_rel, _fn) not in _NO_METRICA):
             _sin_copas.append(f"{_rel}:{_fn}")
 check("métricas: cada población de veredictos saca las copas nacionales con escala.copas_nacionales",
       not _sin_copas, _sin_copas)

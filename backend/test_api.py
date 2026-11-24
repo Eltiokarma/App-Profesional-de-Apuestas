@@ -50,6 +50,12 @@ def main():
     ping = c.get(A + "/analisis/jev/ping").json()
     check("/analisis/jev/ping sin clave no sale a la red y lo dice",
           ping["disponible"] is False and ping["ok"] is False and "TYPESAFE_API_KEY" in ping["error"], ping)
+    ret = c.post(A + "/analisis/jev/reetiquetar?aplicar=true").json()
+    check("/analisis/jev/reetiquetar sin clave no toca nada y lo dice",
+          ret["disponible"] is False and ret["reetiquetados"] == [] and "TYPESAFE_API_KEY" in (ret["cortadoPor"] or ""), ret)
+    check("reetiquetar gasta tokens de Jev: nace denegado para Cowork y la web",
+          not appmod._cowork_puede("POST", A + "/analisis/jev/reetiquetar")
+          and not appmod._web_puede("POST", A + "/analisis/jev/reetiquetar"))
 
     # /fixtures
     check("fixtures acepta limit=500 (días con amistosos globales)",

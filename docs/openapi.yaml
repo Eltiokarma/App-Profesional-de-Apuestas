@@ -825,6 +825,36 @@ paths:
                   tokensEntrada: { type: integer }
                   respuesta: { type: object, additionalProperties: true }
                   error: { type: string, nullable: true }
+  /analisis/jev/reetiquetar:
+    post:
+      summary: Re-etiqueta los veredictos cuyo modo de fallo quedó sellado con un error de Jev
+      description: >
+        Un veredicto se etiqueta con Jev al cerrarse (backend/analisis/modo_fallo.py) y el
+        sello no se rehace. Pero un sello con `error` (402 sin crédito desde el 22/11/2026,
+        401 clave mala, 429 límite) no tiene etiqueta que proteger: esto lo vuelve a
+        preguntar. Sin `aplicar` solo cuenta; sin clave no toca nada; corta en el primer
+        error nuevo. Lo avisa el chequeo `jev-caido` del escaneo. Gasta tokens: token
+        MAESTRO, denegado para Cowork y para la web.
+      tags: [analisis]
+      parameters:
+        - { name: aplicar, in: query, schema: { type: boolean, default: false } }
+        - { name: limite, in: query, schema: { type: integer, default: 300, minimum: 1, maximum: 2000 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pendientes: { type: integer, description: 'veredictos con el sello en error y sin etiqueta' }
+                  erroresSellados: { type: object, additionalProperties: { type: integer } }
+                  aplicar: { type: boolean }
+                  disponible: { type: boolean, description: 'la clave de Jev está puesta' }
+                  reetiquetados: { type: array, items: { type: integer } }
+                  sinCambio: { type: array, items: { type: integer } }
+                  cortadoPor: { type: string, nullable: true, description: 'por qué se detuvo (sin clave, el primer error nuevo)' }
+                  quedan: { type: integer }
   /analisis/cowork/revisor:
     get:
       summary: El reporte del día del revisor de coherencia (Jev)

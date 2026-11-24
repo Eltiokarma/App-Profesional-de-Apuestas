@@ -119,5 +119,85 @@ check("la alarma: piden mover un número sin poder sostenerlo",
       g["pidenMoverNumero"] == 2 and g["pidenMoverSinPoder"] == ["1:b"], g)
 check("y lo dice: agrupan, no puntúan", "no puntúan" in g["nota"])
 
+print("\n== la etiqueta que no llegó (24/11/2026: Jev 402 sin crédito desde el 22/11) ==")
+from backend.analisis import escaneo as _esc  # noqa: E402
+_err402 = 'Jev respondió 402: {"error":"Insufficient credits"}'
+_filas = [
+    {"fixture_id": 1, "fecha": "2026-11-22", "coherencia_json": None,
+     "modo_fallo_json": json.dumps({"error": _err402, "lados": {}}, ensure_ascii=False)},
+    {"fixture_id": 2, "fecha": "2026-11-22", "coherencia_json": json.dumps({"error": _err402, "hallazgos": []}),
+     "modo_fallo_json": None},
+    {"fixture_id": 3, "fecha": "2026-11-20", "coherencia_json": json.dumps({"error": None}),
+     "modo_fallo_json": json.dumps({"error": None, "lados": {"a": {"modo": "tde"}}})},
+]
+_h = _esc._jev_errores(_filas)
+check("el escaneo grita el sello con error, del veredicto y del parte, y calla lo sano",
+      [x["fixtureId"] for x in _h] == [1, 2] and all(x["chequeo"] == "jev-caido" for x in _h)
+      and "402" in _h[0]["detalle"] and "coherencia" in _h[1]["detalle"], _h)
+check("el chequeo se DEPOSITA (no es informativo) y su área existe",
+      not _esc.CHEQUEOS["jev-caido"].get("informativo") and _esc.CHEQUEOS["jev-caido"]["area"] == "api")
+check("solo el sello con error y sin lados se re-etiqueta; lo etiquetado y lo viejo (null) no",
+      mf._sin_etiqueta_por_error({"error": _err402, "lados": {}})
+      and not mf._sin_etiqueta_por_error({"error": None, "lados": {"a": {}}})
+      and not mf._sin_etiqueta_por_error(None))
+
+# sobre una base de partes de verdad (temporal)
+_tmp = tempfile.mkdtemp(prefix="sad_mf_")
+from backend.seed_demo import seed as _seed  # noqa: E402
+_seed(_tmp)   # el nombre de los equipos sale de sad.db (parte._fixture)
+os.environ["SAD_DATA_DIR"] = _tmp
+import backend.db as _dbmod  # noqa: E402
+_dbmod.BASE_DIR = _tmp
+from backend.analisis import parte as _parte  # noqa: E402
+_v = {"porLado": POR_LADO}
+_sano = {"error": None, "lados": {"b": {"modo": "imprevisto"}}, "evaluadoEn": "2026-11-20T00:00:00+00:00"}
+with _parte._conectar() as con:
+    _cols = {r[1] for r in con.execute("PRAGMA table_info(parte_cowork)")}
+    for fid, mfj in ((10, {"error": _err402, "lados": {}, "evaluadoEn": "2026-11-22T01:31:00+00:00"}),
+                     (11, _sano), (12, None)):
+        fila = {"fixture_id": fid, "fecha": "2026-11-22", "parte_json": "{}", "creado_en": "2026-11-21 00:00:00",
+                "actualizado_en": "2026-11-21 00:00:00",
+                "veredicto_json": json.dumps(_v, ensure_ascii=False),
+                "modo_fallo_json": json.dumps(mfj, ensure_ascii=False) if mfj else None}
+        fila = {k: v for k, v in fila.items() if k in _cols}
+        con.execute(f"INSERT INTO parte_cowork ({','.join(fila)}) VALUES ({','.join('?' * len(fila))})",
+                    tuple(fila.values()))
+r = mf.reetiquetar()
+check("sin aplicar solo cuenta: 1 pendiente (el 402), ni el sano ni el viejo",
+      r["pendientes"] == 1 and r["reetiquetados"] == [] and list(r["erroresSellados"].values()) == [1], r)
+r = mf.reetiquetar(aplicar=True)
+check("sin clave no re-etiqueta con respuestas simuladas", r["reetiquetados"] == [] and r["cortadoPor"], r)
+with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as fh:
+    json.dump({"modo_b": {"valor": "imprevisto", "confianza": 0.9, "comoReal": True}}, fh)
+    ruta = fh.name
+os.environ["SAD_JEV_GUION"] = ruta
+_disp, _preg = mf.jev.disponible, mf.jev.preguntar
+mf.jev.disponible = lambda: True   # con clave …
+
+
+def _sigue_sin_credito(estado, preguntas, modelo=""):
+    raise mf.jev.JevError(_err402)
+
+
+mf.jev.preguntar = _sigue_sin_credito
+try:
+    r_corta = mf.reetiquetar(aplicar=True)
+    mf.jev.preguntar = mf.jev._simular   # … y el guion responde en lugar de la red
+    r = mf.reetiquetar(aplicar=True)
+finally:
+    mf.jev.disponible, mf.jev.preguntar = _disp, _preg
+    os.environ.pop("SAD_JEV_GUION", None)
+    os.unlink(ruta)
+with _parte._conectar() as con:
+    _n = {f["fixture_id"]: json.loads(f["modo_fallo_json"]) if f["modo_fallo_json"] else None
+          for f in con.execute("SELECT fixture_id, modo_fallo_json FROM parte_cowork")}
+check("si Jev sigue sin crédito corta en el primero y no pisa nada",
+      r_corta["reetiquetados"] == [] and "402" in (r_corta["cortadoPor"] or ""), r_corta)
+check("con clave: el 402 se re-etiqueta y deja dicho de qué error venía",
+      r["reetiquetados"] == [10] and _n[10]["lados"]["b"]["modo"] == "imprevisto"
+      and "402" in _n[10]["reetiquetado"]["errorAnterior"], (r, _n[10]))
+check("lo ya etiquetado y lo de antes de Jev no se tocan", _n[11] == _sano and _n[12] is None, _n)
+check("una segunda pasada no encuentra nada", mf.reetiquetar()["pendientes"] == 0)
+
 print(f"\n{'TODO OK' if not fallos else str(fallos) + ' FALLAS'}")
 sys.exit(1 if fallos else 0)
