@@ -147,6 +147,20 @@ CHEQUEOS: dict[str, dict] = {
                  "(Nacional Potosí–Real Potosí en el Ugarte: 49 % local contra 37 % del mercado, 1333) "
                  "no hay visita real y μ baja a fiabilidad «media»",
     },
+    # JEV QUE NO RESPONDE (24/11/2026, estudio de lecciones del 17-23/11): desde el
+    # 22/11 a la 01:31 UTC Jev contestó 402 «Insufficient credits» a cada parte y
+    # cada veredicto. El error quedaba sellado adentro del JSON y el depósito seguía
+    # —así está hecho, a propósito— pero NADIE lo miraba: el dossier se quedó sin
+    # modos de fallo tres días y el revisor de coherencia, sin hallazgos. El sello
+    # con error se grita acá; lo que el veredicto perdió se rehace con
+    # `modo_fallo.reetiquetar` (POST /analisis/jev/reetiquetar, maestro).
+    "jev-caido": {
+        "titulo": "Jev respondió con error al sellar un parte o un veredicto",
+        "area": "api", "severidad": "error",
+        "regla": "la coherencia del parte y el modo de fallo del veredicto se sellan con Jev (docs/JEV.md); un "
+                 "error sellado (402 sin crédito, 401 clave mala, 429 límite) deja el dossier y el revisor sin "
+                 "etiqueta: se arregla la cuenta y se re-etiquetan los veredictos (modo_fallo.reetiquetar)",
+    },
 }
 
 # A menos de esto del pitazo, sin cuota es hallazgo. LO QUE EL REFRESCO TODAVÍA
@@ -462,6 +476,47 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
     return out, n
 
 
+# los partes de los últimos días (por la fecha del partido): el veredicto se
+# cierra hasta ~2 días después del pitazo
+DIAS_JEV = 4
+
+
+def _jev_errores(filas) -> list[dict]:
+    """Hallazgos `jev-caido` sobre filas de parte_cowork (fixture_id, fecha,
+    coherencia_json, modo_fallo_json). Puro: lo prueba test_modo_fallo."""
+    import json
+    out = []
+    for f in filas:
+        que = []
+        for col, nombre in (("modo_fallo_json", "modo de fallo del veredicto"),
+                            ("coherencia_json", "coherencia del parte")):
+            try:
+                m = json.loads(f[col]) if f[col] else None
+            except (TypeError, ValueError):
+                m = None
+            if m and m.get("error"):
+                que.append(f"{nombre}: {str(m['error'])[:160]}")
+        if que:
+            item = {"fixtureId": f["fixture_id"], "partido": f["partido"] if "partido" in f.keys() else "",
+                    "fecha": str(f["fecha"] or "")[:10]}
+            out.append(_hallazgo("jev-caido", item, " · ".join(que)))
+    return out
+
+
+def _jev_caido(ahora: datetime) -> list[dict]:
+    from backend.analisis import parte as _parte
+    try:
+        with _parte._conectar() as con:
+            filas = con.execute(
+                "SELECT fixture_id, fecha, coherencia_json, modo_fallo_json FROM parte_cowork "
+                "WHERE fecha >= ? AND (coherencia_json LIKE '%\"error\": \"%' "
+                "OR modo_fallo_json LIKE '%\"error\": \"%')",
+                ((ahora - timedelta(days=DIAS_JEV)).strftime("%Y-%m-%d"),)).fetchall()
+    except Exception:  # noqa: BLE001 — base sin la tabla de partes (demo vacía): nada que gritar
+        return []
+    return _jev_errores(filas)
+
+
 # el resultado entero se guarda unos minutos: el mantenimiento y la corrida de
 # partes pueden pedirlo seguido y la base no cambia tan rápido
 CACHE_S = 600
@@ -496,6 +551,7 @@ def _escanear(horas: int, jugados_horas: int, ahora: datetime | None) -> dict:
         hallazgos.extend(_pre(it, ahora))
     post, jugados = _post(jugados_horas, ahora)
     hallazgos.extend(post)
+    hallazgos.extend(_jev_caido(ahora))
     por = {}
     for h in hallazgos:
         c = por.setdefault(h["chequeo"], {**CHEQUEOS[h["chequeo"]], "hallazgos": 0, "partidos": set()})

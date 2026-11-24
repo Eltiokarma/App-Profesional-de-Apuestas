@@ -1412,6 +1412,32 @@ conversación se pierde en la siguiente.
      decisión del usuario todavía): el método apostando solo con el semáforo
      en «confirma» y la casa en 60 %+.
 
+43. **Revisión de los skills desde las lecciones del 17-23/11** (24/11/2026,
+   usuario: «¿actualizamos los demás skills? veo mucho aprendizaje»). **Paso 1
+   hecho**: `docs/revisiones/estudio_lecciones_2026-11-24/` (1.231 lecciones
+   pendientes de TDE, DTP y EFE leídas una por una; sad-analysis fuera: subió
+   v4.7/v4.8 el 21/11). Las reglas se sostienen en su mayoría (TDE 75 %, DTP
+   55 %, EFE 61 %); `bancoProbable` y el rehacer del 17/11 bajaron los errores
+   de banco, grid y F1, y el incumplimiento se movió al resto del rehacer (EFE
+   con EFE-RECOMPUTO-PENDIENTE sonando y depositado igual). En el DTP, M5 es la
+   única regla que falla en volumen (50 de 119). **Incidencia**: Jev dejó de
+   etiquetar el modo de fallo desde el 21/11 (0 de 39 lados fallados el 22/11).
+   **Jev (decidido el 24/11, hecho)**: la causa era la cuenta de Jev sin
+   crédito (402 desde el 22/11 01:31 UTC). Escaneo `jev-caido` y
+   `POST /analisis/jev/reetiquetar` (maestro; docs/JEV.md, FALLAS clase 5).
+   **Pendiente del usuario**: recargar el crédito de Jev y, con `jev/ping` en
+   verde, correr el `reetiquetar?aplicar=true`. Ojo: producción habla con
+   `jevtypesafeai.com` (intermediario no afiliado, `oficial: false`); el
+   revisor de coherencia costó 0,12 USD en 12 días (180 partes, 23 marcados,
+   16 corregidos) y la etiqueta del modo de fallo coincide con el estudio en
+   la mitad de lo que etiqueta: propuesto que el veredicto declare su clase.
+   **Paso 2 hecho (propuestas, sin aplicar)**: `docs/revisiones/TDE_v0.1.28_propuesta.md`,
+   `DTP_v1.10_propuesta.md` y `EFE_v1.12_propuesta.md` (+ efe-dashboard
+   v1.15). **Aprobadas el 24/11 con todas las recomendaciones y aplicadas**
+   (PR #637; `CORTE_VERSION` al 24/11); zips subidos ese día hacia las 07:54
+   de Lima (`SUBIDA_VERSION`, 12:54 UTC). Sin decidir: el recibo que
+   frena y los datos por sede (§5 del README).
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

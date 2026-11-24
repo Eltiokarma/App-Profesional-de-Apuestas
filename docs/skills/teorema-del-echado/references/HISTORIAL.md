@@ -6,6 +6,33 @@ Se movió tal cual en la v0.1.27, con el núcleo (`docs/revisiones/NUCLEO_SKILLS
 
 ## Notas de versión del `SKILL.md`
 
+> **v0.1.28 · 24.11.2026 — la vía del empate sale del DTP y el seguro
+> tiene relevo.**
+>
+> Revisión desde el estudio del 24/11/2026 (desde
+> `docs/revisiones/estudio_lecciones_2026-11-24/`): 468 lecciones `pendiente`
+> de 135 partidos del 17 al 23/11, ciegas `PRE` y escritas con la v0.1.27.
+> Ningún número se mueve. Propuesta aprobada el 24/11/2026 con todas las
+> recomendaciones (D1 (a), D2 (a), D3 (b)): `docs/revisiones/TDE_v0.1.28_propuesta.md`.
+>
+> - **66:** la vía del empate de la rama de ventaja se copia de las
+>   `viasGol` del rival por renglón, con sus titulares en juego abierto; el
+>   banco es un renglón más (cierra el C6 de la v0.1.27).
+> - **63:** la pieza del seguro va con sus amarillas y su relevo del mismo
+>   rol; el cierre lee «seguro roto» solo sin relevo de rol, también si la
+>   pieza salió antes de abrirse la rama.
+> - **50:** RELEVANCIA BAJA dice «lean las ramas», no que el partido se
+>   resuelva antes; la premisa queda a medir.
+> - **44 (b), `C3`:** no entra al texto (D3 (b)); la regla ya dice que `C3`
+>   no elige la tipología y lo que la hace cumplir es la app (A5).
+> - **Para la app, no en el texto:** el `SOB1` sin gatillo, `S1` sin la línea
+>   del choque, el hecho del desenlace, el rehacer de la rama y la tipología
+>   sin motivo son reglas ya escritas que se incumplen.
+> - **Candidatos, no aplicados:** el peso de `SOB1`, la superioridad y la
+>   roja propia según el marcador, la ventana desde el cambio ofensivo, los
+>   huecos de `S1`, el defecto por quien persigue, la premisa de RELEVANCIA
+>   BAJA, el «doble golpe» y los matices de un caso.
+
 > **v0.1.27 · 17.11.2026 — la rama toma el banco de la app y la
 > ventaja de la fuerza.**
 >
@@ -316,6 +343,161 @@ Se movió tal cual en la v0.1.27, con el núcleo (`docs/revisiones/NUCLEO_SKILLS
 > - **Falsador obligatorio y con regla de redacción**: condición observable pura, sin cláusulas de estado del marcador.
 > - Registro actualizado a 9 casos: cierre de TDE-005 y TDE-006 (ambos fallidos), alta de TDE-007 RETRO y declaración de TDE-008 y TDE-009.
 > - **Los pesos `F×3 · C×2 · P×2 · S×1.5` no cambiaron.** Con N = 2 casos declarados estamos por debajo del primer umbral de revisión. Esto es deliberado, no una omisión.
+
+## v0.1.28 — casos que motivaron cada punto
+
+Fuente: `docs/revisiones/TDE_v0.1.28_propuesta.md` (estudio del 24/11/2026, desde `docs/revisiones/estudio_lecciones_2026-11-24/`: 468 lecciones `pendiente` de 135 partidos del 17 al 23/11; 57 de copa nacional, 17 partidos, que cuentan para la rúbrica y no para las métricas). Son conteos de lecciones, no tasas. Aprobada el 24/11/2026 con D1 (a), D2 (a) y D3 (b).
+
+### 66 · la vía del empate se copia del DTP del rival (T1)
+
+**Qué pasó.** En 7 partidos la nota de `siMarcaPrimero` nombró «banco +
+pelota parada» y el empate llegó por un renglón que la lista de salida de
+`viasGol` del DTP (v1.9) tiene y la nota no copió:
+
+| equipo (lado que iba ganando) | fixtureId | por dónde llegó el empate | renglón del DTP |
+|---|---|---|---|
+| Gales | 1528992 | centro de Trincão a la espalda de C. Roberts, al segundo palo, a los 3' | 6, lado débil (el DTP rival lo tenía) |
+| Portugal (mismo partido) | 1528992 | rebote del área: Costa tapa, Colwill la devuelve, Brooks define | 8, pelota sucia (el DTP la listaba) |
+| Polonia | 1528998 | combinación en el área de los titulares suecos, a los 8' | 1-6, titulares |
+| Athletico-PR | 1492453 | carril derecho de Flamengo contra Esquivel reconvertido, a los 6' | el DTP del parte lo listaba |
+| Belgrano | 1649571 | remate de afuera del 9 titular de Vélez | 7, media distancia |
+| Puebla | 1551039 | centro del carrilero Duarte y remate de Mora (48') | 1, juego abierto |
+| Feyenoord | 1552226 | contra a la espalda de los laterales, a los 4' | 3, la vía `SOB` de su propia base |
+| Querétaro | 1551046 | extremo titular M. Rodríguez, asistido por el pivote Ochoa, a los 2' | 6, titulares |
+
+Dentro de lecciones `sostuvo`, lo mismo: Vasco 1492458 (el empate fue de dos
+centrales de Inter, no del banco nombrado) y Racing 1570459 (la vía estaba en
+categoría, «la pelota parada», pero no el lateral que centra ni quién saca los
+córners). Cuando la vía nombrada era la buena, se cumplió: Palmeiras 1492452,
+Always Ready 1650230 (copa), Juárez 1551040 y Guaraní 1632066; y el banco de la
+hoja nombrado decidió en Gales 1528992 (Forbs) y Excelsior 1552226 (Borges).
+El paréntesis de la 66 (banco, contra, pelota parada) sembraba la falla. Con
+Wanderers 1649063 y Armenia–Cyprus 1528959 del 17/11, el C6 de la v0.1.27 pasa
+de 2 casos a 9 partidos. D1 (a): todos los renglones, cada uno con su
+intérprete, porque el empate llegó por los renglones 1, 3, 6, 7 y 8.
+
+- **Historial:** los 7 partidos de la tabla, Vasco y Racing, y los 2 del
+  17/11.
+- **Lo tumbaría:** que, con la nota copiada por renglón, el empate siga
+  llegando por vías que no están en ninguno de los dos lados del DTP. Ahí la
+  falla sería del DTP, no de la copia.
+
+### 63 · el relevo de la pieza del seguro (T2)
+
+**Qué pasó.** **(a) La pieza salió y entró otro del mismo rol: el seguro no
+se rompió (6 partidos).** Sportivo Ameliano 1632063 (`regla_fallo`: W.
+Rodríguez salió al 29' y J. Benítez, pivote de oficio amonestado al 38',
+sostuvo la ventaja del 62' al final), Lazio 1550202 (Belahyane por Rovella al
+83'), Como 1550200 (Milla por Perrone al 57'; Cagliari, 1 remate al arco),
+Coventry 1557471 (el doble pivote salió entero al 71' con 2-2 y no concedió),
+Nottingham Forest 1557468 (Yates por Schlager al descanso; 2,92 de xG rival y
+no concedió más) y Osasuna 1570458 (la nota ya nombraba a Torró; el Málaga
+nombró a Pablo Martínez «salvo que entre Enríquez», y así fue). **Sin relevo
+de rol, sí concedió:** Chelsea 1557470 (Caicedo al 22', concedió cuatro),
+Coritiba 1492451 (las dos piezas fuera al 70' y al 79', gol al 90+2) y
+Liverpool Montevideo 1650504 (Garayalde por un suplente sin fila al 28',
+concedió al 31'). **(b) Doble pivote y amarillas (4):** Bragantino 1492459,
+Marseille 1552822 (los dos amonestados, salieron juntos al 74' y concedió
+dos), Coventry 1557471 y Osasuna 1570458; Liverpool Montevideo pide lo mismo.
+**(c) La pieza ya estaba fuera al abrirse la rama (5):** Badajoz 1644346
+(copa, `regla_fallo`), Gales 1528992 (Rodon fuera desde el 45' en
+`siExpulsion.rival`), Sporting 1647591 (copa), Juventus 1550201 (Douglas Luiz
+salió al descanso, la rama abrió al 53') y Monterrey 1551043. D2 (a): en Como
+y Osasuna el relevo escrito dejó el cierre comprobable; en Ameliano, sin él, la
+regla de la v0.1.27 leía «seguro roto» y no lo estaba.
+
+- **Historial:** los 13 partidos de (a), (b) y (c), y los 3 que concedieron
+  sin relevo.
+- **Lo tumbaría:** que con el relevo del mismo rol la rama conceda igual que
+  sin él. Se mide con A4 (`piezaSeguro`, pendiente desde la v0.1.27).
+
+### 50 · RELEVANCIA BAJA dice «lean las ramas» (T3)
+
+**Qué pasó.** En 3 partidos con RELEVANCIA BAJA declarada el partido llegó
+vivo y empatado al tramo final: Cercle Brugge–Westerlo 1558682 (0-0 al 71', el
+gol dentro de la ventana 60-75), Sportivo Ameliano–Sportivo Luqueño 1632063
+(0-0 al 62' y abierto por un gol hasta el final) y Aston Villa–Sunderland
+1557467 (0-0 al 75'; la lectura útil fue la del que empuja). En los tres la
+consecuencia se cumplió (lo comprobable fueron las ramas del primer gol); lo
+que falló es la premisa. Se cumplieron las dos: São Paulo 1492457 (decidido al
+32') y Portugalete 1644369 (copa, ninguna rama se abrió en 120').
+
+- **Historial:** los cinco partidos.
+- **Lo tumbaría:** que los partidos sin protector lleguen vivos al 75' tanto
+  como el resto **y** que la lectura por ramas tampoco sirva en ellos. La
+  primera mitad se mide (C8).
+
+### 44 (b) · `C3` no elige la tipología — no entra al texto (D3 (b))
+
+Nacional Potosí 1645542 (`ECHADA-PSI` por el 1-0 perdido en Oruro; con 1-0 al
+34' amplió a 3-0), Mushuc Runa 1639837 (`ECHADA-PSI` por dos ventajas de uno
+perdidas, trasladada a una de dos) y Deportivo La Guaira 1646938 (`ECHADA-VOL`
+por `C3` y `F2` = 1 con el interino; con ventaja desde el 42' hizo tres más).
+La regla ya dice que `C3` «no elige la tipologia de la rama»: es
+incumplimiento, va a la app (`motivoTipologia`, A5). También incumplimiento de
+la 44 (b): «administra» sin motivo (Trinidense 1632065, Libertad 1632067,
+Atlético CP 1647580, copa) y antecedente que no coincide (Palmeiras 1492452,
+Levadiakos 1593361, Cartagena 1644353, copa).
+
+### Candidatos, no aplicados (v0.1.28)
+
+| N.º | Qué | Esta semana | Qué haría falta |
+|---|---|---|---|
+| C1 | **Peso de `SOB1` de tabla sin un hecho de hoy** (de la v0.1.27) | 10 obligados escritos sin condicionar y en ninguno hubo exposición con línea de cinco o con el rival dueño de la pelota (Athletico-PR 1492453, São Paulo 1492457, Cerro 1650503, Wanderers 1650504, Paderborn 1575222, América 1551044, ADO 1552225, OH Leuven 1558680, OFI 1593363, Bulo Bulo 1645547). Más Tijuana 1551038, que administró en parte con 1-0 | lo de la v0.1.27: ramas `SOB` del obligado partidas por sistema del grid y posesión prevista, n ≥ 30 por lado. Lo destraba A1 |
+| C2 | **Superioridad según el marcador** | ganando cargaron los 7 (Irlanda 1528997, Troyes 1552827, Ajax 1552225, AZ 1552230, Liverpool 1557473, PAOK 1593365, Nacional Potosí 1645542); empatando o perdiendo cargaron todos (Gales 1528992, Pumas 1551043, Hull 1557472, Gent 1558681, Twente 1552232, Once Caldas 1650176, Huracán 1649568 y otros) | tramos con uno más por marcador y minuto (A2 de la v0.1.27); n ≥ 30 ganando, separado por margen |
+| C3 | **Roja propia ganando** | contradictorio: concedieron Melgar 1549554, Tenerife 1644346 (copa) y Manta 1639836; sostuvieron Portugal 1528992, Barcelona 1570455 e Instituto 1649568 | la tabla de concesión tras roja propia por marcador (A2 de la v0.1.27) |
+| C4 | **Ventana desde el cambio ofensivo** | LDU 1639807 (gol al 84' tras tres cambios); implícitos Union Berlin 1575225 y Bulo Bulo 1645547. Sin denominador | A3 de la v0.1.27 |
+| C5 | **Huecos de `S1`** | suplente que entra y ve la roja: Bucaramanga 1650173; roja del DT: Iraklis 1593362; roja de un interior sin amarillas: Kortrijk 1558685 | primero el insumo (A2 de la propuesta v0.1.28) |
+| C6 | **Matices de 1-2 casos** | las dos piezas del doble pivote fuera a la vez (Marseille 1552822 concedió, Coventry 1557471 no); la pieza de la VÍA en la rama que persigue (Bayern 1575221, Kane y Olise); el central reconvertido de la línea de tres como seguro (Rumania 1528999); el hecho de `SOB1` también en ramas con `sob1` 0,5 (Everton de Viña 1505565, ADO 1552225); el régimen condicionado a los cambios que queden (Central Español 1650505); nombrar intérpretes de la pelota parada (Racing 1570459, lo cubre el DTP) | el tercer caso ciego de cada uno |
+| C7 | **El defecto por quien persigue** (65, de la v0.1.25) | 14 a favor y 1 en contra. El favorito que persigue rescata: Flamengo 1492453, Troyes 1552827, Bayern 1575221, Barcelona 1570455, Beşiktaş 1584473. El no favorito se rompe: Utebo 1644384 (copa), Lecce 1550202, Ipswich 1557476, La Louvière 1558684, Deportivo 1570453, Paderborn 1575222, Venezia 1550201, Huracán 1649568, Torreense 1647592 (copa). En contra: Metropolitanos 1646938. **Las lecciones lo citan cuando encaja: no es medición** | la condición de la 65: `μ_partido` por tramo (A6 de la v0.1.27), n ≥ 30 por lado, intervalos sin cruzarse |
+| C8 | **La premisa de RELEVANCIA BAJA** (punto 3) | 3 llegaron vivos y 0-0 más allá del 60'; 2 no | con los tramos del veredicto: de los partidos con `SOB1` y `P1a` ≤ 0,5 en los dos lados, cuántos llegan al 75' empatados o a un gol, contra el resto, por liga |
+| C9 | **«Doble golpe»** (61, de la v0.1.25) | 8 partidos con el segundo gol a ≤ 3' del primero: Norway 1528993, Badajoz 1644346 (copa), Cerro Largo 1650501, Nice 1552824, UD da Serra 1647591 (copa), Barcelona 1570455, Real Sociedad 1570459, Gimnasia M. 1649570 | los minutos ya están en los tramos: qué pasa después, con denominador, antes de redactar nada |
+
+**Uno más, sin número para proponer:** el favorito con margen ≥ 0,30 que se
+aparta del defecto «sigue atacando» con un motivo nombrable. Falló en 4
+(Tenerife 1644346 y Sabadell 1644384, copa, `F2` = 1; Arsenal 1557475;
+Cartagena 1644353, copa), se sostuvo en 3 (Ucrania 1528994, Boston River
+1650500, Alavés 1570453) y el defecto falló en 2 (Genoa 1550206, Atlético
+Goianiense 1650247). Hace falta la tasa de «administra» cumplido por motivo,
+con n ≥ 30 por motivo.
+
+**No entran (1-2 casos o ya escritas):** `P1a` bajado a mano por «necesita
+ganar» (Grêmio 1492454, Torque 1650502; lo prohíben la 10 y la 47);
+`ECHADA-SUP` por identidad (Progreso 1650502, Atlante 1551038; disciplina 6);
+rama y DTP del mismo equipo sin decir cuál manda (América de Cali 1650173,
+Cerro 1650503; escrito en la v0.1.26); falsador atado al marcador (Racing
+Montevideo 1650505, Köln 1575221); tipología del obligado en direcciones
+distintas (Vitória 1492459, Wanderers 1650504, Tijuana 1551038, Betis
+1570462); ISE agravado con roja propia perdiendo, contradictorio (Le Havre
+1552827 y ADO 1552225 a favor; Kosovo 1528997 y Kifisia 1593365 en contra);
+roja propia empatando hasta el 45' (en contra solo Atlético Nacional 1650176);
+el que iguala (Atromitos 1593361, Académica 1647588, Alcoyano 1644334);
+`siExpulsion` incompleta (Once Caldas 1650176, Monterrey 1551043, Twente
+1552232); `ventajaPorFuerza` citada del otro lado (Augsburg 1575224, A8); el
+corte «antes del 75'» del banco (Fenerbahçe 1584472); insumo (Reddis–Barakaldo
+1644373, Mafra 1647586, Crystal Palace 1557471, Recoleta–Guaraní 1632066); y
+el bloque de cinco leído «improvisado» (Köln 1575221, es del DTP).
+
+**Se cierran sin texto:** la 61 (78 lecciones sostenidas y 1 sin tramo), el
+`abierto` de la 65, la 66 con `ventajaPorMinuto` y `ventajaPorFuerza`, la 44
+(b) con su defecto (26 de 31 en la parte 2) y el `bancoProbable` copiado
+entero, que se sostiene en todas las lecciones que lo citan.
+
+### Textos reemplazados en la v0.1.28
+
+Texto vigente hasta la v0.1.27 que la v0.1.28 reemplazó por un texto aprobado (número de línea del `SKILL.md` v0.1.27). Se guarda para la traza; **no es regla**.
+
+- **Línea 353:**
+
+  el partido se resuelve antes.
+
+- **Línea 391:**
+
+  y lee el tramo desde ahi con el seguro roto.
+
+- **Línea 442:**
+
+  (el banco del rival, la contra, la pelota parada)
 
 ## v0.1.27 — casos que motivaron cada punto
 

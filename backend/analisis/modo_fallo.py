@@ -25,6 +25,7 @@ Se evalúa AL CERRAR el caso (POST veredicto) y se guarda sellada con el modelo
 dossier cambiara de forma solo. Sin clave, simulado con confianza 0: ninguna
 etiqueta se emite. Un fallo de Jev se declara y el veredicto se guarda igual.
 """
+import json
 from datetime import datetime, timezone
 
 from backend.analisis import jev
@@ -135,3 +136,76 @@ def evaluar(por_lado: dict, nombres: dict) -> dict:
             salida["proponeMoverNumero"] = True if p >= P_SI else (False if p <= P_NO else None)
         base["lados"][lado] = salida
     return base
+
+
+# ── LA ETIQUETA QUE NO LLEGÓ (24/11/2026) ────────────────────────────────────
+# Desde el 22/11 a la 01:31 UTC Jev respondió 402 «Insufficient credits» a cada
+# veredicto: el error quedó sellado en `modo_fallo_json` y nadie lo vio hasta el
+# estudio de lecciones del 24/11 (0 de 39 lados fallados etiquetados el 22/11).
+# Dos arreglos de la CLASE: el escaneo lo grita (chequeo `jev-caido`) y esto
+# rehace lo que nunca se etiquetó. NO contradice «lo sellado no se re-etiqueta»:
+# un sello con `error` no tiene etiqueta que proteger. Lo que sí tiene una (o es
+# de antes de que existiera, `null`) no se toca.
+
+def _sin_etiqueta_por_error(m: dict | None) -> bool:
+    return bool(m) and bool(m.get("error")) and not m.get("lados")
+
+
+def reetiquetar(aplicar: bool = False, limite: int = 300) -> dict:
+    """Vuelve a preguntarle a Jev por los veredictos cuyo sello quedó en error.
+
+    Sin `aplicar` solo cuenta. Sin clave no hace nada (una respuesta simulada
+    pisaría el error con un vacío que parece evaluado). Corta en el primer
+    error nuevo: si el crédito sigue agotado, no se gasta el resto en 402."""
+    from backend.analisis import parte as _parte
+    with _parte._conectar() as con:
+        filas = con.execute(
+            "SELECT fixture_id, veredicto_json, modo_fallo_json FROM parte_cowork "
+            "WHERE veredicto_json IS NOT NULL AND modo_fallo_json LIKE '%\"error\"%' "
+            "ORDER BY fecha, fixture_id").fetchall()
+    pendientes = []
+    for f in filas:
+        try:
+            m = json.loads(f["modo_fallo_json"])
+        except (TypeError, ValueError):
+            continue
+        if _sin_etiqueta_por_error(m):
+            pendientes.append((f["fixture_id"], json.loads(f["veredicto_json"]), m))
+    errores = {}
+    for _, _, m in pendientes:
+        clave = str(m.get("error"))[:120]
+        errores[clave] = errores.get(clave, 0) + 1
+    out = {"pendientes": len(pendientes), "erroresSellados": errores, "aplicar": aplicar,
+           "disponible": jev.disponible(), "reetiquetados": [], "sinCambio": [], "cortadoPor": None}
+    if not aplicar:
+        return out
+    if not jev.disponible():
+        out["cortadoPor"] = "sin TYPESAFE_API_KEY: no se re-etiqueta con respuestas simuladas"
+        return out
+    for fixture_id, vered, previo in pendientes[:max(0, limite)]:
+        fx = _parte._fixture(fixture_id)
+        nombres = {"a": fx["home_name"], "b": fx["away_name"]} if fx else {}
+        nuevo = evaluar(vered.get("porLado") or {}, nombres)
+        if nuevo.get("error"):
+            out["cortadoPor"] = f"{fixture_id}: {nuevo['error']}"
+            break
+        if nuevo.get("simulado"):
+            out["sinCambio"].append(fixture_id)
+            continue
+        nuevo["reetiquetado"] = {"en": nuevo["evaluadoEn"], "errorAnterior": previo.get("error"),
+                                 "evaluadoAntesEn": previo.get("evaluadoEn")}
+        with _parte._conectar() as con:
+            con.execute("UPDATE parte_cowork SET modo_fallo_json=? WHERE fixture_id=?",
+                        (json.dumps(nuevo, ensure_ascii=False), fixture_id))
+        out["reetiquetados"].append(fixture_id)
+    out["quedan"] = out["pendientes"] - len(out["reetiquetados"])
+    return out
+
+
+if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser(description="re-etiqueta los veredictos cuyo sello de Jev quedó en error")
+    ap.add_argument("--aplicar", action="store_true", help="sin esto solo cuenta")
+    ap.add_argument("--limite", type=int, default=300)
+    a = ap.parse_args()
+    print(json.dumps(reetiquetar(a.aplicar, a.limite), ensure_ascii=False, indent=1))

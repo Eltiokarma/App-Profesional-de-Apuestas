@@ -1,0 +1,1358 @@
+[
+ {
+  "clave": "1528992:a:3",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528993:b:4",
+  "regla": "bloque E con su calendario",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "brecha hecha por E contra el más fuerte del grupo: la lectura «E hecho contra el top» la frenó"
+ },
+ {
+  "clave": "1528994:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "no se materializó: amplía rango sin prueba de vía"
+ },
+ {
+  "clave": "1528994:a:6",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528994:b:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528995:b:2",
+  "regla": "G-BLOQUE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528996:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528996:b:2",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528996:b:3",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528997:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "roja al 26': no puesta a prueba"
+ },
+ {
+  "clave": "1528997:b:3",
+  "regla": "F3",
+  "clase": "no_dice",
+  "propuesta_corta": "roja al 26': no puesta a prueba"
+ },
+ {
+  "clave": "1528998:a:5",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528998:b",
+  "regla": "rehacer con el once: B/F sin recomputar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "app: no aceptar nota B «condicionado» con el once a la vista"
+ },
+ {
+  "clave": "1528999:a:4",
+  "regla": "rehacer con el once: B/F sin recomputar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rehizo B y no F/D1/H: app exige F junto con B"
+ },
+ {
+  "clave": "1528999:b:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "escenario sí, mecanismo sin crónica"
+ },
+ {
+  "clave": "1492451:a:7",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:b:2",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "no se materializó"
+ },
+ {
+  "clave": "1492451:b:3",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492452:b:3",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:b:6",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:b:7",
+  "regla": "bloque A / DT",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492456:b:5",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644334:b:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644346:a:5",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644346:b:5",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "once tardío dejó B/F y EJE sin verificar"
+ },
+ {
+  "clave": "1644353:a:3",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644353:b:3",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644369:b",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644373:b:5",
+  "regla": "tabla F1 (filas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "sin plantilla en la base, F1 desde el XI-REFERENCIA de liga (protocolo ya escrito)"
+ },
+ {
+  "clave": "1644384:b:5",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:a:6",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492450:a:3",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "F3 ATK sin el 9: el volumen no cayó (16 remates, 4-0)"
+ },
+ {
+  "clave": "1492450:b:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492454:a:5",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492458:a:4",
+  "regla": "EFE-EMPATE-TECNICO / brecha",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492458:b:4",
+  "regla": "B6 / arquero",
+  "clase": "no_dice",
+  "propuesta_corta": "conversión sin crónica: no se carga al arquero"
+ },
+ {
+  "clave": "1492459:a:4",
+  "regla": "T.54",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "C4/D3 con el DT anterior en vez de sin dato a la caja"
+ },
+ {
+  "clave": "1492459:b:3",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:a:7",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:b:6",
+  "regla": "F3",
+  "clase": "otro_skill",
+  "propuesta_corta": "el pronóstico eligió al degradado con el número del mercado (sad-analysis)"
+ },
+ {
+  "clave": "1650501:a:5",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:a:5",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "once tardío: B/F sin recomputar"
+ },
+ {
+  "clave": "1650502:a:6",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_fallo",
+  "propuesta_corta": "aclarar: la condicional sin once se escribe sobre la línea, no la pareja"
+ },
+ {
+  "clave": "1650502:a:7",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:b:6",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:a:5",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:b:6",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:a:7",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:a:7",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:b:7",
+  "regla": "T.54 ≤ 2 partidos (D1/H condicionados)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:a:6",
+  "regla": "T.54 ≤ 2 partidos (D1/H condicionados)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:b:6",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575221:a:7",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "B5 con F3 en ATK: nombrar el recambio de cada pieza"
+ },
+ {
+  "clave": "1575221:b:7",
+  "regla": "G-BLOQUE",
+  "clase": "regla_fallo",
+  "propuesta_corta": "G-BLOQUE no se confirma solo con el once si la línea es de oficio"
+ },
+ {
+  "clave": "1632063:a:6",
+  "regla": "rehacer con el once: B5 con titulares",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "B5 nombró titulares de la hoja; suplentes sin fila"
+ },
+ {
+  "clave": "1632063:a:7",
+  "regla": "F3",
+  "clase": "otro_skill",
+  "propuesta_corta": "la espina leyó la tarjeta de la K como fuerte pese a F3 (sad-analysis)"
+ },
+ {
+  "clave": "1632066:a:4",
+  "regla": "rehacer con el once: B5 con titulares",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "B5 rehecho seguía con titulares de la hoja"
+ },
+ {
+  "clave": "1632066:a:5",
+  "regla": "bloque H",
+  "clase": "regla_fallo",
+  "propuesta_corta": "H por calidad individual no anticipó el volumen del local"
+ },
+ {
+  "clave": "1632066:b:6",
+  "regla": "B6 / arquero",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "B6 sin dato y la caja no abrió el arco"
+ },
+ {
+  "clave": "1639806:a:5",
+  "regla": "F3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "MID en rojo sin decir «eje entero»; B5 nombró sin fila F1"
+ },
+ {
+  "clave": "1639806:a:6",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "abierta por hecho, nadie rotó: el condicionado se levantó con la hoja"
+ },
+ {
+  "clave": "1649571:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "no se materializó"
+ },
+ {
+  "clave": "1649571:b:5",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650173:a:6",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "dos previas que convergen no suben de nivel C (copia)"
+ },
+ {
+  "clave": "1650173:b:5",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:a:5",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:a:6",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "insumo",
+  "propuesta_corta": "once tardío; la condicional nombraba una pareja que no fue"
+ },
+ {
+  "clave": "1650503:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "no se materializó; uno de la pareja hizo el gol"
+ },
+ {
+  "clave": "1650503:b:6",
+  "regla": "bloque H",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "H en una sola variante con D1 🔶 y variante nombrada"
+ },
+ {
+  "clave": "1650503:b:7",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650504:a",
+  "regla": "rama «once alternativo»",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "campeón consagrado = hecho que abre la rama; porcentaje condicionado"
+ },
+ {
+  "clave": "1650505:a:6",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650505:b:6",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505565:a:3",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505565:a:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550200:a:3",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550200:b:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550202:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550202:b:5",
+  "regla": "bloque H",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "H no releído con el grid (línea de 4, no de 5)"
+ },
+ {
+  "clave": "1550205:a:5",
+  "regla": "reducción por zona (F2b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550205:b",
+  "regla": "rehacer con el once: B/F sin recomputar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rotó 4 fijos y B/F no se recomputaron"
+ },
+ {
+  "clave": "1551038:b:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "volumen sí, vía aérea no"
+ },
+ {
+  "clave": "1551038:b:6",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551039:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551040:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552226:a:6",
+  "regla": "rehacer con el once: B/F sin recomputar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "once a 27', 3 fijos fuera, nota B sin «recomputado»"
+ },
+ {
+  "clave": "1552226:a:7",
+  "regla": "C4",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:a",
+  "regla": "EFE-EMPATE-TECNICO / brecha",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:a:2",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "con la hoja confirmada la alerta quedó condicional"
+ },
+ {
+  "clave": "1552233:b:5",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552824:b:4",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557467:b:3",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557467:b:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "eje nuevo en bloque bajo de plan: no expuesto"
+ },
+ {
+  "clave": "1557468:b:3",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557468:b:4",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557468:b:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557470:a:3",
+  "regla": "F3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«cubierta de oficio» es de ATK/MID; en DEF la F3 anuncia vía y volumen concedido"
+ },
+ {
+  "clave": "1557470:b:3",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557470:b:4",
+  "regla": "EFE-EMPATE-TECNICO / brecha",
+  "clase": "regla_fallo",
+  "propuesta_corta": "ganó el de mayor EFE por lo que decía la brecha: a la medición A6"
+ },
+ {
+  "clave": "1557471:b:5",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557471:b:6",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:a:6",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557475:a:7",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "con DT que corrige al descanso, pesa hasta el primer cambio"
+ },
+ {
+  "clave": "1557476:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "descartada por la línea que no salió; la oficial también era nueva"
+ },
+ {
+  "clave": "1557476:a:5",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "MID en rojo: el doble pivote heredero sostuvo"
+ },
+ {
+  "clave": "1558683:b:5",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558684:a:3",
+  "regla": "T.54 ≤ 2 partidos (D1/H condicionados)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570453:a:4",
+  "regla": "rehacer con el once: B5 con titulares",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "B5 del Alavés con un titular de la hoja (Denis Suárez)"
+ },
+ {
+  "clave": "1570460:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570462:a:6",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570462:b:6",
+  "regla": "bloque H",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "H sobre el 4-3-3 anunciado, no sobre el último grid"
+ },
+ {
+  "clave": "1570462:b:7",
+  "regla": "FACTOR-X",
+  "clase": "no_dice",
+  "propuesta_corta": "no jugó; la rotación tampoco salió"
+ },
+ {
+  "clave": "1575222:b:5",
+  "regla": "R-KT.2",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:a:6",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:b:6",
+  "regla": "FACTOR-X",
+  "clase": "no_dice",
+  "propuesta_corta": "salió titular: no puesta a prueba en su forma"
+ },
+ {
+  "clave": "1575226:a:4",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575226:b:3",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "ATK sin el 9: volumen intacto, gol de la segunda línea"
+ },
+ {
+  "clave": "1575228:a:3",
+  "regla": "rehacer con el once: B5 con titulares",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rehacer solo DTP: B5 con 4 titulares (FUERA-EN-LA-HOJA)"
+ },
+ {
+  "clave": "1575228:b:3",
+  "regla": "rehacer con el once: B/F sin recomputar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "condicionado no levantado con el once (núcleo jugó)"
+ },
+ {
+  "clave": "1575229:a",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584466:a:5",
+  "regla": "reducción por zona (F2b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584466:b",
+  "regla": "B6 / arquero",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "arqueros que se alternan: la ausencia del que no ataja no reduce la zona GK"
+ },
+ {
+  "clave": "1584469:a:4",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "ATK en rojo con la segunda línea entera: la producción no cayó"
+ },
+ {
+  "clave": "1584472:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593360:b:4",
+  "regla": "C4",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639838:a:2",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639838:b:3",
+  "regla": "T.54",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645542:a:5",
+  "regla": "C4",
+  "clase": "regla_fallo",
+  "propuesta_corta": "C4 aislado por competición: la goleada llegó en liga"
+ },
+ {
+  "clave": "1647579:a:3",
+  "regla": "B6 / arquero",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "arco sin dueño: la rama nombra a todos los arqueros"
+ },
+ {
+  "clave": "1647579:a:4",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_fallo",
+  "propuesta_corta": "goleada fuera de la alerta: caso para el candidato D3-DEGRADADO (candidato a medir)"
+ },
+ {
+  "clave": "1647579:b",
+  "regla": "rama «once alternativo»",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rotables de todas las líneas, el arco incluido, con nombre"
+ },
+ {
+  "clave": "1647580:b:2",
+  "regla": "rama «once alternativo»",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "copa contra Liga 3: la rama no se abrió"
+ },
+ {
+  "clave": "1647581:a:5",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647586:a:5",
+  "regla": "caja de sensibilidad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "XI de 5 semanas: B y F1 sobre otro equipo"
+ },
+ {
+  "clave": "1647586:b:2",
+  "regla": "bloque H",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "H FAVORABLE sobre el once que la caja daba por rotable"
+ },
+ {
+  "clave": "1647586:b:3",
+  "regla": "rehacer con el once: B/F sin recomputar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "caja acertó la rotación; B y la línea siguieron sobre el once viejo"
+ },
+ {
+  "clave": "1647587:a:4",
+  "regla": "B6 / arquero",
+  "clase": "insumo",
+  "propuesta_corta": "once a 6': atajó un tercer arquero"
+ },
+ {
+  "clave": "1647587:b:3",
+  "regla": "alerta leída como vía de gol",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "T.54 «sin automatismos» escrito como vía del rival sin hecho del once"
+ },
+ {
+  "clave": "1647591:a:5",
+  "regla": "FACTOR-X",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647591:a:6",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649566:a:2",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649566:b:4",
+  "regla": "F3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rotación de un plantel profundo va a F4, no a F3"
+ },
+ {
+  "clave": "1650174:b",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "otro_skill",
+  "propuesta_corta": "el descarte y la cadena la escribieron como vía de gol (sad-analysis/DTP)"
+ },
+ {
+  "clave": "1550201:a:3",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550201:b:6",
+  "regla": "T.54",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550206:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "descartada por la línea que no salió; la línea de 3 era nueva"
+ },
+ {
+  "clave": "1551043:b:4",
+  "regla": "F3 · zona GK",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551044:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551045:a:3",
+  "regla": "caja de sensibilidad",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la baja del reconvertido que sostiene el dibujo va en la caja con la otra variante"
+ },
+ {
+  "clave": "1551045:b:3",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552225:a:4",
+  "regla": "rehacer con el once: B/F sin recomputar",
+  "clase": "no_dice",
+  "propuesta_corta": "B6 sin recomputar (once a 26'), un solo remate: sin probar"
+ },
+ {
+  "clave": "1552225:b:4",
+  "regla": "caja de sensibilidad",
+  "clase": "insumo",
+  "propuesta_corta": "el conductor de la única vía faltó sin baja anunciada"
+ },
+ {
+  "clave": "1552227:b:3",
+  "regla": "F3 · zona GK",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552227:b:4",
+  "regla": "bloque A / DT",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "buscar el anuncio del DT de la semana antes de dejar A3 sin dato"
+ },
+ {
+  "clave": "1552230:a:5",
+  "regla": "C4",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:a:6",
+  "regla": "F3 · zona GK",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:b:7",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "un gol sin crónica; la vía nombrada no se dio"
+ },
+ {
+  "clave": "1552232:a:6",
+  "regla": "bloque H",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "mecanismo no verificado"
+ },
+ {
+  "clave": "1552821:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:b:5",
+  "regla": "C4",
+  "clase": "regla_fallo",
+  "propuesta_corta": "C4 ❌ por colapsos de visita: no colapsó"
+ },
+ {
+  "clave": "1552822:a:7",
+  "regla": "C4",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "segundo colapso con el DT: C4 pasa a ❌ en el próximo"
+ },
+ {
+  "clave": "1552822:b:2",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "B5 🔶 con un solo suplente de impacto: banco decisivo (candidato a medir, A8)"
+ },
+ {
+  "clave": "1552825:b:3",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_fallo",
+  "propuesta_corta": "se rompió con D3 ❌ y bloque improvisado: candidato COLAPSO + AGRAVANTE (a medir)"
+ },
+ {
+  "clave": "1552825:b:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557472:a:6",
+  "regla": "rehacer con el once: B5 con titulares",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rehacer sin re-juzgar B; B5 con un titular de la hoja"
+ },
+ {
+  "clave": "1557473:b:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "roja al 8'"
+ },
+ {
+  "clave": "1558680:a:4",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558680:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "el rival no la atacó"
+ },
+ {
+  "clave": "1558681:a:2",
+  "regla": "bloque A / DT",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "interino de una sola fuente contra la llegada anunciada por el club"
+ },
+ {
+  "clave": "1558681:b:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558685:a:4",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558687:b:4",
+  "regla": "F3",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "F3 por conteo con bajas de rotación: se lee por titulares que cambian el once"
+ },
+ {
+  "clave": "1570455:a:7",
+  "regla": "D3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "D3 🔶 con un caso de la condición: leer sin dato con caja (choca con Cobresal 1505563)"
+ },
+ {
+  "clave": "1570455:b:6",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570456:a:3",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "once capturado antes del depósito y la alerta quedó condicional"
+ },
+ {
+  "clave": "1570456:a:5",
+  "regla": "bloque E con su calendario",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:a:6",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:b:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570459:a:7",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "volumen sí, vía nombrada no"
+ },
+ {
+  "clave": "1575224:a:4",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575224:b:4",
+  "regla": "COLAPSO EN CASCADA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575227:a:5",
+  "regla": "caja de sensibilidad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575227:b:3",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575227:b:4",
+  "regla": "caja de sensibilidad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la duda física se escribe también como «sale temprano»"
+ },
+ {
+  "clave": "1584471:a:6",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:b:5",
+  "regla": "T.54 ≤ 2 partidos (D1/H condicionados)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584474:a:5",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "el rival casi no salió"
+ },
+ {
+  "clave": "1584474:b:3",
+  "regla": "T.54 ≤ 2 partidos (D1/H condicionados)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593361:a:6",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:a:6",
+  "regla": "F3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "impacto 🔴 en ataque con B5 ✅: la producción no cayó"
+ },
+ {
+  "clave": "1593362:a:7",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:b:5",
+  "regla": "D3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:a:4",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:b:5",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593364:a:4",
+  "regla": "B5 (banco por rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593364:b:4",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593365:a:5",
+  "regla": "F3",
+  "clase": "no_dice",
+  "propuesta_corta": "uno más desde el 19'"
+ },
+ {
+  "clave": "1593365:b:6",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632065:a:3",
+  "regla": "rehacer con el once: bajas de la hoja / un solo lado",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rehecho un solo lado; B de Olimpia con dos TF fuera de la hoja"
+ },
+ {
+  "clave": "1632067:a:3",
+  "regla": "T.54",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "dt.desde de la base (< 6 meses) dejado en blanco"
+ },
+ {
+  "clave": "1632067:b:4",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639807:b",
+  "regla": "rehacer con el once: bajas de la hoja / un solo lado",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "dos jugadores en el banco de la hoja quedaron como baja (FUERA-EN-LA-HOJA)"
+ },
+ {
+  "clave": "1639807:b:2",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "F3 por ATK no resta del bloque defensivo"
+ },
+ {
+  "clave": "1639836:b:5",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639837:a:4",
+  "regla": "B6 / arquero",
+  "clase": "imprevisto",
+  "propuesta_corta": "error del arquero titular fijo: primer caso para GK-FALLA-ACTIVA"
+ },
+ {
+  "clave": "1639837:b:2",
+  "regla": "C4",
+  "clase": "regla_fallo",
+  "propuesta_corta": "patrón de ventajas perdidas de 1 gol no se lee para ventajas de 2"
+ },
+ {
+  "clave": "1645545:a:4",
+  "regla": "rama «once alternativo»",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rama abierta por una previa («prevé»), no por un hecho"
+ },
+ {
+  "clave": "1645545:b:4",
+  "regla": "rehacer con el once: bajas de la hoja / un solo lado",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "sacado de «fuera» pero B, D y caja escritos con él afuera"
+ },
+ {
+  "clave": "1645546:b:2",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645547:a:5",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la matriz leyó la ausencia como vía (otro skill)"
+ },
+ {
+  "clave": "1645547:a:6",
+  "regla": "C4",
+  "clase": "regla_fallo",
+  "propuesta_corta": "colapsos previos con otra línea y otro sistema: C4 no lo distingue"
+ },
+ {
+  "clave": "1647582:a:3",
+  "regla": "B6 / arquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647582:b:3",
+  "regla": "bloque E con su calendario",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647589:a:2",
+  "regla": "G-SORPRESA",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647592:a:5",
+  "regla": "rama «once alternativo»",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647592:a:6",
+  "regla": "B6 / arquero",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "arco sin dueño: la caja abre a todo arquero convocable"
+ },
+ {
+  "clave": "1649569:a:5",
+  "regla": "F3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649569:b:4",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649570:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "no_dice",
+  "propuesta_corta": "el cero lo sostuvo el arquero"
+ },
+ {
+  "clave": "1650176:b:5",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "baja sin motivo contradicha por otra fuente va Duda"
+ },
+ {
+  "clave": "1650247:b:4",
+  "regla": "jerarquía de fuentes de bajas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "baja de la hoja sin motivo: buscar la prensa del club"
+ },
+ {
+  "clave": "1551046:a:4",
+  "regla": "EJE-DEBUTANTE",
+  "clase": "insumo",
+  "propuesta_corta": "formación corregida tras el pitazo (once tardío)"
+ },
+ {
+  "clave": "1551046:b",
+  "regla": "D3",
+  "clase": "regla_fallo",
+  "propuesta_corta": "D3 ❌ con serie corta y T.54: va con su caja, no cierra el partido"
+ },
+ {
+  "clave": "1649568:a:6",
+  "regla": "caja de sensibilidad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ }
+]

@@ -10,6 +10,16 @@ aplicado con la v1.14).
 
 ## Notas de versión
 
+> **v1.15 · 24.11.2026 — Alineado con el clasificador EFE v1.12.** Ningún peso, indicador ni alerta del clasificador tocado; la banda de goleada sigue sin números. Aprobada por el usuario el 24/11 con todas las recomendaciones, desde docs/revisiones/estudio_lecciones_2026-11-24/. Propuesta: `docs/revisiones/EFE_v1.12_propuesta.md` (§10).
+>
+> **1. F6 condicional sobre la línea** (PASO 1): sin once oficial, «si la línea de fondo no repite 3 de 4», no sobre una pareja (clasificador v1.12, punto 2; Progreso 1650502, Medellín 1650175, Tenerife 1644346).
+>
+> **2. EJE-DEBUTANTE tampoco es gatillo de gol en «Para perder»** (PASO 6): anuncia volumen concedido y va a la caja como rango; la vía la nombra la matriz solo si el DTP la fijó con un hecho del partido (clasificador v1.12, punto 1; Atlante 1551038, Racing Santander 1570459, Millonarios 1650174).
+>
+> **3. La fila F3 de la tabla de alertas:** en ATK o MID, «cubierta por la segunda línea» o «por el banco» la deja como confianza en la K (clasificador v1.12, punto 3; Corinthians 1492450, Dortmund 1575226).
+>
+> **4. La descripción** pasa a «EFE v1.12 (skill v1.15)» y el encabezado a «alineada con el clasificador EFE v1.12».
+
 > **v1.14 · 17.11.2026 — Alineado con el clasificador EFE v1.11.** Ningún peso, indicador ni alerta del clasificador tocado; la banda de goleada sigue sin números. Aprobada por el usuario el 17/11 con todas las recomendaciones. Propuesta: `docs/revisiones/EFE_v1.11_propuesta.md` (§12).
 >
 > **1. La matriz no usa el arco como gatillo de gol** («Para perder», PASO 6) sin GK-FALLA-ACTIVA o errores documentados: B6 🔶, la zona GK en rojo y GK-DOWNGRADE van a la caja como rango (clasificador v1.11, punto 2; Albania 1528963, Chequia 1528985, Inglaterra 1528984).

@@ -2799,6 +2799,16 @@ def jev_ping():
     return jev.ping()
 
 
+@app.post(API + "/analisis/jev/reetiquetar")
+def jev_reetiquetar(aplicar: bool = False, limite: int = Query(300, ge=1, le=2000)):
+    """Los veredictos cuyo modo de fallo quedó sellado con un ERROR de Jev
+    (402 sin crédito desde el 22/11/2026, 401, 429) se vuelven a preguntar.
+    Sin `aplicar` solo cuenta. Lo que ya tiene etiqueta no se toca. Gasta
+    tokens de Jev: token MAESTRO, nace denegado para Cowork y la web."""
+    from backend.analisis import modo_fallo
+    return modo_fallo.reetiquetar(aplicar=aplicar, limite=limite)
+
+
 @app.get(API + "/analisis/cowork/revisor")
 def cowork_revisor(horas: int = Query(default=24, ge=1, le=336),
                    dia: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")):

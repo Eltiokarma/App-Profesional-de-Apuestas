@@ -51,6 +51,23 @@ consumidor decide por umbral (`.fiable()`), un simulado no pasa ninguno: el
 código se recorre entero, pero no fabrica juicios. Para probar una lógica
 concreta se le pone un guion fijo con `SAD_JEV_GUION=/ruta/respuestas.json`.
 
+## Con clave y con error: se sella, se grita y se rehace (24/11/2026)
+
+Un error de Jev (402 sin crédito, 401 clave mala, 429 límite) no frena el
+depósito: queda en `error` dentro del JSON sellado. Del 22/11 a la 01:31 UTC
+al 24/11 la cuenta respondió 402 «Insufficient credits» y nadie lo vio en tres
+días. Desde entonces:
+
+- el escaneo preventivo lo grita (chequeo `jev-caido`, se deposita como
+  incidencia), parte por parte y veredicto por veredicto;
+- `POST /analisis/jev/reetiquetar` (maestro; `?aplicar=true` para escribir)
+  vuelve a preguntar el modo de fallo de los veredictos cuyo sello quedó en
+  error y sin etiqueta. Lo ya etiquetado no se toca; corta en el primer error
+  nuevo. También `python -m backend.analisis.modo_fallo [--aplicar]`;
+- la coherencia del parte NO se rehace: es un aviso para antes del pitazo.
+
+Probar la cuenta antes de re-etiquetar: `GET /analisis/jev/ping` (maestro).
+
 ## Los candidatos, con veredicto
 
 ### 1. Guardrail de coherencia del parte de Cowork — **HECHO, en sombra** (22/09)

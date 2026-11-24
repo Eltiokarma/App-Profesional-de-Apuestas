@@ -1,0 +1,2810 @@
+[
+ {
+  "clave": "1528992:a",
+  "regla": "disciplina 66 (vía del empate en la rama de ventaja)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la vía del empate copia los renglones del DTP rival (C6: titulares, pelota sucia)"
+ },
+ {
+  "clave": "1528992:a:2",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528992:a:6",
+  "regla": "disciplina 16 (superioridad)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528992:b",
+  "regla": "disciplina 16 (roja propia ganando)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "C3: sostuvo ganando con diez"
+ },
+ {
+  "clave": "1528992:b:2",
+  "regla": "disciplina 66 (vía del empate en la rama de ventaja)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la vía del empate copia los renglones del DTP rival (C6)"
+ },
+ {
+  "clave": "1528993:a",
+  "regla": "disciplina 66 (ventajaPorFuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528993:b:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "doble golpe: +1 caso"
+ },
+ {
+  "clave": "1528994:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528994:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528995:a:3",
+  "regla": "disciplina 66 (ventajaPorMinuto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528995:b:3",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528996:a:2",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528996:a:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528996:b:4",
+  "regla": "disciplina 65 (hecho)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco ofensivo condicionado (antes del 75 con cambios) era el hecho para rescata"
+ },
+ {
+  "clave": "1528997:a",
+  "regla": "disciplina 16 (superioridad)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528997:b:2",
+  "regla": "disciplina 16 (roja propia perdiendo)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "ISE agravado: concedió por otra vía, no por exposición (contradicción abierta)"
+ },
+ {
+  "clave": "1528998:a:3",
+  "regla": "disciplina 66 (vía del empate en la rama de ventaja)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "C6: la vía también son los titulares del rival"
+ },
+ {
+  "clave": "1528998:a:4",
+  "regla": "disciplina 18 (SOB1)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528998:b:3",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528999:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528999:a:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528999:b",
+  "regla": "disciplina 44 (a)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528999:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con línea de tres, el central reconvertido también es pieza del seguro"
+ },
+ {
+  "clave": "1492451:a",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:a:2",
+  "regla": "disciplina 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:a:3",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:b:4",
+  "regla": "disciplina 14",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:b:5",
+  "regla": "disciplina 17",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492452:a:3",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492452:b",
+  "regla": "disciplina 66 (tipología/fuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492452:b:2",
+  "regla": "disciplina 44 (b) (antecedente que no coincide)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "con la pieza del antecedente ausente la rama vuelve al defecto («en su plan»)"
+ },
+ {
+  "clave": "1492453:a",
+  "regla": "disciplina 65 (candidato defecto por quien persigue)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma al candidato: el favorito que persigue rescata"
+ },
+ {
+  "clave": "1492453:a:2",
+  "regla": "disciplina 66 (ventajaPorFuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:b",
+  "regla": "disciplina 66 (vía del empate en la rama de ventaja)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la vía del empate copia todas las vías del DTP rival, no las principales"
+ },
+ {
+  "clave": "1492453:b:2",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "regla v0.1.27 no aplicada: condicionar el régimen a quién tiene la pelota"
+ },
+ {
+  "clave": "1492453:b:3",
+  "regla": "disciplina 61 (otra_via)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492456:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492456:b",
+  "regla": "disciplina 61 (otra_via)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492456:b:4",
+  "regla": "disciplina 66 (bancoProbable: titular como banco)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "titular nombrado como banco con el once a la vista"
+ },
+ {
+  "clave": "1549554:a",
+  "regla": "disciplina 16 (superioridad)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549554:b",
+  "regla": "disciplina 16 (roja propia ganando)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "C3: concedió ganando con diez (+1)"
+ },
+ {
+  "clave": "1549554:b:2",
+  "regla": "disciplina 16 (S1 sobre toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "S1 nombra la línea entera que va al choque (ya escrito v0.1.26)"
+ },
+ {
+  "clave": "1644334:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644334:a:3",
+  "regla": "disciplina 44 (f) (siIguala en copa, 90-120)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "en partido único la rama de empate llega al 120 (ya escrito en la 16)"
+ },
+ {
+  "clave": "1644334:b:3",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644334:b:4",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644346:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "doble golpe: +1 caso"
+ },
+ {
+  "clave": "1644346:a:2",
+  "regla": "disciplina 63 (pieza del seguro fuera al abrirse la rama)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "si la pieza ya salió cuando se abre la rama, la rama se lee sin seguro"
+ },
+ {
+  "clave": "1644346:a:3",
+  "regla": "disciplina 16 (superioridad)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644346:b",
+  "regla": "disciplina 44 (b) (motivo nombrable)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "F2 = 1 / calendario no eligen ECHADA-VOL contra un rival muy inferior que se abre"
+ },
+ {
+  "clave": "1644346:b:2",
+  "regla": "disciplina 16 (vía de gol propia con diez)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644353:a",
+  "regla": "disciplina 16 (roja propia empatando)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644353:a:4",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644353:b",
+  "regla": "disciplina 44 (b) (antecedente que no coincide)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "un antecedente sostenido por el arquero no sostiene «administra»"
+ },
+ {
+  "clave": "1644353:b:2",
+  "regla": "disciplina 16 (superioridad)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644369:a",
+  "regla": "disciplina 50 (RELEVANCIA BAJA)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644369:a:2",
+  "regla": "disciplina 23 (prórroga)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644369:b:3",
+  "regla": "ventana 60-75 (SOB base)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644373:a",
+  "regla": "disciplina 66 (bancoProbable vacío)",
+  "clase": "insumo",
+  "propuesta_corta": "bancoProbable vacío: nombrar por la hoja o la prensa del día"
+ },
+ {
+  "clave": "1644373:b",
+  "regla": "ventana 60-75 (SOB base)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644373:b:2",
+  "regla": "disciplina 65 (hecho)",
+  "clase": "insumo",
+  "propuesta_corta": "abierto por banco sin dato (bancoProbable vacío)"
+ },
+ {
+  "clave": "1644384:a",
+  "regla": "disciplina 65 (candidato defecto por quien persigue)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma al candidato: el no elegido se rompe"
+ },
+ {
+  "clave": "1644384:a:3",
+  "regla": "disciplina 46",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644384:b",
+  "regla": "disciplina 44 (b) (motivo nombrable)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "F2 = 1 / rotación de copa no alcanzan para ECHADA-VOL del favorito con margen ≥ 0,30"
+ },
+ {
+  "clave": "1644384:b:2",
+  "regla": "disciplina 66 (ventajaPorFuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:a",
+  "regla": "disciplina 66 (tipología/fuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:a:2",
+  "regla": "disciplina 44 (a)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:b",
+  "regla": "disciplina 61 (otra_via)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:b:3",
+  "regla": "disciplina 23 (añadido)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492450:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492450:b:4",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492454:a",
+  "regla": "disciplina 10/47 (P1a del motor)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "P1a se copia del motor; la necesidad va en SOB1"
+ },
+ {
+  "clave": "1492454:a:2",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492454:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492458:a:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "C6: el empate llegó por titulares del rival, no por el banco"
+ },
+ {
+  "clave": "1492458:a:3",
+  "regla": "disciplina 44 (a)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492458:b",
+  "regla": "disciplina 44 (f) (siIguala del obligado)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«el empate le sirve a medias» no es motivo de la 44 (f)"
+ },
+ {
+  "clave": "1492458:b:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492459:a",
+  "regla": "disciplina 17/24 (no testeado)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492459:a:2",
+  "regla": "disciplina 66 (ventajaPorMinuto/fuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492459:a:3",
+  "regla": "disciplina 44 (b) (obligado escrito «en su plan»)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el obligado de tabla va «sigue atacando» por defecto (por amenaza)"
+ },
+ {
+  "clave": "1492459:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492459:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la pieza del seguro se nombra con sus amarillas"
+ },
+ {
+  "clave": "1650500:a:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:a:3",
+  "regla": "disciplina 16 (S1)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:b:2",
+  "regla": "disciplina 56",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:b:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650501:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650501:a:2",
+  "regla": "disciplina 66 (ventajaPorFuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650501:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "doble golpe: +1 caso (4')"
+ },
+ {
+  "clave": "1650501:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:a",
+  "regla": "disciplina 6 (tipología por identidad)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "ECHADA-SUP por descendido/sin objetivo sin S3 ni hecho: la base va «en su plan»"
+ },
+ {
+  "clave": "1650502:a:2",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:b:2",
+  "regla": "disciplina 66 (ventaja temprana, línea del empate)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:b:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:b:4",
+  "regla": "disciplina 10/47 (P1a del motor)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "P1a no se baja a mano por «necesita ganar»; si chocan, la caja con los dos extremos"
+ },
+ {
+  "clave": "1492457:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:a:3",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "regla v0.1.27 no aplicada: condicionar el régimen a quién tendrá la pelota"
+ },
+ {
+  "clave": "1492457:a:4",
+  "regla": "disciplina 50 (RELEVANCIA BAJA)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:a:2",
+  "regla": "disciplina 66 (ventajaPorFuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:b",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:b:2",
+  "regla": "disciplina 16 (S1)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:a",
+  "regla": "disciplina 65 (candidato defecto por quien persigue)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma al candidato: el favorito por μ que persigue rescata"
+ },
+ {
+  "clave": "1552827:a:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:a:3",
+  "regla": "disciplina 16 (superioridad)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:b",
+  "regla": "disciplina 66 (ventaja temprana, línea del empate)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:b:2",
+  "regla": "ventana 60-75 (SOB base)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:b:3",
+  "regla": "disciplina 16 (roja propia perdiendo)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "el expulsado era un titular que va al choque que S1 no nombraba (el DTP sí)"
+ },
+ {
+  "clave": "1558682:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:a:2",
+  "regla": "disciplina 50 (RELEVANCIA BAJA)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "sin protector, el gol cayó en el 60-75 con 0-0 (contraejemplo de «se resuelve antes»)"
+ },
+ {
+  "clave": "1558682:b",
+  "regla": "disciplina 17/24 (no testeado)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575221:a",
+  "regla": "disciplina 63 (candidato: pieza de la vía)",
+  "clase": "imprevisto",
+  "propuesta_corta": "lesiones de Kane y Olise; candidato: la rama nombra también la pieza de su vía"
+ },
+ {
+  "clave": "1575221:a:2",
+  "regla": "disciplina 65 (hecho)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575221:a:3",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575221:b",
+  "regla": "tipología (bloque bajo de plan ≠ echada; C1 del checklist DTP)",
+  "clase": "otro_skill",
+  "propuesta_corta": "C1 = 1 heredado de un checklist del DTP que leyó «improvisado» un bloque de cinco de plan"
+ },
+ {
+  "clave": "1575221:b:2",
+  "regla": "PASO 4 (falsador)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el falsador de una echada se escribe sobre la fractura (remates en el área), no sobre remates de afuera"
+ },
+ {
+  "clave": "1575221:b:3",
+  "regla": "disciplina 66 (ventaja temprana, línea del empate)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575221:b:4",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:a",
+  "regla": "disciplina 63 (reemplazo del mismo rol)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la rama nombra quién hereda el seguro; la salida con reemplazo del mismo rol no rompe el seguro"
+ },
+ {
+  "clave": "1632063:a:2",
+  "regla": "disciplina 66 (ventajaPorMinuto/fuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:b:2",
+  "regla": "disciplina 17/24 (no testeado)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:b:3",
+  "regla": "disciplina 50 (RELEVANCIA BAJA)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "sin protector, el partido llegó 0-0 al 62' (contraejemplo de la premisa; la lectura por ramas sí sirvió)"
+ },
+ {
+  "clave": "1632066:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632066:a:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632066:b",
+  "regla": "disciplina 66 (tipología/fuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632066:b:2",
+  "regla": "disciplina 44 (a) (siLeEmpatan)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632066:b:3",
+  "regla": "disciplina 63",
+  "clase": "insumo",
+  "propuesta_corta": "grid corregido por la API: el seguro del arranque no era el escrito (once tardío)"
+ },
+ {
+  "clave": "1639806:a:4",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639806:a:7",
+  "regla": "P3 (candidato OBJETIVO-COBRADO)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "caso mixto para el candidato"
+ },
+ {
+  "clave": "1639806:b:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639806:b:3",
+  "regla": "disciplina 66 (bancoProbable: titular como banco)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "al rehacer no se reescribieron las ramas con el banco del rival: titulares y fuera de la hoja nombrados"
+ },
+ {
+  "clave": "1649571:a:2",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649571:a:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649571:b:3",
+  "regla": "disciplina 66 (vía del empate en la rama de ventaja)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "C6: la vía también es la media distancia del 9 titular rival"
+ },
+ {
+  "clave": "1649571:b:4",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650173:a:3",
+  "regla": "disciplina 66 (ventaja tardía, línea del empate)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650173:a:4",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650173:a:5",
+  "regla": "S1 (suplente que entra)",
+  "clase": "imprevisto",
+  "propuesta_corta": "C5: suplente que entra y ve la roja (+1)"
+ },
+ {
+  "clave": "1650173:b",
+  "regla": "disciplina 44 (b) (rama vs DTP del mismo equipo)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la rama y el DTP del mismo equipo dicen lo mismo o la nota nombra cuál manda (ya escrito v0.1.26)"
+ },
+ {
+  "clave": "1650173:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:a",
+  "regla": "falsador / disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:a:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:a:3",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:b:4",
+  "regla": "disciplina 17 (no testeado)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:b:5",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650503:a",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "regla v0.1.27 no aplicada: la base SOB nombra el hecho que activa la exposición"
+ },
+ {
+  "clave": "1650503:a:2",
+  "regla": "disciplina 44 (b) (rama vs DTP del mismo equipo)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la nota tiene que decir cuál manda (ya escrito v0.1.26)"
+ },
+ {
+  "clave": "1650503:b:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650504:a:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la pieza del seguro se nombra con sus amarillas y con quién la releva"
+ },
+ {
+  "clave": "1650504:a:3",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650504:b",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "regla v0.1.27 no aplicada: condicionar al sistema del once (línea de cinco)"
+ },
+ {
+  "clave": "1650504:b:2",
+  "regla": "disciplina 44 (b) (defecto del obligado)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el obligado con línea de cinco escrito «en su plan» describió; el defecto «sigue atacando» no"
+ },
+ {
+  "clave": "1650505:a:4",
+  "regla": "PASO 4 (falsador)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "falsador atado al marcador y con dos condiciones (ya prohibido en el PASO 4)"
+ },
+ {
+  "clave": "1650505:a:5",
+  "regla": "disciplina 66 (ventajaPorMinuto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650505:b",
+  "regla": "disciplina 65 (régimen condicionado a los cambios)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el régimen de la rama, no solo el desenlace, se condiciona a los cambios que queden al minuto del gol"
+ },
+ {
+  "clave": "1650505:b:2",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505565:a",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505565:b",
+  "regla": "disciplina 18 (régimen con su hecho, rama no obligada)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el hecho que activa la exposición también en las ramas con sob1 0,5 («si sale un lateral»)"
+ },
+ {
+  "clave": "1550200:a:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550200:b",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550202:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550202:a:2",
+  "regla": "disciplina 63 (reemplazo del mismo rol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "salida con pivote de oficio: el seguro no se rompe"
+ },
+ {
+  "clave": "1550202:b",
+  "regla": "disciplina 65 (candidato defecto por quien persigue)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma al candidato: el no favorito se rompe"
+ },
+ {
+  "clave": "1550205:a:3",
+  "regla": "disciplina 65 (hecho en todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el hecho de siRecibePrimero vale también para siIguala (ya escrito)"
+ },
+ {
+  "clave": "1550205:a:4",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550205:b:4",
+  "regla": "disciplina 65 (hecho)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«si le empatan antes del 75 con cambios por hacer» era hecho escribible para rescata"
+ },
+ {
+  "clave": "1551038:a:3",
+  "regla": "falsador (SOB base)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551038:a:4",
+  "regla": "disciplina 44 (b) (obligado que gana por uno)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el obligado al que le basta ganar por uno administra en parte (cambio defensivo con 1-0)"
+ },
+ {
+  "clave": "1551038:b",
+  "regla": "disciplina 6 (tipología por identidad)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "ECHADA-SUP por «sin nada en juego» sin hecho: no se echó"
+ },
+ {
+  "clave": "1551038:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551039:a",
+  "regla": "disciplina 66 (vía del empate en la rama de ventaja)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "C6: la vía del empate copia la vía principal del rival en juego abierto (renglón 1 del DTP)"
+ },
+ {
+  "clave": "1551039:a:2",
+  "regla": "disciplina 66 (ventaja temprana, línea del empate)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551039:a:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551039:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551040:a:4",
+  "regla": "disciplina 66 (bancoProbable: titular como banco)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rama rehecha con titulares como banco y sin el suplente que marcó"
+ },
+ {
+  "clave": "1551040:a:5",
+  "regla": "disciplina 66 (tipología/vía)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551040:b:5",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552226:a:4",
+  "regla": "disciplina 66 (vía del empate en la rama de ventaja)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la contra que la base propia nombra va también como vía del empate"
+ },
+ {
+  "clave": "1552226:a:5",
+  "regla": "disciplina 61 (otra_via)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552226:b:5",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:a:3",
+  "regla": "disciplina 61 (otra_via)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:a:4",
+  "regla": "disciplina 3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:a:3",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:b:2",
+  "regla": "disciplina 66 (ventajaPorFuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:b:3",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552824:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "doble golpe: +1 caso"
+ },
+ {
+  "clave": "1552824:a:2",
+  "regla": "disciplina 66 (bancoProbable: lista incompleta)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la lista se copia entera y por rol: faltó el defensor que hizo el 2-3"
+ },
+ {
+  "clave": "1552824:b:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552824:b:3",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557467:a:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557467:a:3",
+  "regla": "disciplina 50 (RELEVANCIA BAJA)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "sin protector, llegó 0-0 al 75: la lectura útil fue la del que empuja"
+ },
+ {
+  "clave": "1557467:b:5",
+  "regla": "disciplina 17 (no testeado)",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557468:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557468:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557468:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557470:a",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557470:b:2",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557471:a",
+  "regla": "disciplina 66 (ventaja temprana, línea del empate)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557471:a:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557471:a:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557471:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557471:b:2",
+  "regla": "disciplina 18 (SOB1 necesidad, no régimen)",
+  "clase": "insumo",
+  "propuesta_corta": "once tardío con DT de debut: el régimen se escribió sobre otro sistema"
+ },
+ {
+  "clave": "1557471:b:3",
+  "regla": "disciplina 61 (otra_via)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:a:4",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:a:5",
+  "regla": "disciplina 65 (abierto)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:b:3",
+  "regla": "disciplina 66 (tipología/fuerza)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557475:a:5",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557475:a:6",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557475:b",
+  "regla": "disciplina 44 (b) (antecedente del favorito)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "antecedente de cinco coincidencias no alcanzó para «administra» del favorito con margen 0,80"
+ },
+ {
+  "clave": "1557475:b:2",
+  "regla": "disciplina 61 (otra_via)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557475:b:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557476:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557476:b",
+  "regla": "disciplina 65 (candidato defecto por quien persigue)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma al candidato: el no favorito se rompe"
+ },
+ {
+  "clave": "1557476:b:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558683:a",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558683:a:2",
+  "regla": "disciplina 16 (S1 sobre toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "S1 nombra la línea entera que va al choque, pivote incluido (ya escrito v0.1.26)"
+ },
+ {
+  "clave": "1558683:b",
+  "regla": "disciplina 16 (roja propia empatando)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558683:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558684:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558684:b",
+  "regla": "disciplina 65 (candidato defecto por quien persigue)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma al candidato: el no favorito se rompe"
+ },
+ {
+  "clave": "1570453:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570453:b",
+  "regla": "disciplina 65 (candidato defecto por quien persigue)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma al candidato: el no elegido se rompe"
+ },
+ {
+  "clave": "1570460:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570460:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570462:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570462:a:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570462:b",
+  "regla": "disciplina 66 (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570462:b:2",
+  "regla": "disciplina 44 (b) («en su plan» que administró)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "«en su plan» de posesión: con la ventaja cedió la pelota y dejó de llegar"
+ },
+ {
+  "clave": "1570462:b:3",
+  "regla": "disciplina 23 (añadido)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575222:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575222:b",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rama SOB del obligado escrita sin condicionar al 5-4-1 y al rival con pelota (la 18 v0.1.27 ya lo pide)"
+ },
+ {
+  "clave": "1575222:b:2",
+  "regla": "disciplina 65 · defecto por quien persigue",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 caso al candidato «defecto por quien persigue» (no favorito se rompe)"
+ },
+ {
+  "clave": "1575223:a:3",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:a:4",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:b:5",
+  "regla": "disciplina 16",
+  "clase": "no_dice",
+  "propuesta_corta": "roja al 90+3, sin tramo"
+ },
+ {
+  "clave": "1575225:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:a:3",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:a:4",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "gol 11' después del doble cambio ofensivo propio (C4, implícito)"
+ },
+ {
+  "clave": "1575225:b:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:b:3",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575226:a",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "confirma la 18 v0.1.27: SOB1 de tabla con 5-4-1 no produjo exposición"
+ },
+ {
+  "clave": "1575226:a:2",
+  "regla": "disciplina 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575226:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575228:a:2",
+  "regla": "disciplina 17",
+  "clase": "no_dice",
+  "propuesta_corta": "acierto no testeado (0-0)"
+ },
+ {
+  "clave": "1575229:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575229:a:3",
+  "regla": "disciplina 66 · banco",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "bancoProbable copiado entero cubrió a todos los que entraron"
+ },
+ {
+  "clave": "1575229:b:4",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575229:b:5",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584466:a:4",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584466:b:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584469:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "cita ventajaPorFuerza (tramo 75 %+) y se cumple"
+ },
+ {
+  "clave": "1584469:a:6",
+  "regla": "disciplina 63",
+  "clase": "no_dice",
+  "propuesta_corta": "concedió con la pieza en cancha; sin crónica no se clasifica la vía"
+ },
+ {
+  "clave": "1584469:b",
+  "regla": "disciplina 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584472:a:2",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "ventajaPorFuerza (17 % previo) + banco rival nombrado: la vía escrita fue la del empate"
+ },
+ {
+  "clave": "1584472:b:2",
+  "regla": "disciplina 65 · hecho",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "rescata con el banco a los 76'+ (justo después del corte del 75): caso límite, 1"
+ },
+ {
+  "clave": "1584472:b:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593360:a:3",
+  "regla": "disciplina 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593360:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593360:b:3",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639838:a",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "no_dice",
+  "propuesta_corta": "vía SOB no testeada: el rival no remató al arco"
+ },
+ {
+  "clave": "1639838:b",
+  "regla": "disciplina 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "abierto no se cobra; observado se_rompe"
+ },
+ {
+  "clave": "1645542:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645542:a:2",
+  "regla": "S1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "S1 nombró un candidato y no la línea del choque (la 16 ya lo pide); el DTP sí lo tenía"
+ },
+ {
+  "clave": "1645542:b",
+  "regla": "disciplina 44 (b) · antecedente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "ECHADA-PSI por un antecedente (C3) que no cumple coincidencias: se repite el patrón 4 del 17/11"
+ },
+ {
+  "clave": "1645542:b:2",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647580:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«administra» sin motivo nombrado; iba «en su plan»"
+ },
+ {
+  "clave": "1647580:a:2",
+  "regla": "falsador",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647580:b",
+  "regla": "disciplina 65 · hecho",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rescata apoyado en banco probable de copa (salieron titulares): sin hecho debía ser abierto"
+ },
+ {
+  "clave": "1647581:a",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647581:a:2",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647581:b:2",
+  "regla": "C3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647586:a:3",
+  "regla": "disciplina 66 · banco",
+  "clase": "insumo",
+  "propuesta_corta": "con rotación anunciada (copa) el banco probable no traía al titular rotado que hizo el gol"
+ },
+ {
+  "clave": "1647586:a:4",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647586:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647587:a",
+  "regla": "disciplina 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647591:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "pieza del seguro fuera al 46' antes de abrirse la rama"
+ },
+ {
+  "clave": "1647591:b",
+  "regla": "candidato doble golpe",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato «doble golpe» (sin medición)"
+ },
+ {
+  "clave": "1647591:b:2",
+  "regla": "disciplina 65 · hecho",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el hecho para se_rompe estaba en el parte (banco rival ya en cancha) y se dejó abierto"
+ },
+ {
+  "clave": "1649566:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649566:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650174:a:4",
+  "regla": "disciplina 17",
+  "clase": "no_dice",
+  "propuesta_corta": "acierto no testeado (0-0)"
+ },
+ {
+  "clave": "1650174:b:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550201:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550201:a:2",
+  "regla": "disciplina 63",
+  "clase": "no_dice",
+  "propuesta_corta": "la pieza salió al descanso, antes de abrirse la rama: no testeada"
+ },
+ {
+  "clave": "1550201:b",
+  "regla": "disciplina 65 · defecto por quien persigue",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato «defecto por quien persigue»"
+ },
+ {
+  "clave": "1550201:b:2",
+  "regla": "disciplina 3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550206:a:5",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la app cobra «concedió» un error individual: viaGol sigue pendiente"
+ },
+ {
+  "clave": "1550206:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "favorito con margen 0,35 y 2-0 al 38' administró por plan: candidato a medir el defecto cerca del corte 0,30"
+ },
+ {
+  "clave": "1551043:a:2",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551043:a:3",
+  "regla": "disciplina 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551043:b",
+  "regla": "disciplina 16 · plantilla siExpulsion",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la vía propia con diez debe nombrar el banco ya entrado (1 caso)"
+ },
+ {
+  "clave": "1551043:b:5",
+  "regla": "disciplina 63",
+  "clase": "no_dice",
+  "propuesta_corta": "la pieza salió al descanso, antes de abrirse la rama"
+ },
+ {
+  "clave": "1551044:a:4",
+  "regla": "disciplina 17",
+  "clase": "no_dice",
+  "propuesta_corta": "acierto no testeado"
+ },
+ {
+  "clave": "1551044:b",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "base SOB sin condicionar al hecho que la activa (la 18 v0.1.27 ya lo pide)"
+ },
+ {
+  "clave": "1551044:b:2",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551045:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551045:a:2",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551045:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552225:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552225:a:2",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "ganando con uno más no administró (C2: suma al lado «carga»)"
+ },
+ {
+  "clave": "1552225:b",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rama SOBREEXPOSICION con sob1 0,5 y rival que quita la pelota: iba «en su plan»"
+ },
+ {
+  "clave": "1552225:b:2",
+  "regla": "S1",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "S1 sobre la línea del choque, cumplido"
+ },
+ {
+  "clave": "1552225:b:3",
+  "regla": "disciplina 16 · roja propia perdiendo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "ISE agravado con roja propia perdiendo: +1 a favor"
+ },
+ {
+  "clave": "1552227:a:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552227:b",
+  "regla": "disciplina 44 (b) · antecedente",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "ventaja sostenida por el arquero no es antecedente de administrar"
+ },
+ {
+  "clave": "1552230:a",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:b:3",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "ganando con uno más no administró (C2)"
+ },
+ {
+  "clave": "1552232:a",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "concedió con uno más contra el seguro: en siExpulsion.rival el seguro se nombra con su vuelta"
+ },
+ {
+  "clave": "1552232:a:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "bancoProbable copiado entero: el suplente nombrado hizo el 2-1"
+ },
+ {
+  "clave": "1552232:a:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552232:b",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:a:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:a:3",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:b",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:b:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552822:a",
+  "regla": "disciplina 44 (b) · antecedente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "antecedente de la misma condición y marcador (EFE C4) no usado: dejó el defecto «sigue atacando» y se echó"
+ },
+ {
+  "clave": "1552822:a:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "doble pivote amonestado y cambio doble rompió el seguro (C6 doble pivote, 2.º caso)"
+ },
+ {
+  "clave": "1552822:a:3",
+  "regla": "disciplina 66 · banco",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "banco rival de la hoja nombrado: hicieron el 2-2 y el 2-3"
+ },
+ {
+  "clave": "1552822:b:3",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552825:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552825:a:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552825:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552825:b:2",
+  "regla": "disciplina 65 · hecho",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el hecho admitido (bloque improvisado, EJE-DEBUTANTE confirmada) estaba y se dejó abierto"
+ },
+ {
+  "clave": "1557472:a",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557472:a:2",
+  "regla": "disciplina 63",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "pieza del seguro nombrada que estaba en el banco con la hoja a la vista (para la app: avisar pieza fuera del once)"
+ },
+ {
+  "clave": "1557472:b",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557472:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557473:a",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "ganando con uno más no administró (C2)"
+ },
+ {
+  "clave": "1557473:b",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557473:b:2",
+  "regla": "S1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "S1 nombró candidatos con tarjetas y no la línea; expulsado el otro central"
+ },
+ {
+  "clave": "1558680:a:6",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558680:b",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "base SOB de un 5-3-2 que cede la pelota sin condicionar el régimen (la 18 v0.1.27)"
+ },
+ {
+  "clave": "1558680:b:2",
+  "regla": "disciplina 61",
+  "clase": "no_dice",
+  "propuesta_corta": "rama abierta al 86', sin tramo"
+ },
+ {
+  "clave": "1558681:a",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558681:b",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558685:a",
+  "regla": "disciplina 16",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558685:a:2",
+  "regla": "S1",
+  "clase": "imprevisto",
+  "propuesta_corta": "roja de un interior sin amarillas previas: varianza"
+ },
+ {
+  "clave": "1558685:b:2",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558687:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558687:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570455:a",
+  "regla": "disciplina 65 · defecto por quien persigue",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato (el favorito persigue y rescata)"
+ },
+ {
+  "clave": "1570455:a:2",
+  "regla": "candidato doble golpe",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato «doble golpe»"
+ },
+ {
+  "clave": "1570455:a:3",
+  "regla": "disciplina 16 · roja propia ganando",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "roja propia ganando sin concesión (C3: suma al lado «sostiene»)"
+ },
+ {
+  "clave": "1570455:b",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570455:b:2",
+  "regla": "disciplina 24",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570456:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "concedió antes de armarse la persecución; la app lo cobra «concedió»"
+ },
+ {
+  "clave": "1570456:b:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "si el M3 del DTP cierra con un pivote del banco, la rama dice desde qué tramo manda el cierre (1 caso)"
+ },
+ {
+  "clave": "1570458:a:2",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "nombrar el relevo de la pieza dejó el cierre comprobable"
+ },
+ {
+  "clave": "1570458:a:3",
+  "regla": "disciplina 66 · banco",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:a:4",
+  "regla": "S1",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:b:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570459:a",
+  "regla": "disciplina 44 (a) · siLeEmpatan",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570459:a:2",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la vía del empate se nombra por intérprete (lateral que centra, quien saca los córners), no solo por categoría (1 caso)"
+ },
+ {
+  "clave": "1570459:b:4",
+  "regla": "candidato doble golpe",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato «doble golpe»"
+ },
+ {
+  "clave": "1570459:b:5",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575224:a:2",
+  "regla": "disciplina 66 · ventajaPorFuerza",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "citó la referencia del otro lado; se copia ventajaPorFuerza del lado que marca (para la app: recibo que compare)"
+ },
+ {
+  "clave": "1575224:a:3",
+  "regla": "disciplina 43",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575224:b:3",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575227:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575227:b",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:a",
+  "regla": "disciplina 44 (a) · siLeEmpatan",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:a:2",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:a:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:b:2",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:b:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:a",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:a:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:b",
+  "regla": "disciplina 65 · defecto por quien persigue",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato (favorito persigue y rescata)"
+ },
+ {
+  "clave": "1584473:b:2",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:b:3",
+  "regla": "disciplina 17",
+  "clase": "no_dice",
+  "propuesta_corta": "vía de la base no testeada"
+ },
+ {
+  "clave": "1584474:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584474:b",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la reserva escrita en la rama se cumplió; la rama sobre el sistema de la hoja previa (once tardío)"
+ },
+ {
+  "clave": "1593361:a",
+  "regla": "disciplina 44 (b) · antecedente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "antecedente «mismas piezas» con una pieza distinta en el once (el DTP rehecho lo decía): iba «en su plan»"
+ },
+ {
+  "clave": "1593361:a:2",
+  "regla": "disciplina 66 · banco",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593361:a:3",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593361:b",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "visitante que iguala volvió al bloque en vez de seguir empujando (defecto de siIguala); candidato a medir por fuerza/condición"
+ },
+ {
+  "clave": "1593361:b:4",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:a",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:a:2",
+  "regla": "ventana 75-90 (gestión)",
+  "clase": "no_dice",
+  "propuesta_corta": "con 5-2 el tramo no se abrió"
+ },
+ {
+  "clave": "1593362:b",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:b:2",
+  "regla": "S1 · roja del DT",
+  "clase": "imprevisto",
+  "propuesta_corta": "DT expulsado al 49': el bloque dejó de administrar (hueco de S1, C5)"
+ },
+ {
+  "clave": "1593363:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:b",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "régimen atado al minuto y no al hecho (segundo 9, carrileros): la 18 v0.1.27"
+ },
+ {
+  "clave": "1593364:a:3",
+  "regla": "ventana modal (PASO 3)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593364:b:3",
+  "regla": "disciplina 43",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593365:a",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "ganando con uno más no administró (C2)"
+ },
+ {
+  "clave": "1593365:a:2",
+  "regla": "disciplina 63",
+  "clase": "no_dice",
+  "propuesta_corta": "pieza salió con la rama ya abandonada (3-0)"
+ },
+ {
+  "clave": "1593365:b",
+  "regla": "disciplina 16 · roja propia perdiendo",
+  "clase": "regla_fallo",
+  "propuesta_corta": "«perdiendo: sigue cargando con diez, ISE agravado» sin régimen visible (concedió igual): contraejemplo del ISE agravado"
+ },
+ {
+  "clave": "1632065:a",
+  "regla": "disciplina 65 · hecho",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "rescata con hecho (banco) cumplido"
+ },
+ {
+  "clave": "1632065:a:2",
+  "regla": "disciplina 66 · banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "porqueDesenlace nombró como banco a un titular y el rehacer no reescribió la lista; decidió un suplente no nombrado"
+ },
+ {
+  "clave": "1632065:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "ECHADA-VOL «se mete atrás» sin motivo en un no favorito: iba «en su plan»"
+ },
+ {
+  "clave": "1632065:b:2",
+  "regla": "disciplina 23",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632067:a",
+  "regla": "disciplina 65 · hecho",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "se_rompe apoyado en un antecedente de otro partido, no en un hecho de hoy"
+ },
+ {
+  "clave": "1632067:a:2",
+  "regla": "disciplina 66 · banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco rival no nombrado en siIguala; decidió uno de esa lista"
+ },
+ {
+  "clave": "1632067:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "favorito con margen 0,52: «administra» sin motivo nombrado; el defecto era «sigue atacando»"
+ },
+ {
+  "clave": "1632067:b:2",
+  "regla": "disciplina 66 · banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco propio nombrado en una sola rama; decidió en siLeEmpatan"
+ },
+ {
+  "clave": "1639807:a",
+  "regla": "ventana modal (PASO 3) · desde el cambio ofensivo",
+  "clase": "regla_fallo",
+  "propuesta_corta": "SOB a 0-0 se pagó al 84' tras tres cambios ofensivos, no en la 60-75: suma a C4 (sin denominador)"
+ },
+ {
+  "clave": "1639807:b:6",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639836:a",
+  "regla": "disciplina 16 · roja propia ganando",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "roja propia ganando 2-1 al 84' y concedió en el añadido (C3: suma al lado «concede»)"
+ },
+ {
+  "clave": "1639836:a:2",
+  "regla": "disciplina 66 · ventajaPorFuerza",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639836:b",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639836:b:2",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "perdiendo con uno más cargó (C2)"
+ },
+ {
+  "clave": "1639837:a",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639837:b",
+  "regla": "disciplina 44 (b) · antecedente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "ECHADA-PSI por ventajas perdidas de uno (C3) trasladada a una ventaja de dos"
+ },
+ {
+  "clave": "1645545:a",
+  "regla": "bloque F · ECHADA-FIS",
+  "clase": "regla_fallo",
+  "propuesta_corta": "F2 = 1 sin ECHADA-FIS: el tipo físico necesita quien empuje o algo que proteger (candidato a medir)"
+ },
+ {
+  "clave": "1645545:b:2",
+  "regla": "disciplina 45",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645545:b:3",
+  "regla": "disciplina 63",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645546:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645546:b:3",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "otro caso de necesidad sin régimen; concedió por superioridad del rival"
+ },
+ {
+  "clave": "1645546:b:4",
+  "regla": "disciplina 3",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645547:a",
+  "regla": "disciplina 18 · SOB1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rama SOB «laterales arriba» sin condicionar al 5-4-1 del grid oficial"
+ },
+ {
+  "clave": "1645547:b",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646938:a",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646938:a:2",
+  "regla": "disciplina 65 · defecto por quien persigue",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "1 en contra del candidato (favorito persigue y se rompe)"
+ },
+ {
+  "clave": "1646938:b",
+  "regla": "disciplina 44 (b) · antecedente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "C3 (ventajas perdidas) y F2 eligieron ECHADA-VOL en un no favorito; iba «en su plan»"
+ },
+ {
+  "clave": "1646938:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647582:a",
+  "regla": "disciplina 63",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "pieza del seguro nombrada desde la apertura y no jugó (copa)"
+ },
+ {
+  "clave": "1647582:b:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647585:a",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647585:a:2",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647585:b",
+  "regla": "disciplina 66 · ventajaPorFuerza",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647585:b:2",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647588:a",
+  "regla": "disciplina 65 · hecho",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "se_rompe escrito con la identidad (categoría inferior), sin hecho de hoy (copa)"
+ },
+ {
+  "clave": "1647588:a:2",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la rama de ventaja «administra» sin motivo de 44 (b) (copa)"
+ },
+ {
+  "clave": "1647588:b",
+  "regla": "disciplina 61 · otra vía",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647588:b:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "siIguala no escrita para el favorito que iguala (el que iguala sigue empujando por defecto) (copa)"
+ },
+ {
+  "clave": "1647590:a:3",
+  "regla": "disciplina 44 (b) · antecedente",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647590:b:2",
+  "regla": "disciplina 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647592:a",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647592:a:2",
+  "regla": "disciplina 65 · defecto por quien persigue",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato (no favorito persigue y se rompe)"
+ },
+ {
+  "clave": "1647592:b",
+  "regla": "disciplina 65 · hecho",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "rescata cumplido por un titular, no por el banco del hecho (cumplido por otra vía)"
+ },
+ {
+  "clave": "1647592:b:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649569:a",
+  "regla": "disciplina 66 · ventaja",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649569:a:2",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649569:b",
+  "regla": "disciplina 61",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649569:b:2",
+  "regla": "disciplina 44 (f)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649570:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649570:a:3",
+  "regla": "disciplina 63",
+  "clase": "no_dice",
+  "propuesta_corta": "salida de la pieza con la rama ya abandonada"
+ },
+ {
+  "clave": "1649570:b",
+  "regla": "candidato doble golpe",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato «doble golpe»"
+ },
+ {
+  "clave": "1650176:a",
+  "regla": "disciplina 16 · plantilla siExpulsion",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó la línea `rival` de siExpulsion (plantilla v0.1.27)"
+ },
+ {
+  "clave": "1650176:b",
+  "regla": "disciplina 16 · roja propia empatando",
+  "clase": "regla_fallo",
+  "propuesta_corta": "roja propia empatando al 39' y no concedió en 51': contraejemplo de la referencia 11 de 12 (sin cambio)"
+ },
+ {
+  "clave": "1650176:b:3",
+  "regla": "S1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "S1 nombró un candidato; la roja fue de otro titular del doble pivote"
+ },
+ {
+  "clave": "1650176:b:4",
+  "regla": "disciplina 16 · vía propia",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la vía propia con diez se apagó con los cambios: se lee con el once que queda"
+ },
+ {
+  "clave": "1650247:a",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "favorito con margen 0,54 y ventaja al 5' administró sin declararlo y le empataron (defecto «sigue atacando»)"
+ },
+ {
+  "clave": "1650247:a:2",
+  "regla": "disciplina 66 · banco",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "bancoProbable entero: el suplente nombrado asistió el empate"
+ },
+ {
+  "clave": "1650247:b:3",
+  "regla": "disciplina 65 · hecho",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "abierto con un motivo de llave; el banco con cambios por hacer era el hecho nombrable para rescata"
+ },
+ {
+  "clave": "1551046:a",
+  "regla": "disciplina 66 · vía del empate (titulares)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el empate llegó por un titular de la vía principal rival, no por el banco: C6 llega al 3.er caso"
+ },
+ {
+  "clave": "1551046:b:4",
+  "regla": "disciplina 65",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551046:b:5",
+  "regla": "disciplina 63",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "siIguala que empuja sin pieza del seguro nombrada; concedió por el carril del que salió"
+ },
+ {
+  "clave": "1649568:a",
+  "regla": "disciplina 16 · roja propia ganando",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "roja propia ganando sin concesión (C3: suma al lado «sostiene»)"
+ },
+ {
+  "clave": "1649568:a:2",
+  "regla": "S1",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "S1 nombró dos candidatos; la roja fue del carrilero en capilla según la F1"
+ },
+ {
+  "clave": "1649568:a:3",
+  "regla": "disciplina 44 (b)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649568:b",
+  "regla": "disciplina 65 · defecto por quien persigue",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma 1 al candidato (no favorito persigue y se rompe)"
+ },
+ {
+  "clave": "1649568:b:4",
+  "regla": "disciplina 16 · superioridad",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "perdiendo con uno más persiguió (C2)"
+ }
+]
