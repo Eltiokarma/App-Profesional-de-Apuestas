@@ -289,6 +289,25 @@ check("1456: la nota que cita el error de La Nación no suena; afirmarlo, con o 
       _al1456 == [] and [a["equipo"] for a in _al1456b] == ["a"] and [a["equipo"] for a in _al1456c] == ["a"],
       (_al1456, _al1456b, _al1456c))
 
+# 1499 (24/11/2026, Feyenoord–Porto 1635663): Porto pasó la llave por penales 3-1 y
+# el parte lo decía bien, pero «eliminatoria» (el sustantivo) casaba con «elimin».
+_ll1499 = [{"fixtureId": 1635600, "competicion": "UEFA Europa League", "penales": "3-1", "pasa": True,
+            "texto": "pasó por penales (3-1)", "rival": "Feyenoord", "rivalId": 2}]
+try:
+    eliminatoria.recientes = lambda tid, antes, dias=30: _ll1499 if tid == 1 else []
+    _fx1499 = {"home_team_id": 2, "away_team_id": 1, "date": "2026-11-24 20:00:00"}
+    _nom1499 = {"a": "Feyenoord", "b": "FC Porto"}
+    _al1499 = parte.alertas_eliminatoria({"equipos": {"b": {"nota": "Porto pasó la eliminatoria del 20/11 por "
+                                                                    "penales 3-1 ante Feyenoord; las eliminatorias "
+                                                                    "a doble partido le sientan."}}},
+                                         _fx1499, _nom1499)
+    _al1499b = parte.alertas_eliminatoria({"equipos": {"b": {"nota": "Porto quedó eliminado por penales ante "
+                                                                     "Feyenoord."}}}, _fx1499, _nom1499)
+finally:
+    eliminatoria.recientes = _rec_orig
+check("1499: «pasó la eliminatoria» (el sustantivo) no suena; «quedó eliminado» sí",
+      _al1499 == [] and [a["equipo"] for a in _al1499b] == ["b"], (_al1499, _al1499b))
+
 print()
 print("TODO OK" if not fallos else f"{fallos} FALLA(S)")
 sys.exit(1 if fallos else 0)
