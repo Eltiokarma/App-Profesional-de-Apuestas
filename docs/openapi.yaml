@@ -806,7 +806,8 @@ paths:
         Hace UNA llamada mínima a Jev (docs/JEV.md) y devuelve qué modelo respondió, cuánto
         tardó y cuántos tokens costó. Sin clave no sale a la red y lo dice; con clave mala
         o límite excedido devuelve el error tal cual. Gasta milésimas de centavo: token
-        MAESTRO, denegado para Cowork.
+        MAESTRO, denegado para Cowork y para la web. En la app: Aprendizaje → «Jev», con el
+        modo administrador (🔑), junto con POST /analisis/jev/reetiquetar.
       tags: [analisis]
       responses:
         '200':

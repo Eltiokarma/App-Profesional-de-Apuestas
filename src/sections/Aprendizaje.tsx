@@ -4,6 +4,7 @@ import { getDataSource } from '../services/datasource'
 import { useAsync } from '../services/useAsync'
 import { COLOR_TRAMO } from '../lib/confianza'
 import { FormCuarentena } from '../components/FormCuarentena'
+import { PanelJev } from '../components/PanelJev'
 
 /** Fase C del bucle de aprendizaje (docs/APRENDIZAJE.md).
  *
@@ -129,6 +130,10 @@ export function Aprendizaje({ isMobile }: { isMobile: boolean }) {
           ))}
         </div>
       )}
+
+      {/* JEV (24/11/2026): probar la clave y re-etiquetar lo que quedó sin
+          etiqueta, sin terminal; con el modo administrador 🔑 */}
+      <PanelJev />
 
       {/* flexWrap: cinco pestañas no entran en una fila de teléfono */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: 3, borderRadius: 10, background: 'var(--bg2)', border: '1px solid var(--line)', marginBottom: 14 }}>

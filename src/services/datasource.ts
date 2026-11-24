@@ -12,6 +12,8 @@ import type {
   AnalisisPrepartidoDTO,
   AnalisisRegistroDTO,
   CierreAnterioresDTO,
+  JevPingDTO,
+  JevReetiquetarDTO,
   CargaDespensaDTO,
   CargaDespensaResultadoDTO,
   GeneracionEfeDTO,
@@ -218,6 +220,9 @@ export interface SadDataSource {
   derrotasFavorito(cohorte?: string): Promise<DerrotasFavoritoDTO>
   abrirRevision(skill: string, cohorte?: string): Promise<{ skill: string; movidas: string[]; versionVigente: string }>
   cerrarAnteriores(skill: string): Promise<CierreAnterioresDTO>
+  /** Jev: ¿la clave sirve? y los veredictos con el sello en error (token maestro). */
+  jevPing(): Promise<JevPingDTO>
+  jevReetiquetar(aplicar: boolean, limite?: number): Promise<JevReetiquetarDTO>
 }
 
 // ---------- mapeo de ids internos (strings) ↔ contrato (números) ----------
@@ -1084,6 +1089,17 @@ class MockDataSource implements SadDataSource {
              nota: 'modo demo: no se guarda' }
   }
 
+  // LA DEMO NO HABLA CON JEV: responde como el backend sin clave (no sale a
+  // la red, no fabrica etiquetas), para que la pantalla se pueda probar
+  async jevPing(): Promise<JevPingDTO> {
+    return { disponible: false, ok: false, modelo: null, via: 'api.typesafe.ai', oficial: true,
+             error: 'modo demo: sin TYPESAFE_API_KEY no se llama a Jev' }
+  }
+  async jevReetiquetar(aplicar: boolean): Promise<JevReetiquetarDTO> {
+    return { pendientes: 0, erroresSellados: {}, aplicar, disponible: false, reetiquetados: [], sinCambio: [],
+             cortadoPor: aplicar ? 'modo demo: sin TYPESAFE_API_KEY no se re-etiqueta' : null, quedan: 0 }
+  }
+
   async moverLeccion(clave: string, body: { estado: string; aplicadaEn?: string; nota?: string }): Promise<LeccionItem> {
     // el modo demo no persiste: devuelve la lección con el estado pedido para
     // que la pantalla se pueda probar sin backend
@@ -1418,6 +1434,8 @@ class HttpDataSource implements SadDataSource {
   derrotasFavorito = (cohorte?: string) => SadApi.derrotasFavorito(cohorte)
   abrirRevision = (skill: string, cohorte?: string) => SadApi.abrirRevision(skill, cohorte)
   cerrarAnteriores = (skill: string) => SadApi.cerrarAnteriores(skill)
+  jevPing = () => SadApi.jevPing()
+  jevReetiquetar = (aplicar: boolean, limite?: number) => SadApi.jevReetiquetar(aplicar, limite)
 }
 
 let _ds: SadDataSource | null = null

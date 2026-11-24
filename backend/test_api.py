@@ -56,6 +56,8 @@ def main():
     check("reetiquetar gasta tokens de Jev: nace denegado para Cowork y la web",
           not appmod._cowork_puede("POST", A + "/analisis/jev/reetiquetar")
           and not appmod._web_puede("POST", A + "/analisis/jev/reetiquetar"))
+    check("el ping de Jev sale a la red: tampoco con el token de la web (lee, no gasta)",
+          not appmod._web_puede("GET", A + "/analisis/jev/ping") and appmod._web_puede("GET", A + "/fixtures"))
 
     # /fixtures
     check("fixtures acepta limit=500 (días con amistosos globales)",
