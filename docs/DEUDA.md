@@ -1412,6 +1412,19 @@ conversación se pierde en la siguiente.
      decisión del usuario todavía): el método apostando solo con el semáforo
      en «confirma» y la casa en 60 %+.
 
+43. **Revisión de los skills desde las lecciones del 17-23/11** (24/11/2026,
+   usuario: «¿actualizamos los demás skills? veo mucho aprendizaje»). **Paso 1
+   hecho**: `docs/revisiones/estudio_lecciones_2026-11-24/` (1.231 lecciones
+   pendientes de TDE, DTP y EFE leídas una por una; sad-analysis fuera: subió
+   v4.7/v4.8 el 21/11). Las reglas se sostienen en su mayoría (TDE 75 %, DTP
+   55 %, EFE 61 %); `bancoProbable` y el rehacer del 17/11 bajaron los errores
+   de banco, grid y F1, y el incumplimiento se movió al resto del rehacer (EFE
+   con EFE-RECOMPUTO-PENDIENTE sonando y depositado igual). En el DTP, M5 es la
+   única regla que falla en volumen (50 de 119). **Incidencia**: Jev dejó de
+   etiquetar el modo de fallo desde el 21/11 (0 de 39 lados fallados el 22/11).
+   **Pendiente del usuario**: decidir el §5 del README (Jev, recibo que frena,
+   datos por sede) y aprobar el paso 2: TDE v0.1.28, DTP v1.10, EFE v1.12.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel

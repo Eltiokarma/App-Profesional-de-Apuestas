@@ -1,0 +1,3224 @@
+[
+ {
+  "clave": "1528992:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "DESFAVORABLE sin el rebote ni la segunda línea en la razón (lista de salida, renglones 6 y 8)"
+ },
+ {
+  "clave": "1528992:a:5",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528992:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE por superioridad por dentro que no dio volumen en el área"
+ },
+ {
+  "clave": "1528992:b:4",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "sumar el extremo que defiende hacia atrás contra el velocista fresco del banco rival (1 caso)"
+ },
+ {
+  "clave": "1528992:b:5",
+  "regla": "M2 · viasGol: lado débil y segunda línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528993:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de contra con 1,7 contra 4,28 concedido"
+ },
+ {
+  "clave": "1528993:b",
+  "regla": "candidato · seguro «sin» impide FAVORABLE persiguiendo",
+  "clase": "regla_fallo",
+  "propuesta_corta": "contraejemplo del candidato (Noruega 4,28 xG persiguiendo con seguro «sin»)"
+ },
+ {
+  "clave": "1528993:b:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma un caso al candidato «el segundo de la lista recibe la falta» (Ødegaard)"
+ },
+ {
+  "clave": "1528994:a:2",
+  "regla": "M2 · error en la salida bajo presión (quinta línea)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528994:a:3",
+  "regla": "M2 · posesión «arriba» aparte",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528994:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528994:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue DESFAVORABLE"
+ },
+ {
+  "clave": "1528994:b:3",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528994:b:4",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«de visita cede» y persiguiendo no cedió (17/11: puede ser v1.8)"
+ },
+ {
+  "clave": "1528995:a",
+  "regla": "M2 · viasGol: balón largo a la espalda",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«no aplica» mal razonado contra bloque de cinco que recula"
+ },
+ {
+  "clave": "1528995:a:2",
+  "regla": "M2 · dos capas (once tardío / pieza fuera)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528995:b",
+  "regla": "M2 · el reconvertido también ataca",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "Devenny, carrilero reconvertido, empató (17/11: puede ser v1.8)"
+ },
+ {
+  "clave": "1528996:a",
+  "regla": "M2 · viasGol: lado débil y segunda línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528996:b",
+  "regla": "M5 · volumen y conversión por separado",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528997:a:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528997:a:3",
+  "regla": "M2 · ramas con diferencia numérica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528997:b",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "nombrar la línea que defiende la vía principal del foco, no solo la pieza del duelo"
+ },
+ {
+  "clave": "1528998:a",
+  "regla": "M2 · posesión por rama (perfil en su condición de hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "tomó la posesión del rival GANANDO como perfil igualado"
+ },
+ {
+  "clave": "1528998:a:2",
+  "regla": "M2 · viasGol: lado débil y segunda línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528998:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO por «rotación baja la contra» sin un hecho de cómo juega el once alternativo"
+ },
+ {
+  "clave": "1528999:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528999:b:3",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1528999:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue DESFAVORABLE"
+ },
+ {
+  "clave": "1492451:a:4",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:a:5",
+  "regla": "M3 · quién queda atrás (todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:a:6",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492451:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue FAVORABLE"
+ },
+ {
+  "clave": "1492452:a",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "regla_fallo",
+  "propuesta_corta": "sin perfil de balón medido (sede, DT, n), la pelota parada del local no se rebaja a condicional"
+ },
+ {
+  "clave": "1492452:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492452:b:4",
+  "regla": "M2 · viasGol: balón largo a la espalda",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:a:3",
+  "regla": "M2 · mismatch contra reconvertido, vía a verificar",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:a:4",
+  "regla": "M5 · penales al lado del xG",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:b:4",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492453:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492456:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492456:a:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "base corta con el de la base en el banco: faltó el lanzador de pelota parada en cancha"
+ },
+ {
+  "clave": "1492456:b:2",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492456:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549554:a:2",
+  "regla": "M2 · ramas con diferencia numérica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549554:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1549554:b:3",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644334:a",
+  "regla": "M1 · grid, variantes, sin coordenada inexistente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "sin grid citó «grid de la ficha»: dos variantes"
+ },
+ {
+  "clave": "1644334:a:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644334:b",
+  "regla": "DTP-REHACER · al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "con momento conocido se depositó sin rehacer el sistema"
+ },
+ {
+  "clave": "1644334:b:2",
+  "regla": "M2 · error en la salida bajo presión (quinta línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644346:a:4",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la razón dice «sin banco» y la lista lo traía (once tardío)"
+ },
+ {
+  "clave": "1644346:b:3",
+  "regla": "M2 · el reconvertido también ataca",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644346:b:4",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644353:a:2",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644369:a:3",
+  "regla": "DTP-REHACER · momento tardío (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644369:b:2",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644373:a:2",
+  "regla": "M2 · viasGol: transición",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644373:b:3",
+  "regla": "M2 · dos capas (once tardío / pieza fuera)",
+  "clase": "insumo",
+  "propuesta_corta": "con once nivel C la pelota sucia nombra a la segunda línea que llega"
+ },
+ {
+  "clave": "1644373:b:4",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644384:a:2",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644384:b:3",
+  "regla": "M2 · dos capas (once tardío / pieza fuera)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1644384:b:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el 9 del banco como tercer nombre «si entra»"
+ },
+ {
+  "clave": "1650230:a:3",
+  "regla": "M2 · lista de salida de viasGol",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:a:4",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:a:5",
+  "regla": "M1 · xiReferencia nivel C (once no llegó)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650230:b:4",
+  "regla": "M5 · sin stats el volumen no se juzga",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492450:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio con mismatch nombrado contra reconvertido: 1,57 contra 0,12"
+ },
+ {
+  "clave": "1492450:b",
+  "regla": "M2 · la vía persiguiendo sobrevive a los cambios",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492450:b:2",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492450:b:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492454:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue FAVORABLE"
+ },
+ {
+  "clave": "1492454:a:4",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«cede y saca pocos córners» con el promedio propio (v1.9 ya lo dice)"
+ },
+ {
+  "clave": "1492454:b:3",
+  "regla": "M2 · ceder no es señal",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492454:b:4",
+  "regla": "candidato · rearme del medio (M3)",
+  "clase": "imprevisto",
+  "propuesta_corta": "cambio forzado del contenedor; no concedió (no suma al candidato)"
+ },
+ {
+  "clave": "1492458:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE con 0,52 contra 1,40: no escribió cuánto concedía a la contra"
+ },
+ {
+  "clave": "1492458:a:5",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492458:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "DESFAVORABLE persiguiendo que generó 1,40 contra 0,52"
+ },
+ {
+  "clave": "1492459:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492459:a:6",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el lateral del duelo; M3 solo «si va abajo»"
+ },
+ {
+  "clave": "1492459:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492459:b:5",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492459:b:6",
+  "regla": "checklist del bloque · vida útil / pregunta 5",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "pregunta 5 respondida con partidos del DT anterior; el improvisado sostuvo"
+ },
+ {
+  "clave": "1650500:a:4",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con la condición = obligación de tabla del rival, la línea menos favorable no fue la más probable"
+ },
+ {
+  "clave": "1650500:a:5",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:a:6",
+  "regla": "M2 · dos capas (once tardío / pieza fuera)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:b:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650500:b:5",
+  "regla": "M2 · la vía persiguiendo sobrevive a los cambios",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "pieza amonestada que sostiene dos renglones sin heredero"
+ },
+ {
+  "clave": "1650501:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650501:a:4",
+  "regla": "DTP-REHACER · momento tardío (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": "la API reescribió el grid tras el pitazo"
+ },
+ {
+  "clave": "1650501:b:3",
+  "regla": "M3 · quién queda atrás (todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650501:b:4",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:a:3",
+  "regla": "M2 · la razón de la rama cita sus vías por renglón",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650502:a:4",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_fallo",
+  "propuesta_corta": "improvisado (55-65) sostuvo el empate hasta el final, con reserva por el arquero"
+ },
+ {
+  "clave": "1650502:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE por nivel: la línea «si el rival sale» no escribió cuánto concede al débil"
+ },
+ {
+  "clave": "1650502:b:5",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«con materia» sin los córners que concede el rival ni su n"
+ },
+ {
+  "clave": "1492457:a",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "costo solo en 65-80; el cambio forzado del 25' abrió el gol"
+ },
+ {
+  "clave": "1492457:a:6",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:b:2",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:b:3",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:b:4",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1492457:b:5",
+  "regla": "M2 · posesión «arriba» aparte",
+  "clase": "regla_fallo",
+  "propuesta_corta": "contraejemplo del defecto «arriba = menos pelota»: equipo de posesión arriba en su plan tuvo el 57 %"
+ },
+ {
+  "clave": "1505563:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:a:4",
+  "regla": "M2 · dos capas (once tardío / pieza fuera)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:a:5",
+  "regla": "M2 · posesión «arriba» aparte",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:a:6",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:b:3",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "solo el del borde del ciclo; el TDE del parte listaba al central expulsado"
+ },
+ {
+  "clave": "1505563:b:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:b:5",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:b:6",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505563:b:7",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552827:a:6",
+  "regla": "M2 · viasGol: lado débil y segunda línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "el origen del centro de los dos lados (1 caso)"
+ },
+ {
+  "clave": "1552827:b:4",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "condición del rival etiquetada NEUTRO en vez de la línea menos favorable"
+ },
+ {
+  "clave": "1552827:b:5",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "promedio propio; 0 córners de visita"
+ },
+ {
+  "clave": "1552827:b:6",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:a:3",
+  "regla": "M2 · el reconvertido también ataca",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:a:4",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "promedio propio medido con el DT anterior"
+ },
+ {
+  "clave": "1558682:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:b:3",
+  "regla": "M3 · quién queda atrás (todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rearme en igualado sin escribir"
+ },
+ {
+  "clave": "1558682:b:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558682:b:5",
+  "regla": "checklist del bloque · vida útil / pregunta 5",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "p5 «reacción» cuando el DT cede la pelota de plan (2 partidos)"
+ },
+ {
+  "clave": "1575221:a:4",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575221:a:5",
+  "regla": "M2 · la vía sobrevive a los cambios (heredero de la pieza)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "un renglón que depende de una pieza lleva heredero en todas las ramas, no solo persiguiendo"
+ },
+ {
+  "clave": "1575221:b:5",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_fallo",
+  "propuesta_corta": "improvisado sostuvo el 1-1 de visita sin arquero; la p4 dice qué pasa si sale un central, no cuánto dura"
+ },
+ {
+  "clave": "1575221:b:6",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "regla_fallo",
+  "propuesta_corta": "si la condición es lo que el rival hace siempre, manda el contrario"
+ },
+ {
+  "clave": "1632063:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:a:4",
+  "regla": "M2 · posesión por rama (perfil en su condición de hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "un solo partido del rival ganando de local"
+ },
+ {
+  "clave": "1632063:a:5",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:b:4",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632063:b:6",
+  "regla": "DTP-REHACER · momento tardío (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": "delantero de la base en la casilla de pivote de un grid previo: dos variantes (1 caso)"
+ },
+ {
+  "clave": "1632066:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO/DESFAVORABLE que generó más (once tardío)"
+ },
+ {
+  "clave": "1632066:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE que generó menos de lo concedido"
+ },
+ {
+  "clave": "1632066:b:5",
+  "regla": "M2 · posesión por rama (perfil en su condición de hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "promedio de temporada sin sede ni n"
+ },
+ {
+  "clave": "1639806:a:2",
+  "regla": "M5 · referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "NEUTRO por un antecedente de otra sede; generó 2,28 contra 0,63"
+ },
+ {
+  "clave": "1639806:a:3",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639806:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO apoyado en la contra no dijo cuánto concede esperando"
+ },
+ {
+  "clave": "1639806:b:7",
+  "regla": "M2 · lista de salida de viasGol",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "renglones 1 y 8: origen del centro y pelota sucia en juego abierto"
+ },
+ {
+  "clave": "1649571:a",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el 9 que baja"
+ },
+ {
+  "clave": "1649571:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: 17 contra 6 remates en el área"
+ },
+ {
+  "clave": "1649571:b",
+  "regla": "M2 · viasGol: pelota sucia del área",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649571:b:2",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649571:b:6",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650173:a",
+  "regla": "M2 · posesión por rama (perfil en su condición de hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "perfil de temporada sin sede, DT ni n"
+ },
+ {
+  "clave": "1650173:a:2",
+  "regla": "M2 · dos capas (once tardío / pieza fuera)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650173:b:3",
+  "regla": "M2 · lista de salida de viasGol",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650173:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:a:4",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:b",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "cambio forzado del lateral: el M3 no escribía quién cubre la banda"
+ },
+ {
+  "clave": "1650175:b:2",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650175:b:3",
+  "regla": "DTP-REHACER · momento tardío (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650503:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650503:a:4",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650503:b:4",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650503:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650504:a:4",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "publicó FAVORABLE con la condición del rival; se jugó la línea NEUTRO"
+ },
+ {
+  "clave": "1650504:a:5",
+  "regla": "M2 · dos capas (once tardío / pieza fuera)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650504:a:6",
+  "regla": "candidato · rearme del medio (M3)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma caso al candidato: pivote amonestado cambiado al 28', gol al 31' (m2.piezas sin sus amarillas)"
+ },
+ {
+  "clave": "1650504:b:3",
+  "regla": "checklist del bloque · vida útil / pregunta 5",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "p5 respondida con la obligación de tabla y no con lo que hace el DT"
+ },
+ {
+  "clave": "1650504:b:4",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "regla_fallo",
+  "propuesta_corta": "«el obligado tiene que ir» como hecho: no fue y se jugó la línea contraria"
+ },
+ {
+  "clave": "1650504:b:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "orden: el ejecutor del año sin base va primero «si juega» (1 caso)"
+ },
+ {
+  "clave": "1650505:a",
+  "regla": "M1 · grid, variantes, sin coordenada inexistente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "sin grid contó 5-4-1 en una sola variante"
+ },
+ {
+  "clave": "1650505:a:2",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650505:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE que fue parejo y bajo"
+ },
+ {
+  "clave": "1650505:b:3",
+  "regla": "M3 · quién queda atrás (todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "nombró como «quedan atrás» a dos que el rearme sacaba"
+ },
+ {
+  "clave": "1650505:b:4",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650505:b:5",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1505565:a:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el 9 del banco «si entra» con los dos nombrados sustituibles"
+ },
+ {
+  "clave": "1505565:b:2",
+  "regla": "M2 · posesión por rama (perfil en su condición de hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "promedio de temporada"
+ },
+ {
+  "clave": "1505565:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue FAVORABLE"
+ },
+ {
+  "clave": "1550200:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE que fue NEUTRO (conversión a favor)"
+ },
+ {
+  "clave": "1550200:b:2",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550200:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550202:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE que fue NEUTRO (conversión a favor)"
+ },
+ {
+  "clave": "1550202:b:2",
+  "regla": "M5 · DESFAVORABLE por nivel dice cuánto concede al débil",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550202:b:3",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550202:b:4",
+  "regla": "DTP-REHACER · al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "M3, matchup y G-BLOQUE siguieron con la línea de cinco"
+ },
+ {
+  "clave": "1550205:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "DESFAVORABLE que fue NEUTRO (conversión en contra)"
+ },
+ {
+  "clave": "1550205:a:2",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550205:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550205:b:3",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551038:a",
+  "regla": "M5 · volumen y conversión por separado",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551038:a:2",
+  "regla": "M2 · posesión por rama (perfil en su condición de hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la dirección salió de la obligación del local, no del perfil"
+ },
+ {
+  "clave": "1551038:b:3",
+  "regla": "M2 · mismatch por carril",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551038:b:4",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551039:a:4",
+  "regla": "M2 · viasGol: transición",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la vuelta del córner rival como vía del que cede (mismo partido que 190)"
+ },
+ {
+  "clave": "1551039:b",
+  "regla": "M2 · el reconvertido también ataca",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551039:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551039:b:4",
+  "regla": "M2 · pelota parada con su vuelta",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la contra tras el córner propio va en las vías del rival (1 partido)"
+ },
+ {
+  "clave": "1551040:a",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "promedio propio; 9 córners contra un rival que concede"
+ },
+ {
+  "clave": "1551040:a:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551040:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551040:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE con 1,19 contra 3,82"
+ },
+ {
+  "clave": "1551040:b:2",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551040:b:3",
+  "regla": "M2 · viasGol: lado débil y segunda línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el pivote que llega al córner no estaba en la vía aérea"
+ },
+ {
+  "clave": "1552226:a",
+  "regla": "M2 · mismatch por carril, en las dos direcciones",
+  "clase": "regla_fallo",
+  "propuesta_corta": "el veredicto de la rama pesa la vuelta escrita del carril cargado (1 caso)"
+ },
+ {
+  "clave": "1552226:a:2",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "pelota parada tras el rearme, con las marcas reasignadas (1 caso)"
+ },
+ {
+  "clave": "1552226:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552226:b",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "regla_fallo",
+  "propuesta_corta": "si el propio parte sostiene la condición (TDE del rival), manda la condición"
+ },
+ {
+  "clave": "1552226:b:2",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552226:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552226:b:4",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:a:6",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552229:b:4",
+  "regla": "M2 · viasGol: lado débil y segunda línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el lateral que llega, también como rematador"
+ },
+ {
+  "clave": "1552229:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:a:4",
+  "regla": "M2 · mismatch por carril, en las dos direcciones",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:b",
+  "regla": "M5 · volumen y conversión por separado",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552233:b:4",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552824:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el defensor fresco de la hoja (marcó)"
+ },
+ {
+  "clave": "1552824:a:4",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552824:b",
+  "regla": "M5 · penales al lado del xG",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552824:b:5",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco «desde el 60'» con minuto fijo"
+ },
+ {
+  "clave": "1557467:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: 1,04 contra 0,28"
+ },
+ {
+  "clave": "1557467:a:4",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "mal_aplicada",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557467:b",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557467:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue DESFAVORABLE"
+ },
+ {
+  "clave": "1557468:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557468:b:6",
+  "regla": "M5 · volumen y conversión por separado",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557470:a:2",
+  "regla": "M5 · referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "NEUTRO por tener la pelota; el parte tenía la referencia contraria"
+ },
+ {
+  "clave": "1557470:a:4",
+  "regla": "candidato · rearme del medio (M3)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma caso al candidato: Caicedo fuera al 22', gol al 28'"
+ },
+ {
+  "clave": "1557470:b",
+  "regla": "M5 · referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "racha y promedio en vez de la referencia del mismo perfil que el parte tenía"
+ },
+ {
+  "clave": "1557471:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE que fue NEUTRO (conversión a favor)"
+ },
+ {
+  "clave": "1557471:a:5",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557471:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:a",
+  "regla": "M5 · volumen y conversión por separado",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:a:2",
+  "regla": "M2 · viasGol: lado débil y segunda línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:b",
+  "regla": "M2 · mismatch por carril, en las dos direcciones",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557474:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue DESFAVORABLE"
+ },
+ {
+  "clave": "1557474:b:4",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557475:a",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "banco sin minuto fijo: entró al 45"
+ },
+ {
+  "clave": "1557475:a:2",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557475:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "DESFAVORABLE que fue parejo tras el ajuste del DT al descanso"
+ },
+ {
+  "clave": "1557475:a:4",
+  "regla": "M2 · error en la salida bajo presión (quinta línea)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la pieza que pierde, por rol en toda la salida (mismo partido que 239)"
+ },
+ {
+  "clave": "1557475:b:4",
+  "regla": "M2 · la presión alta, con su vuelta",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "vuelta escrita sobre arquero y centrales; perdió el mediapunta"
+ },
+ {
+  "clave": "1557475:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE que fue NEUTRO en el partido entero"
+ },
+ {
+  "clave": "1557475:b:6",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557476:a:2",
+  "regla": "M5 · el volumen se cuenta donde se remata",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557476:a:3",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "(g) la pareja central cambiada en el once: «sin dato», no estructural probado"
+ },
+ {
+  "clave": "1557476:b:2",
+  "regla": "M2 · la vía persiguiendo sobrevive a los cambios",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558683:a:3",
+  "regla": "M3 · quién queda atrás (todas las ramas)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "la pieza del seguro que sale antes del tramo (roja)"
+ },
+ {
+  "clave": "1558683:a:4",
+  "regla": "M2 · veredicto con condición: línea menos favorable",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE con la condición del rival; se jugó la línea NEUTRO escrita"
+ },
+ {
+  "clave": "1558683:a:5",
+  "regla": "M1 · vía de expulsión (dos lados, toda la línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el contenedor del seguro"
+ },
+ {
+  "clave": "1558683:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "DESFAVORABLE persiguiendo con banco de dos delanteros entero que generó más (con diez)"
+ },
+ {
+  "clave": "1558683:b:4",
+  "regla": "M2 · viasGol: aérea con todos los que atacan el área",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558684:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558684:b:2",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558684:b:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558684:b:4",
+  "regla": "M2 · rama sin vía contra el bloque es DESFAVORABLE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570453:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: 3,17 contra 0,24"
+ },
+ {
+  "clave": "1570453:a:3",
+  "regla": "MECANISMO-ABIERTO",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "mecanismo de zona nacido con otro sistema declarado como vía principal (con la línea cambiada no viaja)"
+ },
+ {
+  "clave": "1570453:b:2",
+  "regla": "M2 · rama sin vía contra el bloque es DESFAVORABLE",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "NEUTRO persiguiendo sin vía nombrada contra el bloque de cinco"
+ },
+ {
+  "clave": "1570460:a:2",
+  "regla": "M5 · el volumen se cuenta donde se remata",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570460:a:3",
+  "regla": "M2 · viasGol: aérea con todos los que atacan el área",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570460:b:2",
+  "regla": "M2 · pelota parada: materia del cruce, por rama",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "promedio propio y el lanzador habitual en vez del que saca los córners"
+ },
+ {
+  "clave": "1570460:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570462:a:3",
+  "regla": "M2 · la vía persiguiendo sobrevive a los cambios",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "DESFAVORABLE «la vía se apaga» con el banco heredero ya nombrado"
+ },
+ {
+  "clave": "1570462:a:4",
+  "regla": "M2 · posesión por rama (perfil en su condición de hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "promedio de temporada sin sede"
+ },
+ {
+  "clave": "1570462:a:5",
+  "regla": "M1 · grid, variantes, sin coordenada inexistente",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "once oficial capturado antes del depósito y no copiado"
+ },
+ {
+  "clave": "1570462:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE con 0,58 contra 2,25"
+ },
+ {
+  "clave": "1570462:b:5",
+  "regla": "checklist del bloque · pregunta 6 / sostuvoArquero",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575222:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575222:a:3",
+  "regla": "DTP-REHACER · momento tardío (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575222:b:3",
+  "regla": "M2 · rama sin vía contra el bloque es DESFAVORABLE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575222:b:4",
+  "regla": "M2 · banco ofensivo (bancoProbable, todas las ramas)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la vía del banco del que persigue dice qué pasa si el DT goleado cierra (1 caso)"
+ },
+ {
+  "clave": "1575223:a",
+  "regla": "M2 · el reconvertido también ataca (viasGol)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "regla v1.9 incumplida: la llegada del reasignado no entró a viasGol; para la app: aviso de rol reasignado sin renglón en viasGol"
+ },
+ {
+  "clave": "1575223:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:a:6",
+  "regla": "M2 · penales con la base corta (9 titular)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:b:2",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575223:b:4",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "regla v1.8 incumplida: nombró un solo amonestado, no toda la línea del duelo"
+ },
+ {
+  "clave": "1575225:a",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:b",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:b:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575225:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575226:a:3",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "condición fuera del control del foco: la rama debía llevar la línea menos favorable (ya escrito v1.8)"
+ },
+ {
+  "clave": "1575226:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575228:a",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "usó el xG de temporada como referencia: ya escrito v1.8"
+ },
+ {
+  "clave": "1575228:b",
+  "regla": "M2 · mismatch contra un reconvertido",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE sobre reconvertido sin el remate nombrado; apertura contra M5 parejo"
+ },
+ {
+  "clave": "1575229:a:4",
+  "regla": "M2 · posesión por rama (perfil del rival hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "dirección invertida: el perfil del rival en su sede no se citó (v1.9)"
+ },
+ {
+  "clave": "1575229:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575229:a:6",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "vía, no certeza: sin crónica no se carga"
+ },
+ {
+  "clave": "1575229:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de apertura que el volumen dejó parejo (acierto por conversión)"
+ },
+ {
+  "clave": "1575229:b:2",
+  "regla": "M2 · posesión por rama (perfil del rival hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "dirección desde el plan propio, no del perfil del rival de visita (v1.9)"
+ },
+ {
+  "clave": "1575229:b:3",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "caso de la 6 para Freiburg"
+ },
+ {
+  "clave": "1584466:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio persiguiendo: volumen DESFAVORABLE (media distancia sin área)"
+ },
+ {
+  "clave": "1584466:a:2",
+  "regla": "M2 · viasGol (pelota sucia)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584466:a:3",
+  "regla": "M2 · mismatch contra un reconvertido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584466:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: el volumen fue a favor"
+ },
+ {
+  "clave": "1584469:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "FAVORABLE con reserva dentro del área"
+ },
+ {
+  "clave": "1584469:a:3",
+  "regla": "M2 · el reconvertido también ataca (viasGol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "v1.9 cumplida y confirmada (Singo)"
+ },
+ {
+  "clave": "1584469:a:5",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584469:b:2",
+  "regla": "M3 · banco sin minuto fijo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco escrito «desde el 60'» (v1.8 pide sin minuto fijo)"
+ },
+ {
+  "clave": "1584469:b:3",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "no puesta a prueba, bien leída"
+ },
+ {
+  "clave": "1584472:a",
+  "regla": "M2 · ceder no es señal",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rama subestimada por ceder la pelota; media distancia y penal estaban en su lista (v1.8)"
+ },
+ {
+  "clave": "1584472:a:3",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rearme de ventaja tardía sin quién queda atrás (v1.8)"
+ },
+ {
+  "clave": "1584472:b",
+  "regla": "M2 · FAVORABLE por zona escribe quién remata",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE por mismatch de zona sin rematador en el área y apoyado en la pelota (v1.8)"
+ },
+ {
+  "clave": "1593360:a",
+  "regla": "M2 · rama sin vía es DESFAVORABLE",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco solo no es vía (Emelec, v1.7): debió ir DESFAVORABLE"
+ },
+ {
+  "clave": "1593360:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593360:b",
+  "regla": "M1 · banda del grid (lado débil)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banda del extremo no copiada del grid (v1.8)"
+ },
+ {
+  "clave": "1639838:a:5",
+  "regla": "M2 · dos capas (estructural sobrevive)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "carril estructural sostuvo pese al once tardío"
+ },
+ {
+  "clave": "1639838:b:2",
+  "regla": "M4 · autopsia y responsables",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645542:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "DESFAVORABLE de apertura, volumen parejo (con 25' de diez)"
+ },
+ {
+  "clave": "1645542:a:4",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645542:b:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "lista entera cubrió; la palanca con nombre no"
+ },
+ {
+  "clave": "1645542:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647579:a:5",
+  "regla": "M2 · dos capas (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": "once capturado después del pitazo"
+ },
+ {
+  "clave": "1647579:b:2",
+  "regla": "M2 · piezas en el banco (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": "once tardío"
+ },
+ {
+  "clave": "1647580:a:5",
+  "regla": "M2 · lado débil (lateral que llega)",
+  "clase": "no_dice",
+  "propuesta_corta": "nota de cadena, no juzga la apertura"
+ },
+ {
+  "clave": "1647581:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "un goleador del banco fuera de las vías"
+ },
+ {
+  "clave": "1647581:a:4",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647581:b",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647586:a",
+  "regla": "M2 · pelota parada (tiro libre directo)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el renglón 2 de la lista ya pide al lanzador de tiro libre directo"
+ },
+ {
+  "clave": "1647586:b:4",
+  "regla": "M1 · vulnerabilidad del rol",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647587:a:2",
+  "regla": "M2 · dos capas (estructural sobrevive)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "estructural sostuvo; nombres caídos por once tardío"
+ },
+ {
+  "clave": "1647587:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647587:b",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "sin bancoProbable (copa sin base), el banco por rol sirvió"
+ },
+ {
+  "clave": "1647587:b:2",
+  "regla": "M1 · XI de referencia obligatorio",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "xiReferencia vacío (DTP-SIN-REFERENCIA) que la v1.5 manda rechazar; para la app: el recibo debería frenarlo"
+ },
+ {
+  "clave": "1647591:a:2",
+  "regla": "checklist del bloque · vida útil",
+  "clase": "regla_fallo",
+  "propuesta_corta": "bloque ambiguo; el refresco propio (pregunta 4) pesa ante rival de dos categorías más (copa, un caso)"
+ },
+ {
+  "clave": "1647591:a:3",
+  "regla": "M2 · banco sin minuto fijo",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647591:a:4",
+  "regla": "M2 · dos capas (once tardío)",
+  "clase": "insumo",
+  "propuesta_corta": "el once nunca llegó a la base"
+ },
+ {
+  "clave": "1647591:b:3",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649566:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649566:b:2",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "gol por el duelo central nombrado; abierto hasta crónica"
+ },
+ {
+  "clave": "1650174:a",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "condición del rival: publicar la línea menos favorable (v1.8)"
+ },
+ {
+  "clave": "1650174:a:5",
+  "regla": "M1 · amarillas de las piezas del seguro",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650174:b:2",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550201:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550201:a:5",
+  "regla": "M2 · banco sin minuto fijo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "matriz y M3 escribieron «desde el 60'» (v1.8)"
+ },
+ {
+  "clave": "1550201:a:6",
+  "regla": "M2 · viasGol lado débil (lateral que llega)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "lateral solo como centrador, no como llegada (renglón 6)"
+ },
+ {
+  "clave": "1550201:a:7",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550201:b:3",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550201:b:4",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "no puesta a prueba, bien leída"
+ },
+ {
+  "clave": "1550201:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550206:a",
+  "regla": "M2 · presión alta con su vuelta",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "v1.9 cumplida (Sassuolo)"
+ },
+ {
+  "clave": "1550206:a:2",
+  "regla": "MECANISMO-ABIERTO · con mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550206:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550206:b:2",
+  "regla": "M2 · viasGol (balón largo, error en la salida)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1550206:b:3",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "sostuvoArquero bien leído"
+ },
+ {
+  "clave": "1551043:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen FAVORABLE (1,76 contra 0,77)"
+ },
+ {
+  "clave": "1551043:a:4",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "insumo",
+  "propuesta_corta": "expulsado era un lateral que la apertura tenía en el banco (once tardío)"
+ },
+ {
+  "clave": "1551043:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen DESFAVORABLE, ganó por conversión"
+ },
+ {
+  "clave": "1551043:b:3",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "vía cumplida; la línea con uno menos no se puso a prueba en serio"
+ },
+ {
+  "clave": "1551044:a",
+  "regla": "M2 · pelota parada (tiro libre directo)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "no nombró al lanzador de tiro libre directo (v1.5, renglón 2)"
+ },
+ {
+  "clave": "1551044:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen FAVORABLE"
+ },
+ {
+  "clave": "1551044:a:3",
+  "regla": "M2 · posesión por rama (perfil del rival hoy)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "media de 10 sin sede (v1.9 pide sede/DT/n)"
+ },
+ {
+  "clave": "1551044:b:3",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE desde xG de últimos 10 sin sede; y la línea contraria del rival no fue la publicada"
+ },
+ {
+  "clave": "1551045:a:4",
+  "regla": "M2 · viasGol lado débil (lateral que llega)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "lado débil nombró al carrilero y llegó el extremo: nombrar a todos los que llegan"
+ },
+ {
+  "clave": "1551045:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551045:a:6",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "caso parcial anotado"
+ },
+ {
+  "clave": "1551045:b:2",
+  "regla": "M5 · dónde remata el que persigue",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la clase del bloque no fija dónde remata el que persigue (un caso)"
+ },
+ {
+  "clave": "1552225:a:3",
+  "regla": "M2 · ramas por número",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552225:b:5",
+  "regla": "M2 · ramas por número",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "no puesta a prueba; nombres caídos por once tardío"
+ },
+ {
+  "clave": "1552227:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de apertura que el volumen dejó parejo"
+ },
+ {
+  "clave": "1552227:b:2",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:a:3",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen DESFAVORABLE"
+ },
+ {
+  "clave": "1552230:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:b:5",
+  "regla": "M2 · viasGol lado débil (lateral que llega)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552230:b:6",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el lateral fresco y un nombrado de banco fue titular (FUERA-EN-LA-HOJA, once tardío)"
+ },
+ {
+  "clave": "1552232:a:4",
+  "regla": "M5 · ramas por número",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552232:a:5",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552232:b:2",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "nombró solo el doble pivote; la roja fue del lateral (v1.8)"
+ },
+ {
+  "clave": "1552232:b:3",
+  "regla": "M2 · viasGol (transición)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:a",
+  "regla": "M2 · pelota parada (materia del cruce)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "materia desde el promedio propio, no de lo que concede el rival (v1.9)"
+ },
+ {
+  "clave": "1552821:a:5",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:a:6",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:b:3",
+  "regla": "M2 · viasGol (transición del favorito)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552821:b:4",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552822:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de apertura con 1,49 contra 4,07 de xG: la transición rival ya estaba abierta"
+ },
+ {
+  "clave": "1552822:a:5",
+  "regla": "M2 · viasGol (error en la salida bajo presión)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552822:a:6",
+  "regla": "M3 · costo de rearmar (candidato: el doble pivote)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "suma caso al candidato «el rearme del medio cuenta como el de la línea»"
+ },
+ {
+  "clave": "1552822:b",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "DESFAVORABLE desde un solo partido de otra sede (v1.8)"
+ },
+ {
+  "clave": "1552825:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552825:a:4",
+  "regla": "M2 · banco sin minuto fijo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«desde el 60'» con un nombre (v1.8: por rol y sin minuto)"
+ },
+ {
+  "clave": "1552825:a:5",
+  "regla": "DTP-REHACER · once tardío",
+  "clase": "insumo",
+  "propuesta_corta": "grid corregido por la API después del pitazo"
+ },
+ {
+  "clave": "1552825:b:5",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1552825:b:6",
+  "regla": "checklist del bloque · vida útil (techo)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "no puesta a prueba"
+ },
+ {
+  "clave": "1552825:b:7",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la línea contraria debe nombrar el seguro del rival, no solo «si se vuelca» (un caso)"
+ },
+ {
+  "clave": "1557472:a:3",
+  "regla": "M2 · al rehacer, todo lo que nombra piezas",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rehecho, la rama y el M3 siguieron citando a un suplente (v1.7-v1.8)"
+ },
+ {
+  "clave": "1557472:a:4",
+  "regla": "M2 · ceder no es señal",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "DESFAVORABLE por ceder el 70 %; volumen parejo (v1.8)"
+ },
+ {
+  "clave": "1557472:a:5",
+  "regla": "M2 · viasGol (lista de salida)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557472:b:3",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "sostuvoArquero, dos partidos seguidos"
+ },
+ {
+  "clave": "1557472:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557473:a:2",
+  "regla": "M5 · ramas por número",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557473:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557473:a:4",
+  "regla": "M2 · viasGol lado débil (lateral que llega)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1557473:b:3",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "cumplida (Yoro); sistema corregido tras el pitazo"
+ },
+ {
+  "clave": "1558680:a",
+  "regla": "M2 · ejecutor de penales (tercer nombre «si entra»)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "aclarar: el tercero «si entra» es el 9 que reemplaza al ejecutor (un caso)"
+ },
+ {
+  "clave": "1558680:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558680:a:3",
+  "regla": "DTP-REHACER · once tardío",
+  "clase": "insumo",
+  "propuesta_corta": "once a 15 min del pitazo; estructural sostuvo"
+ },
+ {
+  "clave": "1558680:b:3",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "publicó NEUTRO con el contrario DESFAVORABLE escrito: va la línea menos favorable (v1.8)"
+ },
+ {
+  "clave": "1558680:b:4",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558681:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558681:a:4",
+  "regla": "M4 · categoría del gol",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558681:b:2",
+  "regla": "M2 · FAVORABLE por zona escribe quién remata",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE por el carril sin rematador (v1.8); once tardío movió a la pieza"
+ },
+ {
+  "clave": "1558681:b:3",
+  "regla": "M2 · pelota parada (materia del cruce)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "condicional por «cede», no por los córners del cruce (v1.9)"
+ },
+ {
+  "clave": "1558685:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558685:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558685:b:3",
+  "regla": "M1 · el sistema se copia del grid",
+  "clase": "no_dice",
+  "propuesta_corta": "no consta si la API corrigió la formación tras el rehacer; para la app: hora de la formación"
+ },
+ {
+  "clave": "1558687:a:2",
+  "regla": "M2 · la vía persiguiendo sobrevive a los cambios",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "NEUTRO persiguiendo sin decir qué vía quedaba tras los cambios (v1.8)"
+ },
+ {
+  "clave": "1558687:a:3",
+  "regla": "M2 · penales con la base corta (9 titular)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1558687:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen FAVORABLE con la vía escrita"
+ },
+ {
+  "clave": "1558687:b:3",
+  "regla": "M1 · el sistema se copia del grid",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "apertura y rehacer con el sistema del último once, no del grid (v1.8)"
+ },
+ {
+  "clave": "1570455:a:4",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570455:a:5",
+  "regla": "M2 · ejecutor de penales (candidato: el segundo recibe la falta)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "suma el 3er partido al candidato (Panathinaikos, Dinamarca, Barcelona)"
+ },
+ {
+  "clave": "1570455:a:6",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570455:b:3",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó el central de la pareja nueva (v1.8)"
+ },
+ {
+  "clave": "1570455:b:4",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570455:b:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570456:a",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "insumo",
+  "propuesta_corta": "identidad: Djené leído fuera de la hoja (API «D. Dakonam»); para la app: caso en identidad.py"
+ },
+ {
+  "clave": "1570456:a:4",
+  "regla": "M2 · rama sin vía es DESFAVORABLE",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570456:b",
+  "regla": "M2 · mismatch contra una línea nueva (con vía, sube)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "NEUTRO por frecuencia de la condición con la zaga rival rearmada y vía nombrada (v1.8)"
+ },
+ {
+  "clave": "1570456:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570458:b",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "estructural sostuvo pese al once tardío"
+ },
+ {
+  "clave": "1570459:a:3",
+  "regla": "M2 · media distancia con todos sus rematadores",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltaron el 9 y los extremos (v1.8)"
+ },
+ {
+  "clave": "1570459:a:4",
+  "regla": "M2 · mismatch con su vuelta",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570459:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen DESFAVORABLE"
+ },
+ {
+  "clave": "1570459:a:6",
+  "regla": "M2 · penales con la base corta (9 titular)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1570459:b:6",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen FAVORABLE"
+ },
+ {
+  "clave": "1575224:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: pelota parada con materia y 3,59 contra 1,22"
+ },
+ {
+  "clave": "1575224:b",
+  "regla": "M2 · mismatch contra una línea nueva (vía a verificar)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE sobre una línea rearmada sin la vía con su remate (v1.8)"
+ },
+ {
+  "clave": "1575224:b:2",
+  "regla": "MECANISMO-ABIERTO · con mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575224:b:5",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el banco nombró a un titular (FUERA-EN-LA-HOJA) después de bancoProbable"
+ },
+ {
+  "clave": "1575227:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de apertura que el volumen dejó parejo (4-0 por conversión)"
+ },
+ {
+  "clave": "1575227:a:3",
+  "regla": "M2 · pelota parada (materia del cruce)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "vía de córner desde la media propia (4,4), el cruce dio 1 (v1.9)"
+ },
+ {
+  "clave": "1575227:a:4",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1575227:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:a:4",
+  "regla": "M2 · penales con la base corta (9 titular)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584471:b",
+  "regla": "M2 · ejecutor de penales (base vacía)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "con la base vacía pateó el carrilero centrador, fuera de la lista (un caso)"
+ },
+ {
+  "clave": "1584471:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:a:3",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:b:5",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584473:b:6",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584474:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1584474:a:3",
+  "regla": "M2 · vía del arquero (P2)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "arquero suplente listado como vía sin las ≥ 2 intervenciones fallidas (P2, v1.9)"
+ },
+ {
+  "clave": "1584474:a:4",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "no puesta a prueba; sostuvo el arquero"
+ },
+ {
+  "clave": "1584474:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593361:a:4",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "NEUTRO desde la referencia de temporada (v1.8)"
+ },
+ {
+  "clave": "1593361:a:5",
+  "regla": "M2 · viasGol (balón largo)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593361:b:2",
+  "regla": "M2 · viasGol (pelota sucia)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "renglón 8 cumplido; faltó el origen del centro"
+ },
+ {
+  "clave": "1593361:b:3",
+  "regla": "M2 · ceder no es señal",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "NEUTRO con el 58 % y volumen DESFAVORABLE: tener la pelota no sostiene (v1.8)"
+ },
+ {
+  "clave": "1593362:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:a:4",
+  "regla": "M2 · rest defense (seguro fijo)",
+  "clase": "regla_fallo",
+  "propuesta_corta": "doble pivote con pocas titularidades juntas no es «fijo» (un caso)"
+ },
+ {
+  "clave": "1593362:a:5",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:b:3",
+  "regla": "M2 · viasGol (transición)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593362:b:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:b:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:b:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593363:b:4",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593364:a",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de apertura que el volumen dejó parejo"
+ },
+ {
+  "clave": "1593364:a:2",
+  "regla": "M2 · la razón cita sus vías por renglón (banco entero)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la razón eligió parte del banco; marcó el que no nombró (v1.7-v1.8)"
+ },
+ {
+  "clave": "1593364:b",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "media de temporada con DT nuevo (v1.8)"
+ },
+ {
+  "clave": "1593364:b:2",
+  "regla": "M2 · la vía persiguiendo sobrevive a los cambios",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593365:a:3",
+  "regla": "M5 · ramas por número",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593365:a:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593365:b:2",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "nombró al pivote, la roja fue del central (v1.8)"
+ },
+ {
+  "clave": "1593365:b:3",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "rearme por roja de un defensor en cualquier tramo (v1.7)"
+ },
+ {
+  "clave": "1593365:b:4",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1593365:b:5",
+  "regla": "M5 · ramas por número",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1632065:a:4",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de apertura con volumen DESFAVORABLE (ganó por conversión)"
+ },
+ {
+  "clave": "1632065:a:5",
+  "regla": "M2 · banco ofensivo (titular rotado primero)",
+  "clase": "no_dice",
+  "propuesta_corta": "sin DTP depositado"
+ },
+ {
+  "clave": "1632067:b:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "no_dice",
+  "propuesta_corta": "sin DTP depositado"
+ },
+ {
+  "clave": "1639807:a:2",
+  "regla": "M2 · FAVORABLE por zona escribe quién remata",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "el rematador real no figuraba y la pieza salió al descanso (v1.8)"
+ },
+ {
+  "clave": "1639807:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "FAVORABLE de apertura que el volumen dejó parejo"
+ },
+ {
+  "clave": "1639807:a:4",
+  "regla": "M1 · el sistema se copia del grid",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "ficha antes del pitazo y el rehacer siguió con el sistema viejo (v1.8)"
+ },
+ {
+  "clave": "1639807:b:3",
+  "regla": "M2 · viasGol lado débil (segunda línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "interior que llega solo como asistidor (renglón 6)"
+ },
+ {
+  "clave": "1639807:b:4",
+  "regla": "M1 · el sistema se copia del grid",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "9 y extremo invertidos contra el grid (v1.8)"
+ },
+ {
+  "clave": "1639807:b:5",
+  "regla": "M2 · dos veredictos, uno por rama",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639836:a:3",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639836:a:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639836:a:5",
+  "regla": "M2 · viasGol (pelota sucia)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "en el rechace faltaron los centrales que ya atacaban el área"
+ },
+ {
+  "clave": "1639836:b:3",
+  "regla": "M2 · viasGol (aérea con todos los que atacan el área)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639836:b:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639837:a:2",
+  "regla": "M5 · sin stats en la ficha",
+  "clase": "no_dice",
+  "propuesta_corta": "ficha sin stats: el volumen no se juzga"
+ },
+ {
+  "clave": "1639837:a:3",
+  "regla": "M2 · viasGol (aérea y pelota sucia)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1639837:b:3",
+  "regla": "M2 · banco sin minuto fijo",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "«desde el 60'» en la matriz (v1.8); once nunca capturado"
+ },
+ {
+  "clave": "1645545:a:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645545:a:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645545:b",
+  "regla": "M2 · FAVORABLE por zona escribe quién remata",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "sin el cabeceador sancionado, FAVORABLE sin decir cómo le llega la pelota al recambio; el H del parte ya decía NEUTRO"
+ },
+ {
+  "clave": "1645546:a:2",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco solo en persiguiendo; marcó con 3-0 (v1.7: todas las ramas)"
+ },
+ {
+  "clave": "1645546:a:3",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645546:b",
+  "regla": "checklist del bloque · vida útil (techo)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la matriz fijó el quiebre «tras el 60'» contra un rival que carga desde el 0 (v1.4)"
+ },
+ {
+  "clave": "1645547:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645547:a:3",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645547:a:4",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "vía, no certeza"
+ },
+ {
+  "clave": "1645547:b:2",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1645547:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646938:a:3",
+  "regla": "M2 · veredicto con condición escribe su contrario",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE persiguiendo apoyado en «retrocede con ventaja» sin línea contraria (v1.8)"
+ },
+ {
+  "clave": "1646938:a:4",
+  "regla": "MECANISMO-ABIERTO · sin mecánica",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1646938:a:5",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "sin quién queda atrás tras los cambios persiguiendo (v1.8)"
+ },
+ {
+  "clave": "1646938:b:3",
+  "regla": "M2 · ningún nombre en el XI y en el banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "un nombre en xiReferencia y en el banco, otro de banco titular (v1.8); para la app: que el recibo frene, no solo avise"
+ },
+ {
+  "clave": "1647582:a:2",
+  "regla": "M3 · plan por fases",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647582:b",
+  "regla": "M3 · plan por fases",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647584:a:3",
+  "regla": "M6 · rotación",
+  "clase": "regla_fallo",
+  "propuesta_corta": "la rotación anunciada no fija el margen contra un rival muy inferior (copa, un caso)"
+ },
+ {
+  "clave": "1647585:a:3",
+  "regla": "M2 · viasGol (pelota parada y segunda línea)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647585:b:3",
+  "regla": "M4 · categoría «sin fuente»",
+  "clase": "no_dice",
+  "propuesta_corta": "sin crónica ni stats"
+ },
+ {
+  "clave": "1647590:a:4",
+  "regla": "checklist del bloque · pregunta 6",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "caso anotado sin stats"
+ },
+ {
+  "clave": "1647590:b",
+  "regla": "M2 · mismatch contra un reconvertido (vuelta)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "FAVORABLE sin pesar la vuelta del carril que la vulnerabilidad ya nombraba"
+ },
+ {
+  "clave": "1647592:a:3",
+  "regla": "DTP-REHACER · once tardío",
+  "clase": "insumo",
+  "propuesta_corta": "once 10 min antes del pitazo"
+ },
+ {
+  "clave": "1647592:a:4",
+  "regla": "M5 · sin stats en la ficha",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647592:b:3",
+  "regla": "M2 · banco ofensivo (bancoProbable)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco de «los conocidos»: uno fuera de la hoja y faltó el extremo convocado"
+ },
+ {
+  "clave": "1647592:b:4",
+  "regla": "M5 · sin stats en la ficha",
+  "clase": "no_dice",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647594:a:3",
+  "regla": "M3 · cadena · cierre de la rama",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1647594:b",
+  "regla": "M1 · vulnerabilidad del rival",
+  "clase": "regla_fallo",
+  "propuesta_corta": "«concede temprano de visita» no se activa solo ante un rival inferior (copa, un caso)"
+ },
+ {
+  "clave": "1649569:a:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen FAVORABLE"
+ },
+ {
+  "clave": "1649569:a:4",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649569:b:3",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_fallo",
+  "propuesta_corta": "NEUTRO-refugio: volumen DESFAVORABLE"
+ },
+ {
+  "clave": "1649570:a:2",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "FAVORABLE con reserva dentro del área"
+ },
+ {
+  "clave": "1649570:b:2",
+  "regla": "M2 · dos capas (estructural sobrevive)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1649570:b:3",
+  "regla": "M2 · ningún nombre en el XI y en el banco",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "banco nombrado titular (FUERA-EN-LA-HOJA) después de bancoProbable"
+ },
+ {
+  "clave": "1650176:a:2",
+  "regla": "M5 · ramas por número",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1650176:b:2",
+  "regla": "M2 · vía de expulsión con toda la línea",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "faltó la pieza del seguro con 3 amarillas en la F1 (v1.7-v1.8)"
+ },
+ {
+  "clave": "1650247:a:3",
+  "regla": "M2 · viasGol (error en la salida bajo presión)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "quinta línea con sus dos condiciones y no escrita (v1.5)"
+ },
+ {
+  "clave": "1650247:a:4",
+  "regla": "M3 · costo de rearmar la línea",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "vía, no certeza"
+ },
+ {
+  "clave": "1650247:b",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "DESFAVORABLE desde un solo partido (v1.8)"
+ },
+ {
+  "clave": "1650247:b:2",
+  "regla": "M2 · la razón cita sus vías por renglón (banco entero)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "la razón recortó el banco; asistió el que no nombró (v1.7)"
+ },
+ {
+  "clave": "1551046:a:2",
+  "regla": "M3 · quién queda atrás / costo de rearmar",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "solo «si va igualado»; faltó la rama arriba (v1.8)"
+ },
+ {
+  "clave": "1551046:a:3",
+  "regla": "M2 · el reconvertido también ataca (viasGol)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551046:b:2",
+  "regla": "M2 · ejecutor de penales",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ },
+ {
+  "clave": "1551046:b:3",
+  "regla": "M2 · viasGol lado débil (segunda línea)",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "extremo solo como centrador y el pivote reasignado sin llegada (renglón 6)"
+ },
+ {
+  "clave": "1649568:a:4",
+  "regla": "MECANISMO-ABIERTO · régimen",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": "abierto sin confirmar, bien leído"
+ },
+ {
+  "clave": "1649568:a:5",
+  "regla": "M5 · veredicto contra lo concedido",
+  "clase": "imprevisto",
+  "propuesta_corta": "las dos piezas de la transición salieron lesionadas al 26' y 37'"
+ },
+ {
+  "clave": "1649568:b:2",
+  "regla": "M5 · la referencia de volumen no viaja",
+  "clase": "mal_aplicada",
+  "propuesta_corta": "DESFAVORABLE desde un solo partido (v1.8)"
+ },
+ {
+  "clave": "1649568:b:3",
+  "regla": "M2 · viasGol (aérea con todos los que atacan el área)",
+  "clase": "regla_sostuvo",
+  "propuesta_corta": ""
+ }
+]
