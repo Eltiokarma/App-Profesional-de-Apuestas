@@ -768,6 +768,37 @@ ese equipo ganó: dos datos por partido, la calibración más rápida. Un partid
 con las lecturas cruzadas es un partido que no leímos claro: se cuenta aparte
 (`cruzadas` del espejo) para ver si avisa cuándo no apostar.
 
+**La calibración de las dos lecturas contra los resultados** (24/11/2026,
+usuario: «se tiene que salir de lo que dice el analista y calibrar con los
+resultados; incluso podemos tomar más resultados pasados»):
+`backend/analisis/calibracion_lecturas.py`, una curva por lado,
+logit(calibrada) = a + b·logit(dicha), con un previo en la identidad. Medido
+ese día con `python -m backend.backtest_calibracion_lecturas` sobre 394 partes
+cerrados desde el 28/10 (las lecturas son el 1X2 publicado, casi la casa) y
+28 ciegos:
+
+- **Lo dicho comprime hacia el medio**, en los dos lados y en la muestra
+  entera: el local que dijimos 68 ganó 78 (69), el de 84 ganó 93 (15); la
+  visita que dijimos 48 ganó 58 (66) y la de 67 ganó 78 (32). La curva sale
+  con b ≈ 1,46 (local) y 1,35 (visita).
+- **Fuera de la muestra no se sostiene.** Corte 80/20 (aprende de 315, mide
+  en 79 desde el 21/11): logLoss local 0,5832 → 0,5814 y visita 0,5628 →
+  0,5621, una mejora que no se distingue de cero, con cualquier previo (0,25
+  a 2). **Semana a semana** —lo que haría la rutina de los lunes—, en 228
+  partidos: local 0,5717 → 0,5718 y visita 0,5414 → **0,5509 (peor)**. La
+  curva aprendió de las semanas en que los favoritos ganaron de más (b ≈ 1,6
+  hasta el 08/11) y la aplicó a la semana en que se cayeron.
+- Es la misma falla de la temperatura del 25/10 (sad-analysis v4.1, 6-B,
+  «Calibración de la cohorte»): lo que aprende la curva es la racha de los
+  favoritos de esas semanas, no un error estable del analista.
+- **En el ciego** (28), la curva del publicado mejora un poco (local 0,6272
+  → 0,6202; visita 0,5990 → 0,5979); la propia del ciego tiene 28 partidos.
+
+**Decisión de ese día**: la curva **no entra al número publicado**. Vive en
+el espejo (`curvas`) como información para el analista, y se vuelve a medir
+con el backtest semana a semana cuando el ciego llegue a 60 cerrados y con
+más semanas: entra solo si la prueba semana a semana mejora en los dos lados.
+
 **Lo que decide**: si el ciego acierta más que la casa en algún grupo de
 partidos (sobre todo donde no coinciden), ahí se apuesta a nuestro lado
 aunque la casa diga otra cosa. Si no, sabremos que leemos mal y qué arreglar

@@ -1382,6 +1382,14 @@ conversación se pierde en la siguiente.
      espejo calibra cada lectura por su lado. Pendiente: medir con 60 si las
      `cruzadas` avisan cuándo no apostar, y si el `pronostico.probabilidades`
      publicado del parte también pasa a las dos lecturas (hoy sigue en 1X2).
+   - HECHO el 24/11: el parte también en dos lecturas (`pronostico.lecturas`,
+     el backend arma el 1X2) y la curva de calibración contra los resultados
+     (`calibracion_lecturas`, `backtest_calibracion_lecturas`). Medido: lo
+     dicho comprime (b ≈ 1,4) pero la curva NO mejora fuera de la muestra
+     (semana a semana empeora la visita, 0,5414 → 0,5509): no entra al número,
+     queda en el espejo. **Pendiente**: re-correr el backtest con 60 ciegos y
+     más semanas; y llevar la matriz por equipo (efe-dashboard ya da «para
+     ganar» con su probabilidad) como fuente de las dos lecturas.
    - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 22/11):
      ciego contra publicado contra favorito de la casa, y el desacuerdo.
    - **Revisar las reglas de anclaje del sad-analysis** (v4.1 «el empate
