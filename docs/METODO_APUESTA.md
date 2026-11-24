@@ -684,6 +684,36 @@ que venía de empatar: 2 de 2 ganados (Lituania, Alemania en Serbia). Muestra
 mínima: la regla queda congelada y se decide con los 60 marcados desde el
 22/11; si en 30 sigue al revés, el escalón la da por `no_se_sostiene`.
 
+## Verde sin alertas (24/11/2026)
+
+El usuario: «agrega las dos series a la simulación; también Martingala Cuidada y
+Ganar Fijo adaptadas al verde sin alertas fuera del medio». Cuatro series
+nuevas en `simulacion.ESTRATEGIAS`, cada una con su gráfica:
+
+| serie | la que adapta | además no apuesta si… |
+|---|---|---|
+| `metodoVerdeSinAlertas` | `metodoVerde` (1 % y freno por tramo) | DESCONFIAR sobre el elegido o su burbuja en riesgo **alto** |
+| `metodoVerdeSinAlertasFueraMedio` | lo anterior | y la casa le da al elegido 45-60 % |
+| `martingalaCuidadaSinAlertas` | `martingalaCuidada` (ya sin el medio) | fuera del verde, DESCONFIAR o riesgo alto |
+| `ganarFijoSinAlertas` | `ganarFijo` (ya en verde y sin el medio) | DESCONFIAR o riesgo alto |
+
+La regla (`simulacion.bloqueo_sin_alertas`) mira DESCONFIAR en toda la
+historia (la sellada manda; si no, `alerta_confianza`), no desde el 10/11, y
+el riesgo de la burbuja total del elegido. El «muy alto» no entra: su elegido
+ganó 66 % (32) en las dos semanas, contra 41 % del alto (63).
+
+**Lo medido el día en que se armó** (partes cerrados bajados con el token de
+Cowork, 1 u plana, mismas apuestas): 28/10-09/11 (167), verde 59,1 % (+6,5 u),
+sin alertas 62,5 % (+9,1 u), sin alertas y fuera del medio 70,7 % (+12,3 u, 58
+apuestas); 10/11-24/11 (227), verde 56,2 % (−14,7 u), sin alertas 62,9 % (+3,4
+u), sin alertas y fuera del medio 69,9 % (+9,1 u, 93 apuestas). Por separado,
+el semáforo no verde y DESCONFIAR separan en los dos periodos (el elegido gana
+31-44 % con ellos contra 55-60 % sin ellos); el riesgo alto solo en el segundo.
+
+**Se armó mirando esos partidos**: vale lo que pase desde el **25/11/2026**
+(`SIN_ALERTAS_DESDE`). La rutina de los lunes lo informa en la sección «Verde
+sin alertas» de `python -m backend.contacto`, contando solo desde esa fecha.
+
 ## El 1X2 ciego: nuestra lectura sin la casa (22/11/2026)
 
 El usuario, al ver la banca caer 15 días seguidos: «no tenemos porcentaje

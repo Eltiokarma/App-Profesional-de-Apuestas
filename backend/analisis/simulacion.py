@@ -213,6 +213,23 @@ CORTE_CUIDADA = 3                  # derrotas seguidas tras las que la línea ac
 # los 447 partidos de producción (28/10-17/11) en docs/METODO_APUESTA.md: es la
 # misma muestra donde salieron el medio y la alerta, se mide hacia adelante.
 GANAR_FIJO = 0.025                 # lo que cada apuesta busca ganar: 2,5 % de la banca cobrada
+# VERDE SIN ALERTAS (24/11/2026, usuario: «agrega las dos series a la
+# simulación; también Martingala Cuidada y Ganar Fijo adaptadas al verde sin
+# alertas fuera del medio»). No se apuesta si el semáforo del elegido no está en
+# verde, si la alerta DESCONFIAR está activa sobre el elegido (sellada o
+# recalculada, `alerta_confianza`) o si su burbuja total está en riesgo ALTO
+# (`SIN_ALERTAS_RIESGOS`). Medido ese día sobre los partes cerrados (1 u plana,
+# las mismas apuestas, contacto.armar):
+#   28/10-09/11 (167): verde 154 a 59,1 % +6,5 u · sin alertas 96 a 62,5 % +9,1 u
+#                      · sin alertas y fuera del medio 58 a 70,7 % +12,3 u
+#   10/11-24/11 (227): verde 194 a 56,2 % −14,7 u · sin alertas 143 a 62,9 % +3,4 u
+#                      · sin alertas y fuera del medio 93 a 69,9 % +9,1 u
+# El riesgo «muy alto» NO entra: en las dos semanas su elegido ganó 66 % (32) y
+# el «alto» 41 % (63); en las anteriores el alto no separó (54 % contra 58 %).
+# La regla se armó mirando esos partidos: lo que vale es lo que pase desde
+# `SIN_ALERTAS_DESDE` (docs/METODO_APUESTA.md, «Verde sin alertas»).
+SIN_ALERTAS_RIESGOS = ("alto",)
+SIN_ALERTAS_DESDE = "2026-11-25 05:00:00"   # 00:00 de Lima del 25/11/2026
 TOPE_GANAR_FIJO = 2.0              # la apuesta no pasa de 2 × eso (5 % de la banca; pega con cuota < 1,50)
 FRANJAS_GANAR_FIJO = ("sorpresa", "favorito")
 
@@ -284,21 +301,44 @@ ESTRATEGIAS = (
      f"al favorito (cuota hasta 2) el {100 * MIXTA_FUERA_MEDIO:g} % de la banca; a la sorpresa, lo que gana ese "
      f"{100 * MIXTA_FUERA_MEDIO:g} %: {100 * MIXTA_FUERA_MEDIO:g} % / (cuota − 1). Sin apostar cuando la casa le da "
      f"entre {MEDIO[0]:g} % y {MEDIO[1]:g} % y sin freno: no mira lo que pasó antes, así que no depende del orden"),
+    ("metodoVerdeSinAlertas", "Método verde sin alertas",
+     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo en verde, sin la "
+     "alerta DESCONFIAR sobre el elegido y sin su burbuja en riesgo alto. La regla salió de los partidos hasta el "
+     "24/11: vale lo que pase desde el 25/11"),
+    ("metodoVerdeSinAlertasFueraMedio", "Método verde sin alertas fuera del medio",
+     f"el método verde sin alertas, y además sin apostar cuando la casa le da al elegido entre {MEDIO[0]:g} % y "
+     f"{MEDIO[1]:g} %. La regla salió de los partidos hasta el 24/11: vale lo que pase desde el 25/11"),
+    ("martingalaCuidadaSinAlertas", "Martingala cuidada verde sin alertas",
+     f"la martingala cuidada ({100 * PROPORCION_CUIDADA:g} % de la banca por ciclo, duplica y corta a "
+     f"{CORTE_CUIDADA} derrotas, sin el medio) apostando solo en verde, sin DESCONFIAR y sin la burbuja del "
+     "elegido en riesgo alto: una derrota filtrada no abre ni carga una línea"),
     ("ganarFijo", "Ganar fijo",
      f"cada apuesta busca ganar el {100 * GANAR_FIJO:g} % de la banca: apuesta {100 * GANAR_FIJO:g} % / (cuota − 1), "
      f"sin pasar del {100 * GANAR_FIJO * TOPE_GANAR_FIJO:g} %. No apuesta cuando la casa le da al elegido entre "
      f"{MEDIO[0]:g} % y {MEDIO[1]:g} %, ni cuando le damos más de 2 puntos sobre la casa, ni con el semáforo fuera de verde; sorpresas y favoritos se "
      f"pausan por separado si en sus últimos {FRENO_VENTANA} partidos acertaron menos de lo que pedía la cuota"),
+    ("ganarFijoSinAlertas", "Ganar fijo verde sin alertas",
+     f"ganar fijo (busca ganar el {100 * GANAR_FIJO:g} % de la banca, sin el medio, sin pasarse de la casa y con su "
+     "freno por franja) y además sin DESCONFIAR sobre el elegido ni su burbuja en riesgo alto"),
 )
-_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaFueraMedio", "martingalaCuidada")
+_MARTINGALAS = ("martingala", "martingala60", "martingala60Ajustada", "martingalaFueraMedio", "martingalaCuidada",
+                "martingalaCuidadaSinAlertas")
+# las cuidadas (1 % por ciclo, duplica y corta) y las de ganar fijo (24/11/2026: con su versión sin alertas)
+_CUIDADAS = ("martingalaCuidada", "martingalaCuidadaSinAlertas")
+_GANAR_FIJO = ("ganarFijo", "ganarFijoSinAlertas")
+# las que no apuestan fuera del verde, con DESCONFIAR ni con la burbuja del elegido en riesgo alto
+_SIN_ALERTAS = ("metodoVerdeSinAlertas", "metodoVerdeSinAlertasFueraMedio", "martingalaCuidadaSinAlertas",
+                "ganarFijoSinAlertas")
 # las que, tras perder, apuestan lo que recupera según la cuota (no duplican)
 _AJUSTADAS = ("martingala60Ajustada", "martingalaFueraMedio")
 # las que no apuestan en el medio (lo que la casa le da al elegido, 45-60 %)
-_FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "martingalaCuidada", "mixtaFueraMedio", "ganarFijo")
+_FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "martingalaCuidada", "mixtaFueraMedio", "ganarFijo",
+                "metodoVerdeSinAlertasFueraMedio", "martingalaCuidadaSinAlertas", "ganarFijoSinAlertas")
 # las ajustadas que buscan solo una parte de la deuda de la línea en cada apuesta
 _RECUPERA_PARTE = {"martingalaFueraMedio": RECUPERA_FUERA_MEDIO}
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
-_CON_FRENO = ("proporcional", "metodoVerde", "metodoFueraMedio")
+_CON_FRENO = ("proporcional", "metodoVerde", "metodoFueraMedio", "metodoVerdeSinAlertas",
+              "metodoVerdeSinAlertasFueraMedio")
 _SOLO_ALTA = ("plana60", "martingala60", "martingala60Ajustada")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
@@ -768,10 +808,30 @@ def _franja(fila: dict) -> str:
     return "sorpresa" if fila["mercado"][fila["elegido"]] < MEDIO[0] else "favorito"
 
 
+def bloqueo_sin_alertas(fila: dict) -> str:
+    """Por qué el verde sin alertas no apuesta este partido ("" si apuesta):
+    semáforo fuera de verde, DESCONFIAR sobre el elegido o su burbuja en riesgo alto."""
+    estado = (fila.get("semaforo") or {}).get("estado") or "sinDato"
+    if estado != "confirma":
+        return {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
+            estado, "semáforo sin dato")
+    if fila.get("desconfiar"):
+        return "alerta DESCONFIAR sobre el elegido"
+    if fila.get("riesgoElegido") in SIN_ALERTAS_RIESGOS:
+        return f"la burbuja del elegido está en riesgo {fila['riesgoElegido']}"
+    return ""
+
+
 def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     """Arma la apuesta de una estrategia en el pitazo, con lo que ya se cobró."""
     libre = max(e["banca"] - e["comprometido"], 0.0)
     linea = None
+    if clave in _SIN_ALERTAS:
+        motivo = bloqueo_sin_alertas(fila)
+        if motivo:
+            fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
+                                            "linea": None, "motivo": motivo}
+            return
     if clave == "metodoVerde" and (fila.get("semaforo") or {}).get("estado") != "confirma":
         estado = (fila.get("semaforo") or {}).get("estado") or "sinDato"
         fila["porEstrategia"][clave] = {
@@ -816,7 +876,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
                      "perdida": 0.0, "racha": 0, "unidad": UNIDAD}
             e["lineas"].append(linea)
         previsto = linea["proximo"]
-        if clave == "martingalaCuidada":
+        if clave in _CUIDADAS:
             # un ciclo nuevo de la línea toma su unidad de la banca de AHORA (lo cobrado)
             if linea["racha"] == 0:
                 linea["unidad"] = PROPORCION_CUIDADA * e["banca"]
@@ -830,7 +890,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         c = fila["cuotas"][sel]
         # la banca de AHORA (lo cobrado), como el método; con cuota > 2, lo que gana el X %
         previsto = MIXTA_FUERA_MEDIO * e["banca"] * (min(1.0, 1 / (c - 1)) if c > 1 else 0.0)
-    elif clave == "ganarFijo":
+    elif clave in _GANAR_FIJO:
         sel = fila["elegido"]
         nuestra, casa = fila["probabilidades"][sel], fila["mercado"][sel]
         fr = _franja(fila)
@@ -865,7 +925,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             motivo = "sin plata libre"
         elif clave in _SOLO_ALTA:
             motivo = f"bajo {CONFIANZA_ALTA:g} %"
-        elif clave in _CON_FRENO or clave in ("mixtaFueraMedio", "martingalaCuidada", "ganarFijo"):
+        elif clave in _CON_FRENO or clave in ("mixtaFueraMedio", *_CUIDADAS, *_GANAR_FIJO):
             motivo = "banca en cero"
         else:
             motivo = "sin ventaja"
@@ -899,7 +959,7 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
                 # lo perdido en la línea: un acierto lo descuenta (entero si la apuesta no se recortó)
                 l["perdida"] = max(0.0, l["perdida"] - ganancia) if gano else l["perdida"] + r["monto"]
                 l.update(ocupada=False, libreDesde=t, proximo=UNIDAD)
-            elif clave == "martingalaCuidada":
+            elif clave in _CUIDADAS:
                 # gana o llega al corte: la línea vuelve a empezar (la pérdida del ciclo se acepta)
                 racha = 0 if gano or l["racha"] + 1 >= CORTE_CUIDADA else l["racha"] + 1
                 if not gano and racha == 0:
@@ -922,7 +982,7 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         sel = fila["elegido"]
         e["tramos"].setdefault(tramo_confianza(fila["probabilidades"][sel]), deque(maxlen=FRENO_VENTANA)).append(
             (fila["resultado"] == sel, 1 / fila["cuotas"][sel]))
-    if clave == "ganarFijo" and not fila["enElMedio"]:
+    if clave in _GANAR_FIJO and not fila["enElMedio"]:
         # el freno por franja anota todo partido cerrado fuera del medio, se haya apostado o no
         sel = fila["elegido"]
         e["tramos"].setdefault(_franja(fila), deque(maxlen=FRENO_VENTANA)).append(
@@ -1009,7 +1069,7 @@ def simular(apuestas: list[dict]) -> dict:
                          "proximoMayor": round(max((l["proximo"] for l in e["lineas"] if l["racha"] > 0),
                                                    default=0.0), 2),
                          "cortes": e["cortes"]}
-                        if clave == "martingalaCuidada" else
+                        if clave in _CUIDADAS else
                         {"abiertas": len(e["lineas"]),
                          "perdiendo": sum(1 for l in e["lineas"] if l["proximo"] > UNIDAD),
                          "proximoMayor": round(max((l["proximo"] for l in e["lineas"]), default=UNIDAD), 2)})
@@ -1019,7 +1079,7 @@ def simular(apuestas: list[dict]) -> dict:
                        if clave in _CON_FRENO else
                        # ganarFijo: el freno de sus dos franjas (sorpresa y favorito)
                        [{"tramo": fr, **freno_tramo(e["tramos"].get(fr, ()))} for fr in FRANJAS_GANAR_FIJO]
-                       if clave == "ganarFijo" else None),
+                       if clave in _GANAR_FIJO else None),
             "serie": e["serie"],
         })
 
@@ -1351,8 +1411,12 @@ def _simulacion() -> dict:
         r = fx[a["fixtureId"]]
         elegido = _elegido(_normalizar(a["probabilidades"]))
         sellada = (a.get("desconfianzaSellada") or {}).get("alerta")
-        a["alerta"] = ((sellada or alerta_confianza(a["probabilidades"], a["mercado"], _burbuja_elegido(r, elegido)))
-                       if _utc(a["pitazo"]) >= inicio_alerta else None)
+        burbuja = _burbuja_elegido(r, elegido)
+        alerta = sellada or alerta_confianza(a["probabilidades"], a["mercado"], burbuja)
+        a["alerta"] = alerta if _utc(a["pitazo"]) >= inicio_alerta else None
+        # el verde sin alertas (24/11/2026) las mira en TODA la historia, no desde ALERTA_DESDE
+        a["desconfiar"] = bool(alerta.get("activa"))
+        a["riesgoElegido"] = (burbuja or {}).get("riesgo")
         a["marcador"] = marcador_de(r, elegido)
     out = simular(apuestas)
     out["excluidos"] = sorted(excluidos, key=lambda x: x["pitazo"], reverse=True)

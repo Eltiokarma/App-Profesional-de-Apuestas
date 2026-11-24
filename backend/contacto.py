@@ -103,6 +103,10 @@ def armar(datos: dict) -> tuple[list[dict], list[dict]]:
             "marcador": _marcador(parte, probs),
             # el 1X2 ciego (22/11/2026): el GET del parte lo trae sellado
             "ciego": parte.get("ciego"),
+            # el verde sin alertas (24/11/2026): DESCONFIAR (la sellada manda) y el riesgo de la burbuja del elegido
+            "desconfiar": bool(((parte.get("desconfianzaSellada") or {}).get("alerta")
+                                or (parte.get("desconfianza") or {}).get("alerta") or {}).get("activa")),
+            "riesgoElegido": ((parte.get("desconfianza") or {}).get("burbujaElegido") or {}).get("riesgo"),
         })
     return apuestas, excluidos
 
@@ -167,7 +171,40 @@ def informe(out: dict) -> str:
     if m:
         lineas.append(f"  martingala: banca {m['banca']:.2f}, caída máx. {100 * m['caidaMaxima']:.1f} %, "
                       f"apuesta máx. {m['montoMaximo']:.0f} u")
-    lineas += ["", informe_ciego(out), "", informe_semaforo(out), "", informe_marcador(out), "", informe_medio(out)]
+    lineas += ["", informe_ciego(out), "", informe_semaforo(out), "", informe_marcador(out), "", informe_medio(out),
+               "", informe_sin_alertas(out)]
+    return "\n".join(lineas)
+
+
+SIN_ALERTAS_SERIES = ("metodoVerde", "metodoVerdeSinAlertas", "metodoVerdeSinAlertasFueraMedio",
+                      "martingalaCuidada", "martingalaCuidadaSinAlertas", "ganarFijo", "ganarFijoSinAlertas")
+
+
+def informe_sin_alertas(out: dict) -> str:
+    """La sección «Verde sin alertas» del informe de los lunes (24/11/2026): las
+    cuatro series nuevas al lado de las que adaptan, contando SOLO desde
+    `SIN_ALERTAS_DESDE` (la regla se armó con los partidos de antes)."""
+    desde = sim.SIN_ALERTAS_DESDE
+    nombres = {e["clave"]: e["nombre"] for e in out.get("estrategias") or []}
+    lineas = [f"Verde sin alertas · cuenta desde {desde[:10]} (antes es la muestra con que se armó la regla)"]
+    for clave in SIN_ALERTAS_SERIES:
+        if clave not in nombres:
+            continue
+        n = k = 0
+        apostado = ganancia = 0.0
+        for a in out.get("apuestas") or []:
+            r = (a.get("porEstrategia") or {}).get(clave) or {}
+            if a.get("estado") != "cerrada" or str(a.get("pitazo") or "") < desde or not r.get("monto"):
+                continue
+            n += 1
+            k += 1 if a.get("resultado") == r.get("seleccion") else 0
+            apostado += r["monto"]
+            ganancia += r.get("ganancia") or 0.0
+        if n:
+            lineas.append(f"  {nombres[clave]}: {k} de {n} ({100 * k / n:.1f} %), apostado {apostado:.2f} u, "
+                          f"ganancia {ganancia:+.2f} u ({100 * ganancia / apostado:+.1f} % por unidad)")
+        else:
+            lineas.append(f"  {nombres[clave]}: sin apuestas cerradas todavía")
     return "\n".join(lineas)
 
 

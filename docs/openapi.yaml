@@ -2227,7 +2227,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaFueraMedio, martingalaCuidada, mixtaFueraMedio, ganarFijo] }
+              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaFueraMedio, martingalaCuidada, mixtaFueraMedio, ganarFijo, metodoVerdeSinAlertas, metodoVerdeSinAlertasFueraMedio, martingalaCuidadaSinAlertas, ganarFijoSinAlertas], description: 'las cuatro «SinAlertas» (24/11/2026) no apuestan fuera del verde, con DESCONFIAR sobre el elegido ni con su burbuja en riesgo alto; la regla salió de los partidos hasta el 24/11 y vale lo que pase desde el 25/11' }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }

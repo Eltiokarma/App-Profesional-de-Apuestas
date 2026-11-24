@@ -1311,9 +1311,423 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    ]
   },
   {
+   "clave": "metodoVerdeSinAlertas",
+   "nombre": "Método verde sin alertas",
+   "descripcion": "el método (1 % de la banca y el mismo freno por tramo) apostando solo en verde, sin la alerta DESCONFIAR sobre el elegido y sin su burbuja en riesgo alto. La regla salió de los partidos hasta el 24/11: vale lo que pase desde el 25/11",
+   "banca": 103.62,
+   "ganancia": 3.62,
+   "apostado": 6.12,
+   "apuestas": 6,
+   "ganadas": 5,
+   "roi": 0.5911,
+   "caidaMaxima": 0.01,
+   "quebro": null,
+   "exposicionMaxima": 2.05,
+   "montoMaximo": 1.04,
+   "lineas": null,
+   "tramos": [
+    {
+     "tramo": "<40",
+     "n": 1,
+     "aciertos": 0,
+     "tasa": 0.0,
+     "pide": 0.3846,
+     "z": -0.79,
+     "pausado": false
+    },
+    {
+     "tramo": "40-49",
+     "n": 3,
+     "aciertos": 3,
+     "tasa": 1.0,
+     "pide": 0.4728,
+     "z": 1.83,
+     "pausado": false
+    },
+    {
+     "tramo": "50-59",
+     "n": 4,
+     "aciertos": 2,
+     "tasa": 0.5,
+     "pide": 0.5449,
+     "z": -0.18,
+     "pausado": false
+    },
+    {
+     "tramo": "60+",
+     "n": 3,
+     "aciertos": 1,
+     "tasa": 0.3333,
+     "pide": 0.6155,
+     "z": -1.0,
+     "pausado": false
+    }
+   ],
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 101.05
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 101.05
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 102.06
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 102.06
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 102.83
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 102.83
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 103.53
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 102.49
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 102.49
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 103.62
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 103.62
+    }
+   ]
+  },
+  {
+   "clave": "metodoVerdeSinAlertasFueraMedio",
+   "nombre": "Método verde sin alertas fuera del medio",
+   "descripcion": "el método verde sin alertas, y además sin apostar cuando la casa le da al elegido entre 45 % y 60 %. La regla salió de los partidos hasta el 24/11: vale lo que pase desde el 25/11",
+   "banca": 99.0,
+   "ganancia": -1.0,
+   "apostado": 1.0,
+   "apuestas": 1,
+   "ganadas": 0,
+   "roi": -1.0,
+   "caidaMaxima": 0.01,
+   "quebro": null,
+   "exposicionMaxima": 1.0,
+   "montoMaximo": 1.0,
+   "lineas": null,
+   "tramos": [
+    {
+     "tramo": "<40",
+     "n": 1,
+     "aciertos": 0,
+     "tasa": 0.0,
+     "pide": 0.3846,
+     "z": -0.79,
+     "pausado": false
+    },
+    {
+     "tramo": "40-49",
+     "n": 3,
+     "aciertos": 3,
+     "tasa": 1.0,
+     "pide": 0.4728,
+     "z": 1.83,
+     "pausado": false
+    },
+    {
+     "tramo": "50-59",
+     "n": 4,
+     "aciertos": 2,
+     "tasa": 0.5,
+     "pide": 0.5449,
+     "z": -0.18,
+     "pausado": false
+    },
+    {
+     "tramo": "60+",
+     "n": 3,
+     "aciertos": 1,
+     "tasa": 0.3333,
+     "pide": 0.6155,
+     "z": -1.0,
+     "pausado": false
+    }
+   ],
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 99.0
+    }
+   ]
+  },
+  {
+   "clave": "martingalaCuidadaSinAlertas",
+   "nombre": "Martingala cuidada verde sin alertas",
+   "descripcion": "la martingala cuidada (1 % de la banca por ciclo, duplica y corta a 3 derrotas, sin el medio) apostando solo en verde, sin DESCONFIAR y sin la burbuja del elegido en riesgo alto: una derrota filtrada no abre ni carga una línea",
+   "banca": 99.0,
+   "ganancia": -1.0,
+   "apostado": 1.0,
+   "apuestas": 1,
+   "ganadas": 0,
+   "roi": -1.0,
+   "caidaMaxima": 0.01,
+   "quebro": null,
+   "exposicionMaxima": 1.0,
+   "montoMaximo": 1.0,
+   "lineas": {
+    "abiertas": 1,
+    "perdiendo": 1,
+    "proximoMayor": 2.0,
+    "cortes": 0
+   },
+   "tramos": null,
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 99.0
+    }
+   ]
+  },
+  {
    "clave": "ganarFijo",
    "nombre": "Ganar fijo",
    "descripcion": "cada apuesta busca ganar el 2.5 % de la banca: apuesta 2.5 % / (cuota − 1), sin pasar del 5 %. No apuesta cuando la casa le da al elegido entre 45 % y 60 %, ni cuando le damos más de 2 puntos sobre la casa, ni con el semáforo fuera de verde; sorpresas y favoritos se pausan por separado si en sus últimos 50 partidos acertaron menos de lo que pedía la cuota",
+   "banca": 95.19,
+   "ganancia": -4.81,
+   "apostado": 4.81,
+   "apuestas": 1,
+   "ganadas": 0,
+   "roi": -1.0,
+   "caidaMaxima": 0.0481,
+   "quebro": null,
+   "exposicionMaxima": 4.81,
+   "montoMaximo": 4.81,
+   "lineas": null,
+   "tramos": [
+    {
+     "tramo": "sorpresa",
+     "n": 2,
+     "aciertos": 1,
+     "tasa": 0.5,
+     "pide": 0.4196,
+     "z": 0.23,
+     "pausado": false
+    },
+    {
+     "tramo": "favorito",
+     "n": 1,
+     "aciertos": 0,
+     "tasa": 0.0,
+     "pide": 0.6579,
+     "z": -1.39,
+     "pausado": false
+    }
+   ],
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 95.19
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 95.19
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 95.19
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 95.19
+    }
+   ]
+  },
+  {
+   "clave": "ganarFijoSinAlertas",
+   "nombre": "Ganar fijo verde sin alertas",
+   "descripcion": "ganar fijo (busca ganar el 2.5 % de la banca, sin el medio, sin pasarse de la casa y con su freno por franja) y además sin DESCONFIAR sobre el elegido ni su burbuja en riesgo alto",
    "banca": 95.19,
    "ganancia": -4.81,
    "apostado": 4.81,
@@ -1499,7 +1913,31 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 0,
      "roi": null
     },
+    "metodoVerdeSinAlertas": {
+     "apostado": 1.0,
+     "ganancia": 1.05,
+     "apuestas": 1,
+     "roi": 1.05
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
+    },
+    "martingalaCuidadaSinAlertas": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
+    },
     "ganarFijo": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
+    },
+    "ganarFijoSinAlertas": {
      "apostado": 0.0,
      "ganancia": 0.0,
      "apuestas": 0,
@@ -1596,7 +2034,31 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 1,
      "roi": 1.2
     },
+    "metodoVerdeSinAlertas": {
+     "apostado": 2.0311,
+     "ganancia": 1.7759,
+     "apuestas": 2,
+     "roi": 0.8744
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
+    },
+    "martingalaCuidadaSinAlertas": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
+    },
     "ganarFijo": {
+     "apostado": 0.0,
+     "ganancia": 0.0,
+     "apuestas": 0,
+     "roi": null
+    },
+    "ganarFijoSinAlertas": {
      "apostado": 0.0,
      "ganancia": 0.0,
      "apuestas": 0,
@@ -1693,7 +2155,31 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 2,
      "roi": -1.0
     },
+    "metodoVerdeSinAlertas": {
+     "apostado": 3.0885,
+     "ganancia": 0.7913,
+     "apuestas": 3,
+     "roi": 0.2562
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "apostado": 1.0,
+     "ganancia": -1.0,
+     "apuestas": 1,
+     "roi": -1.0
+    },
+    "martingalaCuidadaSinAlertas": {
+     "apostado": 1.0,
+     "ganancia": -1.0,
+     "apuestas": 1,
+     "roi": -1.0
+    },
     "ganarFijo": {
+     "apostado": 4.8077,
+     "ganancia": -4.8077,
+     "apuestas": 1,
+     "roi": -1.0
+    },
+    "ganarFijoSinAlertas": {
      "apostado": 4.8077,
      "ganancia": -4.8077,
      "apuestas": 1,
@@ -2346,6 +2832,30 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 50 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 103.62,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
     "ganarFijo": {
      "seleccion": null,
      "monto": 0.0,
@@ -2353,6 +2863,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 95.19,
      "linea": null,
      "motivo": "la casa le da 50 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 95.19,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
     }
    }
   },
@@ -2529,7 +3047,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0249,
+     "ganancia": 1.1274,
+     "banca": 103.62,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 95.19,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -2712,7 +3262,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0249,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "la casa le da 46 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": null,
@@ -2904,7 +3486,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 102.49,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 95.19,
+     "linea": null,
+     "motivo": "semáforo en rojo: no apostar"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3087,7 +3701,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0353,
+     "ganancia": -1.0353,
+     "banca": 102.49,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": ""
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 99.0,
+     "linea": 1,
+     "motivo": ""
+    },
     "ganarFijo": {
+     "seleccion": "local",
+     "monto": 4.8077,
+     "ganancia": -4.8077,
+     "banca": 95.19,
+     "linea": null,
+     "motivo": ""
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": "local",
      "monto": 4.8077,
      "ganancia": -4.8077,
@@ -3270,7 +3916,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0283,
+     "ganancia": 0.6992,
+     "banca": 103.53,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 57 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3462,7 +4140,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 102.83,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3645,7 +4355,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0206,
+     "ganancia": 0.7654,
+     "banca": 102.83,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -3833,6 +4575,30 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 102.06,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
     "ganarFijo": {
      "seleccion": null,
      "monto": 0.0,
@@ -3840,6 +4606,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.0,
      "linea": null,
      "motivo": "la casa le da 55 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
     }
    }
   },
@@ -4016,7 +4790,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 48 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0105,
+     "ganancia": 1.0105,
+     "banca": 102.06,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 48 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 48 % al elegido: en el medio (45-60 %)"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 48 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,
@@ -4204,6 +5010,30 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 59 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 101.05,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
+    },
     "ganarFijo": {
      "seleccion": null,
      "monto": 0.0,
@@ -4211,6 +5041,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.0,
      "linea": null,
      "motivo": "la casa le da 59 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "semáforo en amarillo"
     }
    }
   },
@@ -4387,7 +5225,39 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "la casa le da 47 % al elegido: en el medio (45-60 %)"
     },
+    "metodoVerdeSinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": 1.05,
+     "banca": 101.05,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodoVerdeSinAlertasFueraMedio": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 47 % al elegido: en el medio (45-60 %)"
+    },
+    "martingalaCuidadaSinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 47 % al elegido: en el medio (45-60 %)"
+    },
     "ganarFijo": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 47 % al elegido: en el medio (45-60 %)"
+    },
+    "ganarFijoSinAlertas": {
      "seleccion": null,
      "monto": 0.0,
      "ganancia": 0.0,

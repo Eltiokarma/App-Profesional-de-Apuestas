@@ -1392,6 +1392,12 @@ conversación se pierde en la siguiente.
      lados: no entra al número, queda en el espejo. **Pendiente**: re-correr el backtest con 60 ciegos y
      más semanas; y llevar la matriz por equipo (efe-dashboard ya da «para
      ganar» con su probabilidad) como fuente de las dos lecturas.
+   - HECHO el 24/11 (usuario): cuatro series «verde sin alertas» en la
+     simulación (método, método fuera del medio, martingala cuidada y ganar
+     fijo, sin DESCONFIAR ni la burbuja del elegido en riesgo alto;
+     METODO_APUESTA, «Verde sin alertas»). **Pendiente**: mirarlas con 100+
+     apuestas desde el 25/11 (`SIN_ALERTAS_DESDE`), y si el riesgo alto se
+     sostiene como filtro o sale.
    - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 22/11):
      ciego contra publicado contra favorito de la casa, y el desacuerdo.
    - **Revisar las reglas de anclaje del sad-analysis** (v4.1 «el empate
