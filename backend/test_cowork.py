@@ -5122,6 +5122,30 @@ def main():
     check("1478: con otro motivo propio que ya estaba, sigue `conocido` y el del M2 va en motivosTardios",
           _m1478c.get("momento") == "conocido"
           and _m1478c.get("motivosTardios") == ["duelo del M2: N. Vesterlund arrancó en el banco"], _m1478c)
+    # 1496 (Real Potosí–Bolívar 1645545): Bolívar con su once antes del depósito y la
+    # formación corregida después del pitazo; Real Potosí SIN ningún once antes del
+    # pitazo. El motivo del M2 (Cuellar, de Real) no puede ser `conocido`.
+    with _sq.connect(os.path.join(tmp, "sad.db")) as _con:
+        _con.execute("INSERT INTO fixtures (id, date, status_short, status_long, league_id, league_season, "
+                     "home_team_id, away_team_id) VALUES (991496, '2026-11-22 19:00:00', 'FT', 'Match Finished', "
+                     "5, 2026, 990481, 990482)")
+        _gal(_con, 991496, [{**_once("3-4-1-2", 5700)[0], "team": {"id": 990482}}], "2026-11-22 18:37:00")  # Bolívar
+        _gal(_con, 991496, [{**_once("4-4-2", 5700)[0], "team": {"id": 990482}}], "2026-11-22 20:55:00")    # corrige
+        _gal(_con, 991496, _once("4-4-2", 6700), "2026-11-22 21:02:00")            # Real Potosí, después
+    _fx1496 = {"id": 991496, "date": "2026-11-22 19:00:00", "home_team_id": 990481, "away_team_id": 990482}
+    _mot1496 = ["sistema: la apertura dice '3-4-1-2' y salió 4-4-2",
+                "pieza del M2 (rival, carrilero reconvertido del duelo): D. Cuellar arrancó en el banco",
+                "duelo del M2: D. Cuellar arrancó en el banco"]
+    _m1496 = _mom([{"codigo": "DTP-REHACER", "equipo": "b", "tipo": "dato", "detalle": "x", "motivos": _mot1496}],
+                  _fx1496, "2026-11-22 18:45:00")[0]
+    _m1496b = _mom([{"codigo": "DTP-REHACER", "equipo": "b", "tipo": "dato", "detalle": "x",
+                     "motivos": [*_mot1496, "once: 2 titulares que no estaban en el XI"]}],
+                   _fx1496, "2026-11-22 18:45:00")[0]
+    check("1496: con el rival sin ningún once antes del pitazo, el motivo del M2 no deja el lado `conocido`",
+          _m1496.get("momento") == "tardio" and "ningún once del rival" in _m1496["detalle"], _m1496)
+    check("1496: con un motivo propio que ya estaba, `conocido`, y los del M2 van en motivosTardios",
+          _m1496b.get("momento") == "conocido" and set(_mot1496) <= set(_m1496b.get("motivosTardios") or []),
+          _m1496b)
     # 1403 (Eslovenia 1545654): el rol contra el grid corregido después del pitazo es tardío como el sistema
     _m1403 = _mom([{"codigo": "DTP-REHACER", "equipo": "a", "tipo": "dato", "detalle": "x",
                     "motivos": ["sistema: la apertura dice '4-4-2' y salió 5-3-2",

@@ -5276,31 +5276,48 @@ def momento_rehacer(alertas: list[dict], fx, deposito_previo: str | None,
         # en el banco, que llegó con la corrección de Utrecht de las 18:13, después
         # del pitazo). Un duelo o una pieza rival del M2 nombra al otro equipo: si
         # el once del rival cambió de titulares después del pitazo, ese motivo es tardío.
+        # …Y SI EL RIVAL NO TUVO NINGÚN ONCE ANTES DEL PITAZO, TAMBIÉN (24/11/2026,
+        # incidencia 1496, Real Potosí–Bolívar 1645545: el DTP-REHACER de Bolívar
+        # salía `conocido` por «D. Cuellar arrancó en el banco», de Real Potosí, cuyo
+        # primer once se capturó a las 21:02 con el pitazo a las 19:00). Se mide
+        # siempre, también cuando el lado ya salió `tardio` por su propia formación.
         rival_tid = equipo_de.get("b" if a.get("equipo") == "a" else "a")
-        if campos.get("momento") != "tardio" and rival_tid is not None:
+        del_m2, rival_tarde, por_que = [], False, ""
+        if rival_tid is not None:
             clave_r = ("rival", rival_tid)
             if clave_r not in cache:
                 cache[clave_r] = _momento_de([f for f in filas if f["team_id"] == rival_tid], pitazo, dep) or {}
+            cr = cache[clave_r]
             del_m2 = [x for x in a.get("motivos") or []
                       if str(x).startswith(("duelo del M2", "pieza del M2 (rival"))]
-            if del_m2 and cache[clave_r].get("titularesCorregidos"):
-                if len(del_m2) == len(a.get("motivos") or []):
-                    campos["momento"] = "tardio"
-                    texto = (f"{texto}. PERO el motivo es del M2 ({'; '.join(del_m2)}) y el once del rival cambió "
-                             "de titulares después del pitazo: nadie podía rehacer con esa corrección")
-                else:
-                    campos["motivosTardios"] = del_m2
-                    texto = (f"{texto}. Los motivos del M2 ({'; '.join(del_m2)}) llegaron con la corrección del "
-                             "once del rival, después del pitazo: esos son tardíos")
+            sin_once = (cr.get("campos") or {}).get("momento") == "tardio" \
+                and not (cr.get("campos") or {}).get("onceFinalEn")
+            rival_tarde = bool(cr.get("titularesCorregidos")) or sin_once
+            por_que = ("ningún once del rival se capturó antes del pitazo" if sin_once
+                       else "el once del rival cambió de titulares después del pitazo")
+        if del_m2 and rival_tarde and campos.get("momento") != "tardio":
+            if len(del_m2) == len(a.get("motivos") or []):
+                campos["momento"] = "tardio"
+                texto = (f"{texto}. PERO el motivo es del M2 ({'; '.join(del_m2)}) y {por_que}: nadie podía "
+                         "rehacer con ese once")
+            else:
+                campos["motivosTardios"] = del_m2
+                texto = (f"{texto}. Los motivos del M2 ({'; '.join(del_m2)}) dependen del once del rival y "
+                         f"{por_que}: esos son tardíos")
+        propios = [x for x in otros if not (rival_tarde and x in del_m2)]
         if campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros \
                 and (m.get("titularesCorregidos") or cache["todos"].get("titularesCorregidos")):
             texto = (f"{texto}. La corrección de después del pitazo también cambió titulares: "
                      f"{'; '.join(otros)} tampoco estaba en el once del último depósito")
-        elif campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros:
+        elif campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and propios:
             campos["momento"] = "conocido"
-            campos["motivosTardios"] = [x for x in a.get("motivos") or [] if str(x).startswith(MOTIVOS_DEL_GRID)]
-            texto = (f"{texto}. PERO {'; '.join(otros)} ya estaba en el once del último depósito: ese motivo "
+            campos["motivosTardios"] = [x for x in a.get("motivos") or []
+                                        if str(x).startswith(MOTIVOS_DEL_GRID) or x not in propios]
+            texto = (f"{texto}. PERO {'; '.join(propios)} ya estaba en el once del último depósito: ese motivo "
                      "era conocido y lo rehecho no lo corrigió")
+        elif campos.get("momento") == "tardio" and campos.get("formacionCorregidaEn") and otros:
+            texto = (f"{texto}. Los motivos del M2 ({'; '.join(otros)}) dependen del once del rival y {por_que}: "
+                     "también son tardíos")
         out.append({**a, **campos, "detalle": f"{a['detalle']} [{texto}]"})
     return out
 
