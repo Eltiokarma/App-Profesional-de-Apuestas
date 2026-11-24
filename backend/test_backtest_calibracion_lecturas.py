@@ -67,6 +67,11 @@ def main():
     check("con 12 partidos la curva casi no se mueve (el previo la sostiene)",
           all(abs(cp[l]["b"] - 1) < 0.5 for l in cal.LADOS), cp)
 
+    v = cal.en_ventana([{"pitazo": "2026-11-24 20:00:00"}, {"pitazo": "2026-11-11 20:00:00"},
+                        {"pitazo": "2026-11-05 20:00:00"}, {"pitazo": None}])
+    check("la ventana: solo los últimos 14 días desde el más reciente (y sin pitazo, fuera)",
+          [f["pitazo"][:10] for f in v] == ["2026-11-24", "2026-11-11"], v)
+    check("la ventana en 0: todas", len(cal.en_ventana([{"pitazo": "2026-01-01 00:00:00"}, {}], 0)) == 2)
     x = cal.calibrar(55, 20, {"local": {"a": 0, "b": 1, "n": 1}, "visita": {"a": 0, "b": 1, "n": 1}})
     check("calibrar con la identidad: el 1X2 sale de calzar (empate 25)", x["empate"] == 25.0, x)
     s = bt.semanal(comp)

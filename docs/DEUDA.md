@@ -1386,8 +1386,10 @@ conversación se pierde en la siguiente.
      el backend arma el 1X2) y la curva de calibración contra los resultados
      (`calibracion_lecturas`, `backtest_calibracion_lecturas`). Medido: lo
      dicho comprime (b ≈ 1,4) pero la curva NO mejora fuera de la muestra
-     (semana a semana empeora la visita, 0,5414 → 0,5509): no entra al número,
-     queda en el espejo. **Pendiente**: re-correr el backtest con 60 ciegos y
+     (semana a semana empeora la visita, 0,5414 → 0,5509); con la ventana de
+     dos semanas que pidió el usuario (`VENTANA_DIAS = 14`, 227 partes desde
+     el 09/11) lo publicado está casi calibrado y la curva empeora en los dos
+     lados: no entra al número, queda en el espejo. **Pendiente**: re-correr el backtest con 60 ciegos y
      más semanas; y llevar la matriz por equipo (efe-dashboard ya da «para
      ganar» con su probabilidad) como fuente de las dos lecturas.
    - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 22/11):

@@ -37,6 +37,11 @@ LADOS = ("local", "visita")
 PRIOR_SD = 0.5
 # lo dicho se recorta a [1 %, 99 %] para que el logit no explote
 _EPS = 0.01
+# LA VENTANA (24/11/2026, usuario: «solo usa los partes más recientes, las dos
+# últimas semanas es suficiente; las muy antiguas fueron leídas con una versión
+# muy antigua de skills»): la curva aprende solo de los partidos de los últimos
+# VENTANA_DIAS días, contados desde el más reciente de las filas.
+VENTANA_DIAS = 14
 
 
 def _logit(p: float) -> float:
@@ -105,9 +110,30 @@ def puntos_de(filas: list[dict]) -> dict:
     return out
 
 
-def ajuste_de(filas: list[dict], prior_sd: float = PRIOR_SD) -> dict:
-    """Las dos curvas, una por lado, aprendidas de las filas cerradas."""
-    pts = puntos_de(filas)
+def en_ventana(filas: list[dict], dias: int | None = VENTANA_DIAS) -> list[dict]:
+    """Las filas de los últimos `dias` días, contados desde el pitazo más
+    reciente (sin pitazo no se pueden fechar: quedan fuera). `dias` 0 o None:
+    todas."""
+    if not dias:
+        return list(filas)
+    from datetime import datetime, timedelta
+
+    def _t(f):
+        try:
+            return datetime.fromisoformat(str(f.get("pitazo")).replace("Z", "").replace("T", " ")[:19])
+        except (TypeError, ValueError):
+            return None
+    fechadas = [(t, f) for f in filas if (t := _t(f))]
+    if not fechadas:
+        return []
+    corte = max(t for t, _ in fechadas) - timedelta(days=dias)
+    return [f for t, f in fechadas if t >= corte]
+
+
+def ajuste_de(filas: list[dict], prior_sd: float = PRIOR_SD, dias: int | None = VENTANA_DIAS) -> dict:
+    """Las dos curvas, una por lado, aprendidas de las filas cerradas de la
+    ventana (`dias`, por defecto las dos últimas semanas)."""
+    pts = puntos_de(en_ventana(filas, dias))
     return {lado: ajustar(pts[lado], prior_sd) for lado in LADOS}
 
 

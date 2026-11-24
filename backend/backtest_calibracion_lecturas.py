@@ -82,16 +82,16 @@ def _r(x, d=4):
     return None if x is None else round(x, d)
 
 
-def corte(filas: list[dict], frac: float = 0.8) -> dict:
-    """Aprende del `frac` más viejo y mide en el resto, por previo."""
+def corte(filas: list[dict], frac: float = 0.8, dias: int | None = None) -> dict:
+    """Aprende del `frac` más viejo (de su ventana de `dias`) y mide en el resto, por previo."""
     k = int(len(filas) * frac)
     tren, prueba = filas[:k], filas[k:]
     pts = cal.puntos_de(prueba)
-    out = {"entrena": len(tren), "prueba": len(prueba),
+    out = {"entrena": len(cal.en_ventana(tren, dias)), "prueba": len(prueba),
            "desdePrueba": prueba[0]["pitazo"] if prueba else None,
            "dicho": _medir(pts, None), "porPrevio": {}}
     for sd in PREVIOS:
-        coefs = cal.ajuste_de(tren, sd)
+        coefs = cal.ajuste_de(tren, sd, dias)
         out["porPrevio"][str(sd)] = {"curvas": coefs, **_medir(pts, coefs)}
     return out
 
@@ -102,8 +102,9 @@ def _semana(pitazo: str) -> str:
     return f"{y}-S{w:02d}"
 
 
-def semanal(filas: list[dict], sd: float = cal.PRIOR_SD) -> dict:
-    """Cada semana calibrada con todas las anteriores (la rutina de los lunes)."""
+def semanal(filas: list[dict], sd: float = cal.PRIOR_SD, dias: int | None = None) -> dict:
+    """Cada semana calibrada con las anteriores (las de la ventana de `dias`,
+    o todas con None): la rutina de los lunes."""
     semanas = sorted({_semana(f["pitazo"]) for f in filas})
     dicho = {lado: [] for lado in cal.LADOS}
     calib = {lado: [] for lado in cal.LADOS}
@@ -111,7 +112,7 @@ def semanal(filas: list[dict], sd: float = cal.PRIOR_SD) -> dict:
     for s in semanas[1:]:
         antes = [f for f in filas if _semana(f["pitazo"]) < s]
         esta = [f for f in filas if _semana(f["pitazo"]) == s]
-        coefs = cal.ajuste_de(antes, sd)
+        coefs = cal.ajuste_de(antes, sd, dias)
         pts = cal.puntos_de(esta)
         for lado in cal.LADOS:
             dicho[lado] += [(p, y) for p, y in pts[lado]]
@@ -142,13 +143,17 @@ def tabla(filas: list[dict], coefs: dict | None) -> dict:
     return out
 
 
-def correr(apuestas: list[dict]) -> dict:
-    pub = filas_de(apuestas, "publicado")
-    cie = filas_de(apuestas, "ciego")
-    out = {"partidos": {"publicado": len(pub), "ciego": len(cie)}}
+def correr(apuestas: list[dict], dias: int | None = cal.VENTANA_DIAS) -> dict:
+    """Con `dias` (por defecto las dos últimas semanas, decisión del usuario del
+    24/11/2026) solo entran los partes de esa ventana: los viejos se leyeron con
+    otra versión de los skills."""
+    pub = cal.en_ventana(filas_de(apuestas, "publicado"), dias)
+    cie = cal.en_ventana(filas_de(apuestas, "ciego"), dias)
+    out = {"ventanaDias": dias or None, "desde": pub[0]["pitazo"] if pub else None,
+           "partidos": {"publicado": len(pub), "ciego": len(cie)}}
     if pub:
         out["publicado"] = {"corte": corte(pub), "semanal": semanal(pub),
-                            "curvas": cal.ajuste_de(pub), "tabla": tabla(pub, cal.ajuste_de(pub))}
+                            "curvas": cal.ajuste_de(pub, dias=None), "tabla": tabla(pub, cal.ajuste_de(pub, dias=None))}
     if cie:
         curvas_c = cal.ajuste_de(cie)
         out["ciego"] = {"curvas": curvas_c, "tabla": tabla(cie, curvas_c),
@@ -157,15 +162,15 @@ def correr(apuestas: list[dict]) -> dict:
             # ¿la curva del publicado sirve para el ciego? (solo partidos del publicado ANTES del ciego)
             primero = cie[0]["pitazo"]
             antes = [f for f in pub if f["pitazo"] < primero]
-            coefs = cal.ajuste_de(antes)
+            coefs = cal.ajuste_de(antes, dias=None)
             out["ciego"]["conCurvaDelPublicado"] = {"entrenaCon": len(antes), "curvas": coefs,
                                                     **_medir(cal.puntos_de(cie), coefs)}
     return out
 
 
 def informe(r: dict) -> str:
-    L = [f"Calibración de las dos lecturas · publicado {r['partidos']['publicado']} partidos · "
-         f"ciego {r['partidos']['ciego']}"]
+    L = [f"Calibración de las dos lecturas · ventana {r.get('ventanaDias') or 'toda la historia'} días "
+         f"(desde {r.get('desde')}) · publicado {r['partidos']['publicado']} partidos · ciego {r['partidos']['ciego']}"]
 
     def linea(nombre, m):
         return (f"    {nombre}: " + " · ".join(
@@ -206,6 +211,8 @@ def main(argv=None) -> int:
     ap.add_argument("--desde-json", help="partes bajados ({fixtureId: {parte, fx, cuotas}})")
     ap.add_argument("--api", action="store_true", help="bajarlos con SAD_API_BASE y SAD_TOKEN_COWORK")
     ap.add_argument("--guardar", help="con --api, dónde guardar lo bajado")
+    ap.add_argument("--dias", type=int, default=cal.VENTANA_DIAS,
+                    help=f"solo los partes de los últimos N días (por defecto {cal.VENTANA_DIAS}; 0 = todos)")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     from backend import contacto
@@ -220,7 +227,7 @@ def main(argv=None) -> int:
     else:
         ap.error("falta --desde-json o --api")
     apuestas, _ = contacto.armar(datos)
-    r = correr(apuestas)
+    r = correr(apuestas, a.dias)
     print(json.dumps(r, ensure_ascii=False, indent=1) if a.json else informe(r))
     return 0
 

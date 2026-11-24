@@ -794,6 +794,16 @@ cerrados desde el 28/10 (las lecturas son el 1X2 publicado, casi la casa) y
 - **En el ciego** (28), la curva del publicado mejora un poco (local 0,6272
   → 0,6202; visita 0,5990 → 0,5979); la propia del ciego tiene 28 partidos.
 
+**Con la ventana de dos semanas** (el mismo día, usuario: «solo usa los partes
+más recientes, las dos últimas semanas es suficiente; las muy antiguas fueron
+leídas con una versión muy antigua de skills»; `VENTANA_DIAS = 14`, la curva y
+el backtest solo leen esos días): 227 partes desde el 09/11. Lo publicado
+reciente está **casi calibrado** (local que dijimos 68 ganó 73, n 45; visita
+de 48 ganó 53, n 34; b ≈ 1,24 y 1,11) y la curva **empeora fuera de la
+muestra en los dos lados**: corte 80/20 local 0,6025 → 0,6237 y visita 0,5242
+→ 0,5299; semana a semana local 0,5819 → 0,5907 y visita 0,5521 → 0,5562. La
+compresión fuerte de arriba venía de las semanas viejas.
+
 **Decisión de ese día**: la curva **no entra al número publicado**. Vive en
 el espejo (`curvas`) como información para el analista, y se vuelve a medir
 con el backtest semana a semana cuando el ciego llegue a 60 cerrados y con
