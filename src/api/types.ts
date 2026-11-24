@@ -2662,6 +2662,32 @@ export interface ReglaRevision {
 /** El dossier de revisión de un skill (fase D de docs/APRENDIZAJE.md): ABRE la
  *  revisión, no autoriza nada. `lectura` dice, calculado, qué puede concluir. */
 /** Respuesta de cerrar en bloque las lecciones anteriores a la versión vigente. */
+/** GET /analisis/jev/ping (token maestro): ¿la clave de Jev sirve? */
+export interface JevPingDTO {
+  disponible: boolean
+  ok: boolean
+  modelo: string | null
+  via: string
+  oficial: boolean
+  ms?: number
+  tokensEntrada?: number
+  respuesta?: Record<string, unknown>
+  error: string | null
+}
+
+/** POST /analisis/jev/reetiquetar (token maestro): los veredictos cuyo modo de
+ *  fallo quedó sellado con un error de Jev, contados o vueltos a preguntar. */
+export interface JevReetiquetarDTO {
+  pendientes: number
+  erroresSellados: Record<string, number>
+  aplicar: boolean
+  disponible: boolean
+  reetiquetados: number[]
+  sinCambio: number[]
+  cortadoPor: string | null
+  quedan?: number
+}
+
 export interface CierreAnterioresDTO {
   skill: string
   version: string

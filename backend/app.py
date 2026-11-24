@@ -118,8 +118,11 @@ _COWORK_PERMITIDO = tuple(
 _CUOTAS_FIXTURE = re.compile(re.escape(API) + r"/cuotas/(\d+)(?:/.*)?$")
 
 
-# lo único que el token de la web NO puede leer: la calibración pesada
-_WEB_DENEGADO = (re.compile(re.escape(API) + r"/analisis/burbujas/backtest$"),)
+# lo que el token de la web NO puede leer: la calibración pesada
+# y el ping de Jev, que sale a la red y gasta (24/11/2026: la doc decía «maestro»
+# y el token de la web, que lee todo GET, también podía)
+_WEB_DENEGADO = (re.compile(re.escape(API) + r"/analisis/burbujas/backtest$"),
+                 re.compile(re.escape(API) + r"/analisis/jev/ping$"))
 
 
 def _web_puede(metodo: str, ruta: str) -> bool:

@@ -23,6 +23,8 @@ import type {
   LeccionesParams,
   RevisionSkillDTO,
   CierreAnterioresDTO,
+  JevPingDTO,
+  JevReetiquetarDTO,
   DerrotasFavoritoDTO,
   LeccionItem,
   FixtureLiveDTO,
@@ -222,6 +224,12 @@ export const SadApi = {
   /** El dossier de revisión de un skill (fase D): abre la revisión, no autoriza nada. */
   revisionSkill: (skill: string, cohorte = 'vigente') =>
     apiGet<RevisionSkillDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}` + qs({ cohorte }), { timeoutMs: 60_000 }),
+  /** ¿La clave de Jev sirve? Una pregunta mínima. Token maestro (modo administrador). */
+  jevPing: () => apiGet<JevPingDTO>('/analisis/jev/ping', { timeoutMs: 60_000 }),
+  /** Cuenta (aplicar=false) o vuelve a preguntar a Jev el modo de fallo de los
+   *  veredictos con el sello en error. Por tandas (`limite`). Token maestro. */
+  jevReetiquetar: (aplicar: boolean, limite = 40) =>
+    apiPost<JevReetiquetarDTO>('/analisis/jev/reetiquetar' + qs({ aplicar: String(aplicar), limite }), {}, { timeoutMs: 300_000 }),
   /** Cierra como `aplicada` las pendientes anteriores al corte de la versión vigente. Token maestro. */
   cerrarAnteriores: (skill: string) =>
     apiPost<CierreAnterioresDTO>(`/analisis/cowork/revision/${encodeURIComponent(skill)}/cerrar-anteriores`, {}),

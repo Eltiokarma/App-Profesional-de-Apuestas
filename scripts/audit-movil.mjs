@@ -65,6 +65,13 @@ if (await det.count()) { await det.click({ timeout: 5000 }).catch(() => {}); awa
 await nav('Skills'); await medir('06-skills')
 await nav('Stats'); await medir('07-stats')
 await nav('Aprende'); await medir('08-aprende')
+// el panel de Jev desplegado con sus tres pasos corridos (24/11/2026)
+{ const j = p.getByText('Jev · probar la clave').first()
+  if (await j.count()) {
+    await j.click({ timeout: 5000 }).catch(() => {}); await p.waitForTimeout(300)
+    for (const t of ['Probar la clave', 'Contar los sin etiqueta']) await p.getByText(t, { exact: true }).first().click({ timeout: 5000 }).catch(() => {})
+    await medir('08-aprende-jev', false)
+  } }
 // la lección desplegada y las pestañas de Aprendizaje (reordenada el 25/10/2026)
 const detL = p.locator('button', { hasText: 'detalles y acciones' }).first()
 if (await detL.count()) { await detL.click({ timeout: 5000 }).catch(() => {}); await medir('08-aprende-leccion') }
