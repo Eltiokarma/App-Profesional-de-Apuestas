@@ -82,6 +82,10 @@ compara.
    recurrente, pasá UNA incidencia de la familia a `usuario` con la regla de
    código que taparía el dato (como 381 y 673, que pasaron a código cuando el
    usuario las vio): qué se calcularía, con qué fuente, y qué caso lo pide.
+   Antes de subirla, buscá la causa en `no-se-reporta.md`: si el usuario ya la
+   decidió en otra incidencia, cerrala `dato_api` citándola con su número
+   («decidida por el usuario en la #N»): esa frase la saca de las recurrentes
+   (24/11/2026, 1484).
    **Agrupá por CAUSA antes de tocar nada** (pedido del usuario, 22/10/2026:
    la cola llegó a 88 arreglando de a una). Varias incidencias suelen ser la
    misma raíz —el cruce de nombres de `contraElOnce`, la identidad del jugador

@@ -429,6 +429,16 @@ def _conocida(r) -> dict:
             "pr": r["pr"] or "", "cerradoEn": r["cerrado_en"]}
 
 
+# LA DECISIÓN TOMADA EN OTRA INCIDENCIA Y CITADA (24/11/2026, mantenimiento del
+# mediodía): la familia de la #447 (posesión invertida, paradas que no cuadran)
+# la decidió el usuario en la #1379 —dato de la API, sin regla nueva—, pero la
+# #1379 cae en otra familia por las palabras del título y la 447 seguía saliendo
+# `recurrente`; el mantenimiento la volvió a subir al usuario (1484). Una
+# resolución que cita la decisión con su número («decidida por el usuario en la
+# #1379») cuenta como decisión de la familia.
+_DECIDIDA_EN = re.compile(r"decidid[ao]s? por el usuario en (?:la |el )?#\d+", re.I)
+
+
 def causas(solo_recurrentes: bool = False) -> dict:
     """Las familias de causa, con lo que hace falta para decidir:
 
@@ -462,6 +472,7 @@ def causas(solo_recurrentes: bool = False) -> dict:
         # el próximo dato_api de la misma causa)
         decidida = any(r["estado"] in ("usuario", "aprobada")
                        or (r["estado"] == "por_diseno" and (r["resolucion"] or "").startswith("Decisión del usuario"))
+                       or (r["estado"] in CERRADOS and _DECIDIDA_EN.search(r["resolucion"] or ""))
                        for r in fam)
         resueltas = [r for r in fam if r["estado"] in ("resuelta", "por_desplegar")]
         cierre_pr = max((r["cerrado_en"] or r["ultima_vez"] for r in resueltas), default=None)
