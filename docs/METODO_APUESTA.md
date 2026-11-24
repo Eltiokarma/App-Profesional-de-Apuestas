@@ -754,6 +754,20 @@ si lo usó. La rutina de los lunes («contacto y semáforo») lo informa con la
 sección «1X2 ciego». Recalibrar el 1X2 del motor con eso (de donde sale lo
 plano) pide 60 cerrados y el backtest a la vista, en los dos lados.
 
+**Las dos lecturas** (24/11/2026, usuario: «o gana el local o no gana, y el
+que no gane involucra empate y derrota… cuando se cruzan con el otro, los dos
+tienen un evento en común»; y «si suman más de 100, hacer que calce»): desde
+ese día el ciego no reparte un 1X2 sino dos preguntas de sí o no, una por
+equipo (`{ganaLocal, ganaVisita, porque}`). El empate es lo que comparten los
+dos «no gana»: P(empate) = P(no gana local ∩ no gana visita) = 100 −
+ganaLocal − ganaVisita. Si las dos suman más de 100 se cruzan: el empate lo
+pone el motor (`unXDos`, del nivel, no de la cuota) y local y visita se
+reparten el resto en su proporción (`ciego.calzar`, marcado `cruzadas`). Lo
+escrito queda guardado tal cual y el espejo calibra cada lectura contra si
+ese equipo ganó: dos datos por partido, la calibración más rápida. Un partido
+con las lecturas cruzadas es un partido que no leímos claro: se cuenta aparte
+(`cruzadas` del espejo) para ver si avisa cuándo no apostar.
+
 **Lo que decide**: si el ciego acierta más que la casa en algún grupo de
 partidos (sobre todo donde no coinciden), ahí se apuesta a nuestro lado
 aunque la casa diga otra cosa. Si no, sabremos que leemos mal y qué arreglar

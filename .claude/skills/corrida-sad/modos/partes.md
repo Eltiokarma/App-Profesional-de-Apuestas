@@ -25,9 +25,11 @@
    (incidencia 1206, cinco subagentes colgados de la misma llamada).
    Lo mismo con `GET $B/analisis/cowork/ciego/espejo` (24/11/2026, usuario:
    «sacar nuestras propias probabilidades y calibrarlas»): el historial del
-   1X2 ciego SIN la casa —lo que le dimos al elegido por tramo contra lo que
-   ganó, el empate dicho contra el que hubo y sus `avisos`—. UNA vez acá, y a
-   cada subagente le pasás `calibracion`, `empate` y `avisos` (no `ultimos`).
+   ciego SIN la casa —cada lectura del local y del visitante contra si ganó
+   (`ganaLocal`, `ganaVisita`), lo que le dimos al elegido, el empate dicho
+   contra el que hubo y sus `avisos`—. UNA vez acá, y a cada subagente le
+   pasás `ganaLocal`, `ganaVisita`, `calibracion`, `empate` y `avisos` (no
+   `ultimos`).
    Si el mensaje del disparo trae otros parámetros de agenda, mandan esos,
    salvo un `limite` menor que 30 (ver arriba).
    Usá la misma consulta en el paso 4 → la lista de trabajo es
@@ -90,15 +92,21 @@
 >   `titularesHabitualesEnElBanco` se nombra primero— →
 >   `equipos/{id}/burbujas?proximo={id}` de los dos → `predicciones/{id}`
 >   → prensa (DT de ESTA semana, bajas, once probable; sin buscar cuotas) →
->   **EL 1X2 CIEGO: `POST analisis/cowork/{id}/ciego` con tu 1X2 y su
->   `porque` ANTES de abrir las cuotas** (docs/COWORK.md 3-bis; una vez, no se
->   corrige; antes del sello `cuotas/{id}` da 409 y la `ventajaPorFuerza` del
->   TDE viene tapada). Antes de escribir el número mirá el ESPEJO que te pasé
->   (tu propio historial, sin la casa): si el tramo donde cae tu elegido dice
->   `corto`, tu elegido viene ganando más de lo que le das; si dice `largo`,
->   menos; y el empate, si le venís dando de más o de menos. Es una guía: el
->   número lo pone tu lectura de ESTE partido, y en el `porque` decí en una
->   frase si el espejo te movió y cuánto («espejo: 50-59 corto, subí 4») → `cuotas/{id}` y el TDE de nuevo → el JSON del parte
+>   **EL CIEGO: `POST analisis/cowork/{id}/ciego` con tus DOS LECTURAS
+>   `{"ganaLocal": 55, "ganaVisita": 20, "porque": "…"}` ANTES de abrir las
+>   cuotas** (docs/COWORK.md 3-bis; una vez, no se corrige; antes del sello
+>   `cuotas/{id}` da 409 y la `ventajaPorFuerza` del TDE viene tapada). Cada
+>   lectura es una sola pregunta sobre UN equipo: ¿gana o no gana?, en %
+>   (no gana = empate o derrota). No repartís el empate: sale solo, 100 − las
+>   dos. Si tus dos lecturas suman más de 100 se cruzan (los dos no pueden
+>   ganar): el backend las calza con el empate del motor y el ciego queda
+>   `cruzadas` —decí en el `porque` por qué leíste a los dos ganadores—.
+>   Antes de escribir los números mirá el ESPEJO que te pasé (tu propio
+>   historial, sin la casa): si el tramo de tu lectura del local o del
+>   visitante dice `corto`, ese lado viene ganando más de lo que le das; si
+>   dice `largo`, menos. Es una guía: el número lo pone tu lectura de ESTE
+>   partido, y en el `porque` decí en una frase si el espejo te movió y
+>   cuánto («espejo: local 40-59 corto, subí 4») → `cuotas/{id}` y el TDE de nuevo → el JSON del parte
 >   EXACTO al punto 7 (a = local).
 >   El gap, la μ y el 1X2 del motor (`unXDos`) están en `GET predicciones/{id}`
 >   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ;

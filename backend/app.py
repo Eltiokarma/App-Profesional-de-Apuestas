@@ -3393,13 +3393,23 @@ def cowork_tde(fixture_id: int, request: Request):
 
 @app.post(API + "/analisis/cowork/{fixture_id}/ciego")
 def cowork_ciego(fixture_id: int, body: dict = Body(...)):
-    """EL 1X2 CIEGO: la lectura propia del analista ANTES de ver la cuota
-    (`{local, empate, visita, porque}`, en %). Antes del pitazo y antes del
+    """EL CIEGO: la lectura propia del analista ANTES de ver la cuota. Desde el
+    24/11/2026 son DOS lecturas, una por equipo (`{ganaLocal, ganaVisita,
+    porque}`, en %): el empate es 100 − las dos, y si se cruzan el empate del
+    motor las calza. Sigue aceptando el 1X2 (`{local, empate, visita, porque}`). Antes del pitazo y antes del
     parte; el primero manda (409 con el sellado si ya hay uno). Abre las cuotas
     del partido al token de Cowork. docs/METODO_APUESTA.md, «El 1X2 ciego»."""
     from backend.analisis import ciego as _ciego, parte as cowork
     try:
-        return _ciego.sellar(fixture_id, body, hay_parte=cowork.existe_vigente(fixture_id))
+        # si las dos lecturas se cruzan (suman más de 100), el empate del MOTOR las
+        # calza: sale del nivel de los dos, no de la cuota (24/11/2026)
+        def _empate_motor():
+            try:
+                return (prediccion(fixture_id).get("unXDos") or {}).get("empate")
+            except Exception:  # noqa: BLE001 — sin motor no se calza: ciego.calzar lo dice con 422
+                return None
+        return _ciego.sellar(fixture_id, body, hay_parte=cowork.existe_vigente(fixture_id),
+                             empate_motor=_empate_motor)
     except _ciego.CiegoYaSellado as e:
         raise HTTPException(409, {"detail": str(e), "ciego": e.existente})
     except _ciego.CiegoInvalido as e:

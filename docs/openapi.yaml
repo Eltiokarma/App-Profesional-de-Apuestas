@@ -1705,22 +1705,29 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [desde, n, aciertos, calibracion, empate, avisos, ultimos, texto]
+                required: [desde, n, aciertos, ganaLocal, ganaVisita, calibracion, empate, cruzadas, avisos, ultimos, texto]
                 properties:
                   desde: { type: string }
                   n: { type: integer }
                   aciertos: { type: integer }
+                  ganaLocal:
+                    type: array
+                    description: 'cada lectura del local (¿gana?) contra si ganó, por tramo 0-19 … 80+ (24/11/2026)'
+                    items: { $ref: '#/components/schemas/TramoEspejo' }
+                  ganaVisita:
+                    type: array
+                    description: 'lo mismo con la lectura del visitante'
+                    items: { $ref: '#/components/schemas/TramoEspejo' }
+                  cruzadas:
+                    type: object
+                    description: 'los partidos con las dos lecturas sumando más de 100'
+                    properties:
+                      n: { type: integer }
+                      elegidoGano: { type: integer }
                   calibracion:
                     type: array
-                    items:
-                      type: object
-                      properties:
-                        tramo: { type: string }
-                        n: { type: integer }
-                        dijo: { type: number, nullable: true }
-                        paso: { type: number, nullable: true }
-                        intervalo: { type: array, nullable: true, items: { type: number } }
-                        lectura: { type: string, nullable: true, enum: [corto, largo, bien, null] }
+                    description: 'lo que el 1X2 le dio al elegido contra lo que ganó, por tramo'
+                    items: { $ref: '#/components/schemas/TramoEspejo' }
                   empate:
                     type: object
                     properties:
@@ -1738,6 +1745,9 @@ paths:
                         pitazo: { type: string }
                         partido: { type: string, nullable: true }
                         elegido: { type: string, enum: [local, empate, visita] }
+                        ganaLocal: { type: number }
+                        ganaVisita: { type: number }
+                        cruzadas: { type: boolean }
                         leDiste: { type: number }
                         empate: { type: number }
                         resultado: { type: string, enum: [local, empate, visita] }
@@ -1762,12 +1772,22 @@ paths:
           application/json:
             schema:
               type: object
-              required: [local, empate, visita, porque]
+              description: >
+                LAS DOS LECTURAS (24/11/2026, el formato que se pide): `{ganaLocal, ganaVisita, porque}`,
+                cada una el % de que ESE equipo gane, leído por su lado. El empate es la intersección de
+                los dos «no gana»: 100 − ganaLocal − ganaVisita. Si las dos suman más de 100 se cruzan y se
+                CALZAN con el empate del motor (`unXDos` de `GET /predicciones/{id}`, sale del nivel, no
+                de la cuota): local y visita se reparten el resto en su proporción y el ciego queda
+                `cruzadas: true`; sin motor, 422. Lo escrito se guarda tal cual: es lo que se calibra. Sigue
+                aceptado el 1X2 de antes `{local, empate, visita, porque}`.
+              required: [porque]
               properties:
-                local: { type: number, description: '% (los tres suman 100; se aceptan 95-105 y se normalizan)' }
+                ganaLocal: { type: number, minimum: 0, maximum: 100, description: '% de que gane el local' }
+                ganaVisita: { type: number, minimum: 0, maximum: 100, description: '% de que gane el visitante' }
+                local: { type: number, description: 'formato 1X2 (22/11): los tres suman 100; se aceptan 95-105 y se normalizan' }
                 empate: { type: number }
                 visita: { type: number }
-                porque: { type: string, description: 'lo leído que sostiene el número, sin la cuota (20+ caracteres)' }
+                porque: { type: string, description: 'lo leído de cada equipo que sostiene el número, sin la cuota (20+ caracteres)' }
       responses:
         '200':
           description: sellado
@@ -1780,7 +1800,7 @@ paths:
                   ciego: { $ref: '#/components/schemas/Ciego1x2' }
                   siguiente: { type: string }
         '409': { description: 'ya hay un ciego sellado: `{detail: {detail, ciego}}`' }
-        '422': { description: 'no suma 100, empate arriba, sin porqué, después del pitazo o con el parte ya depositado' }
+        '422': { description: 'no suma 100, una lectura fuera de 0-100, dos arriba empatados, cruzadas sin motor, sin porqué, después del pitazo o con el parte ya depositado' }
     get:
       summary: El 1X2 ciego sellado del partido
       parameters:
@@ -4903,6 +4923,16 @@ components:
         sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
         d3: { type: string, enum: [si, parcial, 'no', sin dato], description: 'solo si el parte lo declaró' }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
+    TramoEspejo:
+      type: object
+      description: 'un tramo de la calibración propia: lo que se dijo contra lo que pasó (sin la casa)'
+      properties:
+        tramo: { type: string }
+        n: { type: integer }
+        dijo: { type: number, nullable: true }
+        paso: { type: number, nullable: true }
+        intervalo: { type: array, nullable: true, items: { type: number } }
+        lectura: { type: string, nullable: true, enum: [corto, largo, bien, null] }
     Ciego1x2:
       type: object
       description: 'el 1X2 del analista ANTES de ver la cuota, sellado (22/11/2026)'
@@ -4912,6 +4942,11 @@ components:
         visita: { type: number }
         elegido: { type: string, enum: [local, empate, visita] }
         porque: { type: string }
+        ganaLocal: { type: number, description: 'la lectura del local tal cual (en el formato 1X2 del 22/11, `local`)' }
+        ganaVisita: { type: number, description: 'la lectura del visitante tal cual (en el formato 1X2, `visita`)' }
+        formato: { type: string, enum: [lecturas, 1x2] }
+        cruzadas: { type: boolean, description: 'las dos lecturas sumaron más de 100 y el empate del motor las calzó' }
+        empateMotor: { type: number, nullable: true }
         pitazo: { type: string, nullable: true }
         selladoEn: { type: string, description: 'UTC' }
     GrupoCiego:

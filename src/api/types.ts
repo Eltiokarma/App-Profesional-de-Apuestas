@@ -2981,6 +2981,13 @@ export interface Ciego1x2 {
   visita: number
   elegido: Resultado1x2
   porque: string
+  /** las dos lecturas, una por equipo: el % de que ESE equipo gane (24/11/2026); en el formato 1X2 del 22/11 son local y visita */
+  ganaLocal?: number
+  ganaVisita?: number
+  formato?: 'lecturas' | '1x2'
+  /** las dos lecturas sumaron más de 100 y el empate del motor las calzó */
+  cruzadas?: boolean
+  empateMotor?: number | null
   pitazo: string | null
   selladoEn: string
 }

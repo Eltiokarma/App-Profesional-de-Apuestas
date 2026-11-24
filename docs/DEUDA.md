@@ -1376,6 +1376,12 @@ conversación se pierde en la siguiente.
      rutina de los lunes informa. Medido ese día en 31: los tres 21 de 31, el
      ciego comprime hacia el medio (50-59 ganó 10 de 10) y le da de más al
      empate (METODO_APUESTA, «El 1X2 ciego»).
+   - HECHO el 24/11 (usuario): el ciego son DOS LECTURAS, una por equipo
+     (`ganaLocal`, `ganaVisita`); el empate es 100 − las dos y, si se cruzan
+     (suman más de 100), el empate del motor las calza (`ciego.calzar`). El
+     espejo calibra cada lectura por su lado. Pendiente: medir con 60 si las
+     `cruzadas` avisan cuándo no apostar, y si el `pronostico.probabilidades`
+     publicado del parte también pasa a las dos lecturas (hoy sigue en 1X2).
    - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 22/11):
      ciego contra publicado contra favorito de la casa, y el desacuerdo.
    - **Revisar las reglas de anclaje del sad-analysis** (v4.1 «el empate
