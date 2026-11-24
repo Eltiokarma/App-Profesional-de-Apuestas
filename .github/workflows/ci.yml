@@ -107,6 +107,8 @@ jobs:
         run: python -m backend.test_semaforo
       - name: El 1X2 ciego (sellado antes de ver la cuota, las cuotas tapadas a Cowork hasta el sello, medido contra la casa por acierto)
         run: python -m backend.test_ciego
+      - name: La calibración de las dos lecturas contra los resultados (corrige al que comprime, no inventa una corrección)
+        run: python -m backend.test_backtest_calibracion_lecturas
       - name: La lectura de la tarjeta en Partidos (DESCONFIAR con la regla del parte y los marcadores más probables)
         run: python -m backend.test_lista_partidos
       - name: Velocidad sin cambiar un número (caché de Aprendizaje y Simulación con huella de insumos)

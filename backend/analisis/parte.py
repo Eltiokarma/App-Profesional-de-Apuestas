@@ -3538,6 +3538,53 @@ def matriz_vs_pronostico(m: dict, pron: dict) -> list[dict]:
     return fuera
 
 
+def _lecturas_pronostico(p: dict, prob: dict, rechazos: list) -> dict | None:
+    """Las dos lecturas del pronóstico (24/11/2026, usuario: «pasá también el
+    parte a las dos lecturas»): `pronostico.lecturas {ganaLocal, ganaVisita}`
+    (o las dos dentro de `probabilidades`). El 1X2 lo calcula el backend con
+    `ciego.calzar`: empate = 100 − las dos; si se cruzan (suman más de 100) el
+    empate lo pone el motor, que se lee al guardar (`calzar_lecturas`)."""
+    fuente = p.get("lecturas") if isinstance(p.get("lecturas"), dict) else prob
+    if not isinstance(fuente, dict) or ("ganaLocal" not in fuente and "ganaVisita" not in fuente):
+        return None
+    try:
+        gl, gv = float(fuente["ganaLocal"]), float(fuente["ganaVisita"])
+    except (KeyError, TypeError, ValueError):
+        rechazos.append({"donde": "pronostico.lecturas",
+                         "porque": "faltan ganaLocal y ganaVisita como números (en %)",
+                         "esperado": '{"ganaLocal": 55, "ganaVisita": 20}'})
+        return None
+    if not (0 <= gl <= 100 and 0 <= gv <= 100):
+        rechazos.append({"donde": "pronostico.lecturas",
+                         "porque": "cada lectura va de 0 a 100: es el % de que ESE equipo gane",
+                         "esperado": '{"ganaLocal": 55, "ganaVisita": 20}'})
+        return None
+    from backend.analisis import ciego as _c
+    if gl + gv <= 100:
+        x = _c.calzar(gl, gv)
+        return {**x, "ganaLocal": round(gl, 1), "ganaVisita": round(gv, 1)}
+    return {"local": 0.0, "empate": 0.0, "visita": 0.0, "ganaLocal": round(gl, 1), "ganaVisita": round(gv, 1),
+            "cruzadas": True, "empateMotor": None}
+
+
+def calzar_lecturas(parte: dict, empate_motor) -> None:
+    """Al guardar, con el fixture a mano: las lecturas cruzadas del pronóstico
+    se calzan con el empate del motor. Sin motor no se inventa: el 1X2 queda
+    vacío y el rechazo lo dice (el recibo ya cobra el pronóstico sin 1X2)."""
+    pron = parte.get("pronostico") or {}
+    lec = pron.get("lecturas")
+    if not lec or not lec.get("cruzadas") or lec.get("empateMotor") is not None:
+        return
+    from backend.analisis import ciego as _c
+    try:
+        x = _c.calzar(lec["ganaLocal"], lec["ganaVisita"], empate_motor)
+    except _c.CiegoInvalido as e:
+        parte.setdefault("rechazos", []).append({"donde": "pronostico.lecturas", "porque": str(e)})
+        return
+    pron["probabilidades"] = {k: x[k] for k in ("local", "empate", "visita")}
+    lec["empateMotor"] = x["empateMotor"]
+
+
 def normalizar_parte(payload: dict) -> dict:
     """Deja el depósito en la forma exacta del contrato.
 
@@ -3646,11 +3693,18 @@ def normalizar_parte(payload: dict) -> dict:
               '"probabilidades": {"local": 52, "empate": 27, "visita": 21}, "marcador": "2-1", "falsador": "…"}')
     prob = _dict(p.get("probabilidades"), rechazos, "pronostico.probabilidades",
                  '{"local": 52, "empate": 27, "visita": 21}')
+    lecturas = _lecturas_pronostico(p, prob, rechazos)
     parte["pronostico"] = {
         "motor": _txt(p.get("motor")),
         "matriz": _txt(p.get("matriz")),
         "mercado": _txt(p.get("mercado")),
-        "probabilidades": {k: _num(prob.get(k), 100) for k in ("local", "empate", "visita")},
+        "probabilidades": ({k: lecturas[k] for k in ("local", "empate", "visita")} if lecturas
+                           else {k: _num(prob.get(k), 100) for k in ("local", "empate", "visita")}),
+        # LAS DOS LECTURAS (24/11/2026): ¿gana el local?, ¿gana el visitante?; el
+        # 1X2 de arriba lo calcula el backend (empate = 100 − las dos, o el del
+        # motor si se cruzan). None si el parte vino con el 1X2 de antes.
+        "lecturas": ({k: lecturas[k] for k in ("ganaLocal", "ganaVisita", "cruzadas", "empateMotor")}
+                     if lecturas else None),
         "marcador": _txt(p.get("marcador")),
         "falsador": _txt(p.get("falsador")),
         # LA FRASE QUE SOSTIENE EL DESCARTE (17/11/2026, sad-analysis v4.6, 6-B): el resultado
@@ -3713,6 +3767,9 @@ def guardar(payload: dict) -> dict:
     """
     parte = normalizar_parte(payload)
     fx = _fixture(parte["fixtureId"])
+    if fx:
+        from backend.analisis import ciego as _c
+        calzar_lecturas(parte, lambda: _c.empate_motor(parte["fixtureId"]))
     sumar_ids_alternos(parte, _ids_alternos_de_la_base(parte["fixtureId"]) if fx else {})
     if not fx:
         raise ParteInvalido(f"el fixture {parte['fixtureId']} no está en nuestra base: "

@@ -1718,6 +1718,15 @@ paths:
                     type: array
                     description: 'lo mismo con la lectura del visitante'
                     items: { $ref: '#/components/schemas/TramoEspejo' }
+                  curvas:
+                    type: object
+                    description: >
+                      la curva de cada lado aprendida de los resultados (24/11/2026,
+                      backend/analisis/calibracion_lecturas.py): logit(calibrada) = a + b · logit(dicha),
+                      con un previo en la identidad; `lectura` la dice en castellano
+                    properties:
+                      local: { $ref: '#/components/schemas/CurvaLectura' }
+                      visita: { $ref: '#/components/schemas/CurvaLectura' }
                   cruzadas:
                     type: object
                     description: 'los partidos con las dos lecturas sumando más de 100'
@@ -4762,6 +4771,19 @@ components:
             local: { type: number }
             empate: { type: number }
             visita: { type: number }
+        lecturas:
+          type: object
+          nullable: true
+          description: >
+            LAS DOS LECTURAS (24/11/2026): `{ganaLocal, ganaVisita}` en %, el % de que ESE equipo gane.
+            Se mandan en `pronostico.lecturas` y el backend calcula `probabilidades` (empate = 100 −
+            las dos; si suman más de 100 se cruzan y el empate lo pone el motor, `cruzadas: true`). Null
+            si el parte vino con el 1X2 de antes en `probabilidades`.
+          properties:
+            ganaLocal: { type: number }
+            ganaVisita: { type: number }
+            cruzadas: { type: boolean }
+            empateMotor: { type: number, nullable: true }
         marcador: { type: string }
         falsador: { type: string, description: 'la condición observable que declara fallado el pronóstico' }
         descarte: { type: string, description: 'la frase que sostiene el descarte (17/11/2026, sad-analysis v4.6, 6-B): el resultado descartado lo calcula la app (`desconfianza.descarte`, el menos probable del 1X2) y el parte escribe solo por qué, con un hecho de este partido. Opcional; vacío si no viene' }
@@ -4923,6 +4945,13 @@ components:
         sensibilidad: { type: array, items: { type: object, additionalProperties: true } }
         d3: { type: string, enum: [si, parcial, 'no', sin dato], description: 'solo si el parte lo declaró' }
         disponibilidad: { $ref: '#/components/schemas/DisponibilidadParte' }
+    CurvaLectura:
+      type: object
+      properties:
+        a: { type: number }
+        b: { type: number, description: '> 1: el analista se queda corto; < 1: exagera' }
+        n: { type: integer }
+        lectura: { type: string }
     TramoEspejo:
       type: object
       description: 'un tramo de la calibración propia: lo que se dijo contra lo que pasó (sin la casa)'

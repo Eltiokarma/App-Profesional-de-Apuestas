@@ -182,6 +182,16 @@ def calzar(gana_local: float, gana_visita: float, empate_motor=None) -> dict:
             "cruzadas": True, "empateMotor": emp}
 
 
+def empate_motor(fixture_id: int) -> float | None:
+    """El empate del 1X2 del MOTOR (`unXDos` de `GET /predicciones/{id}`): sale
+    del nivel de los dos, no de la cuota. None si el motor no lo tiene."""
+    try:
+        from backend.app import prediccion   # app importa este módulo: se trae al usarlo
+        return (prediccion(fixture_id).get("unXDos") or {}).get("empate")
+    except Exception:  # noqa: BLE001 — sin motor no se calza: calzar lo dice con su motivo
+        return None
+
+
 def normalizar(body: dict, empate_motor=None) -> dict:
     """Las dos lecturas {ganaLocal, ganaVisita, porque} (24/11/2026) o el 1X2
     de antes {local, empate, visita, porque} → el 1X2 en % que suma 100 y las
@@ -489,7 +499,14 @@ def espejo(filas: list[dict]) -> dict:
                       f"{cruz['elegidoGano']}.")
         if n < 60:
             texto += " Con menos de 60 partidos es una guía, no una regla: movete con la lectura, no con la tabla."
-    return {"desde": DESDE, "n": n, "aciertos": k, "ganaLocal": t_gl, "ganaVisita": t_gv,
+    # la CURVA aprendida de los resultados (24/11/2026, calibracion_lecturas):
+    # lo que valen tus lecturas en realidad, con el previo que la sostiene si hay pocos
+    from backend.analisis import calibracion_lecturas as _cal
+    curvas = _cal.ajuste_de([{"ganaLocal": u["ganaLocal"], "ganaVisita": u["ganaVisita"], "resultado": u["resultado"],
+                              "pitazo": u["pitazo"]}
+                             for u in ultimos])
+    curvas = {lado: {**cf, "lectura": _cal.lectura(cf)} for lado, cf in curvas.items()}
+    return {"desde": DESDE, "n": n, "aciertos": k, "ganaLocal": t_gl, "ganaVisita": t_gv, "curvas": curvas,
             "calibracion": calibracion, "empate": empate, "cruzadas": cruz,
             "avisos": avisos, "ultimos": list(reversed(ultimos[-ESPEJO_ULTIMOS:])), "texto": texto,
             "nota": "Sin la casa a propósito: son tus lecturas contra lo que pasó. No es una regla que "

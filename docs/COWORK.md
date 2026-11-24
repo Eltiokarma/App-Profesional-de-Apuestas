@@ -1350,6 +1350,14 @@ Escribís vos (es juicio, no se puede calcular):
   con μ como λ** (se hizo en 78 partes de octubre; el modelo de goles del
   skill viejo no existe en esta app). Si `unXDos` viene null, el motor no
   corrió y se dice.
+  **Desde el 24/11/2026 el pronóstico va en DOS LECTURAS** (usuario: «pasá también
+  el parte a las dos lecturas»): `pronostico.lecturas {ganaLocal, ganaVisita}`,
+  el % de que gane ESE equipo, cada uno leído por su lado; el backend calcula
+  `probabilidades` (empate = 100 − las dos; si suman más de 100 se cruzan y el
+  empate lo pone el motor). No escribas `probabilidades`: si mandás las dos
+  cosas, mandan las lecturas. Con las lecturas, la regla del empate de abajo no
+  aplica (el empate no se escribe: sale de las dos) y la del favorito se lee
+  sobre `ganaLocal` / `ganaVisita`.
   Al armar `probabilidades` (sad-analysis v4.1, paso 6-B): el EMPATE arranca en
   el del mercado sin margen y se aparta más de 2 puntos solo con un hecho de
   ESTE partido nombrado en la lectura; un favorito al que el mercado da 50 %+
@@ -1750,7 +1758,7 @@ once por su endpoint (punto 8), citando dónde lo encontraste en `fuente`.
     "motor": "gap §5 a favor del local (+0.31)",
     "matriz": "52 / 27 / 21",
     "mercado": "1.85 / 3.40 / 4.20 (promedio de 6 casas)",
-    "probabilidades": {"local": 52, "empate": 27, "visita": 21},
+    "lecturas": {"ganaLocal": 52, "ganaVisita": 21},
     "marcador": "2-1",
     "falsador": "si el visitante abre el marcador antes del 20', la lectura de bloque bajo queda fallada",
     "descarte": "la visita no gana: sin su 9 y con dos centrales nuevos no tiene vía contra el bloque bajo",

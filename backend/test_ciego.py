@@ -198,6 +198,18 @@ def http():
               cg["ganaLocal"] == 70.0 and cg["ganaVisita"] == 45.0, cg)
         check("el GET del parte de cuotas se abre tras el sello de dos lecturas",
               c.get(f"{A}/cuotas/{cruce}", headers=cw).status_code == 200)
+        # el PARTE también en dos lecturas (24/11/2026): el backend arma el 1X2
+        from backend.test_cowork import _parte as _p
+        pp = _p(cruce)
+        pp["pronostico"] = {**(pp.get("pronostico") or {}), "lecturas": {"ganaLocal": 70, "ganaVisita": 45}}
+        pp["pronostico"].pop("probabilidades", None)
+        rr = c.post(f"{A}/analisis/cowork", json=pp, headers=cw)
+        from backend.analisis import parte as _cw
+        pr = (_cw.dto(cruce).get("pronostico") or {})
+        check("parte en dos lecturas cruzadas: se deposita y el 1X2 lo arma el backend con el empate del motor",
+              rr.status_code == 200 and abs(pr["probabilidades"]["empate"] - round(motor, 1)) < 0.11
+              and abs(sum(pr["probabilidades"].values()) - 100) < 0.2
+              and pr["lecturas"]["cruzadas"] is True and pr["lecturas"]["ganaLocal"] == 70.0, (rr.text[:200], pr))
     r = c.get(f"{A}/analisis/cowork/ciego/espejo", headers=cw)
     check("espejo: el token de Cowork lo lee (200) y no choca con /analisis/cowork/{id}",
           r.status_code == 200 and "calibracion" in r.json(), (r.status_code, r.text[:200]))
@@ -246,6 +258,33 @@ def lecturas_puro():
           n["ganaLocal"] == 50.0 and n["ganaVisita"] == 20.0 and n["cruzadas"] is False, n)
 
 
+def parte_lecturas_puro():
+    """El pronóstico del parte en dos lecturas (24/11/2026)."""
+    from backend.analisis import parte as cowork
+
+    rech = []
+    x = cowork._lecturas_pronostico({"lecturas": {"ganaLocal": 52, "ganaVisita": 21}}, {}, rech)
+    check("parte: lecturas 52 y 21 → 1X2 52/27/21 sin cruce",
+          x and (x["local"], x["empate"], x["visita"]) == (52.0, 27.0, 21.0) and not x["cruzadas"] and not rech, x)
+    x = cowork._lecturas_pronostico({}, {"ganaLocal": 52, "ganaVisita": 21}, rech)
+    check("parte: las lecturas también se leen dentro de `probabilidades`", x and x["empate"] == 27.0, x)
+    check("parte: el 1X2 de antes no tiene lecturas", cowork._lecturas_pronostico({}, {"local": 50}, rech) is None)
+    cowork._lecturas_pronostico({"lecturas": {"ganaLocal": 150, "ganaVisita": 10}}, {}, rech)
+    check("parte: una lectura fuera de 0-100 se rechaza con motivo",
+          bool(rech) and rech[-1]["donde"] == "pronostico.lecturas")
+    parte = {"pronostico": {"probabilidades": {"local": 0, "empate": 0, "visita": 0},
+                            "lecturas": {"ganaLocal": 70, "ganaVisita": 60, "cruzadas": True, "empateMotor": None}}}
+    cowork.calzar_lecturas(parte, lambda: 24.0)
+    pr = parte["pronostico"]
+    check("parte: las cruzadas se calzan al guardar con el empate del motor",
+          pr["probabilidades"]["empate"] == 24.0 and pr["lecturas"]["empateMotor"] == 24.0, pr)
+    sin = {"pronostico": {"probabilidades": {"local": 0, "empate": 0, "visita": 0},
+                          "lecturas": {"ganaLocal": 70, "ganaVisita": 60, "cruzadas": True, "empateMotor": None}}}
+    cowork.calzar_lecturas(sin, lambda: None)
+    check("parte: cruzadas sin motor → 1X2 vacío y el rechazo lo dice (no se inventa el empate)",
+          sum(sin["pronostico"]["probabilidades"].values()) == 0 and bool(sin.get("rechazos")), sin)
+
+
 def espejo_puro():
     """El espejo (24/11/2026): la calibración propia sin la casa, con sus avisos."""
     from backend.analisis import ciego
@@ -292,12 +331,16 @@ def espejo_puro():
           cr["cruzadas"] == {"n": 3, "elegidoGano": 3}
           and {x["tramo"]: x for x in cr["ganaLocal"]}["60-79"]["n"] == 3, (cr["cruzadas"], cr["ganaLocal"]))
     v = ciego.espejo([])
+    check("espejo: trae la curva de cada lado aprendida de los resultados",
+          set(e["curvas"]) == {"local", "visita"} and e["curvas"]["local"]["n"] == 12
+          and "lectura" in e["curvas"]["local"], e["curvas"])
     check("espejo vacío: n 0, sin avisos y con texto", v["n"] == 0 and not v["avisos"] and v["texto"], v)
 
 
 def main():
     resumen_puro()
     lecturas_puro()
+    parte_lecturas_puro()
     espejo_puro()
     http()
     print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLA(S)'}")
