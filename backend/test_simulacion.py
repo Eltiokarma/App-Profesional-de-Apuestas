@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las quince estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas, la cuidada y ganar fijo)", len(out["estrategias"]) == 15, out.keys())
+check("simulacion() responde con las diecinueve estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas, la cuidada, ganar fijo y las cuatro verde sin alertas)", len(out["estrategias"]) == 19, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -765,6 +765,52 @@ check("contacto._marcador lee lecturaSad.golesAcotados del GET del parte",
       and _ct._marcador({}, {"local": 50, "empate": 27, "visita": 23}) is None)
 check("y el informe lo dice", "Marcador · cuenta desde 2026-11-14" in _ct.informe_marcador(_om)
       and _om["marcador"]["criterio"]["texto"] in _ct.informe_marcador(_om))
+
+# ── VERDE SIN ALERTAS (24/11/2026, usuario) ─────────────────────────────────
+# seis partidos con la casa fuera del medio (38 %), todos ganados por el local:
+# 41 verde limpio; 42 amarillo; 43 DESCONFIAR; 44 riesgo alto; 45 riesgo MUY
+# alto (no filtra); 46 verde limpio pero en el medio (la casa da 50 %)
+def _apa(fid, pit, verde=True, desconfiar=False, riesgo=None, mercado_local=38):
+    a = _apf(fid, pit, "local", mercado_local)
+    # nuestro elegido a 1 punto de la casa: ganar fijo no lo frena por «pasarse de la casa»
+    a["probabilidades"] = {"local": mercado_local + 1, "empate": (99 - mercado_local) / 2 + 0.5,
+                           "visita": (99 - mercado_local) / 2 - 0.5}
+    a["semaforo"] = {"estado": "confirma" if verde else "duda", "motivos": []}
+    a["desconfiar"], a["riesgoElegido"] = desconfiar, riesgo
+    return a
+_oa = sim.simular([_apa(41, "2026-11-25 15:00:00"), _apa(42, "2026-11-25 18:00:00", verde=False),
+                   _apa(43, "2026-11-25 21:00:00", desconfiar=True), _apa(44, "2026-11-26 15:00:00", riesgo="alto"),
+                   _apa(45, "2026-11-26 18:00:00", riesgo="muy alto"),
+                   _apa(46, "2026-11-26 21:00:00", mercado_local=50)])
+_ea = {e["clave"]: e for e in _oa["estrategias"]}
+_fa = {a["fixtureId"]: a["porEstrategia"] for a in _oa["apuestas"]}
+check("verde sin alertas: apuesta al verde limpio, al riesgo muy alto y al del medio (41, 45, 46); no al amarillo, "
+      "DESCONFIAR ni riesgo alto", _ea["metodoVerdeSinAlertas"]["apuestas"] == 3
+      and [_fa[k]["metodoVerdeSinAlertas"]["monto"] > 0 for k in (41, 42, 43, 44, 45, 46)]
+      == [True, False, False, False, True, True], {k: _fa[k]["metodoVerdeSinAlertas"] for k in _fa})
+check("…y dice por qué no apuesta",
+      _fa[42]["metodoVerdeSinAlertas"]["motivo"] == "semáforo en amarillo"
+      and _fa[43]["metodoVerdeSinAlertas"]["motivo"] == "alerta DESCONFIAR sobre el elegido"
+      and _fa[44]["metodoVerdeSinAlertas"]["motivo"] == "la burbuja del elegido está en riesgo alto",
+      {k: _fa[k]["metodoVerdeSinAlertas"]["motivo"] for k in (42, 43, 44)})
+check("…fuera del medio, además, no apuesta al 46 (la casa da 50 %)",
+      _ea["metodoVerdeSinAlertasFueraMedio"]["apuestas"] == 2
+      and _fa[46]["metodoVerdeSinAlertasFueraMedio"]["motivo"].endswith("en el medio (45-60 %)"))
+check("martingala cuidada y ganar fijo sin alertas: los mismos filtros (2 apuestas: 41 y 45)",
+      _ea["martingalaCuidadaSinAlertas"]["apuestas"] == 2 and _ea["ganarFijoSinAlertas"]["apuestas"] == 2
+      and _fa[43]["ganarFijoSinAlertas"]["motivo"] == "alerta DESCONFIAR sobre el elegido", _ea["ganarFijoSinAlertas"])
+check("…mientras las de siempre apuestan como antes (la cuidada no mira semáforo, DESCONFIAR ni riesgo: 41-45; "
+      "ganar fijo mira el verde: 41, 43, 44, 45)",
+      _ea["martingalaCuidada"]["apuestas"] == 5 and _ea["ganarFijo"]["apuestas"] == 4,
+      (_ea["martingalaCuidada"]["apuestas"], _ea["ganarFijo"]["apuestas"]))
+check("la cuidada sin alertas lleva sus líneas y la ganar fijo sin alertas su freno por franja",
+      _ea["martingalaCuidadaSinAlertas"]["lineas"] is not None and "cortes" in _ea["martingalaCuidadaSinAlertas"]["lineas"]
+      and [t["tramo"] for t in _ea["ganarFijoSinAlertas"]["tramos"]] == ["sorpresa", "favorito"])
+_txt = _ct.informe_sin_alertas(_oa)
+check("el informe de los lunes cuenta el verde sin alertas solo desde el 25/11 (las seis son del 25-26/11)",
+      "Verde sin alertas · cuenta desde 2026-11-25" in _txt and "Método verde sin alertas: 3 de 3" in _txt, _txt)
+check("contacto.armar no revienta con un parte vacío (los campos nuevos del verde sin alertas son opcionales)",
+      _ct.armar({"9": {"parte": {}, "fx": {}}}) == ([], []))
 
 print("\nTODO OK" if not fallas else f"\n{fallas} FALLA(S)")
 sys.exit(1 if fallas else 0)
