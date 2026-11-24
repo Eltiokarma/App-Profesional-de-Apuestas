@@ -194,11 +194,17 @@ def informe_ciego(out: dict) -> str:
                         "resultado": a.get("resultado")}
                        for a in out.get("apuestas") or [] if a.get("estado") == "cerrada"])
     if e["n"]:
-        lineas.append("  calibración propia (lo que el ciego le dio a su elegido → lo que ganó):")
-        for t in e["calibracion"]:
-            if t["n"]:
-                lineas.append(f"    {t['tramo']}: {t['n']} partidos · dijo {t['dijo']:g} % → ganó {t['paso']:g} %"
-                              f" (IC {ic(t['intervalo'])})" + (f" · {t['lectura']}" if t["lectura"] else ""))
+        for titulo, clave in (("lo que el ciego le dio a su elegido → lo que ganó", "calibracion"),
+                              ("la lectura del LOCAL (¿gana?) → lo que ganó", "ganaLocal"),
+                              ("la lectura del VISITANTE (¿gana?) → lo que ganó", "ganaVisita")):
+            lineas.append(f"  calibración propia · {titulo}:")
+            for t in e[clave]:
+                if t["n"]:
+                    lineas.append(f"    {t['tramo']}: {t['n']} partidos · dijo {t['dijo']:g} % → ganó {t['paso']:g} %"
+                                  f" (IC {ic(t['intervalo'])})" + (f" · {t['lectura']}" if t["lectura"] else ""))
+        if e["cruzadas"]["n"]:
+            lineas.append(f"    lecturas cruzadas (sumaron más de 100): {e['cruzadas']['n']} · el elegido ganó "
+                          f"{e['cruzadas']['elegidoGano']}")
         em = e["empate"]
         lineas.append(f"    empate: dijo {em['dijo']:g} % → hubo {em['paso']:g} % ({em['empates']} de {em['n']})")
         for a in e["avisos"]:

@@ -50,8 +50,24 @@ CREATE TABLE IF NOT EXISTS parte_ciego (
 );
 """
 
-ESPERADO = ('{"local": 48, "empate": 27, "visita": 25, "porque": "lo que leíste en las K, las burbujas, '
-            'el EFE, el TDE, el DTP y la prensa, sin la cuota"}')
+# LAS DOS LECTURAS (24/11/2026, usuario: «o gana el local o no gana; y el que
+# no gane involucra empate y derrota… cuando se cruzan con el otro, los dos
+# tienen un evento en común»): el analista lee a cada equipo por su lado
+# —¿gana o no gana?— y el empate sale de la intersección de los dos «no gana»:
+# P(no gana local ∩ no gana visita) = P(empate) = 100 − ganaLocal − ganaVisita.
+# Si las dos lecturas suman más de 100 se cruzan (los dos no pueden ganar): se
+# CALZAN («podemos refactorizarlo y hacer que calce») con el empate del MOTOR
+# —sale del nivel, no de la cuota— y local y visita se reparten el resto en la
+# proporción que dijo el analista. Lo escrito queda guardado tal cual: es lo
+# que se calibra, cada lectura contra si ese equipo ganó.
+ESPERADO = ('{"ganaLocal": 48, "ganaVisita": 25, "porque": "lo que leíste de cada equipo en las K, '
+            'las burbujas, el EFE, el TDE, el DTP y la prensa, sin la cuota"}')
+# tramos de cada lectura binaria (¿gana este equipo?), para su calibración
+TRAMOS_GANA = ((0, 20, "0-19"), (20, 40, "20-39"), (40, 60, "40-59"), (60, 80, "60-79"), (80, 101, "80+"))
+# columnas nuevas de la tabla (las filas del 22/11 las tienen vacías: se leen
+# del 1X2, que en ese formato es lo mismo)
+_COLUMNAS_NUEVAS = (("gana_local", "REAL"), ("gana_visita", "REAL"), ("cruzadas", "INTEGER"),
+                    ("empate_motor", "REAL"))
 
 
 class CiegoInvalido(ValueError):
@@ -69,6 +85,10 @@ class CiegoYaSellado(ValueError):
 def _conectar():
     con = efedb.conectar()
     con.executescript(DDL)
+    tiene = {r[1] for r in con.execute("PRAGMA table_info(parte_ciego)")}
+    for col, tipo in _COLUMNAS_NUEVAS:
+        if col not in tiene:
+            con.execute(f"ALTER TABLE parte_ciego ADD COLUMN {col} {tipo}")
     return con
 
 
@@ -91,8 +111,17 @@ def _ahora() -> datetime:
 
 def _fila(f) -> dict:
     p = {k: f[k] for k in CLAVES}
+    claves = f.keys()
+    gl = f["gana_local"] if "gana_local" in claves else None
+    gv = f["gana_visita"] if "gana_visita" in claves else None
     return {"local": p["local"], "empate": p["empate"], "visita": p["visita"],
             "elegido": max(CLAVES, key=lambda k: p[k]), "porque": f["porque"],
+            # las dos lecturas como las escribió el analista (las del 1X2 del 22/11 son las mismas)
+            "ganaLocal": gl if gl is not None else p["local"],
+            "ganaVisita": gv if gv is not None else p["visita"],
+            "formato": "lecturas" if gl is not None else "1x2",
+            "cruzadas": bool(f["cruzadas"]) if "cruzadas" in claves and f["cruzadas"] is not None else False,
+            "empateMotor": f["empate_motor"] if "empate_motor" in claves else None,
             "pitazo": f["pitazo"], "selladoEn": f["sellado_en"]}
 
 
@@ -118,10 +147,61 @@ def de_varios(ids) -> dict:
     return out
 
 
-def normalizar(body: dict) -> dict:
-    """{local, empate, visita, porque} → los tres en % que suman 100, o CiegoInvalido."""
+def _porque(body: dict) -> str:
+    porque = str(body.get("porque") or "").strip()
+    if len(porque) < 20:
+        raise CiegoInvalido("falta `porque`: una o dos frases con lo que leíste de cada equipo (K, burbujas, "
+                            "EFE, TDE, DTP, prensa) que sostiene el número, sin la cuota")
+    return porque
+
+
+def calzar(gana_local: float, gana_visita: float, empate_motor=None) -> dict:
+    """Las dos lecturas → el 1X2. El empate es lo que queda en la intersección
+    de los dos «no gana»: 100 − ganaLocal − ganaVisita. Si suman más de 100 se
+    cruzan: el empate lo pone el motor (`empate_motor`, un número o una función
+    que lo trae) y local y visita se reparten el resto en su proporción."""
+    gl, gv = float(gana_local), float(gana_visita)
+    tot = gl + gv
+    if tot <= 100.0:
+        loc, vis = round(gl, 1), round(gv, 1)
+        return {"local": loc, "empate": round(100 - loc - vis, 1), "visita": vis,
+                "cruzadas": False, "empateMotor": None}
+    em = empate_motor() if callable(empate_motor) else empate_motor
+    try:
+        em = float(em)
+    except (TypeError, ValueError):
+        em = None
+    if em is None or not 0 <= em < 100:
+        raise CiegoInvalido(f"ganaLocal + ganaVisita suman {tot:g}: se cruzan (los dos no pueden ganar) y el "
+                            "motor no tiene empate para calzarlas. Revisá las dos lecturas: tienen que sumar "
+                            "100 o menos")
+    resto = 100.0 - em
+    loc = round(gl * resto / tot, 1)
+    emp = round(em, 1)
+    return {"local": loc, "empate": emp, "visita": round(100 - loc - emp, 1),
+            "cruzadas": True, "empateMotor": emp}
+
+
+def normalizar(body: dict, empate_motor=None) -> dict:
+    """Las dos lecturas {ganaLocal, ganaVisita, porque} (24/11/2026) o el 1X2
+    de antes {local, empate, visita, porque} → el 1X2 en % que suma 100 y las
+    lecturas tal cual, o CiegoInvalido."""
     if not isinstance(body, dict):
         raise CiegoInvalido(f"el ciego tiene que ser un objeto: {ESPERADO}")
+    if "ganaLocal" in body or "ganaVisita" in body:
+        try:
+            gl, gv = float(body["ganaLocal"]), float(body["ganaVisita"])
+        except (KeyError, TypeError, ValueError):
+            raise CiegoInvalido(f"faltan ganaLocal y ganaVisita como números (en %): {ESPERADO}")
+        if any(math.isnan(v) or not 0 <= v <= 100 for v in (gl, gv)):
+            raise CiegoInvalido("cada lectura va de 0 a 100: es el % de que ESE equipo gane")
+        porque = _porque(body)
+        p = calzar(gl, gv, empate_motor)
+        orden = sorted((p[k] for k in CLAVES), reverse=True)
+        if orden[0] == orden[1]:
+            raise CiegoInvalido("dos resultados empatados arriba: el ciego tiene que elegir uno "
+                                "(un punto más al que elegís)")
+        return {**p, "ganaLocal": round(gl, 1), "ganaVisita": round(gv, 1), "porque": porque}
     fuente = body.get("probabilidades") if isinstance(body.get("probabilidades"), dict) else body
     try:
         vals = {k: float(fuente[k]) for k in CLAVES}
@@ -137,14 +217,12 @@ def normalizar(body: dict) -> dict:
     if orden[0] == orden[1]:
         raise CiegoInvalido("dos resultados empatados arriba: el ciego tiene que elegir uno "
                             "(un punto más al que elegís)")
-    porque = str(body.get("porque") or "").strip()
-    if len(porque) < 20:
-        raise CiegoInvalido("falta `porque`: una o dos frases con lo que leíste (K, burbujas, EFE, "
-                            "TDE, DTP, prensa) que sostiene el número, sin la cuota")
-    return {**p, "porque": porque}
+    porque = _porque(body)
+    return {**p, "porque": porque, "ganaLocal": p["local"], "ganaVisita": p["visita"], "cruzadas": False,
+            "empateMotor": None}
 
 
-def sellar(fixture_id: int, body: dict, hay_parte: bool) -> dict:
+def sellar(fixture_id: int, body: dict, hay_parte: bool, empate_motor=None) -> dict:
     """Sella el ciego. Antes del pitazo y antes del parte; el primero manda."""
     previo = de(fixture_id)
     if previo:
@@ -157,13 +235,14 @@ def sellar(fixture_id: int, body: dict, hay_parte: bool) -> dict:
     if hay_parte:
         raise CiegoInvalido("este partido ya tiene parte depositado, y el parte trae la casa a la vista: "
                             "el ciego va ANTES del parte. Este partido queda sin ciego")
-    c = normalizar(body)
+    c = normalizar(body, empate_motor)
     ahora = efedb.ahora()
     with _conectar() as con:
-        con.execute("INSERT INTO parte_ciego (fixture_id, local, empate, visita, porque, pitazo, sellado_en) "
-                    "VALUES (?,?,?,?,?,?,?)",
+        con.execute("INSERT INTO parte_ciego (fixture_id, local, empate, visita, porque, pitazo, sellado_en, "
+                    "gana_local, gana_visita, cruzadas, empate_motor) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (fixture_id, c["local"], c["empate"], c["visita"], c["porque"],
-                     pitazo.strftime("%Y-%m-%d %H:%M:%S"), ahora))
+                     pitazo.strftime("%Y-%m-%d %H:%M:%S"), ahora, c["ganaLocal"], c["ganaVisita"],
+                     1 if c["cruzadas"] else 0, c["empateMotor"]))
     return {"fixtureId": fixture_id, "ciego": de(fixture_id),
             "siguiente": "ya podés abrir las cuotas (`GET cuotas/{id}`) y seguir con el parte: "
                          "el ciego queda como está, y tu 1X2 publicado va en `pronostico.probabilidades`"}
@@ -313,73 +392,105 @@ ESPEJO_DESVIO = 10.0
 ESPEJO_ULTIMOS = 12
 
 
-def espejo(filas: list[dict]) -> dict:
-    """Las filas: {fixtureId, pitazo, ciego {local, empate, visita} | None,
-    resultado | None, local?, visita?}. Solo las cerradas con ciego desde DESDE.
-    Devuelve la calibración propia por tramo (lo que se le dio al elegido contra
-    lo que ganó), el empate (lo que se le dio contra cuántos hubo) y avisos en
-    castellano. Nada de la casa entra ni sale."""
-    desde = _utc(DESDE)
-    con = sorted((f for f in filas if f.get("ciego") and f.get("resultado") in CLAVES
-                  and (_utc(f.get("pitazo")) or desde) >= desde),
-                 key=lambda f: str(f.get("pitazo") or ""))
-    n = len(con)
-    tramos = {t: {"n": 0, "dijo": 0.0, "aciertos": 0} for _, _, t in TRAMOS}
-    emp_dijo, emp_real, k = 0.0, 0, 0
-    ultimos = []
-    for f in con:
-        c = {kk: float(f["ciego"][kk]) for kk in CLAVES}
-        el = max(CLAVES, key=lambda kk: c[kk])
-        r = f["resultado"]
-        k += el == r
-        emp_dijo += c["empate"]
-        emp_real += r == "empate"
-        for lo, hi, t in TRAMOS:
-            if lo <= c[el] < hi:
-                tramos[t]["n"] += 1
-                tramos[t]["dijo"] += c[el]
-                tramos[t]["aciertos"] += el == r
+def _tabla(puntos, tramos, que: str) -> tuple[list[dict], list[str]]:
+    """puntos: [(lo que se dijo en %, si pasó)] → la calibración por tramo y sus
+    avisos (corto / largo desde ESPEJO_MIN_TRAMO partidos y ESPEJO_DESVIO puntos)."""
+    acc = {t: {"n": 0, "dijo": 0.0, "aciertos": 0} for _, _, t in tramos}
+    for dijo, paso in puntos:
+        for lo, hi, t in tramos:
+            if lo <= dijo < hi:
+                acc[t]["n"] += 1
+                acc[t]["dijo"] += dijo
+                acc[t]["aciertos"] += bool(paso)
                 break
-        ultimos.append({"fixtureId": f.get("fixtureId"), "pitazo": f.get("pitazo"),
-                        "partido": " - ".join(x for x in (f.get("local"), f.get("visita")) if x) or None,
-                        "elegido": el, "leDiste": round(c[el], 1), "empate": round(c["empate"], 1),
-                        "resultado": r, "acerto": el == r})
-    calibracion, avisos = [], []
-    for _, _, t in TRAMOS:
-        v = tramos[t]
+    filas, avisos = [], []
+    for _, _, t in tramos:
+        v = acc[t]
         dijo = round(v["dijo"] / v["n"], 1) if v["n"] else None
         paso = round(100 * v["aciertos"] / v["n"], 1) if v["n"] else None
         lectura = None
         if v["n"] >= ESPEJO_MIN_TRAMO:
             if paso - dijo >= ESPEJO_DESVIO:
                 lectura = "corto"
-                avisos.append(f"Cuando le diste {t} % a tu elegido (en promedio {dijo:g} %), ganó el "
-                              f"{paso:g} % ({v['aciertos']} de {v['n']}): te quedás CORTO. Si la lectura "
-                              "sostiene a ese favorito, animate a darle más.")
+                avisos.append(f"Cuando le diste {t} % a {que} (en promedio {dijo:g} %), ganó el {paso:g} % "
+                              f"({v['aciertos']} de {v['n']}): te quedás CORTO. Si la lectura lo sostiene, "
+                              "animate a darle más.")
             elif dijo - paso >= ESPEJO_DESVIO:
                 lectura = "largo"
-                avisos.append(f"Cuando le diste {t} % a tu elegido (en promedio {dijo:g} %), ganó el "
-                              f"{paso:g} % ({v['aciertos']} de {v['n']}): te pasás. En esos partidos "
-                              "parejos tu elegido gana menos de lo que decís.")
+                avisos.append(f"Cuando le diste {t} % a {que} (en promedio {dijo:g} %), ganó el {paso:g} % "
+                              f"({v['aciertos']} de {v['n']}): te pasás. Gana menos de lo que decís.")
             else:
                 lectura = "bien"
-        calibracion.append({"tramo": t, "n": v["n"], "dijo": dijo, "paso": paso,
-                            "intervalo": _wilson(v["aciertos"], v["n"]), "lectura": lectura})
+        filas.append({"tramo": t, "n": v["n"], "dijo": dijo, "paso": paso,
+                      "intervalo": _wilson(v["aciertos"], v["n"]), "lectura": lectura})
+    return filas, avisos
+
+
+def espejo(filas: list[dict]) -> dict:
+    """Las filas: {fixtureId, pitazo, ciego {local, empate, visita, ganaLocal?,
+    ganaVisita?, cruzadas?} | None, resultado | None, local?, visita?}. Solo las
+    cerradas con ciego desde DESDE. Devuelve, sin nada de la casa:
+
+    - `ganaLocal` / `ganaVisita`: cada lectura binaria (¿gana este equipo?)
+      contra si ganó, por tramo — dos datos por partido, la calibración rápida;
+    - `calibracion`: lo que el 1X2 le dio al elegido contra lo que ganó;
+    - `empate`: el empate (que sale de las dos lecturas) dicho contra el que hubo;
+    - `cruzadas`: los partidos en que las dos lecturas sumaron más de 100;
+    - `avisos` en castellano y los últimos casos."""
+    desde = _utc(DESDE)
+    con = sorted((f for f in filas if f.get("ciego") and f.get("resultado") in CLAVES
+                  and (_utc(f.get("pitazo")) or desde) >= desde),
+                 key=lambda f: str(f.get("pitazo") or ""))
+    n = len(con)
+    p_el, p_gl, p_gv = [], [], []
+    emp_dijo, emp_real, k = 0.0, 0, 0
+    cruz = {"n": 0, "elegidoGano": 0}
+    ultimos = []
+    for f in con:
+        cg = f["ciego"]
+        c = {kk: float(cg[kk]) for kk in CLAVES}
+        gl = float(cg.get("ganaLocal") if cg.get("ganaLocal") is not None else c["local"])
+        gv = float(cg.get("ganaVisita") if cg.get("ganaVisita") is not None else c["visita"])
+        el = max(CLAVES, key=lambda kk: c[kk])
+        r = f["resultado"]
+        k += el == r
+        emp_dijo += c["empate"]
+        emp_real += r == "empate"
+        p_el.append((c[el], el == r))
+        p_gl.append((gl, r == "local"))
+        p_gv.append((gv, r == "visita"))
+        if cg.get("cruzadas"):
+            cruz["n"] += 1
+            cruz["elegidoGano"] += el == r
+        ultimos.append({"fixtureId": f.get("fixtureId"), "pitazo": f.get("pitazo"),
+                        "partido": " - ".join(x for x in (f.get("local"), f.get("visita")) if x) or None,
+                        "ganaLocal": round(gl, 1), "ganaVisita": round(gv, 1),
+                        "elegido": el, "leDiste": round(c[el], 1), "empate": round(c["empate"], 1),
+                        "cruzadas": bool(cg.get("cruzadas")), "resultado": r, "acerto": el == r})
+    calibracion, avisos = _tabla(p_el, TRAMOS, "tu elegido")
+    t_gl, a_gl = _tabla(p_gl, TRAMOS_GANA, "que gane el LOCAL")
+    t_gv, a_gv = _tabla(p_gv, TRAMOS_GANA, "que gane el VISITANTE")
+    avisos = a_gl + a_gv + avisos
     empate = {"dijo": round(emp_dijo / n, 1) if n else None,
               "paso": round(100 * emp_real / n, 1) if n else None, "empates": emp_real, "n": n}
     if n >= 2 * ESPEJO_MIN_TRAMO and empate["dijo"] - empate["paso"] >= ESPEJO_DESVIO:
-        avisos.append(f"Al empate le diste en promedio {empate['dijo']:g} % y hubo {emp_real} en {n} "
-                      f"({empate['paso']:g} %): le das de más.")
+        avisos.append(f"Al empate (lo que dejan tus dos lecturas) le diste en promedio {empate['dijo']:g} % y "
+                      f"hubo {emp_real} en {n} ({empate['paso']:g} %): le das de más, o sea que te quedás "
+                      "corto en alguna de las dos lecturas.")
     elif n >= 2 * ESPEJO_MIN_TRAMO and empate["paso"] - empate["dijo"] >= ESPEJO_DESVIO:
-        avisos.append(f"Al empate le diste en promedio {empate['dijo']:g} % y hubo {emp_real} en {n} "
-                      f"({empate['paso']:g} %): le das de menos.")
+        avisos.append(f"Al empate (lo que dejan tus dos lecturas) le diste en promedio {empate['dijo']:g} % y "
+                      f"hubo {emp_real} en {n} ({empate['paso']:g} %): le das de menos.")
     if not n:
-        texto = "Todavía no hay partidos cerrados con tu 1X2 ciego: sellá con tu lectura."
+        texto = "Todavía no hay partidos cerrados con tu ciego: sellá tus dos lecturas."
     else:
-        texto = (f"Tu 1X2 ciego en {n} partidos cerrados: tu elegido ganó {k} ({100 * k / n:.1f} %).")
+        texto = (f"Tu ciego en {n} partidos cerrados: tu elegido ganó {k} ({100 * k / n:.1f} %).")
+        if cruz["n"]:
+            texto += (f" En {cruz['n']} tus dos lecturas se cruzaron (sumaron más de 100) y el elegido ganó "
+                      f"{cruz['elegidoGano']}.")
         if n < 60:
             texto += " Con menos de 60 partidos es una guía, no una regla: movete con la lectura, no con la tabla."
-    return {"desde": DESDE, "n": n, "aciertos": k, "calibracion": calibracion, "empate": empate,
+    return {"desde": DESDE, "n": n, "aciertos": k, "ganaLocal": t_gl, "ganaVisita": t_gv,
+            "calibracion": calibracion, "empate": empate, "cruzadas": cruz,
             "avisos": avisos, "ultimos": list(reversed(ultimos[-ESPEJO_ULTIMOS:])), "texto": texto,
-            "nota": "Sin la casa a propósito: es tu lectura contra lo que pasó. No es una regla que "
+            "nota": "Sin la casa a propósito: son tus lecturas contra lo que pasó. No es una regla que "
                     "corrija el número sola; decí en el `porque` si la usaste."}

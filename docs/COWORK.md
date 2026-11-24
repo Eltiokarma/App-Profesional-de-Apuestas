@@ -868,9 +868,16 @@ margen a los números de la casa** (usuario, 22/11/2026).
 1. Leé todo lo que NO es la cuota: K y burbujas, `predicciones/{id}` (el
    motor), el TDE, el DTP, la F1, el banco, la prensa (DT, bajas, once). No
    busques cuotas ni pronósticos de casas en la prensa.
-2. Sellá tu 1X2 con lo que leíste: `POST {base}/analisis/cowork/{id}/ciego`
-   con `{"local": 48, "empate": 27, "visita": 25, "porque": "…"}` (en %, que
-   sumen 100; el `porque` dice qué de lo leído sostiene el número). Se sella
+2. Sellá tus DOS LECTURAS (24/11/2026): `POST {base}/analisis/cowork/{id}/ciego`
+   con `{"ganaLocal": 48, "ganaVisita": 25, "porque": "…"}`. Cada una es una
+   pregunta sobre UN equipo —¿gana o no gana?, en %— y «no gana» es empate o
+   derrota: no repartís el empate, sale de la intersección de los dos «no
+   gana» (100 − 48 − 25 = 27). Si las dos suman más de 100 se cruzan y el
+   backend las calza con el empate del motor (sale del nivel, no de la cuota):
+   el ciego queda `cruzadas` y en el `porque` decís por qué leíste a los dos
+   ganadores. El `porque` dice qué de lo leído de cada equipo sostiene el
+   número. (El 1X2 de antes, `{local, empate, visita, porque}`, se sigue
+   aceptando.) Se sella
    UNA vez, antes del parte y antes del pitazo: no se corrige después. Un
    partido de `aRehacer` (el parte es de otra fecha: aplazado) cuenta como
    sin parte: se sella el ciego antes del parte nuevo y, hasta el sello, la
@@ -878,9 +885,10 @@ margen a los números de la casa** (usuario, 22/11/2026).
 1-bis. Antes de escribir el número, mirá tu ESPEJO (24/11/2026):
    `GET {base}/analisis/cowork/ciego/espejo` —en la corrida lo pide el
    orquestador una vez y te lo pasa—. Es tu propio 1X2 ciego contra lo que
-   pasó, SIN la casa: por tramo de lo que le diste al elegido (`dijo` →
-   `paso`, `lectura` corto / largo / bien) y el empate dicho contra el que
-   hubo. Si tu tramo dice `corto`, tu elegido viene ganando más de lo que le
+   pasó, SIN la casa: cada lectura del local y del visitante contra si ganó
+   (`ganaLocal`, `ganaVisita`, por tramo: `dijo` → `paso`, `lectura` corto /
+   largo / bien), lo que le diste al elegido y el empate dicho contra el que
+   hubo. Si tu tramo dice `corto`, ese lado viene ganando más de lo que le
    das; `largo`, menos. Es guía, no regla: el número sale de ESTE partido, y
    en el `porque` decís en una frase si el espejo te movió («espejo: 50-59
    corto, subí 4»). Con los primeros 31 (22/11): el elegido al que le diste

@@ -103,11 +103,11 @@ def http():
     # dos partidos por jugarse: uno se sella, el otro no; y uno ya jugado
     import sqlite3
     sad = sqlite3.connect(os.path.join(tmp, "sad.db"))
-    ids = [r[0] for r in sad.execute("SELECT id FROM fixtures ORDER BY date DESC LIMIT 3")]
+    ids = [r[0] for r in sad.execute("SELECT id FROM fixtures ORDER BY date DESC LIMIT 4")]
     futuro = (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
     pasado = (datetime.now(timezone.utc) - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    fx, otro, jugado = ids
-    sad.execute("UPDATE fixtures SET date=?, status_short='NS' WHERE id IN (?,?)", (futuro, fx, otro))
+    fx, otro, jugado, cruce = ids
+    sad.execute("UPDATE fixtures SET date=?, status_short='NS' WHERE id IN (?,?,?)", (futuro, fx, otro, cruce))
     sad.execute("UPDATE fixtures SET date=? WHERE id=?", (pasado, jugado))
     sad.commit()
     sad.close()
@@ -181,12 +181,69 @@ def http():
     check("aplazado: con el ciego sellado la casa se abre", c.get(f"{A}/cuotas/{otro}", headers=cw).status_code == 200)
     check("la simulación trae el bloque del ciego",
           "ciego" in c.get(f"{A}/analisis/simulacion", headers=ma).json())
+    # LAS DOS LECTURAS (24/11/2026): una por equipo; si se cruzan, el empate del motor las calza
+    lect = {"ganaLocal": 70, "ganaVisita": 45, "porque": "el local llega entero y el visitante gana fuera"}
+    r = c.post(f"{A}/analisis/cowork/{cruce}/ciego", json=lect, headers=cw)
+    motor = (c.get(f"{A}/predicciones/{cruce}", headers=ma).json().get("unXDos") or {}).get("empate")
+    if motor is None:
+        check("dos lecturas cruzadas sin motor → 422 (no se inventa el empate)", r.status_code == 422, r.text[:300])
+    else:
+        cg = r.json().get("ciego") or {}
+        check("dos lecturas cruzadas: se sellan (200) marcadas `cruzadas`", r.status_code == 200
+              and cg.get("cruzadas") is True and cg.get("formato") == "lecturas", r.text[:300])
+        check("dos lecturas cruzadas: el empate es el del motor y el 1X2 suma 100",
+              abs(cg["empate"] - round(motor, 1)) < 0.11
+              and abs(cg["local"] + cg["empate"] + cg["visita"] - 100) < 0.2, (cg, motor))
+        check("dos lecturas cruzadas: lo escrito queda tal cual (70 y 45)",
+              cg["ganaLocal"] == 70.0 and cg["ganaVisita"] == 45.0, cg)
+        check("el GET del parte de cuotas se abre tras el sello de dos lecturas",
+              c.get(f"{A}/cuotas/{cruce}", headers=cw).status_code == 200)
     r = c.get(f"{A}/analisis/cowork/ciego/espejo", headers=cw)
     check("espejo: el token de Cowork lo lee (200) y no choca con /analisis/cowork/{id}",
           r.status_code == 200 and "calibracion" in r.json(), (r.status_code, r.text[:200]))
     crudo = r.text.lower()
     check("espejo: no trae nada de la casa (ni mercado, ni cuotas, ni plata)",
           not any(x in crudo for x in ('"mercado"', '"cuotas"', '"casa"', '"banca"', '"monto"')), crudo[:300])
+
+
+def lecturas_puro():
+    """Las dos lecturas (24/11/2026): ¿gana el local?, ¿gana el visitante?; el
+    empate es la intersección de los dos «no gana»."""
+    from backend.analisis import ciego
+
+    p = ciego.calzar(55, 20)
+    check("calzar: 55 y 20 → empate 25 (100 − las dos), sin cruce",
+          p == {"local": 55.0, "empate": 25.0, "visita": 20.0, "cruzadas": False, "empateMotor": None}, p)
+    p = ciego.calzar(70, 60, empate_motor=24.0)
+    check("calzar: 70 y 60 se cruzan → empate del motor (24) y el resto 76 en proporción 70:60",
+          p["cruzadas"] and p["empate"] == 24.0 and p["local"] == round(70 * 76 / 130, 1)
+          and abs(p["local"] + p["empate"] + p["visita"] - 100) < 0.11, p)
+    check("calzar: el motor puede llegar como función (se llama solo si hace falta)",
+          ciego.calzar(70, 60, empate_motor=lambda: 30.0)["empate"] == 30.0)
+    llamado = []
+    ciego.calzar(40, 30, empate_motor=lambda: llamado.append(1))
+    check("calzar: sin cruce no se llama al motor", not llamado)
+    try:
+        ciego.calzar(70, 60, empate_motor=None)
+        check("calzar: cruzadas sin motor → CiegoInvalido", False)
+    except ciego.CiegoInvalido:
+        check("calzar: cruzadas sin motor → CiegoInvalido", True)
+    n = ciego.normalizar({"ganaLocal": 48, "ganaVisita": 25, "porque": "el local viene entero y el rival sin su nueve"})
+    check("normalizar: las dos lecturas dan el 1X2 y quedan tal cual",
+          n["local"] == 48.0 and n["empate"] == 27.0 and n["visita"] == 25.0
+          and n["ganaLocal"] == 48.0 and n["ganaVisita"] == 25.0 and n["cruzadas"] is False, n)
+    for malo, por in (({"ganaLocal": 48, "porque": "x" * 30}, "falta una lectura"),
+                      ({"ganaLocal": 120, "ganaVisita": 10, "porque": "x" * 30}, "una lectura sobre 100"),
+                      ({"ganaLocal": 48, "ganaVisita": 25}, "sin porqué"),
+                      ({"ganaLocal": 35, "ganaVisita": 35, "porque": "x" * 30}, "local y visita empatados arriba")):
+        try:
+            ciego.normalizar(malo, empate_motor=20.0)
+            check(f"normalizar rechaza las lecturas: {por}", False)
+        except ciego.CiegoInvalido:
+            check(f"normalizar rechaza las lecturas: {por}", True)
+    n = ciego.normalizar({"local": 50, "empate": 30, "visita": 20, "porque": "el formato de antes sigue valiendo"})
+    check("normalizar: el 1X2 de antes sigue valiendo y sus lecturas son local y visita",
+          n["ganaLocal"] == 50.0 and n["ganaVisita"] == 20.0 and n["cruzadas"] is False, n)
 
 
 def espejo_puro():
@@ -214,18 +271,33 @@ def espejo_puro():
     check("espejo: el empate dicho contra el que hubo (0 de 12) avisa que le da de más",
           e["empate"]["empates"] == 0 and any("empate" in a.lower() and "de más" in a for a in e["avisos"]),
           (e["empate"], e["avisos"]))
-    check("espejo: un aviso por tramo leído fuera de lo dicho, más el del empate", len(e["avisos"]) == 3, e["avisos"])
+    check("espejo: un aviso por tramo del elegido leído fuera de lo dicho, más el del empate",
+          sum("tu elegido" in a for a in e["avisos"]) == 2 and any("empate" in a.lower() for a in e["avisos"]),
+          e["avisos"])
     check("espejo: los últimos casos, el más nuevo arriba y con el elegido",
           e["ultimos"] and e["ultimos"][0]["elegido"] in ("local", "visita") and len(e["ultimos"]) <= ciego.ESPEJO_ULTIMOS,
           e["ultimos"][:1])
     check("espejo: con menos de 60 dice que es guía", "guía" in e["texto"], e["texto"])
     check("espejo: ninguna clave de la casa", not any(k in e for k in ("casa", "mercado", "publicado", "brier")))
+    gl = {x["tramo"]: x for x in e["ganaLocal"]}
+    check("espejo: la lectura del local se calibra sola (53 → 40-59, ganó 6 de 6 + 1 de 6)",
+          gl["40-59"]["n"] == 12 and gl["40-59"]["paso"] == round(100 * 7 / 12, 1), gl["40-59"])
+    gv = {x["tramo"]: x for x in e["ganaVisita"]}
+    check("espejo: la lectura del visitante se calibra sola (20 y 25 → 20-39, ganó 5 de 12: corto)",
+          gv["20-39"]["n"] == 12 and gv["20-39"]["paso"] == round(100 * 5 / 12, 1)
+          and gv["20-39"]["lectura"] == "corto", gv["20-39"])
+    cr = ciego.espejo([f(30 + i, {"local": 45, "empate": 20, "visita": 35, "ganaLocal": 70, "ganaVisita": 55,
+                                  "cruzadas": True}, "local") for i in range(3)])
+    check("espejo: los partidos con lecturas cruzadas se cuentan aparte y la lectura escrita es la que se calibra",
+          cr["cruzadas"] == {"n": 3, "elegidoGano": 3}
+          and {x["tramo"]: x for x in cr["ganaLocal"]}["60-79"]["n"] == 3, (cr["cruzadas"], cr["ganaLocal"]))
     v = ciego.espejo([])
     check("espejo vacío: n 0, sin avisos y con texto", v["n"] == 0 and not v["avisos"] and v["texto"], v)
 
 
 def main():
     resumen_puro()
+    lecturas_puro()
     espejo_puro()
     http()
     print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLA(S)'}")
