@@ -731,6 +731,29 @@ del favorito de la casa **en los mismos partidos**, con su IC; el desacuerdo
 tramo (lo que dijo contra lo que pasó). El Brier y la distancia a la casa van
 como información. Con menos de 60 partidos es observación.
 
+**Lo medido en los primeros 31** (todos del domingo 22/11, bajados el 24/11
+con el token de Cowork; con el `DESDE` en el 23/11 la tabla de la app los
+dejaba fuera y desde ese día cuenta desde el 22/11): ciego, publicado y
+favorito de la casa acertaron los TRES 21 de 31; el Brier del ciego fue 0,519
+contra 0,475 del publicado y 0,471 de la casa. El ciego le dio a su elegido 9
+puntos menos que la casa en promedio y comprimió todo hacia el medio: dijo
+45 % y ganó 36 % (14), dijo 53 % y ganó 100 % (10), dijo 63 % y ganó 80 %
+(5); al empate le dio 26,5 % y hubo 3 empates (10 %). El publicado quedó a 1,1
+puntos de la casa: las reglas de anclaje lo devuelven a la cuota (DEUDA 42).
+Observación de un día, no conclusión.
+
+**El espejo** (24/11/2026, usuario: «feedback inmediato y empezar a calibrar
+esos porcentajes»): `GET /analisis/cowork/ciego/espejo` (`ciego.espejo`) es
+esa misma calibración propia SIN la casa, para que el analista la lea ANTES
+de sellar: por tramo, lo que le dio al elegido contra lo que ganó (`lectura`
+corto / largo desde 5 partidos y 10 puntos de desvío) y el empate dicho contra
+el que hubo. Se recalcula en cada llamada (cada veredicto cerrado ya entra:
+ese es el feedback inmediato) y la corrida de partes lo pide una vez y lo pasa
+a cada subagente. No corrige el número solo: el analista dice en el `porque`
+si lo usó. La rutina de los lunes («contacto y semáforo») lo informa con la
+sección «1X2 ciego». Recalibrar el 1X2 del motor con eso (de donde sale lo
+plano) pide 60 cerrados y el backtest a la vista, en los dos lados.
+
 **Lo que decide**: si el ciego acierta más que la casa en algún grupo de
 partidos (sobre todo donde no coinciden), ahí se apuesta a nuestro lado
 aunque la casa diga otra cosa. Si no, sabremos que leemos mal y qué arreglar

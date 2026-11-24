@@ -875,6 +875,16 @@ margen a los números de la casa** (usuario, 22/11/2026).
    partido de `aRehacer` (el parte es de otra fecha: aplazado) cuenta como
    sin parte: se sella el ciego antes del parte nuevo y, hasta el sello, la
    casa vuelve a taparse (1491).
+1-bis. Antes de escribir el número, mirá tu ESPEJO (24/11/2026):
+   `GET {base}/analisis/cowork/ciego/espejo` —en la corrida lo pide el
+   orquestador una vez y te lo pasa—. Es tu propio 1X2 ciego contra lo que
+   pasó, SIN la casa: por tramo de lo que le diste al elegido (`dijo` →
+   `paso`, `lectura` corto / largo / bien) y el empate dicho contra el que
+   hubo. Si tu tramo dice `corto`, tu elegido viene ganando más de lo que le
+   das; `largo`, menos. Es guía, no regla: el número sale de ESTE partido, y
+   en el `porque` decís en una frase si el espejo te movió («espejo: 50-59
+   corto, subí 4»). Con los primeros 31 (22/11): el elegido al que le diste
+   50-59 ganó 10 de 10 y al empate le diste 26 % con 3 empates en 31.
 3. Recién ahí abrí `cuotas/{id}`. Antes del sello, con tu token, las cuotas de
    un partido por jugarse responden 409 y la `ventajaPorFuerza` del TDE viene
    tapada (`pendienteCiego`): volvé a pedir el TDE después del sello.

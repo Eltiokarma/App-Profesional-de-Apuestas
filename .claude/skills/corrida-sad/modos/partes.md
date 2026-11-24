@@ -23,6 +23,11 @@
    Leé también `GET $B/analisis/cowork/espina/calibracion` UNA vez acá y
    pasale el resultado a cada subagente en su encargo: que no la pida cada uno
    (incidencia 1206, cinco subagentes colgados de la misma llamada).
+   Lo mismo con `GET $B/analisis/cowork/ciego/espejo` (24/11/2026, usuario:
+   «sacar nuestras propias probabilidades y calibrarlas»): el historial del
+   1X2 ciego SIN la casa —lo que le dimos al elegido por tramo contra lo que
+   ganó, el empate dicho contra el que hubo y sus `avisos`—. UNA vez acá, y a
+   cada subagente le pasás `calibracion`, `empate` y `avisos` (no `ultimos`).
    Si el mensaje del disparo trae otros parámetros de agenda, mandan esos,
    salvo un `limite` menor que 30 (ver arriba).
    Usá la misma consulta en el paso 4 → la lista de trabajo es
@@ -88,7 +93,12 @@
 >   **EL 1X2 CIEGO: `POST analisis/cowork/{id}/ciego` con tu 1X2 y su
 >   `porque` ANTES de abrir las cuotas** (docs/COWORK.md 3-bis; una vez, no se
 >   corrige; antes del sello `cuotas/{id}` da 409 y la `ventajaPorFuerza` del
->   TDE viene tapada) → `cuotas/{id}` y el TDE de nuevo → el JSON del parte
+>   TDE viene tapada). Antes de escribir el número mirá el ESPEJO que te pasé
+>   (tu propio historial, sin la casa): si el tramo donde cae tu elegido dice
+>   `corto`, tu elegido viene ganando más de lo que le das; si dice `largo`,
+>   menos; y el empate, si le venís dando de más o de menos. Es una guía: el
+>   número lo pone tu lectura de ESTE partido, y en el `porque` decí en una
+>   frase si el espejo te movió y cuánto («espejo: 50-59 corto, subí 4») → `cuotas/{id}` y el TDE de nuevo → el JSON del parte
 >   EXACTO al punto 7 (a = local).
 >   El gap, la μ y el 1X2 del motor (`unXDos`) están en `GET predicciones/{id}`
 >   (no existe `/estadisticas/gap`; μ son puntos: nunca un Poisson sobre μ;

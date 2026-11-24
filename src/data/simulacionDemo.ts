@@ -2090,7 +2090,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
   "nota": "lo que la casa le da al elegido, sin margen. La ventaja es el acierto menos lo que pedía la cuota: acá el criterio SÍ mira la cuota, porque el hallazgo es dónde le sacamos algo"
  },
  "ciego": {
-  "desde": "2026-11-23 05:00:00",
+  "desde": "2026-11-22 05:00:00",
   "n": 0,
   "sinCiego": 0,
   "ciego": {
@@ -2161,7 +2161,7 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "intervalo": null
    }
   ],
-  "texto": "Todavía no hay partidos cerrados con 1X2 ciego: cuenta desde los del 23/11/2026. Se juzga por acierto contra la casa en los mismos partidos."
+  "texto": "Todavía no hay partidos cerrados con 1X2 ciego: cuenta desde los del 22/11/2026. Se juzga por acierto contra la casa en los mismos partidos."
  },
  "apuestas": [
   {

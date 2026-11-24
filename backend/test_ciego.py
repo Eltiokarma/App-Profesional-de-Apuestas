@@ -181,10 +181,52 @@ def http():
     check("aplazado: con el ciego sellado la casa se abre", c.get(f"{A}/cuotas/{otro}", headers=cw).status_code == 200)
     check("la simulación trae el bloque del ciego",
           "ciego" in c.get(f"{A}/analisis/simulacion", headers=ma).json())
+    r = c.get(f"{A}/analisis/cowork/ciego/espejo", headers=cw)
+    check("espejo: el token de Cowork lo lee (200) y no choca con /analisis/cowork/{id}",
+          r.status_code == 200 and "calibracion" in r.json(), (r.status_code, r.text[:200]))
+    crudo = r.text.lower()
+    check("espejo: no trae nada de la casa (ni mercado, ni cuotas, ni plata)",
+          not any(x in crudo for x in ('"mercado"', '"cuotas"', '"casa"', '"banca"', '"monto"')), crudo[:300])
+
+
+def espejo_puro():
+    """El espejo (24/11/2026): la calibración propia sin la casa, con sus avisos."""
+    from backend.analisis import ciego
+
+    check("DESDE cuenta desde el domingo 22/11 (00:00 de Lima)", ciego.DESDE == "2026-11-22 05:00:00")
+
+    def f(i, c, real, pitazo="2026-11-23 20:00:00"):
+        return {"fixtureId": i, "pitazo": pitazo, "ciego": c, "resultado": real, "local": "A", "visita": "B"}
+    corto = {"local": 53, "empate": 27, "visita": 20}      # tramo 50-59, gana siempre
+    largo = {"local": 45, "empate": 30, "visita": 25}      # tramo 40-49, gana poco
+    filas = ([f(i, corto, "local") for i in range(6)]
+             + [f(10 + i, largo, "local" if i < 1 else "visita") for i in range(6)]
+             + [f(20, corto, None),                                   # pendiente: no entra
+                f(21, None, "local"),                                 # sin ciego: no entra
+                f(22, corto, "visita", pitazo="2026-11-21 20:00:00")])  # antes de DESDE
+    e = ciego.espejo(filas)
+    check("espejo: solo cerradas con ciego desde DESDE", e["n"] == 12, e["n"])
+    t = {x["tramo"]: x for x in e["calibracion"]}
+    check("espejo: el 50-59 que gana siempre se lee CORTO", t["50-59"]["lectura"] == "corto"
+          and t["50-59"]["paso"] == 100.0 and t["50-59"]["dijo"] == 53.0, t["50-59"])
+    check("espejo: el 40-49 que gana 1 de 6 se lee LARGO", t["40-49"]["lectura"] == "largo", t["40-49"])
+    check("espejo: un tramo sin 5 partidos no se lee", t["60-69"]["lectura"] is None, t["60-69"])
+    check("espejo: el empate dicho contra el que hubo (0 de 12) avisa que le da de más",
+          e["empate"]["empates"] == 0 and any("empate" in a.lower() and "de más" in a for a in e["avisos"]),
+          (e["empate"], e["avisos"]))
+    check("espejo: un aviso por tramo leído fuera de lo dicho, más el del empate", len(e["avisos"]) == 3, e["avisos"])
+    check("espejo: los últimos casos, el más nuevo arriba y con el elegido",
+          e["ultimos"] and e["ultimos"][0]["elegido"] in ("local", "visita") and len(e["ultimos"]) <= ciego.ESPEJO_ULTIMOS,
+          e["ultimos"][:1])
+    check("espejo: con menos de 60 dice que es guía", "guía" in e["texto"], e["texto"])
+    check("espejo: ninguna clave de la casa", not any(k in e for k in ("casa", "mercado", "publicado", "brier")))
+    v = ciego.espejo([])
+    check("espejo vacío: n 0, sin avisos y con texto", v["n"] == 0 and not v["avisos"] and v["texto"], v)
 
 
 def main():
     resumen_puro()
+    espejo_puro()
     http()
     print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLA(S)'}")
     raise SystemExit(1 if fallos else 0)

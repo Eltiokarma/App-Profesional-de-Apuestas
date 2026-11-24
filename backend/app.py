@@ -2849,6 +2849,16 @@ def cowork_latido(horas: int = Query(default=36, ge=1, le=336)):
     return cowork.latido(horas)
 
 
+@app.get(API + "/analisis/cowork/ciego/espejo")
+def cowork_ciego_espejo():
+    """EL ESPEJO DEL 1X2 CIEGO (24/11/2026): lo que el analista le dio a su
+    elegido contra lo que ganó, por tramo, y el empate, SIN la casa. Lo lee la
+    corrida de partes una vez, antes de sellar los ciegos; se recalcula en cada
+    llamada con los veredictos cerrados. docs/METODO_APUESTA.md, «El espejo»."""
+    from backend.analisis import simulacion
+    return simulacion.espejo_ciego()
+
+
 @app.get(API + "/analisis/cowork/marcas")
 def cowork_marcas(ids: str = Query(default="", description="fixtureIds separados por coma")):
     """¿Cuáles de estos partidos ya tienen parte de Cowork? Para la marca al
