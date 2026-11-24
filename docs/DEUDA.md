@@ -1433,7 +1433,9 @@ conversación se pierde en la siguiente.
    la mitad de lo que etiqueta: propuesto que el veredicto declare su clase.
    **Paso 2 hecho (propuestas, sin aplicar)**: `docs/revisiones/TDE_v0.1.28_propuesta.md`,
    `DTP_v1.10_propuesta.md` y `EFE_v1.12_propuesta.md` (+ efe-dashboard
-   v1.15). Esperan la aprobación punto por punto. Sin decidir: el recibo que
+   v1.15). **Aprobadas el 24/11 con todas las recomendaciones y aplicadas**
+   (PR #637; `CORTE_VERSION` al 24/11); zips subidos ese día hacia las 07:54
+   de Lima (`SUBIDA_VERSION`, 12:54 UTC). Sin decidir: el recibo que
    frena y los datos por sede (§5 del README).
 
 ## Siguientes pasos (en orden)

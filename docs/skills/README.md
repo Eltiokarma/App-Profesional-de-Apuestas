@@ -2,8 +2,8 @@
 > v0.1.28**, **diagnostico-tactico v1.10**, **efe-clasificador v1.12** (rúbrica en
 > `references/rubrica-efe-v1.12.md`) y **efe-dashboard v1.15** (propuestas aprobadas
 > el 24/11 en `docs/revisiones/*_propuesta.md`, desde
-> `docs/revisiones/estudio_lecciones_2026-11-24/`); sad-analysis sigue en v4.8. La
-> cuenta sigue con la versión anterior hasta que el usuario suba los zips.
+> `docs/revisiones/estudio_lecciones_2026-11-24/`); sad-analysis sigue en v4.8.
+> Zips subidos a la cuenta el 24/11 hacia las 07:54 de Lima.
 
 # Snapshot de los skills — material de referencia, no fuente de verdad
 
