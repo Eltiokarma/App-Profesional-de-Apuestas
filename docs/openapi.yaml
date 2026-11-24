@@ -4762,6 +4762,19 @@ components:
             local: { type: number }
             empate: { type: number }
             visita: { type: number }
+        lecturas:
+          type: object
+          nullable: true
+          description: >
+            LAS DOS LECTURAS (24/11/2026): `{ganaLocal, ganaVisita}` en %, el % de que ESE equipo gane.
+            Se mandan en `pronostico.lecturas` y el backend calcula `probabilidades` (empate = 100 −
+            las dos; si suman más de 100 se cruzan y el empate lo pone el motor, `cruzadas: true`). Null
+            si el parte vino con el 1X2 de antes en `probabilidades`.
+          properties:
+            ganaLocal: { type: number }
+            ganaVisita: { type: number }
+            cruzadas: { type: boolean }
+            empateMotor: { type: number, nullable: true }
         marcador: { type: string }
         falsador: { type: string, description: 'la condición observable que declara fallado el pronóstico' }
         descarte: { type: string, description: 'la frase que sostiene el descarte (17/11/2026, sad-analysis v4.6, 6-B): el resultado descartado lo calcula la app (`desconfianza.descarte`, el menos probable del 1X2) y el parte escribe solo por qué, con un hecho de este partido. Opcional; vacío si no viene' }

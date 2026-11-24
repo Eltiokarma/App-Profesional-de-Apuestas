@@ -2298,6 +2298,8 @@ export interface ParteCoworkDTO {
     matriz: string
     mercado: string
     probabilidades: { local: number; empate: number; visita: number }
+    /** las dos lecturas (24/11/2026): el 1X2 de arriba lo calcula el backend; null con el 1X2 de antes */
+    lecturas?: { ganaLocal: number; ganaVisita: number; cruzadas: boolean; empateMotor: number | null } | null
     marcador: string
     falsador: string
     /** la frase que sostiene el descarte (sad-analysis v4.6); el resultado lo calcula la app */

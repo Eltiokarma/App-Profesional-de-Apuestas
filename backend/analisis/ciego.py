@@ -182,6 +182,16 @@ def calzar(gana_local: float, gana_visita: float, empate_motor=None) -> dict:
             "cruzadas": True, "empateMotor": emp}
 
 
+def empate_motor(fixture_id: int) -> float | None:
+    """El empate del 1X2 del MOTOR (`unXDos` de `GET /predicciones/{id}`): sale
+    del nivel de los dos, no de la cuota. None si el motor no lo tiene."""
+    try:
+        from backend.app import prediccion   # app importa este módulo: se trae al usarlo
+        return (prediccion(fixture_id).get("unXDos") or {}).get("empate")
+    except Exception:  # noqa: BLE001 — sin motor no se calza: calzar lo dice con su motivo
+        return None
+
+
 def normalizar(body: dict, empate_motor=None) -> dict:
     """Las dos lecturas {ganaLocal, ganaVisita, porque} (24/11/2026) o el 1X2
     de antes {local, empate, visita, porque} → el 1X2 en % que suma 100 y las

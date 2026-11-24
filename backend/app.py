@@ -3403,13 +3403,8 @@ def cowork_ciego(fixture_id: int, body: dict = Body(...)):
     try:
         # si las dos lecturas se cruzan (suman más de 100), el empate del MOTOR las
         # calza: sale del nivel de los dos, no de la cuota (24/11/2026)
-        def _empate_motor():
-            try:
-                return (prediccion(fixture_id).get("unXDos") or {}).get("empate")
-            except Exception:  # noqa: BLE001 — sin motor no se calza: ciego.calzar lo dice con 422
-                return None
         return _ciego.sellar(fixture_id, body, hay_parte=cowork.existe_vigente(fixture_id),
-                             empate_motor=_empate_motor)
+                             empate_motor=lambda: _ciego.empate_motor(fixture_id))
     except _ciego.CiegoYaSellado as e:
         raise HTTPException(409, {"detail": str(e), "ciego": e.existente})
     except _ciego.CiegoInvalido as e:

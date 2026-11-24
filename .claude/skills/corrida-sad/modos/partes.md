@@ -169,7 +169,11 @@
 > - **La matriz de escenarios va estructurada en `matriz`** (desde el 15/10):
 >   por equipo, `ganar` / `empatar` / `perder` con las filas del skill y la
 >   `probabilidad` estimada de cada escenario, que tiene que cuadrar con tu 1X2
->   de `pronostico.probabilidades` (el recibo avisa en `matrizVsPronostico`).
+>   (el recibo avisa en `matrizVsPronostico`).
+> - **El pronóstico va en DOS LECTURAS** (24/11/2026): `pronostico.lecturas
+>   {"ganaLocal": 52, "ganaVisita": 21}` —el % de que gane ESE equipo, cada
+>   uno por su lado— y el backend arma `pronostico.probabilidades` (empate =
+>   100 − las dos; si se cruzan, el del motor). No mandes `probabilidades`.
 >   Es cómo puede darse el partido: no olvides la pelota parada ni el gatillo
 >   del que pierde. Ya no va como documento.
 > - **Goles acotados antes del marcador** (30/10/2026): `golesAcotados` de
