@@ -7681,6 +7681,21 @@ def main():
     _fhs = next(f for f in c.get(f"{A}/analisis/cowork/incidencias/causas").json()["causas"] if _rec[0] in f["ids"])
     check("una familia rechazada por el usuario (por_diseno «Decisión del usuario») no vuelve a salir recurrente",
           _fhs["recurrente"] is False and _fhs["fixturesDatoApi"] >= 3, _fhs)
+    # 3-ter. la decisión tomada en OTRA incidencia y citada con su número (24/11/2026,
+    # 1484: la familia de la #447 decidida en la #1379 salía recurrente igual)
+    _cit = []
+    for _f in (7201, 7202, 7203):
+        _n = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "veredictos", "items": [
+            {"titulo": "Posesión de la ficha invertida frente a los pases del rival", "area": "ficha", "fixtureId": _f}]}).json()
+        _cit.append((_n["nuevas"] or _n["repetidas"])[0])
+        c.post(f"{A}/analisis/cowork/incidencias/{_cit[-1]}/estado",
+               json={"estado": "dato_api", "resolucion": "posesión y pases tal como los da la API"})
+    _fpo = lambda: next(f for f in c.get(f"{A}/analisis/cowork/incidencias/causas").json()["causas"] if _cit[0] in f["ids"])
+    check("3 dato_api sin decisión: recurrente", _fpo()["recurrente"] is True, _fpo())
+    c.post(f"{A}/analisis/cowork/incidencias/{_cit[-1]}/estado",
+           json={"estado": "dato_api", "resolucion": "Misma causa, ya decidida por el usuario en la #1379: dato de la API."})
+    check("con la decisión citada por número («decidida por el usuario en la #1379») deja de ser recurrente",
+          _fpo()["recurrente"] is False, _fpo())
     # 4. lo que vuelve después de un PR: el parche no alcanzó
     _rp = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "partes", "items": [
         {"titulo": "Formación del once del parte distinta de la ficha", "area": "dtp"}]}).json()["nuevas"][0]
