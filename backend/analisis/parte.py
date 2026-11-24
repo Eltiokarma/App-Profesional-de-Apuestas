@@ -1916,7 +1916,10 @@ def alertas_colapso(parte: dict, nombres: dict) -> list[dict]:
 # Palmeiras–Bragantino lo dio por eliminado: D3, C4, la sensibilidad y el ensayo
 # sobre una «resaca» que no existía. Quién pasó sale de `backend/eliminatoria.py`
 # y una frase del parte que lo contradice se grita, al depositar y al leer.
-_DICE_ELIMINADO = re.compile(r"elimin|qued[oó] (?:afuera|fuera|out)|se despidi[oó]|perdi[oó] la (?:llave|serie)|"
+# «eliminatoria» es el SUSTANTIVO (la llave), no que quedó eliminado (24/11/2026,
+# incidencia 1499, Feyenoord–Porto 1635663: «Porto pasó la eliminatoria por
+# penales 3-1» sonaba ELIMINATORIA-AL-REVES; «eliminación», «eliminado» siguen).
+_DICE_ELIMINADO = re.compile(r"elimin(?!atori)|qued[oó] (?:afuera|fuera|out)|se despidi[oó]|perdi[oó] la (?:llave|serie)|"
                              r"cay[oó] en (?:la )?(?:semi|cuartos|octavos|final|repechaje)", re.I)
 _DICE_PASA = re.compile(r"clasific[oó]|pas[oó] a (?:la )?(?:final|semi|cuartos|octavos)|finalista|avanz[oó]|"
                         r"sigue (?:vivo|en carrera)", re.I)
