@@ -615,6 +615,23 @@ def main():
     check("1308: DTP-INCOMPLETO para el bloque sin veredicto, rest defense, posesión ni M3; el completo, nada",
           [x["bloque"] for x in _vac] == ["dtp.a"] and _vac[0]["codigo"] == "DTP-INCOMPLETO"
           and "veredicto" in _vac[0]["costara"], _vac)
+    # 1504 (Galatasaray–Aston Villa 1635667): veredicto FAVORABLE con las dos ramas NEUTRO
+    _nr = {"veredicto": "NEUTRO", "razon": "x"}
+    _vr = _dc997.avisos_veredicto_ramas({"bloques": [
+        {"equipo": "a", "apertura": {"m2": {"veredicto": "NEUTRO",
+                                            "veredictoRamas": {"igualadoOArriba": _nr, "persiguiendo": _nr}}}},
+        {"equipo": "b", "apertura": {"m2": {"veredicto": "FAVORABLE",
+                                            "veredictoRamas": {"igualadoOArriba": _nr, "persiguiendo": _nr}}}}]},
+        {"a": "Galatasaray", "b": "Aston Villa"})
+    _vr2 = _dc997.avisos_veredicto_ramas({"bloques": [
+        {"equipo": "b", "apertura": {"m2": {"veredicto": "FAVORABLE", "veredictoRamas": {
+            "igualadoOArriba": {"veredicto": "FAVORABLE"}, "persiguiendo": _nr}}}},
+        {"equipo": "a", "apertura": {"m2": {"veredicto": "", "veredictoRamas": {
+            "igualadoOArriba": _nr, "persiguiendo": _nr}}}}]}, {"a": "L", "b": "V"})
+    check("1504: M2-VEREDICTO-VS-RAMAS para el único que contradice a sus dos ramas iguales; ramas distintas o "
+          "sin único, nada",
+          [x["bloque"] for x in _vr] == ["dtp.b"] and _vr[0]["codigo"] == "M2-VEREDICTO-VS-RAMAS"
+          and "FAVORABLE" in _vr[0]["costara"] and _vr2 == [], (_vr, _vr2))
     check("1283: con el último partido de Champions y hoy la liga viaja el último once de liga; hoy Champions, nada",
           (_u1283.get("ultimoOnceDeLiga") or {}).get("fixtureId") == 20
           and "internacional" in _u1283["ultimoOnceDeLiga"]["nota"] and _u1283b == {}, (_u1283, _u1283b))
