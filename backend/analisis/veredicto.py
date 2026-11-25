@@ -473,6 +473,20 @@ def resultados(fixture_ids: list[int]) -> dict[int, str]:
             for r in filas if (r["status_short"] or "") in FIN_SHORT and r["gl"] is not None and r["gv"] is not None}
 
 
+def goles_totales(fixture_ids: list[int]) -> dict[int, int]:
+    """Los goles del partido (90 minutos, como el 1X2) de los TERMINADOS, en una consulta."""
+    ids = sorted({int(i) for i in fixture_ids})
+    if not ids:
+        return {}
+    try:
+        filas = saddb.query("sad", f"SELECT f.id, f.status_short, {_G90_LOCAL} AS gl, {_G90_VISITA} AS gv "
+                                   f"FROM fixtures f WHERE f.id IN ({','.join('?' * len(ids))})", tuple(ids))
+    except Exception:  # noqa: BLE001 — sin la base de partidos no hay goles
+        return {}
+    return {r["id"]: int(r["gl"]) + int(r["gv"]) for r in filas
+            if (r["status_short"] or "") in FIN_SHORT and r["gl"] is not None and r["gv"] is not None}
+
+
 def objetivo(fixture_id: int, parte: dict) -> dict:
     """Todo lo que la base puede responder sola sobre cómo salió el pronóstico."""
     fx = _fixture(fixture_id)

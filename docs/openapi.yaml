@@ -2302,7 +2302,7 @@ components:
           items:
             type: object
             properties:
-              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaFueraMedio, martingalaCuidada, mixtaFueraMedio, ganarFijo, metodoVerdeSinAlertas, metodoVerdeSinAlertasFueraMedio, martingalaCuidadaSinAlertas, ganarFijoSinAlertas], description: 'las cuatro «SinAlertas» (24/11/2026) no apuestan fuera del verde, con DESCONFIAR sobre el elegido ni con su burbuja en riesgo alto; la regla salió de los partidos hasta el 24/11 y vale lo que pase desde el 25/11' }
+              clave: { type: string, enum: [proporcional, metodoVerde, metodoFueraMedio, plana, plana60, kelly, kellyMedio, kellyCuarto, martingala, martingala60, martingala60Ajustada, martingalaFueraMedio, martingalaCuidada, mixtaFueraMedio, ganarFijo, metodoVerdeSinAlertas, metodoVerdeSinAlertasFueraMedio, martingalaCuidadaSinAlertas, ganarFijoSinAlertas, metodo55, metodo55SinAlertas, golesMas25], description: 'las cuatro «SinAlertas» (24/11/2026) no apuestan fuera del verde, con DESCONFIAR sobre el elegido ni con su burbuja en riesgo alto; la regla salió de los partidos hasta el 24/11 y vale lo que pase desde el 25/11. metodo55 y metodo55SinAlertas (25/11/2026) apuestan por el número (55 %+), no por el color. golesMas25 (25/11/2026) apuesta a más de 2,5 goles (casa 60 %+, salvo parejo y equipos flojos por el nivel de 3 años): su `seleccion` es mas25' }
               nombre: { type: string }
               descripcion: { type: string }
               banca: { type: number }
@@ -2593,6 +2593,14 @@ components:
                   prob: { type: number, description: '0-1' }
                   signo: { type: string, enum: [local, empate, visita] }
                   alineado: { type: boolean, description: 'el signo del marcador es el elegido' }
+              goles:
+                type: object
+                description: 'lo que lee la serie de más de 2,5 (25/11/2026); cada campo null si no hay'
+                properties:
+                  probMas: { type: number, nullable: true, description: 'la casa a más de 2,5, sin margen (más contra menos), en %' }
+                  cuotaMas: { type: number, nullable: true, description: 'media de las casas a más de 2,5, con su margen' }
+                  total: { type: integer, nullable: true, description: 'goles del partido en 90 minutos; null por jugarse' }
+                  nivelLargo: { type: number, nullable: true, description: 'suma del nivel de 3 años de los dos (media del nivel en los 1.095 días antes, 10 niveles al menos); null sin datos' }
               kelly:
                 type: object
                 properties:
@@ -2604,7 +2612,7 @@ components:
                 additionalProperties:
                   type: object
                   properties:
-                    seleccion: { type: string, nullable: true, description: 'null = no apostó' }
+                    seleccion: { type: string, nullable: true, description: "null = no apostó; local · empate · visita, o 'mas25' en golesMas25" }
                     monto: { type: number }
                     linea: { type: integer, nullable: true, description: 'solo martingala: en qué línea entró' }
                     motivo: { type: string, description: "sin apuesta: 'sin ventaja' · 'sin plata libre' · 'bajo 60 %'" }

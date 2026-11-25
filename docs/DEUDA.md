@@ -1466,6 +1466,11 @@ conversación se pierde en la siguiente.
    chip** (usuario): el número publicado separa mejor. Decide el número: serie
    «Método 55 %+» (`metodo55`), primera en la Simulación; las series por color
    y el semáforo de las espinas siguen como dato hasta cerrar su medición.
+   **El nivel de 3 años ya se calcula en el backend** (25/11, usuario: «sí,
+   hazlo»), pero solo para la serie «Más de 2,5 goles» (`golesMas25`,
+   METODO_APUESTA «Más de 2,5 goles»), que no apuesta cuando los dos equipos
+   suman menos de 5,18. El motor sigue sin tocarse. Se revisa con lo que la
+   serie haga desde el 25/11, porque el corte salió de los partidos de atrás.
 
 ## Siguientes pasos (en orden)
 

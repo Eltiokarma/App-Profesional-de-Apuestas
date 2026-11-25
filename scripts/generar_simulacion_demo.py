@@ -53,6 +53,11 @@ APUESTAS = [
 MAS_PROBABLE = {900001: ("1-1", 0.121), 900002: ("1-0", 0.118), 900003: ("1-1", 0.124), 900004: ("1-0", 0.115),
                 900005: ("2-1", 0.102), 900006: ("1-1", 0.119), 900007: ("2-1", 0.104), 900008: ("2-0", 0.112),
                 900009: ("1-1", 0.13), 900011: ("1-1", 0.122), 900012: ("1-0", 0.117), 900013: ("1-1", 0.126)}
+# la serie de goles (25/11/2026): (prob. de más de 2,5 de la casa sin margen, su cuota, goles del partido,
+# suma del nivel de 3 años de los dos); el resto no tiene cuota de goles capturada
+GOLES = {900002: (64.0, 1.55, 3, 6.1), 900005: (62.0, 1.6, 2, 5.9), 900007: (70.0, 1.42, 3, 6.4),
+         900008: (66.0, 1.5, 4, 5.6), 900004: (61.0, 1.62, 1, 4.9), 900001: (52.0, 1.9, 3, 5.4),
+         900003: (63.0, 1.58, 2, 5.8), 900011: (65.0, 1.52, None, 5.7)}
 EXCLUIDOS = [{"fixtureId": 900010, "pitazo": "2026-10-28 23:00:00",
               "partido": {"local": "Villarreal", "visita": "Real Betis", "liga": "LaLiga"},
               "motivo": "sin las tres cuotas del 1X2 capturadas"}]
@@ -79,6 +84,8 @@ def armar() -> list[dict]:
             "mercado": mercado, "resultado": res,
             "semaforo": sem.semaforo(probs, {"a": ea, "b": eb}, mercado, marcador),
             "marcador": _marcador(fid, probs),
+            "goles": sim.datos_goles({"probMas": GOLES[fid][0], "cuotaMas": GOLES[fid][1]} if fid in GOLES else None,
+                                     GOLES[fid][2] if fid in GOLES else None, GOLES[fid][3] if fid in GOLES else None),
         })
     return out
 

@@ -35,13 +35,15 @@ const COLOR: Record<Exclude<EstrategiaClave, 'kellyMedio' | 'kellyCuarto'>, stri
   metodo55: 'var(--sim-metodo-55)',
   // …y sin las dos alertas del verde sin alertas (DESCONFIAR y la burbuja en riesgo alto), sin el color
   metodo55SinAlertas: 'var(--sim-metodo-55-sin-alertas)',
+  // la primera serie de goles (25/11/2026): más de 2,5 con la casa en 60 %+, sin parejo ni equipos flojos
+  golesMas25: 'var(--sim-goles-mas25)',
 }
-const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
+const RES: Record<Resultado1x2 | 'mas25', string> = { local: 'Local', empate: 'Empate', visita: 'Visita', mas25: 'más de 2,5' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', martingalaFueraMedio: 'Martin. sin medio ⅓', martingalaCuidada: 'Martin. cuidada', mixtaFueraMedio: 'Mixta sin medio', ganarFijo: 'Ganar fijo', metodoVerdeSinAlertas: 'Método 🟢 sin alertas', metodoVerdeSinAlertasFueraMedio: 'Método 🟢 sin alertas sin medio', martingalaCuidadaSinAlertas: 'Martin. cuidada 🟢 sin alertas', ganarFijoSinAlertas: 'Ganar fijo 🟢 sin alertas', metodo55: 'Método 55 %+', metodo55SinAlertas: 'Método 55 %+ sin alertas', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', martingalaFueraMedio: 'Martin. sin medio ⅓', martingalaCuidada: 'Martin. cuidada', mixtaFueraMedio: 'Mixta sin medio', ganarFijo: 'Ganar fijo', metodoVerdeSinAlertas: 'Método 🟢 sin alertas', metodoVerdeSinAlertasFueraMedio: 'Método 🟢 sin alertas sin medio', martingalaCuidadaSinAlertas: 'Martin. cuidada 🟢 sin alertas', ganarFijoSinAlertas: 'Ganar fijo 🟢 sin alertas', metodo55: 'Método 55 %+', metodo55SinAlertas: 'Método 55 %+ sin alertas', golesMas25: 'Más de 2,5', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -190,7 +192,7 @@ function ErrorSimulacion({ mensaje, recargar }: { mensaje: string; recargar: () 
 }
 
 function estrategiasVisibles(kelly: Kelly, claves: string[]): { clave: EstrategiaClave; color: string }[] {
-  const orden: EstrategiaClave[] = ['metodo55', 'metodo55SinAlertas', 'proporcional', 'metodoVerde', 'metodoVerdeSinAlertas', 'metodoVerdeSinAlertasFueraMedio',
+  const orden: EstrategiaClave[] = ['metodo55', 'metodo55SinAlertas', 'golesMas25', 'proporcional', 'metodoVerde', 'metodoVerdeSinAlertas', 'metodoVerdeSinAlertasFueraMedio',
     'metodoFueraMedio', 'plana', 'plana60', kelly, 'martingala', 'martingalaCuidada', 'martingalaCuidadaSinAlertas',
     'martingala60', 'martingala60Ajustada', 'martingalaFueraMedio', 'mixtaFueraMedio', 'ganarFijo', 'ganarFijoSinAlertas']
   return orden.filter((clave) => claves.includes(clave)).map((clave) => ({
@@ -1090,7 +1092,7 @@ function EstrategiasDePartido({ a, kelly }: { a: ApuestaSimulada; kelly: Kelly }
                       ? 'no apuesta: toda la banca está en juego en otros partidos'
                       : ['proporcional', 'metodoVerde', 'metodoFueraMedio', 'martingalaFueraMedio', 'martingalaCuidada', 'mixtaFueraMedio', 'ganarFijo',
                           'metodoVerdeSinAlertas', 'metodoVerdeSinAlertasFueraMedio', 'martingalaCuidadaSinAlertas', 'ganarFijoSinAlertas',
-                          'metodo55', 'metodo55SinAlertas'].includes(v.clave) ? `no apuesta: ${r.motivo}`
+                          'metodo55', 'metodo55SinAlertas', 'golesMas25'].includes(v.clave) ? `no apuesta: ${r.motivo}`
                       : v.clave === 'plana60' || v.clave === 'martingala60' || v.clave === 'martingala60Ajustada' ? `no apuesta: el elegido tiene ${num(a.probabilidades[a.elegido], 0)} %, bajo el 60 %`
                       : v.clave.startsWith('kelly') ? `no apuesta: sin ventaja (mejor f* ${signo(100 * a.kelly.fraccion, 1)} % en ${RES[a.kelly.seleccion]})` : 'no apuesta: banca en cero'}
                   </span>

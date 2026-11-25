@@ -107,8 +107,25 @@ def armar(datos: dict) -> tuple[list[dict], list[dict]]:
             "desconfiar": bool(((parte.get("desconfianzaSellada") or {}).get("alerta")
                                 or (parte.get("desconfianza") or {}).get("alerta") or {}).get("activa")),
             "riesgoElegido": ((parte.get("desconfianza") or {}).get("burbujaElegido") or {}).get("riesgo"),
+            # la serie de goles (25/11/2026): /cuotas trae el más/menos 2,5; el nivel de 3 años
+            # no viene por la API, así que esa serie no apuesta acá (el contacto mira el 1X2)
+            "goles": sim.datos_goles(_goles_casa(cuotas), _total(fx), None),
         })
     return apuestas, excluidos
+
+
+def _goles_casa(cuotas) -> dict | None:
+    ou = {x["seleccion"]: float(x["cuota"]) for x in (cuotas if isinstance(cuotas, list) else [])
+          if x.get("mercado") == "ou" and x.get("seleccion") in ("O", "U") and float(x.get("cuota") or 0) > 1}
+    if len(ou) < 2:
+        return None
+    return {"probMas": 100 * (1 / ou["O"]) / (1 / ou["O"] + 1 / ou["U"]), "cuotaMas": ou["O"]}
+
+
+def _total(fx: dict) -> int | None:
+    if fx.get("estado") != "finalizado" or fx.get("golesLocal") is None or fx.get("golesVisitante") is None:
+        return None
+    return int(fx["golesLocal"]) + int(fx["golesVisitante"])
 
 
 def _marcador(parte: dict, probs: dict) -> dict | None:
