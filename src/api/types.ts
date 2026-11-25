@@ -2804,6 +2804,8 @@ export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio
   /** verde sin alertas (24/11/2026): sin amarillo/rojo, sin DESCONFIAR y sin la burbuja del elegido en riesgo alto */
   | 'metodoVerdeSinAlertas' | 'metodoVerdeSinAlertasFueraMedio' | 'martingalaCuidadaSinAlertas' | 'ganarFijoSinAlertas'
   | 'metodo55' | 'metodo55SinAlertas'
+  /** más de 2,5 goles (25/11/2026): casa 60 %+, salvo parejo y equipos flojos (nivel de 3 años) */
+  | 'golesMas25'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
@@ -2875,7 +2877,9 @@ export interface ApuestaSimulada {
   ciego?: Ciego1x2 | null
   /** el marcador más probable del modelo de goles contra el elegido (13/11/2026); null sin modelo */
   marcador?: { masProbable: string; prob: number; signo: Resultado1x2 | null; alineado: boolean } | null
-  porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
+  /** lo que lee la serie de más de 2,5 (25/11/2026); cada campo null si no hay */
+  goles?: { probMas: number | null; cuotaMas: number | null; total: number | null; nivelLargo: number | null }
+  porEstrategia: Record<EstrategiaClave, { seleccion: Resultado1x2 | 'mas25' | null; monto: number; ganancia: number | null; banca: number | null; linea: number | null; motivo: string }>
 }
 
 /** Acierto del elegido justo después de k fallos seguidos (criterio de contacto, 04/11/2026) */

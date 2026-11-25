@@ -1123,6 +1123,48 @@ de las espinas. Recalibrar = bajar los partes y correr
 la salida en `semaforo.py`. La regla anti-Goodhart no cambia: el analista no
 ve ni el color ni las razones.
 
+## Más de 2,5 goles: la primera serie de goles (25/11/2026)
+
+El estudio de goles (`docs/revisiones/ESTUDIO_GOLES_CUOTA_2026-11.md`) dejó
+una sola idea con algo de pie: la casa sabe cuántos goles va a haber mejor que
+cualquier cosa nuestra, pero no conviene seguirla en todos los partidos. Hay
+dos lugares donde su «más de 2,5» falla más de lo que paga. El primero es el
+partido parejo, en el que ningún lado llega al 50 % del 1X2. El segundo, que
+salió después al cruzar con el nivel, es el partido entre equipos flojos.
+
+La regla, tal como entró a la simulación (`golesMas25`, «Más de 2,5 goles»):
+se apuesta el 1 % de la banca a más de 2,5 goles cuando la casa le da 60 % o
+más, salvo que el partido sea parejo y salvo que la suma del nivel de 3 años
+de los dos equipos quede bajo 5,18. No mira nuestro 1X2 ni el semáforo, y por
+ahora no tiene freno.
+
+Las piezas se calculan así:
+
+- **Lo que dice la casa**: la media de las casas a más de 2,5 contra la media
+  a menos de 2,5, sin margen (`lecciones.cuotas_goles`). Se cobra a la media
+  de más de 2,5, con su margen, como el 1X2.
+- **El partido parejo**: en la casa, ni el local ni la visita pasan del 50 %.
+- **El nivel de 3 años** de un equipo: la media de su nivel en los 1.095 días
+  anteriores al partido, sin el del propio partido y con 10 niveles por lo
+  menos (`simulacion.nivel_largo`, la misma «D media3a» de
+  `backend/backtest_nivel_largo.py`). Se suman los dos equipos. Si alguno no
+  llega a 10 niveles, la serie no apuesta y lo dice. Este nivel decide solo
+  esta serie: el motor no lo usa (DEUDA 44).
+- **Los goles**: los de los 90 minutos, igual que el 1X2.
+
+Hacia atrás, en el padrón (4.236 partidos con cuota de goles, del 15/08 al
+24/11), la regla apostó 407 veces y acertó el 74,2 %, cuando la cuota pedía el
+72 %. Con apuesta plana ganó el 3,0 %: 3,7 % en la primera mitad y 2,3 % en la
+segunda. Sin el corte de los flojos perdía el 2,1 %, y con el nivel de 20
+partidos en lugar del de 3 años ganaba el 2,2 %.
+
+**Reserva**: el corte de 5,18 salió de esos mismos partidos y la ventaja sobre
+la cuota es de unos dos puntos, de modo que lo de hacia atrás sale favorecido.
+Lo que cuenta es lo que pase desde el 25/11. Por la API (`backend.contacto`)
+no llega el nivel de 3 años, así que ahí la serie no apuesta; el contacto
+mira el 1X2. Las líneas de 1,5 y 3,5 no se capturan por ahora (decisión del
+usuario, 25/11).
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

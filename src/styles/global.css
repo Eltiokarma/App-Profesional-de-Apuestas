@@ -45,6 +45,7 @@
   --sim-ganar-fijo-sin-alertas: #a0a7b4;
   --sim-metodo-55: #4fd1c5;
   --sim-metodo-55-sin-alertas: #7fb3ff;
+  --sim-goles-mas25: #e879f9;
   /* grid de las gráficas: la línea base acercada un 20% al texto para que
      las guías se lean sin robar protagonismo a las series */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
@@ -91,6 +92,7 @@
   --sim-ganar-fijo-sin-alertas: #5b6573;
   --sim-metodo-55: #0f7c72;
   --sim-metodo-55-sin-alertas: #2a5fb0;
+  --sim-goles-mas25: #a21caf;
   /* se redeclara aquí: var() dentro de una custom property se resuelve donde
      se define, no donde se usa — sin esto el grid claro heredaría el oscuro */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);

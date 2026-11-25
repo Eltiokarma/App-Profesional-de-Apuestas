@@ -678,6 +678,33 @@ def cuotas_mercado(ids: list[int]) -> dict[int, dict]:
     return fuera
 
 
+def cuotas_goles(ids: list[int]) -> dict[int, dict]:
+    """Más/menos 2,5 de la casa por partido (25/11/2026, la serie de goles de la
+    simulación): `probMas` sin margen (en %, más contra menos con la media de las
+    casas en cada lado) y `cuotaMas`, la media de las casas CON su margen."""
+    if not ids:
+        return {}
+    from backend import db as saddb
+    from backend.cuota_mercados import cuota_key
+    try:
+        filas = saddb.query("sad", "SELECT fixture_id, bet_name, value, odd FROM odds "
+                                   f"WHERE fixture_id IN ({','.join('?' * len(ids))}) AND odd IS NOT NULL "
+                                   "AND bet_name LIKE '%over/under%'", tuple(ids))
+    except Exception:  # noqa: BLE001 — sin la base de cuotas la serie de goles no apuesta
+        return {}
+    acc: dict[int, dict[str, list[float]]] = {}
+    for r in filas:
+        k = cuota_key(r["bet_name"], r["value"])
+        if k and k[0] == "ou" and float(r["odd"]) > 1:
+            acc.setdefault(r["fixture_id"], {}).setdefault(k[1], []).append(float(r["odd"]))
+    fuera = {}
+    for fid, d in acc.items():
+        if "O" in d and "U" in d:
+            o, u = sum(d["O"]) / len(d["O"]), sum(d["U"]) / len(d["U"])
+            fuera[fid] = {"probMas": 100 * (1 / o) / (1 / o + 1 / u), "cuotaMas": o}
+    return fuera
+
+
 def _valor_mercado() -> dict | None:
     try:
         from backend.analisis.parte import historial_valor

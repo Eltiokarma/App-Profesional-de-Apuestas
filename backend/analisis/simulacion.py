@@ -71,7 +71,8 @@ from backend import db as saddb
 from backend.analisis import ciego as _ciego
 from backend.analisis import semaforo as _sem, veredicto as _vered
 from backend.analisis.escala import copas_nacionales
-from backend.analisis.lecciones import CORTE_VERSION, TRAMOS_CONFIANZA, cuotas_mercado, tramo_confianza
+from backend.analisis.lecciones import (CORTE_VERSION, TRAMOS_CONFIANZA, cuotas_goles, cuotas_mercado,
+                                       tramo_confianza)
 
 # 00:00 de Lima (UTC−5) del 28/10/2026: «recién desde los partidos de hoy»
 DESDE = "2026-10-28 05:00:00"
@@ -95,6 +96,25 @@ UMBRAL_METODO = 55.0
 # (245 partidos). Dentro del 55 %+, con DESCONFIAR ganó 62 % (sin, 77 %) y con riesgo
 # alto 67 % (sin, 77 %). Exigir además el verde no suma (78,4 %). Las alertas se
 # eligieron el 24/11 con esos partidos: el resultado hacia atrás sale favorecido.
+# LA PRIMERA SERIE DE GOLES (25/11/2026, usuario: «esto abre otro abanico de
+# apuestas, las apuestas a goles»; docs/revisiones/ESTUDIO_GOLES_CUOTA_2026-11.md).
+# Más de 2,5 goles cuando la casa le da 60 % o más (sin margen: más contra menos
+# de 2,5, cada una con la media de las casas), salvo el partido PAREJO (ningún lado
+# pasa del 50 % en el 1X2 de la casa) y salvo los equipos FLOJOS: la suma del nivel
+# de 3 años de los dos (la media de su nivel en los 1.095 días ANTES del partido,
+# con 10 niveles al menos) bajo 5,18. Medido hacia atrás en el padrón (4.236
+# partidos con cuota de goles, 15/08-24/11): 407 apuestas, acertó 74,2 % contra el
+# 72 % que pedía la cuota; plana +3,0 % (+3,7 y +2,3 en las dos mitades). Sin el
+# corte de los flojos daba −2,1 %, y con el nivel de 20 en vez del de 3 años +2,2 %.
+# El corte de 5,18 salió de esos partidos: lo que vale es lo que pase desde hoy.
+# El nivel de 3 años NO entra al motor (DEUDA 44): solo decide esta serie.
+GOLES_CASA_MIN = 60.0
+GOLES_PAREJO = 50.0
+GOLES_NIVEL_LARGO_MIN = 5.18
+NIVEL_LARGO_DIAS = 1095
+NIVEL_LARGO_MIN_NIVELES = 10
+SELECCION_MAS25 = "mas25"
+_GOLES_NIVEL_TXT = f"{GOLES_NIVEL_LARGO_MIN:.2f}".replace(".", ",")
 # cuánto después del pitazo se cobra: no tenemos la hora de fin de cada
 # partido, y 90 minutos con el descanso y el añadido son unas dos horas
 DURACION = timedelta(minutes=120)
@@ -271,6 +291,10 @@ ESTRATEGIAS = (
     ("metodo55SinAlertas", f"Método {UMBRAL_METODO:g} %+ sin alertas",
      f"el método {UMBRAL_METODO:g} %+ y además sin la alerta DESCONFIAR sobre el elegido ni su burbuja en riesgo "
      "alto: las alertas del verde sin alertas, sin mirar el color"),
+    ("golesMas25", "Más de 2,5 goles",
+     f"{100 * PROPORCION:g} % de la banca a más de 2,5 goles cuando la casa le da {GOLES_CASA_MIN:g} % o más, salvo "
+     f"el partido parejo (ningún lado pasa del {GOLES_PAREJO:g} % en la casa) y salvo los equipos flojos (el nivel "
+     f"de 3 años de los dos suma menos de {_GOLES_NIVEL_TXT}); no mira nuestro 1X2"),
     # EL MÉTODO FUERA DEL MEDIO (13/11/2026, usuario: «siento que hay una forma
     # correcta de apostar… por un lado un gran win rate, por otro buena ganancia
     # con bajo win rate»). Medido en 748 partes (14/09-13/11): la ventaja sobre
@@ -859,10 +883,52 @@ def bloqueo_sin_alertas(fila: dict) -> str:
     return ""
 
 
+def datos_goles(casa: dict | None, total: int | None, nivel_largo_suma: float | None) -> dict:
+    """Lo que la serie de goles lee de cada partido, con el mismo molde en la base y en la demo."""
+    casa = casa or {}
+    return {"probMas": round(casa["probMas"], 1) if casa.get("probMas") is not None else None,
+            "cuotaMas": round(casa["cuotaMas"], 3) if casa.get("cuotaMas") else None,
+            "total": total, "nivelLargo": nivel_largo_suma}
+
+
+def bloqueo_goles(fila: dict) -> str:
+    """Por qué la serie de más de 2,5 no apuesta este partido ("" si apuesta)."""
+    g = fila.get("goles") or {}
+    if g.get("probMas") is None or not g.get("cuotaMas"):
+        return "sin la cuota de más/menos 2,5 capturada"
+    if g["probMas"] < GOLES_CASA_MIN:
+        return f"la casa le da {g['probMas']:.0f} % a más de 2,5: bajo {GOLES_CASA_MIN:g} %"
+    mer = fila.get("mercado") or {}
+    if max(mer.get("local", 0), mer.get("visita", 0)) < GOLES_PAREJO:
+        return f"partido parejo: en la casa ningún lado pasa del {GOLES_PAREJO:g} %"
+    if g.get("nivelLargo") is None:
+        return "sin el nivel de 3 años de los dos equipos"
+    if g["nivelLargo"] < GOLES_NIVEL_LARGO_MIN:
+        return (f"equipos flojos: el nivel de 3 años de los dos suma {g['nivelLargo']:.2f}, "
+                f"bajo {GOLES_NIVEL_LARGO_MIN:.2f}").replace(".", ",")
+    return ""
+
+
+def _gano(fila: dict, seleccion: str) -> bool:
+    if seleccion == SELECCION_MAS25:
+        return ((fila.get("goles") or {}).get("total") or 0) > 2
+    return fila["resultado"] == seleccion
+
+
+def _cuota(fila: dict, seleccion: str) -> float:
+    return fila["goles"]["cuotaMas"] if seleccion == SELECCION_MAS25 else fila["cuotas"][seleccion]
+
+
 def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     """Arma la apuesta de una estrategia en el pitazo, con lo que ya se cobró."""
     libre = max(e["banca"] - e["comprometido"], 0.0)
     linea = None
+    if clave == "golesMas25":
+        motivo = bloqueo_goles(fila)
+        if motivo:
+            fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
+                                            "linea": None, "motivo": motivo}
+            return
     if clave in _SIN_ALERTAS:
         motivo = bloqueo_sin_alertas(fila)
         if motivo:
@@ -958,6 +1024,10 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
         c = fila["cuotas"][sel]
         # la banca de AHORA (lo cobrado); lo que gana el X %, con tope en el favorito de cuota baja
         previsto = GANAR_FIJO * e["banca"] * (min(TOPE_GANAR_FIJO, 1 / (c - 1)) if c > 1 else 0.0)
+    elif clave == "golesMas25":
+        sel = SELECCION_MAS25
+        # la banca de AHORA (lo cobrado), como el método; sin freno: todavía no hay historia que lo calibre
+        previsto = PROPORCION * e["banca"]
     elif clave == "plana60":
         sel = fila["elegido"]
         previsto = UNIDAD if fila["probabilidades"][sel] >= CONFIANZA_ALTA else 0.0
@@ -970,7 +1040,7 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             motivo = "sin plata libre"
         elif clave in _SOLO_ALTA:
             motivo = f"bajo {CONFIANZA_ALTA:g} %"
-        elif clave in _CON_FRENO or clave in ("mixtaFueraMedio", *_CUIDADAS, *_GANAR_FIJO):
+        elif clave in _CON_FRENO or clave in ("mixtaFueraMedio", "golesMas25", *_CUIDADAS, *_GANAR_FIJO):
             motivo = "banca en cero"
         else:
             motivo = "sin ventaja"
@@ -991,8 +1061,8 @@ def _cobrar(e: dict, clave: str, fila: dict, t: datetime) -> None:
     """Liquida la apuesta del partido (o solo anota la banca si no hubo)."""
     r = fila["porEstrategia"][clave]
     if r["monto"] > 0:
-        gano = fila["resultado"] == r["seleccion"]
-        ganancia = r["monto"] * (fila["cuotas"][r["seleccion"]] - 1) if gano else -r["monto"]
+        gano = _gano(fila, r["seleccion"])
+        ganancia = r["monto"] * (_cuota(fila, r["seleccion"]) - 1) if gano else -r["monto"]
         e["banca"] += ganancia
         e["comprometido"] -= r["monto"]
         e["apostado"] += r["monto"]
@@ -1355,6 +1425,43 @@ def _burbuja_elegido(fx, elegido: str) -> dict | None:
     return _BURBUJA_ELEGIDO[clave]
 
 
+def nivel_largo(niveles: list[tuple[str, float]], fecha: str) -> float | None:
+    """La media del nivel del equipo en los `NIVEL_LARGO_DIAS` ANTES de `fecha`
+    (el nivel del propio partido no entra), con `NIVEL_LARGO_MIN_NIVELES` al
+    menos; None si no alcanza. `niveles`: (fecha, nivel) ordenados por fecha.
+    Es la «D media3a» de backend/backtest_nivel_largo.py: no toca el motor."""
+    dia = str(fecha)[:10]
+    lim = (date.fromisoformat(dia) - timedelta(days=NIVEL_LARGO_DIAS)).isoformat()
+    vals = [v for f, v in niveles if lim <= str(f)[:10] < dia]
+    return sum(vals) / len(vals) if len(vals) >= NIVEL_LARGO_MIN_NIVELES else None
+
+
+def niveles_largos(partidos: dict[int, tuple[int, int, str]]) -> dict[int, float]:
+    """{fixtureId: (local, visita, fecha)} → {fixtureId: suma del nivel de 3 años de los dos},
+    en una consulta a team_levels; sin el de alguno de los dos, el partido no figura."""
+    if not partidos:
+        return {}
+    equipos = sorted({t for l, v, _ in partidos.values() for t in (l, v)})
+    desde = (min(date.fromisoformat(str(f)[:10]) for _, _, f in partidos.values())
+             - timedelta(days=NIVEL_LARGO_DIAS)).isoformat()
+    try:
+        filas = saddb.query("levels", "SELECT team_id, date, level FROM team_levels "
+                                      f"WHERE team_id IN ({','.join('?' * len(equipos))}) AND date >= ? "
+                                      "ORDER BY date", (*equipos, desde))
+    except Exception:  # noqa: BLE001 — sin la base de niveles la serie de goles no apuesta
+        return {}
+    por: dict[int, list[tuple[str, float]]] = {}
+    for r in filas:
+        if r["level"] is not None:
+            por.setdefault(r["team_id"], []).append((str(r["date"]), float(r["level"])))
+    fuera = {}
+    for fid, (l, v, fecha) in partidos.items():
+        nl, nv = nivel_largo(por.get(l, []), fecha), nivel_largo(por.get(v, []), fecha)
+        if nl is not None and nv is not None:
+            fuera[fid] = round(nl + nv, 4)
+    return fuera
+
+
 def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | None = None) -> tuple:
     """El 1X2 y el resultado se leen sin pedir las historias del modelo de goles."""
     from backend.analisis.parte import _conectar
@@ -1386,6 +1493,10 @@ def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | N
     ids = list(candidatos)
     reales = _vered.resultados(ids)
     mercados = cuotas_mercado(ids)
+    # la serie de goles (25/11/2026): más/menos 2,5 de la casa, los goles y el nivel de 3 años
+    goles_casa = cuotas_goles(ids)
+    goles = _vered.goles_totales(ids)
+    largos = niveles_largos({i: (fx[i]["home_team_id"], fx[i]["away_team_id"], fx[i]["date"]) for i in ids})
     copas = copas_nacionales(ids)
     ciegos = _ciego.de_varios(ids)
     apuestas, excluidos = [], []
@@ -1444,6 +1555,7 @@ def _insumos(*, q: str | None = None, desde: date | None = None, hasta: date | N
             "semaforo": _sem.del_parte(parte, m["prob"]),
             # el 1X2 ciego, sellado antes de ver la cuota (22/11/2026); None si no hay
             "ciego": ciegos.get(fid),
+            "goles": datos_goles(goles_casa.get(fid), goles.get(fid), largos.get(fid)),
         })
     return apuestas, excluidos, fx
 

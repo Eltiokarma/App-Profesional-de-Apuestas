@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las veintiuna estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas, la cuidada, ganar fijo, las cuatro verde sin alertas y el método 55 %+ con y sin alertas)", len(out["estrategias"]) == 21, out.keys())
+check("simulacion() responde con las veintidós estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas, la cuidada, ganar fijo, las cuatro verde sin alertas, el método 55 %+ con y sin alertas y más de 2,5 goles)", len(out["estrategias"]) == 22, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -228,6 +228,10 @@ check("la del 29/10 → sad v4.2", next(a for a in out["apuestas"] if a["fixture
       ["versiones"]["sad-analysis"] == "v4.2")
 check("cerrada con el resultado de la base (local 2-1)", a0["estado"] == "cerrada" and a0["resultado"] == "local", a0)
 check("la plana apostó en las dos", est(out, "plana")["apuestas"] == 2, est(out, "plana"))
+g0 = a0.get("goles") or {}
+check("la serie de goles lee de la base el más/menos 2,5 de la casa (sin el del primer tiempo) y los goles (2-1 → 3)",
+      g0.get("total") == 3 and g0.get("probMas") is not None and 40 < g0["probMas"] < 55
+      and g0.get("cuotaMas") and 1.9 < g0["cuotaMas"] < 2.2, g0)
 
 # 11) EL MÉTODO (03/11/2026, usuario; docs/METODO_APUESTA.md): 1 % de la banca al
 # elegido, con freno por tramo de confianza
@@ -323,6 +327,12 @@ check("contacto.armar: fuera el depositado tarde, la copa y la cuarentena, con s
 res = {a["fixtureId"]: a["resultado"] for a in ap_}
 check("contacto.armar: el resultado del veredicto manda sobre el marcador; sin veredicto, el marcador",
       res == {1: "local", 6: "empate", 7: "visita"}, res)
+datos["1"]["cuotas"] += [{"mercado": "ou", "seleccion": "O", "cuota": 1.5}, {"mercado": "ou", "seleccion": "U", "cuota": 2.5}]
+_g = {a["fixtureId"]: a["goles"] for a in contacto.armar(datos)[0]}
+check("contacto.armar: el más/menos 2,5 de /cuotas sin margen (1/1,5 contra 1/2,5 → 62,5 %), los goles del marcador "
+      "y sin nivel de 3 años (no viene por la API: la serie de goles no apuesta ahí)",
+      _g[1] == {"probMas": 62.5, "cuotaMas": 1.5, "total": 3, "nivelLargo": None}
+      and _g[6]["probMas"] is None and _g[6]["total"] == 0, _g)
 
 # 10) COPA NACIONAL FUERA (29/10/2026, usuario: «no hay que contaminar las tablas»)
 _sad = _sql.connect(os.path.join(_tmp, "sad.db"))
@@ -580,6 +590,42 @@ check("método 55 %+ sin alertas: con DESCONFIAR o la burbuja en riesgo alto no 
       and _osa[33]["metodo55"]["monto"] > 0 and _osa[34]["metodo55"]["monto"] > 0, _osa)
 check("…el riesgo «muy alto» no lo frena, y no mira el color (estas apuestas no traen semáforo)",
       _osa[35]["metodo55SinAlertas"]["monto"] > 0 and _osa[35]["metodoVerdeSinAlertas"]["monto"] == 0, _osa[35])
+# ── MÁS DE 2,5 GOLES (25/11/2026, usuario; ESTUDIO_GOLES_CUOTA_2026-11) ────
+def _apg(fid, pit, prob_mas, cuota_mas, total, nivel, mercado=(60, 22, 18)):
+    a = ap(fid, pit, (40, 30, 30), (2.0, 3.4, 3.9), "visita")
+    a["mercado"] = dict(zip(("local", "empate", "visita"), mercado))
+    a["goles"] = sim.datos_goles({"probMas": prob_mas, "cuotaMas": cuota_mas} if prob_mas else None, total, nivel)
+    return a
+_og = sim.simular([_apg(41, "2026-11-20 15:00:00", 64, 1.55, 3, 6.0),
+                   _apg(42, "2026-11-20 20:00:00", 62, 1.6, 2, 5.9),
+                   _apg(43, "2026-11-21 15:00:00", 59.9, 1.7, 4, 6.0),
+                   _apg(44, "2026-11-21 20:00:00", 70, 1.4, 4, 6.0, mercado=(48, 27, 25)),
+                   _apg(45, "2026-11-22 15:00:00", 70, 1.4, 4, 5.1),
+                   _apg(46, "2026-11-22 20:00:00", 70, 1.4, 4, None),
+                   _apg(47, "2026-11-23 15:00:00", None, None, 4, 6.0),
+                   {**_apg(48, "2026-11-23 20:00:00", 66, 1.5, None, 6.2, mercado=(25, 22, 53)), "resultado": None}])
+_fg = {a["fixtureId"]: a["porEstrategia"]["golesMas25"] for a in _og["apuestas"]}
+check("más de 2,5: apuesta el 1 % a 'mas25' y cobra a su cuota con 3 goles (+0,55), pierde con 2; no mira el 1X2",
+      _fg[41]["seleccion"] == "mas25" and _fg[41]["monto"] == 1.0 and _fg[41]["ganancia"] == 0.55
+      and _fg[42]["seleccion"] == "mas25" and _fg[42]["ganancia"] == -_fg[42]["monto"]
+      and _og["apuestas"][-1]["porEstrategia"]["proporcional"]["seleccion"] == "local", _fg)
+check("…no apuesta con la casa bajo 60 %, el partido parejo, los equipos flojos (5,10 < 5,18), sin nivel de 3 años "
+      "ni sin la cuota de goles, y dice por qué",
+      all(_fg[k]["monto"] == 0 for k in (43, 44, 45, 46, 47)) and "bajo 60" in _fg[43]["motivo"]
+      and "parejo" in _fg[44]["motivo"] and "flojos" in _fg[45]["motivo"] and "5,10" in _fg[45]["motivo"]
+      and "nivel de 3 años" in _fg[46]["motivo"] and "cuota de más/menos" in _fg[47]["motivo"], _fg)
+check("…el favorito visitante cuenta igual que el local (casa 53 % a la visita), y la de por jugarse queda abierta",
+      _fg[48]["monto"] > 0 and _fg[48]["ganancia"] is None, _fg[48])
+_eg = est(_og, "golesMas25")
+check("…la banca de la serie: 100 + 0,55 − 1,0055 (la segunda es el 1 % de 100,55)",
+      _eg["apuestas"] == 2 and _eg["ganadas"] == 1 and abs(_eg["banca"] - (100.55 - 1.0055)) < 0.01, _eg)
+# el nivel de 3 años: la media de los 1.095 días ANTES (el del día del partido no entra), con 10 niveles al menos
+_nv = [(f"2026-10-{d:02d} 20:00:00", 2.0) for d in range(1, 11)] + [("2026-11-20 20:00:00", 9.0)]
+check("nivel de 3 años: diez niveles antes → su media; el del propio día no entra",
+      sim.nivel_largo(_nv, "2026-11-20 20:00:00") == 2.0, sim.nivel_largo(_nv, "2026-11-20 20:00:00"))
+check("…con nueve no alcanza, y lo de hace más de 1.095 días no cuenta",
+      sim.nivel_largo(_nv[:9], "2026-11-20") is None
+      and sim.nivel_largo([("2023-01-01", 9.0)] + _nv, "2026-11-20") == 2.0)
 # ── EL MÉTODO FUERA DEL MEDIO (13/11/2026, usuario) ─────────────────────────
 def _apf(fid, pit, res, mercado_local):
     a = _apm(fid, pit, res, None)

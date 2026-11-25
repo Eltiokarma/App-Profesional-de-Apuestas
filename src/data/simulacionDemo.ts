@@ -535,6 +535,85 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    ]
   },
   {
+   "clave": "golesMas25",
+   "nombre": "Más de 2,5 goles",
+   "descripcion": "1 % de la banca a más de 2,5 goles cuando la casa le da 60 % o más, salvo el partido parejo (ningún lado pasa del 50 % en la casa) y salvo los equipos flojos (el nivel de 3 años de los dos suma menos de 5,18); no mira nuestro 1X2",
+   "banca": 100.46,
+   "ganancia": 0.46,
+   "apostado": 4.0,
+   "apuestas": 4,
+   "ganadas": 3,
+   "roi": 0.1156,
+   "caidaMaxima": 0.01,
+   "quebro": null,
+   "exposicionMaxima": 1.01,
+   "montoMaximo": 1.01,
+   "lineas": null,
+   "tramos": null,
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.55
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 100.55
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 100.55
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 99.54
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 99.54
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 99.96
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 100.46
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 100.46
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 100.46
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 100.46
+    }
+   ]
+  },
+  {
    "clave": "metodoFueraMedio",
    "nombre": "Método fuera del medio",
    "descripcion": "el método (1 % de la banca y el mismo freno por tramo) sin apostar cuando la casa le da al elegido entre 45 % y 60 % (sin margen): ahí no le sacamos nada a la cuota",
@@ -2085,6 +2164,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 1,
      "roi": -1.0
     },
+    "golesMas25": {
+     "apostado": 1.0,
+     "ganancia": 0.55,
+     "apuestas": 1,
+     "roi": 0.55
+    },
     "metodoFueraMedio": {
      "apostado": 0.0,
      "ganancia": 0.0,
@@ -2218,6 +2303,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 2,
      "roi": -0.1294
     },
+    "golesMas25": {
+     "apostado": 1.0055,
+     "ganancia": -1.0055,
+     "apuestas": 1,
+     "roi": -1.0
+    },
     "metodoFueraMedio": {
      "apostado": 1.0,
      "ganancia": 1.2,
@@ -2350,6 +2441,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "ganancia": -0.3227,
      "apuestas": 2,
      "roi": -0.1628
+    },
+    "golesMas25": {
+     "apostado": 1.995,
+     "ganancia": 0.9179,
+     "apuestas": 2,
+     "roi": 0.4601
     },
     "metodoFueraMedio": {
      "apostado": 2.0139,
@@ -2979,6 +3076,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "empate",
     "alineado": false
    },
+   "goles": {
+    "probMas": null,
+    "cuotaMas": null,
+    "total": null,
+    "nivelLargo": null
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -3019,6 +3122,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 98.42,
      "linea": null,
      "motivo": "le damos 50 % al elegido: bajo 55 %"
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.46,
+     "linea": null,
+     "motivo": "sin la cuota de más/menos 2,5 capturada"
     },
     "metodoFueraMedio": {
      "seleccion": null,
@@ -3210,6 +3321,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "local",
     "alineado": true
    },
+   "goles": {
+    "probMas": null,
+    "cuotaMas": null,
+    "total": null,
+    "nivelLargo": null
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -3250,6 +3367,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 98.42,
      "linea": null,
      "motivo": "le damos 46 % al elegido: bajo 55 %"
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.46,
+     "linea": null,
+     "motivo": "sin la cuota de más/menos 2,5 capturada"
     },
     "metodoFueraMedio": {
      "seleccion": null,
@@ -3441,6 +3566,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "empate",
     "alineado": false
    },
+   "goles": {
+    "probMas": 65.0,
+    "cuotaMas": 1.52,
+    "total": null,
+    "nivelLargo": 5.7
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -3481,6 +3612,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": null,
      "linea": null,
      "motivo": "le damos 47 % al elegido: bajo 55 %"
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "partido parejo: en la casa ningún lado pasa del 50 %"
     },
     "metodoFueraMedio": {
      "seleccion": null,
@@ -3681,6 +3820,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "empate",
     "alineado": false
    },
+   "goles": {
+    "probMas": null,
+    "cuotaMas": null,
+    "total": null,
+    "nivelLargo": null
+   },
    "enElMedio": false,
    "elegido": "local",
    "kelly": {
@@ -3721,6 +3866,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 98.42,
      "linea": null,
      "motivo": "le damos 38 % al elegido: bajo 55 %"
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.46,
+     "linea": null,
+     "motivo": "sin la cuota de más/menos 2,5 capturada"
     },
     "metodoFueraMedio": {
      "seleccion": "local",
@@ -3912,6 +4065,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "local",
     "alineado": true
    },
+   "goles": {
+    "probMas": 66.0,
+    "cuotaMas": 1.5,
+    "total": 4,
+    "nivelLargo": 5.6
+   },
    "enElMedio": false,
    "elegido": "local",
    "kelly": {
@@ -3950,6 +4109,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 0.9942,
      "ganancia": -0.9942,
      "banca": 98.42,
+     "linea": null,
+     "motivo": ""
+    },
+    "golesMas25": {
+     "seleccion": "mas25",
+     "monto": 0.9996,
+     "ganancia": 0.4998,
+     "banca": 100.46,
      "linea": null,
      "motivo": ""
     },
@@ -4143,6 +4310,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "local",
     "alineado": true
    },
+   "goles": {
+    "probMas": 70.0,
+    "cuotaMas": 1.42,
+    "total": 3,
+    "nivelLargo": 6.4
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -4181,6 +4354,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 0.9875,
      "ganancia": 0.6715,
      "banca": 99.42,
+     "linea": null,
+     "motivo": ""
+    },
+    "golesMas25": {
+     "seleccion": "mas25",
+     "monto": 0.9954,
+     "ganancia": 0.4181,
+     "banca": 99.96,
      "linea": null,
      "motivo": ""
     },
@@ -4383,6 +4564,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "empate",
     "alineado": false
    },
+   "goles": {
+    "probMas": null,
+    "cuotaMas": null,
+    "total": null,
+    "nivelLargo": null
+   },
    "enElMedio": false,
    "elegido": "local",
    "kelly": {
@@ -4423,6 +4610,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 98.75,
      "linea": null,
      "motivo": "le damos 40 % al elegido: bajo 55 %"
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.54,
+     "linea": null,
+     "motivo": "sin la cuota de más/menos 2,5 capturada"
     },
     "metodoFueraMedio": {
      "seleccion": "local",
@@ -4614,6 +4809,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "local",
     "alineado": true
    },
+   "goles": {
+    "probMas": 62.0,
+    "cuotaMas": 1.6,
+    "total": 2,
+    "nivelLargo": 5.9
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -4652,6 +4853,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 0.9801,
      "ganancia": 0.7351,
      "banca": 98.75,
+     "linea": null,
+     "motivo": ""
+    },
+    "golesMas25": {
+     "seleccion": "mas25",
+     "monto": 1.0055,
+     "ganancia": -1.0055,
+     "banca": 99.54,
      "linea": null,
      "motivo": ""
     },
@@ -4850,6 +5059,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "local",
     "alineado": true
    },
+   "goles": {
+    "probMas": 61.0,
+    "cuotaMas": 1.62,
+    "total": 1,
+    "nivelLargo": 4.9
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -4890,6 +5105,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 98.01,
      "linea": null,
      "motivo": ""
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.55,
+     "linea": null,
+     "motivo": "equipos flojos: el nivel de 3 años de los dos suma 4,90, bajo 5,18"
     },
     "metodoFueraMedio": {
      "seleccion": null,
@@ -5081,6 +5304,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "empate",
     "alineado": false
    },
+   "goles": {
+    "probMas": 63.0,
+    "cuotaMas": 1.58,
+    "total": 2,
+    "nivelLargo": 5.8
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -5121,6 +5350,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 99.0,
      "linea": null,
      "motivo": "le damos 52 % al elegido: bajo 55 %"
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.55,
+     "linea": null,
+     "motivo": "partido parejo: en la casa ningún lado pasa del 50 %"
     },
     "metodoFueraMedio": {
      "seleccion": null,
@@ -5317,6 +5554,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "local",
     "alineado": true
    },
+   "goles": {
+    "probMas": 64.0,
+    "cuotaMas": 1.55,
+    "total": 3,
+    "nivelLargo": 6.1
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -5355,6 +5598,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 1.0,
      "ganancia": -1.0,
      "banca": 99.0,
+     "linea": null,
+     "motivo": ""
+    },
+    "golesMas25": {
+     "seleccion": "mas25",
+     "monto": 1.0,
+     "ganancia": 0.55,
+     "banca": 100.55,
      "linea": null,
      "motivo": ""
     },
@@ -5548,6 +5799,12 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
     "signo": "empate",
     "alineado": false
    },
+   "goles": {
+    "probMas": 52.0,
+    "cuotaMas": 1.9,
+    "total": 3,
+    "nivelLargo": 5.4
+   },
    "enElMedio": true,
    "elegido": "local",
    "kelly": {
@@ -5588,6 +5845,14 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 100.0,
      "linea": null,
      "motivo": "le damos 48 % al elegido: bajo 55 %"
+    },
+    "golesMas25": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "la casa le da 52 % a más de 2,5: bajo 60 %"
     },
     "metodoFueraMedio": {
      "seleccion": null,
