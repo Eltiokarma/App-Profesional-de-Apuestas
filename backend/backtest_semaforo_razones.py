@@ -197,9 +197,10 @@ def _imprimir(r: dict) -> None:
           f"corte {r['corte']} · corte del rojo {r['corteRojo']}")
 
     def linea(d):
-        return (f"gana {d['gana']}/{d['n']} = {100 * d['tasa']:5.1f} % · decíamos "
-                f"{'—' if d['decíamos'] is None else f'{100 * d['decíamos']:.1f}'} · marca {100 * d['marca']:3.0f} % · "
-                f"tiene {100 * d['derrotas']:3.0f} % de las derrotas")
+        # sin f-strings anidadas con las mismas comillas: CI corre Python 3.11
+        dicho = "—" if d["decíamos"] is None else f"{100 * d['decíamos']:.1f}"
+        return (f"gana {d['gana']}/{d['n']} = {100 * d['tasa']:5.1f} % · decíamos {dicho} · "
+                f"marca {100 * d['marca']:3.0f} % · tiene {100 * d['derrotas']:3.0f} % de las derrotas")
     for et in ("aprendizaje", "comprobacion"):
         print(f"\n{et.upper()}")
         for cual in ("hoy", "calibrado"):
