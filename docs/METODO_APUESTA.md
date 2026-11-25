@@ -845,6 +845,20 @@ aunque la casa diga otra cosa. Si no, sabremos que leemos mal y qué arreglar
 en la lectura. Y se revisan con eso las reglas de anclaje v4.1-v4.5 (DEUDA
 42), que se justificaron por el error de los números, no por el acierto.
 
+
+**La tabla con el ciego, primera mirada (25/11/2026, 40 partes cerrados sin
+copas; se revisa al llegar a 60, junto con la regla 6-B, DEUDA 42).** En los
+mismos partidos, el elegido del ciego acertó 27 de 40 (68 %) y el del
+publicado 26 de 40 (65 %); los dos eligen igual en 37. El ciego dice 51 % en
+promedio y su elegido gana el 68 %: se queda corto (en su tramo 55-65 % ganó
+10 de 12), y sus porcentajes calibran peor (Brier 0,518 contra 0,492).
+Cuando el ciego le dio a su elegido 10+ puntos menos que el publicado (17
+partidos, como el City–Napoli: 57 contra 73), el elegido ganó 13. Con el City:
+sin la 6-B, el City–Napoli quedaba en 57 % y no se apostaba con un umbral de
+60 %; pero calibrar ese 57 contra los resultados lo sube a 75-80 %, porque el
+ciego se queda corto en general. La pregunta para los 60: ¿la lectura sin el
+ancla acierta MÁS que la casa en algún grupo de partidos?
+
 ## El favorito que viene fallando (25/11/2026)
 
 El caso: Manchester City ganó 1 de 7 (24/10 → 24/11) con la casa dándole
@@ -956,6 +970,57 @@ FAMILIA-RECORD y DIV-MOTOR-MERCADO sobre el elegido van al revés: con ellas
 el elegido gana más. Ninguna mueve el semáforo ni la alerta; FUERA-EN-LA-HOJA
 queda como candidata para medir hacia adelante con 300 partes más. El
 análisis se corrió suelto (scratchpad), no hay script en el repo.
+
+## El número, no el color (25/11/2026)
+
+El usuario, tras ver el semáforo por razones: «no usemos semáforo, usemos algo
+más continuo». Medido hacia atrás sobre los mismos 1.018 partes (14/09 →
+25/11/2026, sin copas nacionales, elegido local o visita).
+
+**Para decir qué elegido va a perder, el número que publicamos sabe más que
+cualquier semáforo.** AUC en los 425 partes desde el 04/11 (0,5 = moneda): el
+porcentaje publicado solo 0,706; el semáforo calibrado por razones 0,581; el
+de las espinas 0,534. Sumarle razones al número (del parte, de las burbujas
+completas con `antesDe`, del nivel largo, de la forma o de la cuota) lo
+empeoró: entre 0,61 y 0,69. Recalibrar el número con una curva aprendida en
+lo viejo tampoco mejoró lo nuevo (log-loss 0,6195 contra 0,6207).
+
+**El winrate según lo que decimos del elegido** (cada fila es solo ese tramo):
+
+| Decimos | Partidos | Ganó | Hasta 04/11 | Desde 04/11 |
+|---|---|---|---|---|
+| menos de 40 % | 173 | 39 % | 45 % | 30 % |
+| 40-45 % | 205 | 49 % | 48 % | 50 % |
+| 45-50 % | 167 | 46 % | 47 % | 44 % |
+| 50-55 % | 123 | 55 % | 59 % | 49 % |
+| 55-60 % | 117 | 64 % | 67 % | 59 % |
+| 60-65 % | 84 | 73 % | 79 % | 66 % |
+| 65-70 % | 58 | 79 % | 77 % | 81 % |
+| 70 % o más | 91 | 88 % | 83 % | 91 % |
+
+Apostando solo desde un umbral, el elegido ganó (hasta 04/11 · desde 04/11):
+55 %+ 74,6 · 75,1 % (el 34 % de los partidos, evita el 80 % de las
+derrotas); 60 %+ 80,2 · 80,3 % (23 %, evita el 90 %).
+
+**Qué es ese número**: casi todo es el método anterior (1.006 de 1.018
+partes), con el número a 2,4 puntos de la casa por la regla 6-B. Mientras el
+número siga al mercado, la tabla mide el número de la casa; si se saca la 6-B
+o las dos lecturas lo alejan, la tabla se rehace con los partes nuevos.
+
+**En la simulación** (las series por color no se tocan: son la medición fija
+desde el 13/11): la serie **«Método 55 %+»** (`metodo55`,
+`simulacion.UMBRAL_METODO`) es el método (1 % de la banca y el mismo freno
+por tramo) apostando solo con el elegido a 55 % o más, sin mirar el color.
+Sobre las 368 apuestas cerradas desde el 28/10 (contacto.armar, los mismos
+partes): 124 apuestas, banca 104,7 y caída máxima 5,4 %, contra el método en
+verde 230 apuestas, 82,7 y 18,8 %, y el método verde sin alertas 158, 102,1 y
+7,6 %. El umbral de 55 % salió de esta misma tabla: es un punto elegido
+mirando el pasado.
+
+**El City** con el número: Villa 44 % (no se apuesta; perdió), Brighton 56 %
+y Forest 55 % (se apuestan; perdieron), Fulham 69 % y Napoli 73 % (se
+apuestan; empataron). Con 64, 64, 79 y 88 de cada 100 en esos tramos, perder
+así es raro pero pasa: ninguna medida que tengamos lo anticipa.
 
 ## El semáforo calibrado por razones (25/11/2026)
 

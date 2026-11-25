@@ -31,13 +31,15 @@ const COLOR: Record<Exclude<EstrategiaClave, 'kellyMedio' | 'kellyCuarto'>, stri
   metodoVerdeSinAlertasFueraMedio: 'var(--sim-verde-sin-alertas-fuera-medio)',
   martingalaCuidadaSinAlertas: 'var(--sim-martingala-cuidada-sin-alertas)',
   ganarFijoSinAlertas: 'var(--sim-ganar-fijo-sin-alertas)',
+  // el método por el número (25/11/2026): solo con el elegido a 55 %+, sin mirar el color
+  metodo55: 'var(--sim-metodo-55)',
 }
 const RES: Record<Resultado1x2, string> = { local: 'Local', empate: 'Empate', visita: 'Visita' }
 const SKILL_CORTO: [string, string][] = [
   ['sad-analysis', 'sad'], ['efe-clasificador', 'EFE'], ['teorema-del-echado', 'TDE'], ['diagnostico-tactico', 'DTP'],
 ]
 const CORTO: Record<EstrategiaClave, string> = {
-  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', martingalaFueraMedio: 'Martin. sin medio ⅓', martingalaCuidada: 'Martin. cuidada', mixtaFueraMedio: 'Mixta sin medio', ganarFijo: 'Ganar fijo', metodoVerdeSinAlertas: 'Método 🟢 sin alertas', metodoVerdeSinAlertasFueraMedio: 'Método 🟢 sin alertas sin medio', martingalaCuidadaSinAlertas: 'Martin. cuidada 🟢 sin alertas', ganarFijoSinAlertas: 'Ganar fijo 🟢 sin alertas', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
+  proporcional: 'Método', metodoVerde: 'Método 🟢', metodoFueraMedio: 'Método sin medio', martingala60Ajustada: 'Martin. 60 %+ aj.', martingalaFueraMedio: 'Martin. sin medio ⅓', martingalaCuidada: 'Martin. cuidada', mixtaFueraMedio: 'Mixta sin medio', ganarFijo: 'Ganar fijo', metodoVerdeSinAlertas: 'Método 🟢 sin alertas', metodoVerdeSinAlertasFueraMedio: 'Método 🟢 sin alertas sin medio', martingalaCuidadaSinAlertas: 'Martin. cuidada 🟢 sin alertas', ganarFijoSinAlertas: 'Ganar fijo 🟢 sin alertas', metodo55: 'Método 55 %+', plana: 'Plana', plana60: 'Plana 60 %+', kelly: 'Kelly', kellyMedio: 'Kelly ½', kellyCuarto: 'Kelly ¼', martingala: 'Martingala', martingala60: 'Martin. 60 %+',
 }
 const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
@@ -186,7 +188,7 @@ function ErrorSimulacion({ mensaje, recargar }: { mensaje: string; recargar: () 
 }
 
 function estrategiasVisibles(kelly: Kelly, claves: string[]): { clave: EstrategiaClave; color: string }[] {
-  const orden: EstrategiaClave[] = ['proporcional', 'metodoVerde', 'metodoVerdeSinAlertas', 'metodoVerdeSinAlertasFueraMedio',
+  const orden: EstrategiaClave[] = ['proporcional', 'metodo55', 'metodoVerde', 'metodoVerdeSinAlertas', 'metodoVerdeSinAlertasFueraMedio',
     'metodoFueraMedio', 'plana', 'plana60', kelly, 'martingala', 'martingalaCuidada', 'martingalaCuidadaSinAlertas',
     'martingala60', 'martingala60Ajustada', 'martingalaFueraMedio', 'mixtaFueraMedio', 'ganarFijo', 'ganarFijoSinAlertas']
   return orden.filter((clave) => claves.includes(clave)).map((clave) => ({

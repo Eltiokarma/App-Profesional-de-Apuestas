@@ -1400,6 +1400,9 @@ conversación se pierde en la siguiente.
      sostiene como filtro o sale.
    - **Mirar la tabla con 60 cerrados con ciego** (cuenta desde el 22/11):
      ciego contra publicado contra favorito de la casa, y el desacuerdo.
+     Primera mirada con 40 el 25/11 (METODO_APUESTA, «El 1X2 ciego»): el ciego
+     acierta 68 % contra 65 % y se queda corto en el número; el usuario quiere
+     sacar la 6-B y calibrar el número propio: se decide con los 60.
    - **Revisar las reglas de anclaje del sad-analysis** (v4.1 «el empate
      parte del mercado», «el favorito no se recorta»; v4.2 «el mercado que se
      mueve»; v4.5 «no restan bajo el mercado») con el ciego a la vista: se

@@ -43,6 +43,7 @@
   --sim-verde-sin-alertas-fuera-medio: #f7e463;
   --sim-martingala-cuidada-sin-alertas: #ffb3a7;
   --sim-ganar-fijo-sin-alertas: #a0a7b4;
+  --sim-metodo-55: #4fd1c5;
   /* grid de las gráficas: la línea base acercada un 20% al texto para que
      las guías se lean sin robar protagonismo a las series */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
@@ -87,6 +88,7 @@
   --sim-verde-sin-alertas-fuera-medio: #7a6a00;
   --sim-martingala-cuidada-sin-alertas: #b8442f;
   --sim-ganar-fijo-sin-alertas: #5b6573;
+  --sim-metodo-55: #0f7c72;
   /* se redeclara aquí: var() dentro de una custom property se resuelve donde
      se define, no donde se usa — sin esto el grid claro heredaría el oscuro */
   --grid: color-mix(in oklch, var(--line), var(--t2) 20%);
