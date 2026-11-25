@@ -2203,7 +2203,8 @@ components:
           type: object
           nullable: true
           description: >
-            EL SEMÁFORO CALIBRADO POR RAZONES (25/11/2026, backend/backtest_semaforo_razones.py, docs/METODO_APUESTA.md):
+            null desde el 25/11/2026: la capa se retiró del chip (el número publicado separa mejor; docs/METODO_APUESTA.md,
+            «El número, no el color»). Si se retoma: EL SEMÁFORO CALIBRADO POR RAZONES (backend/backtest_semaforo_razones.py):
             cada razón previa del parte pesa log(frecuencia en los verdes perdidos / en los ganados); verde con
             `puntaje` ≥ `corteRojo` → rojo y ≥ `corte` → amarillo; amarillo con puntaje ≥ corte → rojo y < corte →
             verde; rojo se queda (`confirmado` dice si las razones lo acompañan). null sin el parte enriquecido.

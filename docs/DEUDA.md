@@ -1462,9 +1462,10 @@ conversación se pierde en la siguiente.
    nivel.
    **HECHO el 25/11 (usuario, «calibremos solo el semáforo, hacia atrás»)**:
    el semáforo calibrado por razones (METODO_APUESTA, «El semáforo calibrado
-   por razones»; `backtest_semaforo_razones`). Pendiente: recalibrar la tabla
-   de `semaforo.PESOS` cuando haya partes nuevos cerrados, y que la
-   simulación mida también el color calibrado (hoy mide el de las espinas).
+   por razones»; `backtest_semaforo_razones`), y el mismo día **retirado del
+   chip** (usuario): el número publicado separa mejor. Decide el número: serie
+   «Método 55 %+» (`metodo55`), primera en la Simulación; las series por color
+   y el semáforo de las espinas siguen como dato hasta cerrar su medición.
 
 ## Siguientes pasos (en orden)
 

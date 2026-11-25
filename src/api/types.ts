@@ -2953,7 +2953,7 @@ export interface SemaforoElegido {
   marcadorSigno: Resultado1x2 | null
   /** el color por las espinas solas (25/11/2026); `estado` es el calibrado por las razones cuando hay parte enriquecido */
   estadoBase?: SemaforoElegido['estado']
-  /** EL SEMÁFORO CALIBRADO POR RAZONES (25/11/2026): null sin el parte enriquecido */
+  /** EL SEMÁFORO CALIBRADO POR RAZONES: null desde el 25/11/2026 (se retiró del chip; el número separa mejor) */
   calibrado?: SemaforoCalibrado | null
 }
 

@@ -11,7 +11,7 @@
 // razonable del impacto. Cuando el once aparece —de la ficha ya ingestada o
 // del pantallazo que el usuario pega aquí— el bloque se cierra al instante.
 import { GolesAcotadosPartido } from './GolesAcotados'
-import { SemaforoChip, titleSemaforo } from './SemaforoChip'
+import { SemaforoChip } from './SemaforoChip'
 import { MOTIVO_ENTRAR, titleEntrar } from './LecturaListaChips'
 import { getDataSource } from '../services/datasource'
 import { useEffect, useMemo, useState } from 'react'
@@ -807,19 +807,7 @@ function PronosticoDelEnsayo({ parte, nombreDe }: { parte: ParteCoworkDTO; nombr
           {parte.pronostico?.marcador && <><span style={{ color: 'var(--t3)' }}> · </span>marcador {parte.pronostico.marcador}</>}
         </span>
       )}
-      {!jugado && sel && sem && <RazonesSemaforo s={sem} />}
     </section>
-  )
-}
-
-/** El porqué del semáforo escrito (25/11/2026): en el teléfono el title no se ve.
- *  Las razones salen calibradas del backend; si no hay, no se muestra nada. */
-function RazonesSemaforo({ s }: { s: SemaforoElegido }) {
-  if (!s.calibrado) return null
-  return (
-    <span style={{ flexBasis: '100%', minWidth: 0, font: '500 10.5px var(--sans)', color: 'var(--t3)', lineHeight: 1.5 }}>
-      {titleSemaforo(s)}
-    </span>
   )
 }
 

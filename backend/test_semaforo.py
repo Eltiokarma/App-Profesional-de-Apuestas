@@ -217,8 +217,8 @@ def main():
     check("…con la MISMA cuota que la simulación (lecciones.cuotas_mercado)",
           {k: s1[k] for k in solo_espinas if k != "estado"} == {k: v for k, v in solo_espinas.items() if k != "estado"}
           and s1["estadoBase"] == solo_espinas["estado"], (s1, mk))
-    check("…y calibrado por las razones del parte enriquecido (25/11/2026)",
-          isinstance(s1.get("calibrado"), dict) and "puntaje" in s1["calibrado"], s1)
+    check("…con el color de las espinas solas: la capa de razones se retiró del chip (25/11/2026)",
+          s1.get("calibrado") is None and s1["estado"] == s1["estadoBase"], s1)
 
     appmod.API_TOKEN, appmod.TOKEN_COWORK, appmod.TOKEN_WEB = "maestra-prueba", "cowork-prueba", "web-prueba"
     try:

@@ -188,7 +188,7 @@ function ErrorSimulacion({ mensaje, recargar }: { mensaje: string; recargar: () 
 }
 
 function estrategiasVisibles(kelly: Kelly, claves: string[]): { clave: EstrategiaClave; color: string }[] {
-  const orden: EstrategiaClave[] = ['proporcional', 'metodo55', 'metodoVerde', 'metodoVerdeSinAlertas', 'metodoVerdeSinAlertasFueraMedio',
+  const orden: EstrategiaClave[] = ['metodo55', 'proporcional', 'metodoVerde', 'metodoVerdeSinAlertas', 'metodoVerdeSinAlertasFueraMedio',
     'metodoFueraMedio', 'plana', 'plana60', kelly, 'martingala', 'martingalaCuidada', 'martingalaCuidadaSinAlertas',
     'martingala60', 'martingala60Ajustada', 'martingalaFueraMedio', 'mixtaFueraMedio', 'ganarFijo', 'ganarFijoSinAlertas']
   return orden.filter((clave) => claves.includes(clave)).map((clave) => ({

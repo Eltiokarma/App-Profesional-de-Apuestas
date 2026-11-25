@@ -942,19 +942,10 @@ class MockDataSource implements SadDataSource {
           : caso === 3 ? [{ codigo: 'SIN-ESPINA', detalle: 'falta la espina del elegido (local) o es neutra: no se juzga' }] : [],
         elegido: 'local', regla: 'espinas', espinaElegido: espE, espinaRival: espR, espinas: { a: espE, b: espR },
         distancia: caso === 3 ? null : 1.2, marcadorSigno: 'local',
-        // de muestra: uno de cada ocho verdes de las espinas baja a amarillo por las razones (25/11/2026)
+        // la capa de razones se retiró del chip el 25/11/2026: el color es el de las espinas
         estadoBase: caso === 0 ? 'confirma' : caso === 1 ? 'duda' : caso === 2 ? 'noApostar' : 'sinDato',
-        calibrado: caso === 3 ? null : {
-          puntaje: fid % 8 === 0 ? 3.1 : 0.8, corte: 2.264, corteRojo: 4.16, cambio: fid % 8 === 0, confirmado: fid % 8 !== 0,
-          contra: [
-            { codigo: 'EMPATE-27+', texto: 'le dimos al empate 27 % o más (partido parejo)', peso: 0.52 },
-            { codigo: 'DTP-NEUTRO', texto: 'el DTP no favorece a ningún lado', peso: 0.5 },
-          ],
-          aFavor: [{ codigo: 'MOTOR-20+BAJO-PUBLICADO', texto: 'el motor da 20+ puntos menos que lo publicado', peso: -1.04 }],
-          fuente: { fecha: '2026-11-25', partes: 1018, verdes: 787, desde: '2026-09-14', hasta: '2026-11-25' },
-        },
+        calibrado: null,
       }
-      if (caso === 0 && fid % 8 === 0) out[fid].estado = 'duda'
     }
     return out
   }

@@ -152,6 +152,10 @@ def del_parte(parte: dict, mercado=None, dto: dict | None = None) -> dict:
 
 
 # ── LAS RAZONES: el semáforo calibrado hacia atrás (25/11/2026) ──────────────
+# RETIRADO DEL CHIP el mismo 25/11/2026 (usuario: «sí, hazlo así»): contra el número
+# publicado pierde (AUC 0,581 contra 0,706 en los partes desde el 04/11) y dejaba dos
+# colores para un partido. `/analisis/semaforo` ya no lo usa; queda para el backtest
+# (`backend/backtest_semaforo_razones.py`) por si se retoma con partes nuevos.
 # El usuario, tras Manchester City (1 victoria en 7, seis veces en verde): «el
 # analista dice semáforo en amarillo por tal razón, en rojo por tal razón, en
 # verde por tal razón… viendo cuál razón se repite más y dándole más peso, a eso
@@ -553,16 +557,14 @@ def de_partidos(ids) -> dict[int, dict]:
             "SELECT fixture_id, parte_json FROM parte_cowork "
             f"WHERE fixture_id IN ({','.join('?' * len(ids))})", tuple(ids)).fetchall()
     mercados = cuotas_mercado([f["fixture_id"] for f in filas])
-    from backend.analisis.parte import dto as parte_dto
     out = {}
     for f in filas:
         try:
             parte = json.loads(f["parte_json"])
         except (TypeError, ValueError):
             continue
-        try:
-            enriquecido = parte_dto(f["fixture_id"])
-        except Exception:  # noqa: BLE001 — sin el parte enriquecido el color sale de las espinas solas (estadoBase)
-            enriquecido = None
-        out[f["fixture_id"]] = del_parte(parte, (mercados.get(f["fixture_id"]) or {}).get("prob"), enriquecido)
+        # sin el parte enriquecido: el color es el de las espinas. La capa de razones
+        # se retiró del chip el 25/11/2026 (usuario): el número publicado separa mejor
+        # (docs/METODO_APUESTA.md, «El número, no el color»)
+        out[f["fixture_id"]] = del_parte(parte, (mercados.get(f["fixture_id"]) or {}).get("prob"))
     return out

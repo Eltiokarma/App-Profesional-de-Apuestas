@@ -1024,6 +1024,14 @@ así es raro pero pasa: ninguna medida que tengamos lo anticipa.
 
 ## El semáforo calibrado por razones (25/11/2026)
 
+> **Retirado del chip el mismo 25/11/2026** (usuario, «sí, hazlo así»): contra
+> el número publicado pierde (AUC 0,581 contra 0,706; «El número, no el
+> color», arriba) y dejaba dos colores para un mismo partido. El chip volvió
+> al color de las espinas, que sigue como dato hasta completar su criterio
+> por escalones (60 no-verdes), y lo que decide cuándo apostar es el número
+> (la serie «Método 55 %+», la primera de la Simulación). El backtest, la
+> tabla de pesos y esta medición quedan por si se retoma con partes nuevos.
+
 El usuario, tras Manchester City (seis partidos seguidos en verde, uno
 ganado): «el analista dice semáforo en amarillo por tal razón, en rojo por tal
 razón, en verde por tal razón… viendo cuál razón se repite más y dándole más
@@ -1096,8 +1104,8 @@ sobre los amarillos no vistos es la más firme. El City no se caza: sus verdes
 perdidos suman entre −2,9 y +1,5 contra un corte de 2,26 (el del rojo es
 4,16), y el calibrado habría pasado a amarillo el 5-1 al AEK.
 
-**Dónde vive**: `/analisis/semaforo` (el chip de la web) calibra con el parte
-enriquecido (`parte.dto`) y trae `estadoBase` (el de las espinas) y
+**Dónde vivía** (hasta su retiro): `/analisis/semaforo` (el chip de la web) calibraba con el parte
+enriquecido (`parte.dto`) y traía `estadoBase` (el de las espinas) y
 `calibrado` {puntaje, corte, corteRojo, cambio, confirmado, contra, aFavor}; el parte
 muestra las razones escritas bajo el chip. La serie fija de la simulación
 (`metodoVerde`, el criterio por escalones desde el 13/11) sigue con el color
