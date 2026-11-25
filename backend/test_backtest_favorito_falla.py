@@ -112,5 +112,31 @@ cuotas = {10 + i: (0.8, 0.12, 0.08) for i in range(6)}
 cc = [c for c in ff.casos(mini, cuotas) if c["team"] == 1 and c["fixtureId"] == 15][0]
 check("casa: residuo de 5 con la cuota", cc["casa5"] is not None and abs(cc["casa5"] - 5 * 0.2) < 1e-9, cc)
 
+# 6. Grandes en temporada internacional: nivel mediano + liga grande, y la temporada
+#    con un partido de torneo internacional de clubes
+def _equipo(liga, nivel, temporadas_int=()):
+    filas = []
+    for i in range(60):
+        tmp = 2024 if i < 30 else 2025
+        filas.append({"fixtureId": 5000 + i, "fecha": f"{tmp}-{1 + i % 12:02d}-{1 + i % 28:02d}T18:00:00Z",
+                      "condicion": "Local", "rivalId": 9, "ligaId": liga, "temporada": tmp,
+                      "golesFavor": 1, "golesContra": 0, "esInternacional": False})
+    for tmp in temporadas_int:
+        filas.append({"fixtureId": 6000 + tmp, "fecha": f"{tmp}-10-15T18:00:00Z", "condicion": "Visita",
+                      "rivalId": 9, "ligaId": 2, "temporada": tmp, "golesFavor": 1, "golesContra": 0,
+                      "esInternacional": True})
+    return {"filas": filas, "niveles": [{"fecha": f["fecha"], "nivel": nivel} for f in filas]}
+
+
+hg = {1: _equipo(39, 3.6, (2025,)), 2: _equipo(9999, 3.6, (2025,)), 3: _equipo(39, 2.4, (2025,))}
+check("grandes: liga grande y nivel alto entra", 1 in ff.grandes(hg, 3.0))
+check("grandes: el que domina una liga chica no entra", 2 not in ff.grandes(hg, 3.0))
+check("grandes: nivel bajo no entra", 3 not in ff.grandes(hg, 3.0))
+check("temporada internacional: solo la de la Champions", ff.temporadas_internacionales(hg) >= {(1, 2025)}
+      and (1, 2024) not in ff.temporadas_internacionales(hg))
+fil = ff.filtrar([{"team": 1, "temporada": 2024}, {"team": 1, "temporada": 2025}, {"team": 2, "temporada": 2025}],
+                 hg, 3.0, True)
+check("filtrar: grande y en su temporada internacional", fil == [{"team": 1, "temporada": 2025}], fil)
+
 print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLA(S)'}")
 sys.exit(1 if fallos else 0)

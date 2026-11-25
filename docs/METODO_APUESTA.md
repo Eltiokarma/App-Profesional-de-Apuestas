@@ -892,6 +892,31 @@ tamaño un efecto de 5 puntos se habría visto. Lo único que asoma es el
 gigante (nivel 3,5+ y 1,0+ de ventaja): +8,0 pts con la de 5 en −1,0 (IC
 −0,8 a +17,3, unos 120 casos); se miró después y no es una regla.
 
+**Solo grandes en temporada internacional** (pedido del usuario el mismo
+día; `--grandes 3.0 --temporada-internacional`). Grande = liga principal en
+la lista `LIGAS_GRANDES` (las cinco grandes de Europa, Portugal, Países
+Bajos, Brasil y Argentina) **y** nivel mediano de los 5 años ≥ 3,0. Sin la
+liga, el corte de nivel metía a La Fiorita, Kauno Žalgiris o Lincoln Red
+Imps (el nivel es relativo a cada liga). Quedan 28 equipos: City, Bayern,
+Real Madrid, Barcelona, PSG, Liverpool, Arsenal, Inter, Juventus, Napoli,
+Atlético, Leverkusen, Dortmund, Leipzig, Benfica, Porto, Sporting, Braga,
+Ajax, PSV, Feyenoord, AZ, Twente, Lens, Flamengo, Palmeiras, River y Boca.
+Se evalúan sus partidos oficiales de cada temporada en que jugaron un torneo
+internacional de clubes: 3.574 favoritos por nivel.
+
+| Variante (contra el nivel) | Marca | Falla con / sin | Diferencia (IC 95 %) | Por época |
+|---|---|---|---|---|
+| 5 en −1,5 (la fijada) | 0,8 % (30) | 40,0 / 34,1 % | +2,3 (−14,9 a +17,3) | sin muestra |
+| 3 en −1,0 | 3,5 % | 35,4 / 34,1 % | −1,9 (−9,5 a +5,2) | −11,3 y +8,7 (al revés) |
+| 5 en −1,0 | 3,1 % | 38,4 / 34,0 % | +0,8 (−9,1 a +9,5) | −3,4 y +5,9 |
+
+En un grande la mala racha contra su nivel casi no pasa (30 casos en cinco
+años) y, cuando pasa, no separa. **El City no es un caso de esta señal**: su
+nivel bajó de 4,08 (14/10) a 3,11 (04/11) y ante Fulham y Napoli ya no era
+favorito por nivel (menos de 0,5 de ventaja). El nivel y el motor (49 %) lo
+bajaron; la casa lo sostuvo en 69 y 75 %, y el número publicado siguió a la
+casa (6-B).
+
 **Lectura**: el que viene fallándole a su nivel gana lo que dice su nivel
 (el nivel ya baja con la mala racha). Contra la casa queda la pista de tres
 meses, sin muestra para decidir. No entra al semáforo ni a la alerta. Se

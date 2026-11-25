@@ -37,6 +37,7 @@ casos (sí cuentan en la ventana: son partidos que el equipo jugó). Lee, no
 escribe.
 
     python -m backend.backtest_favorito_falla --padron [--anos 5] [--json salida.json]
+    python -m backend.backtest_favorito_falla --padron --grandes 3.0 --temporada-internacional
     python -m backend.backtest_favorito_falla --desde-dir carpeta [--anos 5]
       (carpeta: c/<id>.json de /constantes, n/<id>.json de /niveles,
        ligas.json {id: nombre} de /ligas/{id} y, si hay, cuotas.json
@@ -113,6 +114,7 @@ def partidos(historias: dict[int, dict], nivel_rival=None) -> dict[int, list[dic
                 rival = None
             gf, gc = int(f["golesFavor"]), int(f["golesContra"])
             lista.append({"fixtureId": f["fixtureId"], "fecha": fecha[:10], "liga": f.get("ligaId"), "rival": rid,
+                          "temporada": f.get("temporada"), "internacional": bool(f.get("esInternacional")),
                           "local": f["condicion"] == "Local", "gana": gf > gc,
                           "nivel": propio, "ventaja": (propio - rival) if propio is not None and rival is not None else None})
         out[t] = lista
@@ -171,6 +173,7 @@ def casos(historias: dict[int, dict], cuotas: dict | None = None, excluir: set |
                     rcv = [r for f, r in rc if f >= lim]
                     out.append({
                         "fixtureId": p["fixtureId"], "team": t, "fecha": p["fecha"], "liga": p["liga"],
+                        "temporada": p["temporada"],
                         "local": p["local"], "gana": p["gana"], "ventaja": p["ventaja"], "nivel": p["nivel"],
                         "porNivel": por_nivel, "p": pc, "porCasa": por_casa,
                         "nivel5": sum(rn) if len(rn) == 5 else None,
@@ -185,6 +188,59 @@ def casos(historias: dict[int, dict], cuotas: dict | None = None, excluir: set |
                 pendientes.append(("c", (p["fecha"], (1 if p["gana"] else 0) - pc)))
     out.sort(key=lambda x: (x["fecha"], x["fixtureId"]))
     return out
+
+
+# ── el grupo: grandes en temporada internacional (25/11/2026) ─────────────────
+# El usuario: «córrelo solo con equipos grandes y en temporadas de torneos
+# internacionales». GRANDE es del equipo, no del momento: su nivel MEDIANO en
+# los años evaluados (el City entró a Napoli con 2,93 en plena mala racha y su
+# mediana es 3,67). Es una clasificación del grupo, no un rasgo previo del
+# partido: no entra a la señal. TEMPORADA INTERNACIONAL: la `temporada` en la
+# que el equipo jugó al menos un partido de torneo internacional de clubes
+# (`esInternacional`: Champions, Libertadores, Mundial de Clubes…); entran
+# todos sus partidos oficiales de esa temporada, liga incluida.
+
+# El nivel es relativo a la liga: con el corte solo, La Fiorita (San Marino),
+# Kauno Žalgiris o Lincoln Red Imps eran «grandes». Grande es además jugar en
+# una liga grande: la liga principal del equipo (la más frecuente de sus
+# oficiales, sin torneos internacionales ni copas) está en esta lista.
+LIGAS_GRANDES = {
+    39: "Premier League", 140: "La Liga", 135: "Serie A", 78: "Bundesliga", 61: "Ligue 1",
+    94: "Primeira Liga", 88: "Eredivisie", 71: "Brasil - Serie A", 128: "Argentina - Liga Profesional",
+}
+
+
+def liga_principal(h: dict, desde: str = "") -> int | None:
+    from collections import Counter
+    # sin mirar copas: la liga siempre tiene más partidos que la copa
+    c = Counter(f.get("ligaId") for f in h["filas"] if str(f.get("fecha") or "")[:10] >= desde
+                and not f.get("esInternacional") and f.get("ligaId") not in AMISTOSOS)
+    return c.most_common(1)[0][0] if c else None
+
+
+def grandes(historias: dict[int, dict], corte: float, desde: str = "", ligas=LIGAS_GRANDES) -> set[int]:
+    out = set()
+    for t, h in historias.items():
+        nv = sorted(float(n["nivel"]) for n in h.get("niveles") or [] if str(n["fecha"])[:10] >= desde)
+        if len(nv) >= 50 and nv[len(nv) // 2] >= corte and (ligas is None or liga_principal(h, desde) in ligas):
+            out.add(t)
+    return out
+
+
+def temporadas_internacionales(historias: dict[int, dict]) -> set[tuple[int, int]]:
+    return {(t, f["temporada"]) for t, h in historias.items() for f in h["filas"]
+            if f.get("esInternacional") and f.get("temporada") is not None and f.get("ligaId") not in AMISTOSOS}
+
+
+def filtrar(cs: list[dict], historias: dict[int, dict], corte: float | None, internacional: bool,
+            desde: str = "") -> list[dict]:
+    if corte is not None:
+        g = grandes(historias, corte, desde)
+        cs = [c for c in cs if c["team"] in g]
+    if internacional:
+        ti = temporadas_internacionales(historias)
+        cs = [c for c in cs if (c["team"], c["temporada"]) in ti]
+    return cs
 
 
 # ── la cuenta ────────────────────────────────────────────────────────────────
@@ -327,7 +383,7 @@ def _desde(anos: int, hoy: date | None = None) -> str:
         return (h.replace(month=2, day=28, year=h.year - anos)).isoformat()
 
 
-def correr_padron(anos: int = ANOS) -> dict:
+def correr_padron(anos: int = ANOS, corte: float | None = None, internacional: bool = False) -> dict:
     os.environ.setdefault("SAD_SIN_HILOS", "1")
     from backend.backtest_burbuja import nivel_rival_previo
     from backend.backtest_burbuja_1x2 import cuotas_1x2
@@ -338,13 +394,15 @@ def correr_padron(anos: int = ANOS) -> dict:
                   if f.get("ligaId") not in AMISTOSOS and f.get("golesFavor") is not None})
     cuotas = cuotas_1x2(fxs)
     excluir = _copas(fxs)
-    r = evaluar(casos(historias, cuotas, excluir, nivel_rival_previo, _desde(anos)))
-    r.update({"equipos": len(historias), "partidosConCuota": len(cuotas), "copasNacionalesFuera": len(excluir),
-              "anos": anos})
+    cs = filtrar(casos(historias, cuotas, excluir, nivel_rival_previo, _desde(anos)), historias, corte,
+                 internacional, _desde(anos))
+    r = evaluar(cs)
+    r.update({"equipos": len({c["team"] for c in cs}), "partidosConCuota": len(cuotas),
+              "copasNacionalesFuera": len(excluir), "anos": anos, "grandes": corte, "temporadaInternacional": internacional})
     return r
 
 
-def correr_dir(carpeta: str, anos: int = ANOS) -> dict:
+def correr_dir(carpeta: str, anos: int = ANOS, corte: float | None = None, internacional: bool = False) -> dict:
     from backend.analisis.escala import es_copa_nacional
     from backend.backtest_dc_record import historias_desde_dir
     try:
@@ -366,9 +424,11 @@ def correr_dir(carpeta: str, anos: int = ANOS) -> dict:
                 inv = [1 / o["1"], 1 / o["X"], 1 / o["2"]]
                 tot = sum(inv)
                 cuotas[int(fx)] = (inv[0] / tot, inv[1] / tot, inv[2] / tot)
-    r = evaluar(casos(historias, cuotas, excluir, None, _desde(anos)))
-    r.update({"equipos": len(historias), "partidosConCuota": len(cuotas), "copasNacionalesFuera": len(excluir),
-              "anos": anos, "ligasSinNombre": sum(1 for v in nombres.values() if not v)})
+    cs = filtrar(casos(historias, cuotas, excluir, None, _desde(anos)), historias, corte, internacional, _desde(anos))
+    r = evaluar(cs)
+    r.update({"equipos": len({c["team"] for c in cs}), "partidosConCuota": len(cuotas),
+              "copasNacionalesFuera": len(excluir), "anos": anos, "grandes": corte, "temporadaInternacional": internacional,
+              "ligasSinNombre": sum(1 for v in nombres.values() if not v)})
     return r
 
 
@@ -415,12 +475,15 @@ def main() -> None:
     ap.add_argument("--padron", action="store_true", help="historias, niveles y cuotas del padrón (en el servidor)")
     ap.add_argument("--desde-dir", help="carpeta con c/, n/, ligas.json y cuotas.json bajados de la API")
     ap.add_argument("--anos", type=int, default=ANOS, help=f"años hacia atrás que se evalúan (por defecto {ANOS})")
+    ap.add_argument("--grandes", type=float, help="solo equipos con nivel MEDIANO del período en este corte o más (p. ej. 3.0)")
+    ap.add_argument("--temporada-internacional", action="store_true",
+                    help="solo las temporadas en que el equipo jugó un torneo internacional de clubes")
     ap.add_argument("--json", help="guardar el resumen en este archivo")
     a = ap.parse_args()
     if a.desde_dir:
-        r = correr_dir(a.desde_dir, a.anos)
+        r = correr_dir(a.desde_dir, a.anos, a.grandes, a.temporada_internacional)
     elif a.padron:
-        r = correr_padron(a.anos)
+        r = correr_padron(a.anos, a.grandes, a.temporada_internacional)
     else:
         ap.error("falta --padron (en el servidor) o --desde-dir")
     _imprimir(r)
