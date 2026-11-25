@@ -845,6 +845,59 @@ aunque la casa diga otra cosa. Si no, sabremos que leemos mal y qué arreglar
 en la lectura. Y se revisan con eso las reglas de anclaje v4.1-v4.5 (DEUDA
 42), que se justificaron por el error de los números, no por el acierto.
 
+## El favorito que viene fallando (25/11/2026)
+
+El caso: Manchester City ganó 1 de 7 (24/10 → 24/11) con la casa dándole
+entre 55 y 75 % en cada uno, y el sistema no marcó nada. La alerta
+DESCONFIAR no podía encenderse: SOBRE-LA-CASA pide nuestro número 2+ puntos
+sobre la casa y 6-B lo pega a ella; BURBUJA-DE-UN-PARTIDO pide una racha +.
+Lo demás empujaba al rebote: la regresión al nivel decía «gap fuerte ·
+mejora» (+0,88 ante Fulham, +0,70 ante Napoli) y la burbuja «−» con riesgo
+alto decía que la racha de no ganar se cortaba.
+
+Lo que se descartó antes, sobre los 410 partes cerrados desde el 28/10 (160
+favoritos de la casa con 50 %+, sin copas):
+
+| Señal | n con | Gana con | Casa decía | Lectura |
+|---|---|---|---|---|
+| motor 15+ pts bajo la casa | 80 | 80,0 % | 69,6 % | al revés: gana MÁS |
+| ciego 10+ pts bajo la casa | 17 | 82,4 % | 67,8 % | al revés |
+| el analista «dudo» | 43 | 69,8 % | 65,0 % | no separa (−4,4, IC −20 a +10) |
+
+**La señal, fijada antes de mirar**: el residuo de los últimos 5 partidos
+oficiales del favorito (victorias − victorias esperadas) en −1,5 o menos.
+
+- **Contra la cuota de cada previo** (1.890 favoritos con cuota, agosto →
+  24/11): ganó el 51 % contra el 61 % que decía la casa, n 49, −14 pts con
+  IC −28,6 a 0,0. En el City habría marcado Fulham y Napoli. Pista, no
+  prueba: tres meses de cuotas, con el hueco del 18/09 al 11/10.
+- **Contra el nivel, 5 años** (pedido del usuario;
+  `backend/backtest_favorito_falla.py --desde-dir`, 1.595 equipos de las
+  ligas con cuota bajados por la API, 38.054 favoritos por nivel del
+  25/11/2021 al 24/11/2026, 10.850 partidos de copa nacional fuera): **no
+  separa**.
+
+| Variante (contra el nivel) | Marca | Falla con / sin | Diferencia (IC 95 %) |
+|---|---|---|---|
+| 5 en −1,5 (la fijada) | 2,9 % | 51,1 / 50,0 % | −1,3 (−4,5 a +1,6) |
+| 3 en −1,0 | 8,0 % | 52,0 / 49,9 % | +0,3 (−1,5 a +1,8) |
+| 5 en −1,0 | 8,1 % | 51,3 / 49,9 % | −0,8 (−2,4 a +1,1) |
+| espejo: 5 en +1,5 | 16,2 % | 47,5 / 50,5 % | −0,1 (−1,8 a +1,6) |
+
+Diferencia = cuánto más NO gana el favorito con la señal que los sin señal
+de su mismo tramo fino de ventaja y condición. Ninguna variante separa ni
+se repite por época; las ligas no se inclinan (la de 3: 20 en el sentido,
+19 al revés). El test planta una crisis y la detecta, así que con este
+tamaño un efecto de 5 puntos se habría visto. Lo único que asoma es el
+gigante (nivel 3,5+ y 1,0+ de ventaja): +8,0 pts con la de 5 en −1,0 (IC
+−0,8 a +17,3, unos 120 casos); se miró después y no es una regla.
+
+**Lectura**: el que viene fallándole a su nivel gana lo que dice su nivel
+(el nivel ya baja con la mala racha). Contra la casa queda la pista de tres
+meses, sin muestra para decidir. No entra al semáforo ni a la alerta. Se
+re-corre contra la casa (`--padron` en el servidor, que tiene todas las
+cuotas) cuando haya seis meses de cuotas sin hueco.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

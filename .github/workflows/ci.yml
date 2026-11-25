@@ -85,6 +85,7 @@ jobs:
           python -m backend.test_backtest_dc_record
           python -m backend.test_backtest_forma_cuota
           python -m backend.test_backtest_rival_resiste
+          python -m backend.test_backtest_favorito_falla
           python -m backend.test_backtest_margen
           python -m backend.test_backtest_semaforo_burbujas
           python -m backend.test_backtest_reventon_cruzado
