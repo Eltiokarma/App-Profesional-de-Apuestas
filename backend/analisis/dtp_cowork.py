@@ -2347,6 +2347,38 @@ def avisos_vacios(dtp: dict, nombres: dict) -> list[dict]:
     return out
 
 
+def _ver(v) -> str:
+    return " ".join(str(v or "").upper().split())
+
+
+def avisos_veredicto_ramas(dtp: dict, nombres: dict) -> list[dict]:
+    """M2-VEREDICTO-VS-RAMAS (25/11/2026, incidencia 1504, Galatasaray–Aston
+    Villa 1635667: el bloque del Villa decía `veredicto` FAVORABLE con sus dos
+    ramas NEUTRO, y nada lo marcó). La DTP v1.8, aprobada el 10/11, pidió el
+    aviso del `veredicto` distinto de la rama más probable; cuando las DOS
+    ramas dicen lo mismo, cualquiera es la más probable y el único no puede
+    decir otra cosa. Aviso del recibo, sin rechazo: el veredicto del partido
+    juzga la rama jugada, así que el único se lee como resumen."""
+    out = []
+    for b in (dtp or {}).get("bloques") or []:
+        m2 = ((b.get("apertura") or {}).get("m2") or {})
+        ramas = m2.get("veredictoRamas") or {}
+        de_ramas = {_ver((ramas.get(r) or {}).get("veredicto")) for r in ("igualadoOArriba", "persiguiendo")}
+        unico = _ver(m2.get("veredicto"))
+        if len(de_ramas) != 1 or "" in de_ramas or not unico:
+            continue
+        rama = de_ramas.pop()
+        if unico != rama:
+            lado = b.get("equipo") or ""
+            out.append({"bloque": f"dtp.{lado}", "codigo": "M2-VEREDICTO-VS-RAMAS",
+                        "costara": (f"{nombres.get(lado, lado)}: `m2.veredicto` dice {unico} y las dos ramas "
+                                    f"(igualadoOArriba y persiguiendo) dicen {rama}: el resumen contradice a las "
+                                    "dos lecturas que se juzgan (DTP v1.8, punto 2)"),
+                        "comoSeArregla": (f"o el único pasa a {rama}, o la rama que lo sostiene cambia su "
+                                          "veredicto con la razón por renglón; re-depositar el bloque entero")})
+    return out
+
+
 def avisos_v16(dtp: dict, fx, nombres: dict) -> list[dict]:
     """DTP v1.6, avisos del recibo (sin rechazo):
     · M1-VS-ULTIMO-ONCE (cambio 3): `m1.sistema` distinto de la formación del
