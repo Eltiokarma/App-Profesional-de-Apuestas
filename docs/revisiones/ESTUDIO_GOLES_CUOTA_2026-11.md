@@ -138,8 +138,54 @@ Lo único que la app agrega de verdad, por ahora, está en el 1X2: las dos
 alertas de las burbujas (DESCONFIAR y el riesgo alto del elegido), que suben
 el acierto del elegido de 74,9 % a 79,2 % en los partidos de 55 % o más
 («El número, no el color», en
-`docs/METODO_APUESTA.md`); para los goles, en cambio, no apareció ninguna
-señal equivalente.
+`docs/METODO_APUESTA.md`). Para los goles, las constantes y las rachas no
+dieron nada, pero la forma 1X2 sí marca dónde no apostar: el partido parejo
+(sección 5).
+
+## 5. Apostar a goles: aciertan mucho, pero la cuota lo cobra
+
+El usuario lo leyó bien: esto no es una señal más para el 1X2, sino otro
+mercado donde apostar. Se midió cómo le habría ido a una apuesta de goles por
+tramo, a 1 unidad y con la cuota media que pagaban las casas (con su margen),
+sobre los 4.343 partidos con cuota de goles:
+
+| Apuesta | Partidos | Acertó (dos mitades) | La cuota pide | Apuesta plana |
+|---|---|---|---|---|
+| Más de 2,5 con la casa en 60 %+ | 1.133 | 68 % (69 / 68) | 71 % | −4,6 % |
+| Más de 2,5 con la casa en 70 %+ | 236 | 75 % (73 / 76) | 80 % | −6,8 % |
+| Menos de 2,5 con la casa bajo 40 % | 375 | 65 % (63 / 71) | 69 % | −6,1 % |
+| Ambos marcan (sí) con la casa en 60 %+ | 706 | 62 % (63 / 60) | 69 % | −10,5 % |
+| Ambos marcan (no) con la casa bajo 40 % | 201 | 57 % (55 / 60) | 68 % | −15,7 % |
+
+En goles la casa está tan bien calibrada que su margen se come la ganancia.
+Con los favoritos del 1X2 pasa otra cosa: la casa se queda corta (cuando dice
+60-65 %, el favorito gana el 73 %), y por eso «Método 55 %+» deja plata y una
+regla igual en goles no.
+
+**Dónde no apostar a goles.** Para que una apuesta de goles gane, el acierto
+tiene que subir unos 3 o 4 puntos sobre lo que pide la cuota, igual que las
+alertas lo hacen con el 1X2. Se probaron cinco filtros fijados antes de mirar,
+sobre «más de 2,5 con la casa en 60 %+» (1.076 partidos con la historia de los
+dos equipos):
+
+| Además de la casa en 60 %+ | Partidos | Acertó (dos mitades) | La cuota pide | Apuesta plana |
+|---|---|---|---|---|
+| nada | 1.076 | 68 % (68 / 67) | 71 % | −4,5 % |
+| **partido parejo en el 1X2 (nadie llega a 50 %)** | 263 | **60 % (59 / 61)** | 68 % | **−12,4 %** |
+| favorito muy fuerte en el 1X2 (65 %+) | 496 | 71 % (73 / 70) | 73 % | −2,3 % |
+| rachas de goles (tres variantes) | 147 a 391 | 66-68 % | 69-72 % | −4 a −8 % |
+
+Cuando la casa espera muchos goles pero el 1X2 sale parejo, el «más de 2,5»
+falla bastante más, y pasa igual en las dos mitades. Es la hipótesis de la
+forma funcionando donde sirve: no para predecir los goles, que la cuota de
+goles ya predice, sino para marcar dónde no apostar a goles. Con el favorito
+muy fuerte, la apuesta queda casi a la par, todavía sin ganancia.
+
+**El más de 1,5**, que la ingesta no guarda (solo se captura la línea de 2,5),
+pasó el 86 % de las veces cuando la casa le daba 65 % o más al «más de 2,5»,
+y el 82 % en el tramo de 55-65 %. Sin su cuota no se puede saber si deja
+plata; capturarla no gasta requests de la API (llega en la misma consulta de
+`/odds`), pero agranda las tablas de cuotas de `sad.db`.
 
 ## Reservas
 
