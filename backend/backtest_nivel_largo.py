@@ -127,32 +127,60 @@ def _probs(beta: list[list[float]], x: list[float]) -> list[float]:
     return [el / s, ee / s, ev / s]
 
 
-def ajustar(filas: list[dict], var: str, iters: int = 25) -> list[list[float]]:
-    import numpy as np
-    X = np.array([_x(r, var) for r in filas])
-    y = np.array([r["res"] for r in filas])
-    k = X.shape[1]
-    beta = np.zeros(2 * k)
-    Y = np.stack([(y == 0), (y == 2)], axis=1).astype(float)
+def _resolver(A: list[list[float]], b: list[float]) -> list[float]:
+    """A·x = b por eliminación de Gauss con pivoteo parcial (sistemas chicos)."""
+    n = len(b)
+    M = [fila[:] + [bi] for fila, bi in zip(A, b)]
+    for c in range(n):
+        piv = max(range(c, n), key=lambda r: abs(M[r][c]))
+        M[c], M[piv] = M[piv], M[c]
+        if abs(M[c][c]) < 1e-15:
+            continue
+        for r in range(c + 1, n):
+            f = M[r][c] / M[c][c]
+            if f:
+                for k in range(c, n + 1):
+                    M[r][k] -= f * M[c][k]
+    x = [0.0] * n
+    for c in range(n - 1, -1, -1):
+        if abs(M[c][c]) < 1e-15:
+            continue
+        x[c] = (M[c][n] - sum(M[c][k] * x[k] for k in range(c + 1, n))) / M[c][c]
+    return x
+
+
+def ajustar(filas: list[dict], var: str, iters: int = 25, ridge: float = 1e-6) -> list[list[float]]:
+    """Logística multinomial por Newton, SIN numpy (CI y la imagen no lo traen):
+    local y visita contra el empate, con las variables de `_x`."""
+    X = [_x(r, var) for r in filas]
+    k = len(X[0])
+    q = 2 * k
+    beta = [0.0] * q
     for _ in range(iters):
-        B = beta.reshape(2, k)
-        Z = X @ B.T
-        m = np.maximum(0, Z.max(axis=1, keepdims=True))
-        E = np.exp(Z - m)
-        den = np.exp(-m) + E.sum(axis=1, keepdims=True)
-        P = E / den
-        g = ((Y - P).T @ X).reshape(-1) - 1e-6 * beta
-        H = np.zeros((2 * k, 2 * k))
-        for i in range(2):
-            for j in range(2):
-                w = P[:, i] * ((1.0 if i == j else 0.0) - P[:, j])
-                H[i * k:(i + 1) * k, j * k:(j + 1) * k] = -(X * w[:, None]).T @ X
-        H -= 1e-6 * np.eye(2 * k)
-        paso = np.linalg.solve(H, g)
-        beta = beta - paso
-        if np.abs(paso).max() < 1e-9:
+        g = [0.0] * q
+        H = [[0.0] * q for _ in range(q)]
+        for x, r in zip(X, filas):
+            pl, _pe, pv = _probs([beta[:k], beta[k:]], x)
+            rl, rv = (r["res"] == 0) - pl, (r["res"] == 2) - pv
+            wll, wvv, wlv = pl * (1 - pl), pv * (1 - pv), -pl * pv
+            for i in range(k):
+                xi = x[i]
+                g[i] += rl * xi
+                g[k + i] += rv * xi
+                for j in range(k):
+                    xx = xi * x[j]
+                    H[i][j] += wll * xx
+                    H[k + i][k + j] += wvv * xx
+                    H[i][k + j] += wlv * xx
+                    H[k + i][j] += wlv * xx
+        for i in range(q):
+            g[i] -= ridge * beta[i]
+            H[i][i] += ridge
+        paso = _resolver(H, g)
+        beta = [b + d for b, d in zip(beta, paso)]
+        if max(abs(d) for d in paso) < 1e-9:
             break
-    return beta.reshape(2, k).tolist()
+    return [beta[:k], beta[k:]]
 
 
 def _metricas(filas: list[dict], var: str, beta) -> list[tuple[float, float, int]]:
