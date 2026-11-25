@@ -2205,11 +2205,12 @@ components:
           description: >
             EL SEMÁFORO CALIBRADO POR RAZONES (25/11/2026, backend/backtest_semaforo_razones.py, docs/METODO_APUESTA.md):
             cada razón previa del parte pesa log(frecuencia en los verdes perdidos / en los ganados); verde con
-            `puntaje` ≥ `corte` → amarillo; amarillo con puntaje < corte → verde; rojo se queda (`confirmado` dice si
-            las razones lo acompañan). null sin el parte enriquecido.
+            `puntaje` ≥ `corteRojo` → rojo y ≥ `corte` → amarillo; amarillo con puntaje ≥ corte → rojo y < corte →
+            verde; rojo se queda (`confirmado` dice si las razones lo acompañan). null sin el parte enriquecido.
           properties:
             puntaje: { type: number }
-            corte: { type: number }
+            corte: { type: number, description: 'desde acá un verde baja a amarillo y un amarillo sube a rojo' }
+            corteRojo: { type: number, description: 'desde acá un verde baja directo a rojo' }
             cambio: { type: boolean, description: 'el color calibrado es distinto del de las espinas' }
             confirmado: { type: boolean, nullable: true, description: 'las razones sostienen el color de las espinas' }
             contra:

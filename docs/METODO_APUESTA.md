@@ -986,33 +986,54 @@ espina del elegido se apoya en «una racha de un partido» (23 contra 15). A
 favor: el motor 20+ puntos bajo lo publicado (los favoritos claros),
 DIV-MOTOR-MERCADO y G-SORPRESA sobre el elegido.
 
-**La regla** (`semaforo.calibrar`): verde con puntaje ≥ corte → amarillo;
-amarillo con puntaje < corte → verde (las razones no lo confirman); rojo se
-queda rojo y `confirmado` dice si las razones lo acompañan.
+**La regla, con todas las combinaciones** (`semaforo.calibrar`; el usuario: «¿y
+le bajaste el peso a los amarillos que eran rojo? o a los verdes que eran
+amarillo?… toda esa combinación de colores»). Dos cortes sobre el puntaje de
+los verdes: `CORTE` (el cuarto con más razones en contra) y `CORTE_ROJO` (el
+10 % con más).
 
-**Comprobación** (pesos y corte aprendidos con los verdes hasta el 04/11,
-medido en los 425 partes posteriores, que no se usaron):
+- verde con puntaje ≥ `CORTE_ROJO` → **rojo**; ≥ `CORTE` → **amarillo**;
+- amarillo con puntaje ≥ `CORTE` → **rojo** (las razones lo confirman); por
+  debajo → **verde** (no lo confirman);
+- rojo → rojo; `confirmado` dice si las razones lo acompañan. Por tramo hay
+  de 2 a 13 rojos y se contradicen: no hay con qué moverlo.
+
+**Cada combinación** (color de las espinas × tramo de razones en contra; pesos
+aprendidos con los verdes hasta el 04/11):
+
+| Combinación | Aprendizaje | Comprobación | Decíamos |
+|---|---|---|---|
+| verde · sin razones en contra | 78,9 % (161) | 70,3 % (185) | 57-61 % |
+| verde · bajo el corte | 56,2 % (146) | 47,6 % (126) | 49 % |
+| verde · sobre el corte | 43,5 % (62) | 47,9 % (48) | 45-46 % |
+| verde · muy alto | **14,6 %** (41) | **27,8 %** (18) | 42 % |
+| amarillo · bajo el corte | 56,0 % (25) | 50,0 % (10) | 39-47 % |
+| amarillo · sobre el corte | **33,3 %** (12) | **36,4 %** (11) | 40-42 % |
+| sin dato (partes viejos sin espina) · de menos a más | 65,5 · 55,4 · 47,1 · 28,6 % | — | 53 → 42 % |
+
+Los partes «sin dato» no se usaron para pesar y repiten la misma escalera.
+
+**Comprobación** (los 425 partes desde el 04/11, que no se usaron):
 
 | Color | Hoy (espinas) | Calibrado |
 |---|---|---|
 | 🟢 verde | 218/377 = 57,8 % | 197/323 = **61,0 %** |
-| 🟡 amarillo | 11/23 = 47,8 % · marca 5 % · 6 % de las derrotas | 32/77 = **41,6 %** · marca 18 % · **24 %** de las derrotas |
-| 🔴 rojo | 9/25 = 36,0 % | 9/25 = 36,0 % |
+| 🟡 amarillo | 11/23 = 47,8 % · marca 5 % · 6 % de las derrotas | 23/48 = **47,9 %** · marca 11 % · 13 % de las derrotas |
+| 🔴 rojo | 9/25 = 36,0 % · marca 6 % · 9 % de las derrotas | 18/54 = **33,3 %** · marca 13 % · **19 %** de las derrotas |
 
 Los amarillos de las espinas, que los pesos no vieron: con razones ganó el
 40,6 % (13 de 32) y sin ellas el 55,0 % (22 de 40), y en los dos grupos
-decíamos lo mismo (41-42 %). Los rojos no se confirman con las razones (40
-contra 35 %, 33 partidos): el rojo se sostiene por su espina sola.
+decíamos lo mismo (41-42 %).
 
 **Reserva**: descontado lo que decíamos, la ventaja del amarillo calibrado es
 de unos 8 puntos y su intervalo cruza el cero en los verdes; la del amarillo
 sobre los amarillos no vistos es la más firme. El City no se caza: sus verdes
-perdidos suman entre −2,9 y +1,5 contra un corte de 2,26, y el calibrado
-habría pasado a amarillo el 5-1 al AEK.
+perdidos suman entre −2,9 y +1,5 contra un corte de 2,26 (el del rojo es
+4,16), y el calibrado habría pasado a amarillo el 5-1 al AEK.
 
 **Dónde vive**: `/analisis/semaforo` (el chip de la web) calibra con el parte
 enriquecido (`parte.dto`) y trae `estadoBase` (el de las espinas) y
-`calibrado` {puntaje, corte, cambio, confirmado, contra, aFavor}; el parte
+`calibrado` {puntaje, corte, corteRojo, cambio, confirmado, contra, aFavor}; el parte
 muestra las razones escritas bajo el chip. La serie fija de la simulación
 (`metodoVerde`, el criterio por escalones desde el 13/11) sigue con el color
 de las espinas. Recalibrar = bajar los partes y correr

@@ -945,7 +945,7 @@ class MockDataSource implements SadDataSource {
         // de muestra: uno de cada ocho verdes de las espinas baja a amarillo por las razones (25/11/2026)
         estadoBase: caso === 0 ? 'confirma' : caso === 1 ? 'duda' : caso === 2 ? 'noApostar' : 'sinDato',
         calibrado: caso === 3 ? null : {
-          puntaje: fid % 8 === 0 ? 3.1 : 0.8, corte: 2.264, cambio: fid % 8 === 0, confirmado: fid % 8 !== 0,
+          puntaje: fid % 8 === 0 ? 3.1 : 0.8, corte: 2.264, corteRojo: 4.16, cambio: fid % 8 === 0, confirmado: fid % 8 !== 0,
           contra: [
             { codigo: 'EMPATE-27+', texto: 'le dimos al empate 27 % o más (partido parejo)', peso: 0.52 },
             { codigo: 'DTP-NEUTRO', texto: 'el DTP no favorece a ningún lado', peso: 0.5 },

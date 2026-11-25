@@ -60,8 +60,10 @@ pesos = bt.aprender([x for x in fs if x["base"] == "confirma"])
 check("aprende la razón plantada con peso positivo", pesos.get("AL-X@ELEGIDO", 0) > 0.5, pesos)
 check("y no le da peso al ruido", abs(pesos.get("AL-RUIDO@RIVAL", 0)) < bt.MIN_PESO or "AL-RUIDO@RIVAL" not in pesos, pesos)
 cal = r["comprobacionTabla"]["calibrado"]
-check("comprobación: el amarillo calibrado gana menos que el verde calibrado",
-      cal["amarillo"]["tasa"] < cal["verde"]["tasa"] - 0.1, cal)
+no_verde = [cal[c] for c in ("amarillo", "rojo") if c in cal]
+tasa_nv = sum(c["gana"] for c in no_verde) / max(1, sum(c["n"] for c in no_verde))
+check("comprobación: lo que deja de ser verde (amarillo o rojo) gana menos que el verde calibrado",
+      no_verde and tasa_nv < cal["verde"]["tasa"] - 0.1, cal)
 am = r["amarillosConPesosDelVerde"]
 check("los amarillos (no vistos) con la razón ganan menos que sin ella",
       am["conRazones"]["amarillo"]["tasa"] < am["sinRazones"]["amarillo"]["tasa"], am)
@@ -75,8 +77,11 @@ check("sin efecto: el amarillo calibrado no gana claramente menos que el verde",
 
 # 3. La tabla para semaforo.py
 t = bt.tabla(fs)
-check("la tabla trae CALIBRACION, CORTE y PESOS listos para pegar",
-      t.startswith("CALIBRACION = {") and "\nCORTE = " in t and '"AL-X@ELEGIDO":' in t, t[:200])
+check("la tabla trae CALIBRACION, CORTE, CORTE_ROJO y PESOS listos para pegar",
+      t.startswith("CALIBRACION = {") and "\nCORTE = " in t and "\nCORTE_ROJO = " in t and '"AL-X@ELEGIDO":' in t, t[:200])
+check("todas las combinaciones de color y tramo, en las dos etapas",
+      any(k.startswith("verde · ") for k in r["combinaciones"]) and any(k.startswith("amarillo · ") for k in r["combinaciones"]),
+      list(r["combinaciones"])[:4])
 
 print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLA(S)'}")
 sys.exit(1 if fallos else 0)

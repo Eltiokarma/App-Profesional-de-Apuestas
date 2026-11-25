@@ -164,9 +164,15 @@ def del_parte(parte: dict, mercado=None, dto: dict | None = None) -> dict:
 # partido es la suma. Medido en `backend/backtest_semaforo_razones.py`
 # (docs/METODO_APUESTA.md, «El semáforo calibrado por razones»).
 #
-# - verde con puntaje ≥ CORTE → amarillo (las razones contra el elegido pesan);
+# Todas las combinaciones (usuario: «¿y le bajaste el peso a los amarillos que
+# eran rojo? o a los verdes que eran amarillo?… toda esa combinación»):
+# - verde con puntaje ≥ CORTE_ROJO → ROJO (el 10 % de los verdes con más razones
+#   en contra ganó 15 % y 28 % en las dos etapas, diciendo 42 %);
+# - verde con puntaje ≥ CORTE → amarillo;
+# - amarillo con puntaje ≥ CORTE → ROJO (las razones lo confirman: 33 y 36 %);
 # - amarillo con puntaje < CORTE → verde (las razones no lo confirman);
-# - rojo → rojo; `confirmado` dice si las razones también lo sostienen.
+# - rojo → rojo: por tramo hay de 2 a 13 partidos y se contradicen, no se mueve;
+#   `confirmado` dice si las razones lo acompañan.
 #
 # Los pesos se aprendieron SOLO con los verdes y separaron también los amarillos,
 # que no vieron (con razones ganó 39,5 %, sin ellas 58,8 %, diciendo lo mismo).
@@ -399,12 +405,14 @@ def _texto_razon(codigo: str) -> str:
     return fijos.get(codigo, codigo)
 
 
-def calibrar(base: dict, rz: set[str], pesos: dict | None = None, corte: float | None = None) -> dict:
+def calibrar(base: dict, rz: set[str], pesos: dict | None = None, corte: float | None = None,
+             corte_rojo: float | None = None) -> dict:
     """El color calibrado por las razones (ver arriba). Devuelve lo que se suma al
     semáforo: `estado` (calibrado), `estadoBase`, `calibrado` {puntaje, corte,
     confirmado, contra, aFavor}. `pesos` y `corte` de afuera solo para el backtest."""
     pesos = PESOS if pesos is None else pesos
     corte = CORTE if corte is None else corte
+    corte_rojo = CORTE_ROJO if corte_rojo is None else corte_rojo
     est = base.get("estado")
     con = sorted(((pesos[c], c) for c in rz if pesos.get(c, 0) > 0), reverse=True)
     fav = sorted((pesos[c], c) for c in rz if pesos.get(c, 0) < 0)
@@ -412,14 +420,14 @@ def calibrar(base: dict, rz: set[str], pesos: dict | None = None, corte: float |
     alto = puntaje > 0 and puntaje >= corte   # sin razones en contra nunca baja un verde
     nuevo = est
     if est == "confirma" and alto:
-        nuevo = "duda"
-    elif est == "duda" and not alto and base.get("elegido") in _LADO:
-        nuevo = "confirma"
+        nuevo = "noApostar" if puntaje >= corte_rojo else "duda"
+    elif est == "duda" and base.get("elegido") in _LADO:
+        nuevo = "noApostar" if alto else "confirma"
     fila = lambda w, c: {"codigo": c, "texto": texto_razon(c), "peso": round(w, 2)}  # noqa: E731
     return {
         "estado": nuevo, "estadoBase": est,
         "calibrado": {
-            "puntaje": puntaje, "corte": corte, "cambio": nuevo != est,
+            "puntaje": puntaje, "corte": corte, "corteRojo": corte_rojo, "cambio": nuevo != est,
             "confirmado": alto if est in ("duda", "noApostar") else (not alto if est == "confirma" else None),
             "contra": [fila(w, c) for w, c in con[:5]], "aFavor": [fila(w, c) for w, c in fav[:3]],
             "fuente": CALIBRACION,
@@ -432,6 +440,7 @@ def calibrar(base: dict, rz: set[str], pesos: dict | None = None, corte: float |
 # docs/METODO_APUESTA.md). Recalibrar = correr eso y pegar la salida acá.
 CALIBRACION = {"fecha": "2026-11-25", "partes": 1018, "verdes": 787, "desde": "2026-09-14", "hasta": "2026-11-25"}
 CORTE = 2.264
+CORTE_ROJO = 4.16
 PESOS: dict[str, float] = {
     "AL-DTP-SIN-REFERENCIA@RIVAL": 0.763,
     "AL-G-CLÁSICO@PARTIDO": 0.618,
@@ -484,10 +493,10 @@ PESOS: dict[str, float] = {
     "TXT[espina rival]:tarjeta fuerte": -0.306,
     "TDE-RIVAL-ECHADA-FIS": -0.319,
     "AL-TIPOLOGIA-VS-INDICES@RIVAL": -0.331,
-    "TARJ-RIVAL-negativa-fuerte": -0.338,
     "BURB-RIVAL--RIESGO-bajo": -0.338,
-    "BURB-ELEGIDO+-RIESGO-bajo": -0.365,
+    "TARJ-RIVAL-negativa-fuerte": -0.338,
     "TARJ-ELEGIDO-positiva-fuerte": -0.365,
+    "BURB-ELEGIDO+-RIESGO-bajo": -0.365,
     "AL-ESCALA-LIGAS@PARTIDO": -0.369,
     "FAM-ELEGIDO-RECORD-ambosMarcan": -0.376,
     "TXT[espina rival]:el perfil DC": -0.389,
@@ -508,8 +517,8 @@ PESOS: dict[str, float] = {
     "AL-G-ASCENDIDO@ELEGIDO": -0.629,
     "AL-K-EXTREMO-CONDICION@ELEGIDO": -0.629,
     "AL-TIPOLOGIA-VS-INDICES@ELEGIDO": -0.65,
-    "AL-K-EXTREMO@ELEGIDO": -0.696,
     "BURB-ELEGIDO-EXTREMO": -0.696,
+    "AL-K-EXTREMO@ELEGIDO": -0.696,
     "AL-K-EXTREMO-CONDICION@RIVAL": -0.696,
     "AL-COLAPSO-EN-CASCADA@RIVAL": -0.706,
     "FAM-RIVAL-RECORD-gana3+": -0.758,

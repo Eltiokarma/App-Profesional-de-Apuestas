@@ -2965,7 +2965,10 @@ export interface RazonSemaforo {
 
 export interface SemaforoCalibrado {
   puntaje: number
+  /** desde acá un verde baja a amarillo y un amarillo sube a rojo */
   corte: number
+  /** desde acá un verde baja directo a rojo */
+  corteRojo: number
   /** el color calibrado es distinto del de las espinas */
   cambio: boolean
   /** las razones sostienen el color de las espinas */

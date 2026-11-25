@@ -292,22 +292,27 @@ def main():
     check("razones: el veredicto (posterior al partido) no se lee", not any("acerto" in x.lower() or "VERED" in x for x in rz))
     check("razones: sin elegido local o visita no hay razones (el empate no se calibra)", sem.razones(enriquecido, "empate") == set())
     pesos = {"DTP-NEUTRO": 1.0, "EMPATE-27+": 1.0, "MOTOR-20+BAJO-PUBLICADO": -1.0}
-    v = sem.calibrar({"estado": "confirma", "elegido": "local"}, {"DTP-NEUTRO", "EMPATE-27+"}, pesos, 1.5)
+    v = sem.calibrar({"estado": "confirma", "elegido": "local"}, {"DTP-NEUTRO", "EMPATE-27+"}, pesos, 1.5, 9.0)
     check("verde con razones en contra que pasan el corte → amarillo, con las razones en palabras",
           v["estado"] == "duda" and v["estadoBase"] == "confirma" and v["calibrado"]["cambio"]
           and v["calibrado"]["confirmado"] is False and [r["texto"] for r in v["calibrado"]["contra"]][0].startswith("el DTP")
           or v["calibrado"]["contra"][0]["texto"].startswith("le dimos"), v)
     a = sem.calibrar({"estado": "duda", "elegido": "local"}, {"MOTOR-20+BAJO-PUBLICADO"}, pesos, 1.5)
     check("amarillo que las razones no confirman → verde", a["estado"] == "confirma" and a["calibrado"]["confirmado"] is False, a)
-    a2 = sem.calibrar({"estado": "duda", "elegido": "local"}, {"DTP-NEUTRO", "EMPATE-27+"}, pesos, 1.5)
-    check("amarillo confirmado por las razones sigue amarillo", a2["estado"] == "duda" and a2["calibrado"]["confirmado"] is True, a2)
+    a2 = sem.calibrar({"estado": "duda", "elegido": "local"}, {"DTP-NEUTRO", "EMPATE-27+"}, pesos, 1.5, 9.0)
+    check("amarillo confirmado por las razones → rojo", a2["estado"] == "noApostar" and a2["calibrado"]["confirmado"] is True, a2)
+    vr = sem.calibrar({"estado": "confirma", "elegido": "local"}, {"DTP-NEUTRO", "EMPATE-27+"}, pesos, 1.5, 2.0)
+    check("verde con muchísimas razones en contra (≥ corte del rojo) → rojo",
+          vr["estado"] == "noApostar" and vr["calibrado"]["corteRojo"] == 2.0, vr)
+    va = sem.calibrar({"estado": "confirma", "elegido": "local"}, {"DTP-NEUTRO", "EMPATE-27+"}, pesos, 1.5, 9.0)
+    check("verde sobre el corte pero bajo el del rojo → amarillo", va["estado"] == "duda", va)
     r = sem.calibrar({"estado": "noApostar", "elegido": "local"}, set(), pesos, 1.5)
     check("el rojo se queda rojo aunque las razones no lo confirmen (lo dice `confirmado`)",
           r["estado"] == "noApostar" and r["calibrado"]["confirmado"] is False, r)
     e = sem.calibrar({"estado": "duda", "elegido": "empate"}, set(), pesos, 1.5)
     check("el amarillo del elegido empate no sube a verde", e["estado"] == "duda", e)
     check("la tabla de pesos viene del backtest (fuente, corte y razones con nombre en palabras)",
-          sem.CALIBRACION.get("partes", 0) > 0 and 0 < sem.CORTE < 99 and len(sem.PESOS) > 10
+          sem.CALIBRACION.get("partes", 0) > 0 and 0 < sem.CORTE < sem.CORTE_ROJO < 99 and len(sem.PESOS) > 10
           and all(sem.texto_razon(c) for c in sem.PESOS), sem.CALIBRACION)
 
     print(f"\n{'TODO OK' if not fallos else f'{fallos} FALLA(S)'}")

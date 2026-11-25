@@ -47,6 +47,7 @@ MIN_N = 15
 MIN_PESO = 0.25
 MAX_PREV = 0.80
 CUANTIL_CORTE = 0.75
+CUANTIL_ROJO = 0.90
 FRAC = 0.6
 COLOR = {"confirma": "verde", "duda": "amarillo", "noApostar": "rojo", "sinDato": "sin dato"}
 
@@ -96,15 +97,15 @@ def puntaje(r: dict, pesos: dict) -> float:
     return sum(pesos.get(x, 0.0) for x in r["razones"])
 
 
-def corte_de(verdes: list[dict], pesos: dict) -> float:
+def corte_de(verdes: list[dict], pesos: dict, cuantil: float = CUANTIL_CORTE) -> float:
     ps = sorted(puntaje(r, pesos) for r in verdes)
     if not ps or not pesos:
         return 99.0          # sin pesos no hay razón que mueva un color
-    return round(ps[int(len(ps) * CUANTIL_CORTE)], 3)
+    return round(ps[int(len(ps) * cuantil)], 3)
 
 
-def calibrado(r: dict, pesos: dict, corte: float) -> str:
-    return sem.calibrar({"estado": r["base"], "elegido": r["elegido"]}, r["razones"], pesos, corte)["estado"]
+def calibrado(r: dict, pesos: dict, corte: float, corte_rojo: float = 99.0) -> str:
+    return sem.calibrar({"estado": r["base"], "elegido": r["elegido"]}, r["razones"], pesos, corte, corte_rojo)["estado"]
 
 
 def resumen(g: list[dict], color) -> dict:
@@ -131,11 +132,29 @@ def evaluar(fs: list[dict], frac: float = FRAC) -> dict:
     pru = [r for r in fs if r["fecha"] >= corte_f]
     pesos = aprender([r for r in ent if r["base"] == "confirma"])
     corte = corte_de([r for r in ent if r["base"] == "confirma"], pesos)
+    corte_rojo = corte_de([r for r in ent if r["base"] == "confirma"], pesos, CUANTIL_ROJO)
     out = {"partes": len(fs), "desde": fs[0]["fecha"], "hasta": fs[-1]["fecha"], "corteFecha": corte_f,
-           "aprendizaje": len(ent), "comprobacion": len(pru), "pesosAprendidos": len(pesos), "corte": corte}
+           "aprendizaje": len(ent), "comprobacion": len(pru), "pesosAprendidos": len(pesos), "corte": corte,
+           "corteRojo": corte_rojo}
     for nombre, g in (("aprendizaje", ent), ("comprobacion", pru)):
         out[nombre + "Tabla"] = {"hoy": resumen(g, lambda r: r["base"]),
-                                 "calibrado": resumen(g, lambda r: calibrado(r, pesos, corte))}
+                                 "calibrado": resumen(g, lambda r: calibrado(r, pesos, corte, corte_rojo))}
+    # todas las combinaciones: color de las espinas × tramo del puntaje, en las dos etapas
+    def tramo(p):
+        return ("sin razones en contra" if p <= 0 else "bajo el corte" if p < corte
+                else "sobre el corte" if p < corte_rojo else "muy alto")
+    comb = {}
+    for est, nombre in COLOR.items():
+        for t in ("sin razones en contra", "bajo el corte", "sobre el corte", "muy alto"):
+            fila = {}
+            for et, g in (("aprendizaje", ent), ("comprobacion", pru)):
+                h = [r for r in g if r["base"] == est and tramo(puntaje(r, pesos)) == t]
+                if h:
+                    fila[et] = {"n": len(h), "tasa": round(sum(r["gana"] for r in h) / len(h), 4),
+                                "decíamos": round(sum(r["pe"] for r in h if r["pe"] is not None) / len(h) / 100, 4)}
+            if fila:
+                comb[f"{nombre} · {t}"] = fila
+    out["combinaciones"] = comb
     # los amarillos y rojos de TODO el período con los pesos de los verdes del aprendizaje
     for est, nombre in (("duda", "amarillos"), ("noApostar", "rojos")):
         g = [r for r in fs if r["base"] == est]
@@ -150,9 +169,10 @@ def tabla(fs: list[dict]) -> str:
     v = [r for r in fs if r["base"] == "confirma"]
     pesos = aprender(v)
     corte = corte_de(v, pesos)
+    corte_rojo = corte_de(v, pesos, CUANTIL_ROJO)
     lineas = [f'CALIBRACION = {{"fecha": "{fs[-1]["fecha"]}", "partes": {len(fs)}, "verdes": {len(v)}, '
               f'"desde": "{fs[0]["fecha"]}", "hasta": "{fs[-1]["fecha"]}"}}',
-              f"CORTE = {corte}", "PESOS: dict[str, float] = {"]
+              f"CORTE = {corte}", f"CORTE_ROJO = {corte_rojo}", "PESOS: dict[str, float] = {"]
     lineas += [f'    {json.dumps(k, ensure_ascii=False)}: {w},' for k, w in pesos.items()]
     lineas.append("}")
     return "\n".join(lineas)
@@ -174,7 +194,7 @@ def _imprimir(r: dict) -> None:
         return
     print(f"\n{r['partes']} partes ({r['desde']} → {r['hasta']}) · aprendizaje {r['aprendizaje']} (hasta el "
           f"{r['corteFecha']}) · comprobación {r['comprobacion']} · {r['pesosAprendidos']} razones con peso · "
-          f"corte {r['corte']}")
+          f"corte {r['corte']} · corte del rojo {r['corteRojo']}")
 
     def linea(d):
         return (f"gana {d['gana']}/{d['n']} = {100 * d['tasa']:5.1f} % · decíamos "
@@ -186,6 +206,11 @@ def _imprimir(r: dict) -> None:
             print(f"  {cual}")
             for c, d in r[et + "Tabla"][cual].items():
                 print(f"    {c:9s} {linea(d)}")
+    print("\nTODAS LAS COMBINACIONES (color de las espinas · tramo de razones en contra)")
+    for k, f in r["combinaciones"].items():
+        partes = [f"{et} {d['n']:3d} gana {100 * d['tasa']:5.1f} % (decíamos {100 * d['decíamos']:.1f})"
+                  for et, d in f.items()]
+        print(f"  {k:38s} " + " | ".join(partes))
     for nombre in ("amarillos", "rojos"):
         print(f"\n{nombre.upper()} con los pesos de los verdes (no los vieron)")
         for k, t in r[nombre + "ConPesosDelVerde"].items():

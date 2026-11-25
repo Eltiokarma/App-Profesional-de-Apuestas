@@ -33,9 +33,11 @@ export function titleSemaforo(s: SemaforoElegido): string {
   const c = s.calibrado
   const partes = [`Semáforo ${NOMBRE[s.estado]}`]
   if (c?.cambio) {
-    partes.push(s.estado === 'duda'
-      ? `las espinas lo daban verde, pero pesan las razones en contra (${c.puntaje.toFixed(1)} sobre un corte de ${c.corte.toFixed(1)})`
-      : `las espinas lo daban amarillo (${baseTexto(s, base)}), pero ninguna razón lo confirma`)
+    const antes = NOMBRE[base]
+    partes.push(s.estado === 'confirma'
+      ? `las espinas lo daban ${antes} (${baseTexto(s, base)}), pero ninguna razón lo confirma`
+      : `las espinas lo daban ${antes}, pero pesan las razones en contra (${c.puntaje.toFixed(1)}; ` +
+        `amarillo desde ${c.corte.toFixed(1)}${base === 'confirma' ? `, rojo desde ${c.corteRojo.toFixed(1)}` : ', y en un amarillo eso ya es rojo'})`)
   } else {
     partes.push(baseTexto(s, base))
     if (c && base === 'noApostar') partes.push(c.confirmado ? 'las razones lo confirman' : 'las razones no lo confirman')
