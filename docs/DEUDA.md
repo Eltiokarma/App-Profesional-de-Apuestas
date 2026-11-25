@@ -801,27 +801,26 @@ conversación se pierde en la siguiente.
    la primera noche: una sesión nueva arranca en ~90 mil tokens (sistema,
    herramientas, CLAUDE.md); rehacer suma ~3.500 por disparo vacío (~250 mil
    por día) y cada disparo vacío costó ~0,10 USD con la sesión chica (antes
-   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (24/11 03:17 de Lima: rotadas las cuatro
-   —partes 528 mil, veredictos 404 mil, mantenimiento 495 mil y rehacer 491 mil—;
-   la corrida del 23/11 no llegó a correr (la de rotar estaba desconectada);
-   la de rotar v8 quedó en 145 mil tras compactarse y no se rotó; las
-   reemplazadas del 22/11 quedan desactivadas. Ojo: las sesiones nacen anidadas
-   bajo la de rotar y el límite de anidación es 8; la de rotar v8 está en el
-   nivel 7 y sus hijas en el 8: si la de rotar se rota a sí misma, la nueva
-   quedaría en el 8 y ya no podría crear sesiones, así que esa rotación pide
-   crearla desde una sesión de nivel más bajo —pendiente del usuario—):
-   - partes (v21): `session_01WwsfbTZAF5By2UueerbFeZ` · 04:47
-     `trig_01UGVuHdid8QqAx7kTduoCit`, 09:52 `trig_01CdBJhsV7Bp7aSXt1JEUCWB`,
-     14:56 `trig_01YWyFbGp2pvs2DH7k5fHNWY`;
-   - veredictos (v22): `session_01WwsfbU4svM1FRpCbHJmA4K` · 20:12
-     `trig_01VX7Cw5w2F47LWKcomZV4V7`;
-   - mantenimiento (v23): `session_01WwsfbVZ2NKH299HxKUkhLu` · 12:23
-     `trig_01Cfndr6YRxbfLCjMGH8m1u4`, 17:41 `trig_01NweF2C7XLGBSvKAsDyFQR2`,
-     21:47 `trig_01ENZfaQRqAtPBwF7KWU2oVu`;
-   - rehacer (v24): `session_01WwsfbTvbMEx5XBwEBrF9VU` · :02
-     `trig_014S9mxWUATL1BdLF8MnfWz2`, :12 `trig_019gLtLxKDBaGBDrLtEBfTCL`,
-     :22 `trig_01MXdHMTafp4KXuhm3kuhMF8`, :42 `trig_01LQMK1hhG8EKfn2z7MaNGNZ`,
-     :52 `trig_01PMGyfJaVQg8X5nNzYL94M9` (:52 desde el 10/11, incidencia 1304).
+   ~0,30); una pasada de mantenimiento suma ~200 mil y costó 40 USD. **Sesiones y rutinas vigentes** (25/11 03:17 de Lima: rotadas las cuatro
+   —partes 252 mil, veredictos 281 mil, mantenimiento 332 mil y rehacer 595 mil—;
+   la de rotar v8 tiene 255 mil y NO se rotó a propósito; las reemplazadas del
+   24/11 quedan desactivadas. Ojo: las sesiones nacen anidadas bajo la de
+   rotar y el límite de anidación es 8; la de rotar v8 está en el nivel 7 y sus
+   hijas en el 8: si la de rotar se rota a sí misma, la nueva quedaría en el 8 y
+   ya no podría crear sesiones, así que esa rotación pide crearla desde una
+   sesión de nivel más bajo —pendiente del usuario—):
+   - partes (v22): `session_01WwsfbW6Rk5xf5BG7vTafoh` · 04:47
+     `trig_014xpk8Kar8Y85rrVy4WzkNV`, 09:52 `trig_01LbkLcB31TNQD6bwWidXwhC`,
+     14:56 `trig_01VUKbgsyypkXpm7hS1ZBgZE`;
+   - veredictos (v23): `session_01WwsfbVGF4wyGUiognUGrbV` · 20:12
+     `trig_01Jx8VyQqGDRbmVHueahuSab`;
+   - mantenimiento (v24): `session_01WwsfbUUykqhhbzawcrtS4Q` · 12:23
+     `trig_01W5YS5k7TWtAJAHd9uD9jWj`, 17:41 `trig_01Pk9CHQpZC2fKXte4oG1cn3`,
+     21:47 `trig_01AUnq8XA8xDB4DXWV1wBpQJ`;
+   - rehacer (v25): `session_01WwsfbTPrugEewrfwak1FB9` · :02
+     `trig_01DBrHoB9TLEa2kHkV9mMD8x`, :12 `trig_01KVbAfNa8W9VWgazbzrQgiW`,
+     :22 `trig_01Avw47jc4HSq9ovd6Q3BU6L`, :42 `trig_019a6fWSrHaDF1tE8FMbo7uX`,
+     :52 `trig_01NvraL53dmCvHR2a7WJtEvH` (:52 desde el 10/11, incidencia 1304).
    Medido el 03/11 con las sesiones nuevas: partes 117 USD (8 partes en el tramo
    3), veredictos 50 USD (18 veredictos), mantenimiento 29 USD por pasada,
    rehacer 41 USD en el día (hubo rehaceres reales). Las rutinas viejas quedaron desactivadas, no borradas. **Probado el mismo
