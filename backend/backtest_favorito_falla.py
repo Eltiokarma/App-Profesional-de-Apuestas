@@ -218,10 +218,14 @@ def liga_principal(h: dict, desde: str = "") -> int | None:
     return c.most_common(1)[0][0] if c else None
 
 
-def grandes(historias: dict[int, dict], corte: float, desde: str = "", ligas=LIGAS_GRANDES) -> set[int]:
+def grandes(historias: dict[int, dict], corte: float, desde: str = "", ligas=LIGAS_GRANDES,
+            hasta: str | None = None) -> set[int]:
+    """`hasta` deja afuera el nivel desde esa fecha: quien mide una predicción no puede
+    elegir el grupo con el futuro (un grande con un bache «se recupera» por construcción)."""
     out = set()
     for t, h in historias.items():
-        nv = sorted(float(n["nivel"]) for n in h.get("niveles") or [] if str(n["fecha"])[:10] >= desde)
+        nv = sorted(float(n["nivel"]) for n in h.get("niveles") or []
+                    if str(n["fecha"])[:10] >= desde and (hasta is None or str(n["fecha"])[:10] < hasta))
         if len(nv) >= 50 and nv[len(nv) // 2] >= corte and (ligas is None or liga_principal(h, desde) in ligas):
             out.add(t)
     return out

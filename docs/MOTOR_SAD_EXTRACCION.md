@@ -190,6 +190,36 @@ El nivel se consume de dos formas:
    `regresion_nivel_engine` para el Gap.
 2. **Discretizado (0–9)** — features para ML, ver §4.
 
+### 2.6 El nivel largo, MEDIDO (25/11/2026; la fórmula NO se tocó)
+
+El caso: el nivel del Manchester City cayó de 4,08 (11/10) a 2,87 (07/11),
+−0,86 por los goles de 5 y −0,35 por los puntos de 20, y ante Fulham dejó
+de ser favorito por nivel (+0,38) con la casa en 69 %. El usuario pensaba
+el nivel como fuerza de fondo («hype e hinchada», varios años).
+`backend/backtest_nivel_largo.py` compara seis versiones, cada una con su
+logística sobre d y d² (como §5.6), con corte temporal 80/20: 49.841
+partidos oficiales de 1.595 equipos, 5 años, prueba de 9.969 desde el
+14/03/2026, sin copas nacionales. Log-loss contra la actual (A), IC 95 %:
+
+| Versión | Todos | Grandes (769) | Donde A y D discrepan 0,5+ (5.120) |
+|---|---|---|---|
+| B solo puntos de 20 | +0,0003 | −0,0012 | −0,0003 |
+| C promedio de 1 año | +0,0027 | **−0,0212** | +0,0083 peor |
+| D promedio de 3 años | +0,0034 | **−0,0481** (−0,066 a −0,031) | +0,0129 peor |
+| E puntos de 60 | +0,0018 | **−0,0274** | +0,0064 peor |
+| **F actual + 3 años** | **−0,0081** (−0,011 a −0,005) | **−0,0520** | **−0,0091** |
+
+- **Juntos le ganan a cada uno**: el de 20 + goles de 5 sabe lo reciente y
+  el de 3 años la fuerza de fondo. F mejora en todo el padrón; la mejora es
+  más del triple que la localía por liga (−0,0017).
+- **En los grandes** (liga grande y nivel mediano previo ≥ 3,0, elegidos SIN
+  ver la prueba) el largo solo ya gana por mucho: acierto 55,8 → 60,1 %.
+- Con F, el City quedaba 63,7 % ante Fulham (A: 49,3; casa 69) y 56 % ante
+  Napoli (A: 50; casa 74): el motor bajo la casa era sobre todo el nivel
+  corto.
+- **No cambia nada todavía**: llevar F al motor toca μ, el gap y el reventón
+  (DEUDA 44, decisión del usuario).
+
 ### 2.5 La retícula del nivel (valores repetidos entre equipos)
 
 El nivel NO es continuo: `P` toma 61 valores (`pts/20`) y `G` es una

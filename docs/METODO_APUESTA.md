@@ -923,6 +923,40 @@ meses, sin muestra para decidir. No entra al semáforo ni a la alerta. Se
 re-corre contra la casa (`--padron` en el servidor, que tiene todas las
 cuotas) cuando haya seis meses de cuotas sin hueco.
 
+## Las alertas del parte, calibradas (25/11/2026)
+
+El usuario, tras el City: «veamos las señales que decían que no debíamos
+apostar y calibremos». En los partes del City saltaron T.54-B sobre el City
+(Maresca, que hereda el ciclo de Guardiola) en todos, EFE-EMPATE-TECNICO en
+todos y DIV-MOTOR-MERCADO en cuatro; ninguna entra a DESCONFIAR. Sobre 370
+partes cerrados desde el 28/10 con el elegido local o visita (sin copas;
+el elegido no ganó el 44,6 %), cada alerta según caiga sobre el ELEGIDO,
+el RIVAL o el partido. Diferencia = cuánto más no gana el elegido con la
+alerta que sin ella, en el mismo tramo de 10 puntos de la casa; mitades
+cortadas el 15/11. Con ~40 señales, 2 «separan» por azar.
+
+| Señal | n | No gana con / sin | Diferencia (IC 95 %) | Mitades | Lectura |
+|---|---|---|---|---|---|
+| FUERA-EN-LA-HOJA sobre el elegido | 135 | 52,6 / 40,0 % | +9,3 (−1,6 a +19,2) | +13,7 y +7,6 | candidata |
+| T.54-B sobre el elegido | 17 | 52,9 / 44,2 % | +17,4 (−7,4 a +40,0) | +16 y +15 | sin el City (3 casos): 6 de 14, la casa decía 40 % |
+| FACTOR-X sobre el elegido | 20 | 55,0 / 44,0 % | +16,3 (−1,8 a +34,7) | +26 y +5 | poca muestra |
+| EJE-DEBUTANTE sobre el elegido | 83 | 51,8 / 42,5 % | +6,5 (−4,4 a +17,6) | +8 y +5 | poca muestra |
+| DESCONFIAR | 48 | 54,2 / 43,2 % | +3,9 (−10,3 a +17,2) | +2 y +9 | no separa |
+| el analista «dudo» | 82 | 46,3 / 44,1 % | +2,1 | — | no separa |
+| EFE-EMPATE-TECNICO | 247 | 42,1 / 49,6 % | −4,5 | −8 y −2 | no avisa |
+| FAMILIA-RECORD sobre el elegido | 102 | 36,3 / 47,8 % | −13,2 (−23,9 a −2,4) | −9 y −16 | al revés: gana MÁS |
+| DIV-MOTOR-MERCADO sobre el elegido | 36 | 11,1 / 48,2 % | −14,2 (−26,5 a −2,2) | −15 y −13 | al revés: gana MÁS |
+| motor 15+ pts bajo la casa | 73 | 21,9 / 50,2 % | −4,8 | −14 y +7 | no avisa |
+
+**Lectura**: ninguna alerta del parte marca con muestra dónde no apostar.
+La que más se acerca es **FUERA-EN-LA-HOJA sobre el elegido**: el análisis
+contaba de banco a alguien que salió titular, o sea que se leyó otro once.
+Es una falla del proceso y suena con la hoja publicada, antes del pitazo.
+FAMILIA-RECORD y DIV-MOTOR-MERCADO sobre el elegido van al revés: con ellas
+el elegido gana más. Ninguna mueve el semáforo ni la alerta; FUERA-EN-LA-HOJA
+queda como candidata para medir hacia adelante con 300 partes más. El
+análisis se corrió suelto (scratchpad), no hay script en el repo.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

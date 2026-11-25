@@ -1437,6 +1437,27 @@ conversación se pierde en la siguiente.
    de Lima (`SUBIDA_VERSION`, 12:54 UTC). Sin decidir: el recibo que
    frena y los datos por sede (§5 del README).
 
+44. **El caso City y el nivel largo** (25/11/2026, usuario: «mi lógica de
+   separar el nivel era como por hype e hinchada… la matemática le sacó la
+   vuelta a mis principios, me da miedo»). El City ganó 1 de 7 con la casa
+   entre 55 y 75 % (1,4 % de chance para un equipo) y nada lo marcó. Medido:
+   - El favorito que viene fallándole a lo esperado no separa, ni contra el
+     nivel (5 años) ni en los grandes (`backtest_favorito_falla`,
+     METODO_APUESTA «El favorito que viene fallando»).
+   - **El nivel largo sí predice mejor** (`backtest_nivel_largo`, 49.841
+     partidos, prueba desde el 14/03/2026; MOTOR §2.6): el actual + el
+     promedio de 3 años juntos bajan el log-loss del 1X2 en −0,0081 en todos
+     y en −0,052 en los partidos de los grandes (55,8 → 60,1 % de acierto).
+     El largo solo es peor en todos y mucho mejor en los grandes.
+   - Las alertas del parte, calibradas sobre 370 partes (METODO_APUESTA,
+     «Las alertas del parte, calibradas»): ninguna separa en el sentido de no
+     apostar con muestra; T.54-B era el City contándose a sí mismo.
+   **Pendiente, decisión del usuario** (el motor es sagrado: MOTOR §2 + los
+   dos lados + vectores dorados): llevar al motor el nivel combinado (F).
+   Antes: correrlo con `--padron` en el servidor (707 equipos, todas las
+   ligas) y medir qué cambia en μ, el gap y el reventón, que también leen el
+   nivel.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
