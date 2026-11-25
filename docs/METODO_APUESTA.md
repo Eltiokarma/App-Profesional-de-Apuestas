@@ -1017,6 +1017,15 @@ verde 230 apuestas, 82,7 y 18,8 %, y el método verde sin alertas 158, 102,1 y
 7,6 %. El umbral de 55 % salió de esta misma tabla: es un punto elegido
 mirando el pasado.
 
+**«Método 55 %+ sin alertas»** (`metodo55SinAlertas`, usuario el mismo día):
+el 55 %+ sin DESCONFIAR sobre el elegido ni su burbuja en riesgo alto, las
+dos alertas del «verde sin alertas» sin el color. En los 1.018 partes, el
+elegido ganó 80,5 % hasta el 04/11 y 78,0 % después (245 partidos), contra
+74,9 % del 55 %+ solo; dentro del 55 %+, con DESCONFIAR ganó 62 % (sin, 77 %)
+y con riesgo alto 67 % (sin, 77 %). Exigir además el verde no suma (78,4 %).
+En la simulación desde el 28/10: 92 apuestas, 75 ganadas, banca 109,0 y caída
+máxima 3,0 %. Las dos alertas se eligieron el 24/11 con esos mismos partidos.
+
 **El City** con el número: Villa 44 % (no se apuesta; perdió), Brighton 56 %
 y Forest 55 % (se apuestan; perdieron), Fulham 69 % y Napoli 73 % (se
 apuestan; empataron). Con 64, 64, 79 y 88 de cada 100 en esos tramos, perder

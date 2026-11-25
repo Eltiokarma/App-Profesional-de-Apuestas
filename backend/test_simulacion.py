@@ -185,7 +185,7 @@ for _sk, _antes, _despues in (("sad-analysis", "v4.4", "v4.5"), ("teorema-del-ec
 
 # 8) el armado desde la base corre sobre la demo (sin partes desde el 28/10: vacío, no un error)
 out = sim.simulacion()
-check("simulacion() responde con las veinte estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas, la cuidada, ganar fijo, las cuatro verde sin alertas y el método 55 %+)", len(out["estrategias"]) == 20, out.keys())
+check("simulacion() responde con las veintiuna estrategias (con el método, en verde, fuera del medio, las martingalas ajustadas, la cuidada, ganar fijo, las cuatro verde sin alertas y el método 55 %+ con y sin alertas)", len(out["estrategias"]) == 21, out.keys())
 check("simulacion() trae desde y nota", out["desde"] == sim.DESDE and out["nota"])
 
 # 9) de punta a punta: un parte de verdad en la base, depositado antes del pitazo
@@ -567,6 +567,19 @@ check("método 55 %+: con el elegido a 54 % no apuesta (y dice por qué); a 55 %
 _v55 = {a["fixtureId"]: a["porEstrategia"]["metodoVerde"] for a in _o55["apuestas"]}
 check("…sin mirar el color: en el mismo partido sin semáforo, el método en verde no apuesta y el 55 %+ sí",
       _v55[32]["monto"] == 0 and _f55[32]["monto"] > 0, (_v55, _f55))
+_a1 = ap(33, "2026-11-15 15:00:00", (60, 22, 18), (1.6, 3.8, 5.0), "local")
+_a2 = ap(34, "2026-11-15 20:00:00", (60, 22, 18), (1.6, 3.8, 5.0), "local")
+_a3 = ap(35, "2026-11-16 15:00:00", (60, 22, 18), (1.6, 3.8, 5.0), "local")
+_a1["desconfiar"] = True
+_a2["riesgoElegido"] = "alto"
+_a3["riesgoElegido"] = "muy alto"
+_osa = {a["fixtureId"]: a["porEstrategia"] for a in sim.simular([_a1, _a2, _a3])["apuestas"]}
+check("método 55 %+ sin alertas: con DESCONFIAR o la burbuja en riesgo alto no apuesta (y lo dice); el 55 %+ sí",
+      _osa[33]["metodo55SinAlertas"]["monto"] == 0 and "DESCONFIAR" in _osa[33]["metodo55SinAlertas"]["motivo"]
+      and _osa[34]["metodo55SinAlertas"]["monto"] == 0 and "riesgo alto" in _osa[34]["metodo55SinAlertas"]["motivo"]
+      and _osa[33]["metodo55"]["monto"] > 0 and _osa[34]["metodo55"]["monto"] > 0, _osa)
+check("…el riesgo «muy alto» no lo frena, y no mira el color (estas apuestas no traen semáforo)",
+      _osa[35]["metodo55SinAlertas"]["monto"] > 0 and _osa[35]["metodoVerdeSinAlertas"]["monto"] == 0, _osa[35])
 # ── EL MÉTODO FUERA DEL MEDIO (13/11/2026, usuario) ─────────────────────────
 def _apf(fid, pit, res, mercado_local):
     a = _apm(fid, pit, res, None)

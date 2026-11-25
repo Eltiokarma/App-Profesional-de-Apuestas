@@ -1454,9 +1454,9 @@ def main():
           c.delete(A + f"/analisis/cowork/{fx}", headers=wb).status_code == 403
           and c.post(A + f"/analisis/cowork/{fx}/cuarentena", json={"motivo": "x" * 20}, headers=wb).status_code == 403)
     r_sim = c.get(A + "/analisis/simulacion", headers=wb)
-    check("web: lee la simulación de apuesta (veinte estrategias, con las cuatro verde sin alertas y el método 55 %+, desde el 28/10)",
-          r_sim.status_code == 200 and len(r_sim.json()["estrategias"]) == 20
-          and any(e["clave"] == "metodo55" for e in r_sim.json()["estrategias"])
+    check("web: lee la simulación de apuesta (veintiuna estrategias, con las cuatro verde sin alertas y el método 55 %+ con y sin alertas, desde el 28/10)",
+          r_sim.status_code == 200 and len(r_sim.json()["estrategias"]) == 21
+          and {"metodo55", "metodo55SinAlertas"} <= {e["clave"] for e in r_sim.json()["estrategias"]}
           and r_sim.json()["desde"].startswith("2026-10-28"), r_sim.text[:200])
     # 13/11/2026: la página y el gzip (usuario: «esa página demora mucho en cargarse»)
     r_pag = c.get(A + "/analisis/simulacion", params={"pagina": 1, "porPagina": 20}, headers=wb)

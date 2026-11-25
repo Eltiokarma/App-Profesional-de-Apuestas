@@ -2803,7 +2803,7 @@ export interface HistorialValorDTO extends GananciaValor {
 export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaCuidada' | 'mixtaFueraMedio' | 'ganarFijo'
   /** verde sin alertas (24/11/2026): sin amarillo/rojo, sin DESCONFIAR y sin la burbuja del elegido en riesgo alto */
   | 'metodoVerdeSinAlertas' | 'metodoVerdeSinAlertasFueraMedio' | 'martingalaCuidadaSinAlertas' | 'ganarFijoSinAlertas'
-  | 'metodo55'
+  | 'metodo55' | 'metodo55SinAlertas'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
