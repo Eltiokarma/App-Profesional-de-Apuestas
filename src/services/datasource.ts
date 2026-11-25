@@ -942,6 +942,9 @@ class MockDataSource implements SadDataSource {
           : caso === 3 ? [{ codigo: 'SIN-ESPINA', detalle: 'falta la espina del elegido (local) o es neutra: no se juzga' }] : [],
         elegido: 'local', regla: 'espinas', espinaElegido: espE, espinaRival: espR, espinas: { a: espE, b: espR },
         distancia: caso === 3 ? null : 1.2, marcadorSigno: 'local',
+        // la capa de razones se retiró del chip el 25/11/2026: el color es el de las espinas
+        estadoBase: caso === 0 ? 'confirma' : caso === 1 ? 'duda' : caso === 2 ? 'noApostar' : 'sinDato',
+        calibrado: null,
       }
     }
     return out

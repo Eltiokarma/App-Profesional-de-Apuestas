@@ -845,6 +845,284 @@ aunque la casa diga otra cosa. Si no, sabremos que leemos mal y qué arreglar
 en la lectura. Y se revisan con eso las reglas de anclaje v4.1-v4.5 (DEUDA
 42), que se justificaron por el error de los números, no por el acierto.
 
+
+**La tabla con el ciego, primera mirada (25/11/2026, 40 partes cerrados sin
+copas; se revisa al llegar a 60, junto con la regla 6-B, DEUDA 42).** En los
+mismos partidos, el elegido del ciego acertó 27 de 40 (68 %) y el del
+publicado 26 de 40 (65 %); los dos eligen igual en 37. El ciego dice 51 % en
+promedio y su elegido gana el 68 %: se queda corto (en su tramo 55-65 % ganó
+10 de 12), y sus porcentajes calibran peor (Brier 0,518 contra 0,492).
+Cuando el ciego le dio a su elegido 10+ puntos menos que el publicado (17
+partidos, como el City–Napoli: 57 contra 73), el elegido ganó 13. Con el City:
+sin la 6-B, el City–Napoli quedaba en 57 % y no se apostaba con un umbral de
+60 %; pero calibrar ese 57 contra los resultados lo sube a 75-80 %, porque el
+ciego se queda corto en general. La pregunta para los 60: ¿la lectura sin el
+ancla acierta MÁS que la casa en algún grupo de partidos?
+
+## El favorito que viene fallando (25/11/2026)
+
+El caso: Manchester City ganó 1 de 7 (24/10 → 24/11) con la casa dándole
+entre 55 y 75 % en cada uno, y el sistema no marcó nada. La alerta
+DESCONFIAR no podía encenderse: SOBRE-LA-CASA pide nuestro número 2+ puntos
+sobre la casa y 6-B lo pega a ella; BURBUJA-DE-UN-PARTIDO pide una racha +.
+Lo demás empujaba al rebote: la regresión al nivel decía «gap fuerte ·
+mejora» (+0,88 ante Fulham, +0,70 ante Napoli) y la burbuja «−» con riesgo
+alto decía que la racha de no ganar se cortaba.
+
+Lo que se descartó antes, sobre los 410 partes cerrados desde el 28/10 (160
+favoritos de la casa con 50 %+, sin copas):
+
+| Señal | n con | Gana con | Casa decía | Lectura |
+|---|---|---|---|---|
+| motor 15+ pts bajo la casa | 80 | 80,0 % | 69,6 % | al revés: gana MÁS |
+| ciego 10+ pts bajo la casa | 17 | 82,4 % | 67,8 % | al revés |
+| el analista «dudo» | 43 | 69,8 % | 65,0 % | no separa (−4,4, IC −20 a +10) |
+
+**La señal, fijada antes de mirar**: el residuo de los últimos 5 partidos
+oficiales del favorito (victorias − victorias esperadas) en −1,5 o menos.
+
+- **Contra la cuota de cada previo** (1.890 favoritos con cuota, agosto →
+  24/11): ganó el 51 % contra el 61 % que decía la casa, n 49, −14 pts con
+  IC −28,6 a 0,0. En el City habría marcado Fulham y Napoli. Pista, no
+  prueba: tres meses de cuotas, con el hueco del 18/09 al 11/10.
+- **Contra el nivel, 5 años** (pedido del usuario;
+  `backend/backtest_favorito_falla.py --desde-dir`, 1.595 equipos de las
+  ligas con cuota bajados por la API, 38.054 favoritos por nivel del
+  25/11/2021 al 24/11/2026, 10.850 partidos de copa nacional fuera): **no
+  separa**.
+
+| Variante (contra el nivel) | Marca | Falla con / sin | Diferencia (IC 95 %) |
+|---|---|---|---|
+| 5 en −1,5 (la fijada) | 2,9 % | 51,1 / 50,0 % | −1,3 (−4,5 a +1,6) |
+| 3 en −1,0 | 8,0 % | 52,0 / 49,9 % | +0,3 (−1,5 a +1,8) |
+| 5 en −1,0 | 8,1 % | 51,3 / 49,9 % | −0,8 (−2,4 a +1,1) |
+| espejo: 5 en +1,5 | 16,2 % | 47,5 / 50,5 % | −0,1 (−1,8 a +1,6) |
+
+Diferencia = cuánto más NO gana el favorito con la señal que los sin señal
+de su mismo tramo fino de ventaja y condición. Ninguna variante separa ni
+se repite por época; las ligas no se inclinan (la de 3: 20 en el sentido,
+19 al revés). El test planta una crisis y la detecta, así que con este
+tamaño un efecto de 5 puntos se habría visto. Lo único que asoma es el
+gigante (nivel 3,5+ y 1,0+ de ventaja): +8,0 pts con la de 5 en −1,0 (IC
+−0,8 a +17,3, unos 120 casos); se miró después y no es una regla.
+
+**Solo grandes en temporada internacional** (pedido del usuario el mismo
+día; `--grandes 3.0 --temporada-internacional`). Grande = liga principal en
+la lista `LIGAS_GRANDES` (las cinco grandes de Europa, Portugal, Países
+Bajos, Brasil y Argentina) **y** nivel mediano de los 5 años ≥ 3,0. Sin la
+liga, el corte de nivel metía a La Fiorita, Kauno Žalgiris o Lincoln Red
+Imps (el nivel es relativo a cada liga). Quedan 28 equipos: City, Bayern,
+Real Madrid, Barcelona, PSG, Liverpool, Arsenal, Inter, Juventus, Napoli,
+Atlético, Leverkusen, Dortmund, Leipzig, Benfica, Porto, Sporting, Braga,
+Ajax, PSV, Feyenoord, AZ, Twente, Lens, Flamengo, Palmeiras, River y Boca.
+Se evalúan sus partidos oficiales de cada temporada en que jugaron un torneo
+internacional de clubes: 3.574 favoritos por nivel.
+
+| Variante (contra el nivel) | Marca | Falla con / sin | Diferencia (IC 95 %) | Por época |
+|---|---|---|---|---|
+| 5 en −1,5 (la fijada) | 0,8 % (30) | 40,0 / 34,1 % | +2,3 (−14,9 a +17,3) | sin muestra |
+| 3 en −1,0 | 3,5 % | 35,4 / 34,1 % | −1,9 (−9,5 a +5,2) | −11,3 y +8,7 (al revés) |
+| 5 en −1,0 | 3,1 % | 38,4 / 34,0 % | +0,8 (−9,1 a +9,5) | −3,4 y +5,9 |
+
+En un grande la mala racha contra su nivel casi no pasa (30 casos en cinco
+años) y, cuando pasa, no separa. **El City no es un caso de esta señal**: su
+nivel bajó de 4,08 (14/10) a 3,11 (04/11) y ante Fulham y Napoli ya no era
+favorito por nivel (menos de 0,5 de ventaja). El nivel y el motor (49 %) lo
+bajaron; la casa lo sostuvo en 69 y 75 %, y el número publicado siguió a la
+casa (6-B).
+
+**Lectura**: el que viene fallándole a su nivel gana lo que dice su nivel
+(el nivel ya baja con la mala racha). Contra la casa queda la pista de tres
+meses, sin muestra para decidir. No entra al semáforo ni a la alerta. Se
+re-corre contra la casa (`--padron` en el servidor, que tiene todas las
+cuotas) cuando haya seis meses de cuotas sin hueco.
+
+## Las alertas del parte, calibradas (25/11/2026)
+
+El usuario, tras el City: «veamos las señales que decían que no debíamos
+apostar y calibremos». En los partes del City saltaron T.54-B sobre el City
+(Maresca, que hereda el ciclo de Guardiola) en todos, EFE-EMPATE-TECNICO en
+todos y DIV-MOTOR-MERCADO en cuatro; ninguna entra a DESCONFIAR. Sobre 370
+partes cerrados desde el 28/10 con el elegido local o visita (sin copas;
+el elegido no ganó el 44,6 %), cada alerta según caiga sobre el ELEGIDO,
+el RIVAL o el partido. Diferencia = cuánto más no gana el elegido con la
+alerta que sin ella, en el mismo tramo de 10 puntos de la casa; mitades
+cortadas el 15/11. Con ~40 señales, 2 «separan» por azar.
+
+| Señal | n | No gana con / sin | Diferencia (IC 95 %) | Mitades | Lectura |
+|---|---|---|---|---|---|
+| FUERA-EN-LA-HOJA sobre el elegido | 135 | 52,6 / 40,0 % | +9,3 (−1,6 a +19,2) | +13,7 y +7,6 | candidata |
+| T.54-B sobre el elegido | 17 | 52,9 / 44,2 % | +17,4 (−7,4 a +40,0) | +16 y +15 | sin el City (3 casos): 6 de 14, la casa decía 40 % |
+| FACTOR-X sobre el elegido | 20 | 55,0 / 44,0 % | +16,3 (−1,8 a +34,7) | +26 y +5 | poca muestra |
+| EJE-DEBUTANTE sobre el elegido | 83 | 51,8 / 42,5 % | +6,5 (−4,4 a +17,6) | +8 y +5 | poca muestra |
+| DESCONFIAR | 48 | 54,2 / 43,2 % | +3,9 (−10,3 a +17,2) | +2 y +9 | no separa |
+| el analista «dudo» | 82 | 46,3 / 44,1 % | +2,1 | — | no separa |
+| EFE-EMPATE-TECNICO | 247 | 42,1 / 49,6 % | −4,5 | −8 y −2 | no avisa |
+| FAMILIA-RECORD sobre el elegido | 102 | 36,3 / 47,8 % | −13,2 (−23,9 a −2,4) | −9 y −16 | al revés: gana MÁS |
+| DIV-MOTOR-MERCADO sobre el elegido | 36 | 11,1 / 48,2 % | −14,2 (−26,5 a −2,2) | −15 y −13 | al revés: gana MÁS |
+| motor 15+ pts bajo la casa | 73 | 21,9 / 50,2 % | −4,8 | −14 y +7 | no avisa |
+
+**Lectura**: ninguna alerta del parte marca con muestra dónde no apostar.
+La que más se acerca es **FUERA-EN-LA-HOJA sobre el elegido**: el análisis
+contaba de banco a alguien que salió titular, o sea que se leyó otro once.
+Es una falla del proceso y suena con la hoja publicada, antes del pitazo.
+FAMILIA-RECORD y DIV-MOTOR-MERCADO sobre el elegido van al revés: con ellas
+el elegido gana más. Ninguna mueve el semáforo ni la alerta; FUERA-EN-LA-HOJA
+queda como candidata para medir hacia adelante con 300 partes más. El
+análisis se corrió suelto (scratchpad), no hay script en el repo.
+
+## El número, no el color (25/11/2026)
+
+El usuario, tras ver el semáforo por razones: «no usemos semáforo, usemos algo
+más continuo». Medido hacia atrás sobre los mismos 1.018 partes (14/09 →
+25/11/2026, sin copas nacionales, elegido local o visita).
+
+**Para decir qué elegido va a perder, el número que publicamos sabe más que
+cualquier semáforo.** AUC en los 425 partes desde el 04/11 (0,5 = moneda): el
+porcentaje publicado solo 0,706; el semáforo calibrado por razones 0,581; el
+de las espinas 0,534. Sumarle razones al número (del parte, de las burbujas
+completas con `antesDe`, del nivel largo, de la forma o de la cuota) lo
+empeoró: entre 0,61 y 0,69. Recalibrar el número con una curva aprendida en
+lo viejo tampoco mejoró lo nuevo (log-loss 0,6195 contra 0,6207).
+
+**El winrate según lo que decimos del elegido** (cada fila es solo ese tramo):
+
+| Decimos | Partidos | Ganó | Hasta 04/11 | Desde 04/11 |
+|---|---|---|---|---|
+| menos de 40 % | 173 | 39 % | 45 % | 30 % |
+| 40-45 % | 205 | 49 % | 48 % | 50 % |
+| 45-50 % | 167 | 46 % | 47 % | 44 % |
+| 50-55 % | 123 | 55 % | 59 % | 49 % |
+| 55-60 % | 117 | 64 % | 67 % | 59 % |
+| 60-65 % | 84 | 73 % | 79 % | 66 % |
+| 65-70 % | 58 | 79 % | 77 % | 81 % |
+| 70 % o más | 91 | 88 % | 83 % | 91 % |
+
+Apostando solo desde un umbral, el elegido ganó (hasta 04/11 · desde 04/11):
+55 %+ 74,6 · 75,1 % (el 34 % de los partidos, evita el 80 % de las
+derrotas); 60 %+ 80,2 · 80,3 % (23 %, evita el 90 %).
+
+**Qué es ese número**: casi todo es el método anterior (1.006 de 1.018
+partes), con el número a 2,4 puntos de la casa por la regla 6-B. Mientras el
+número siga al mercado, la tabla mide el número de la casa; si se saca la 6-B
+o las dos lecturas lo alejan, la tabla se rehace con los partes nuevos.
+
+**En la simulación** (las series por color no se tocan: son la medición fija
+desde el 13/11): la serie **«Método 55 %+»** (`metodo55`,
+`simulacion.UMBRAL_METODO`) es el método (1 % de la banca y el mismo freno
+por tramo) apostando solo con el elegido a 55 % o más, sin mirar el color.
+Sobre las 368 apuestas cerradas desde el 28/10 (contacto.armar, los mismos
+partes): 124 apuestas, banca 104,7 y caída máxima 5,4 %, contra el método en
+verde 230 apuestas, 82,7 y 18,8 %, y el método verde sin alertas 158, 102,1 y
+7,6 %. El umbral de 55 % salió de esta misma tabla: es un punto elegido
+mirando el pasado.
+
+**«Método 55 %+ sin alertas»** (`metodo55SinAlertas`, usuario el mismo día):
+el 55 %+ sin DESCONFIAR sobre el elegido ni su burbuja en riesgo alto, las
+dos alertas del «verde sin alertas» sin el color. En los 1.018 partes, el
+elegido ganó 80,5 % hasta el 04/11 y 78,0 % después (245 partidos), contra
+74,9 % del 55 %+ solo; dentro del 55 %+, con DESCONFIAR ganó 62 % (sin, 77 %)
+y con riesgo alto 67 % (sin, 77 %). Exigir además el verde no suma (78,4 %).
+En la simulación desde el 28/10: 92 apuestas, 75 ganadas, banca 109,0 y caída
+máxima 3,0 %. Las dos alertas se eligieron el 24/11 con esos mismos partidos.
+
+**El City** con el número: Villa 44 % (no se apuesta; perdió), Brighton 56 %
+y Forest 55 % (se apuestan; perdieron), Fulham 69 % y Napoli 73 % (se
+apuestan; empataron). Con 64, 64, 79 y 88 de cada 100 en esos tramos, perder
+así es raro pero pasa: ninguna medida que tengamos lo anticipa.
+
+## El semáforo calibrado por razones (25/11/2026)
+
+> **Retirado del chip el mismo 25/11/2026** (usuario, «sí, hazlo así»): contra
+> el número publicado pierde (AUC 0,581 contra 0,706; «El número, no el
+> color», arriba) y dejaba dos colores para un mismo partido. El chip volvió
+> al color de las espinas, que sigue como dato hasta completar su criterio
+> por escalones (60 no-verdes), y lo que decide cuándo apostar es el número
+> (la serie «Método 55 %+», la primera de la Simulación). El backtest, la
+> tabla de pesos y esta medición quedan por si se retoma con partes nuevos.
+
+El usuario, tras Manchester City (seis partidos seguidos en verde, uno
+ganado): «el analista dice semáforo en amarillo por tal razón, en rojo por tal
+razón, en verde por tal razón… viendo cuál razón se repite más y dándole más
+peso, a eso me refiero con calibrar. Eso incluye hacer que el verde no diga
+verde cuando perdimos». Y: «nada se mide hacia adelante esta vez, solo hacia
+atrás». Después: «usa los otros dos semáforos, la razón de amarillo y las
+razones de rojo que confirmen o no».
+
+**Cómo se calibró** (`backend/backtest_semaforo_razones.py`, test
+`backend/test_backtest_semaforo_razones.py`). Sobre 1.018 partes cerrados
+(14/09 → 25/11/2026, sin copas nacionales, elegido local o visita) se juntaron
+las RAZONES previas de cada parte (`semaforo.razones`): alertas por lado,
+burbujas y tarjetas calculadas, EFE, TDE, DTP, motor, ciego, DESCONFIAR, el
+empate y el marcador declarados, y lo que el analista escribió al justificar
+cada espina. El `veredicto` no se lee. El peso de una razón es log(su
+frecuencia en los verdes que perdimos / en los que ganamos); el puntaje de un
+partido es la suma; el corte deja en amarillo el cuarto de los verdes con más
+peso en contra.
+
+**Las razones que más se repiten en los verdes perdidos**: le dimos al empate
+27 % o más (60 % de los verdes perdidos contra 36 % de los ganados), el DTP no
+ve ventaja (41 contra 25), DESCONFIAR (25 contra 15), 1X2-CARGA-CONTRA-RIESGO
+(19 contra 12), el elegido viene de no ganar con riesgo alto (22 contra 14), la
+espina del elegido se apoya en «una racha de un partido» (23 contra 15). A
+favor: el motor 20+ puntos bajo lo publicado (los favoritos claros),
+DIV-MOTOR-MERCADO y G-SORPRESA sobre el elegido.
+
+**La regla, con todas las combinaciones** (`semaforo.calibrar`; el usuario: «¿y
+le bajaste el peso a los amarillos que eran rojo? o a los verdes que eran
+amarillo?… toda esa combinación de colores»). Dos cortes sobre el puntaje de
+los verdes: `CORTE` (el cuarto con más razones en contra) y `CORTE_ROJO` (el
+10 % con más).
+
+- verde con puntaje ≥ `CORTE_ROJO` → **rojo**; ≥ `CORTE` → **amarillo**;
+- amarillo con puntaje ≥ `CORTE` → **rojo** (las razones lo confirman); por
+  debajo → **verde** (no lo confirman);
+- rojo → rojo; `confirmado` dice si las razones lo acompañan. Por tramo hay
+  de 2 a 13 rojos y se contradicen: no hay con qué moverlo.
+
+**Cada combinación** (color de las espinas × tramo de razones en contra; pesos
+aprendidos con los verdes hasta el 04/11):
+
+| Combinación | Aprendizaje | Comprobación | Decíamos |
+|---|---|---|---|
+| verde · sin razones en contra | 78,9 % (161) | 70,3 % (185) | 57-61 % |
+| verde · bajo el corte | 56,2 % (146) | 47,6 % (126) | 49 % |
+| verde · sobre el corte | 43,5 % (62) | 47,9 % (48) | 45-46 % |
+| verde · muy alto | **14,6 %** (41) | **27,8 %** (18) | 42 % |
+| amarillo · bajo el corte | 56,0 % (25) | 50,0 % (10) | 39-47 % |
+| amarillo · sobre el corte | **33,3 %** (12) | **36,4 %** (11) | 40-42 % |
+| sin dato (partes viejos sin espina) · de menos a más | 65,5 · 55,4 · 47,1 · 28,6 % | — | 53 → 42 % |
+
+Los partes «sin dato» no se usaron para pesar y repiten la misma escalera.
+
+**Comprobación** (los 425 partes desde el 04/11, que no se usaron):
+
+| Color | Hoy (espinas) | Calibrado |
+|---|---|---|
+| 🟢 verde | 218/377 = 57,8 % | 197/323 = **61,0 %** |
+| 🟡 amarillo | 11/23 = 47,8 % · marca 5 % · 6 % de las derrotas | 23/48 = **47,9 %** · marca 11 % · 13 % de las derrotas |
+| 🔴 rojo | 9/25 = 36,0 % · marca 6 % · 9 % de las derrotas | 18/54 = **33,3 %** · marca 13 % · **19 %** de las derrotas |
+
+Los amarillos de las espinas, que los pesos no vieron: con razones ganó el
+40,6 % (13 de 32) y sin ellas el 55,0 % (22 de 40), y en los dos grupos
+decíamos lo mismo (41-42 %).
+
+**Reserva**: descontado lo que decíamos, la ventaja del amarillo calibrado es
+de unos 8 puntos y su intervalo cruza el cero en los verdes; la del amarillo
+sobre los amarillos no vistos es la más firme. El City no se caza: sus verdes
+perdidos suman entre −2,9 y +1,5 contra un corte de 2,26 (el del rojo es
+4,16), y el calibrado habría pasado a amarillo el 5-1 al AEK.
+
+**Dónde vivía** (hasta su retiro): `/analisis/semaforo` (el chip de la web) calibraba con el parte
+enriquecido (`parte.dto`) y traía `estadoBase` (el de las espinas) y
+`calibrado` {puntaje, corte, corteRojo, cambio, confirmado, contra, aFavor}; el parte
+muestra las razones escritas bajo el chip. La serie fija de la simulación
+(`metodoVerde`, el criterio por escalones desde el 13/11) sigue con el color
+de las espinas. Recalibrar = bajar los partes y correr
+`python -m backend.backtest_semaforo_razones --desde-json … --tabla`, y pegar
+la salida en `semaforo.py`. La regla anti-Goodhart no cambia: el analista no
+ve ni el color ni las razones.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos

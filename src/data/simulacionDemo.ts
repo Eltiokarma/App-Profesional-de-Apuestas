@@ -303,6 +303,238 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
    ]
   },
   {
+   "clave": "metodo55",
+   "nombre": "Método 55 %+",
+   "descripcion": "el método (1 % de la banca y el mismo freno por tramo) apostando solo cuando le damos al elegido 55 % o más: guiado por el número, no por el color",
+   "banca": 98.42,
+   "ganancia": -1.58,
+   "apostado": 4.95,
+   "apuestas": 5,
+   "ganadas": 2,
+   "roi": -0.3186,
+   "caidaMaxima": 0.0199,
+   "quebro": null,
+   "exposicionMaxima": 1.0,
+   "montoMaximo": 1.0,
+   "lineas": null,
+   "tramos": [
+    {
+     "tramo": "<40",
+     "n": 1,
+     "aciertos": 0,
+     "tasa": 0.0,
+     "pide": 0.3846,
+     "z": -0.79,
+     "pausado": false
+    },
+    {
+     "tramo": "40-49",
+     "n": 3,
+     "aciertos": 3,
+     "tasa": 1.0,
+     "pide": 0.4728,
+     "z": 1.83,
+     "pausado": false
+    },
+    {
+     "tramo": "50-59",
+     "n": 4,
+     "aciertos": 2,
+     "tasa": 0.5,
+     "pide": 0.5449,
+     "z": -0.18,
+     "pausado": false
+    },
+    {
+     "tramo": "60+",
+     "n": 3,
+     "aciertos": 1,
+     "tasa": 0.3333,
+     "pide": 0.6155,
+     "z": -1.0,
+     "pausado": false
+    }
+   ],
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 98.01
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 98.75
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 98.75
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 99.42
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 98.42
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 98.42
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 98.42
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 98.42
+    }
+   ]
+  },
+  {
+   "clave": "metodo55SinAlertas",
+   "nombre": "Método 55 %+ sin alertas",
+   "descripcion": "el método 55 %+ y además sin la alerta DESCONFIAR sobre el elegido ni su burbuja en riesgo alto: las alertas del verde sin alertas, sin mirar el color",
+   "banca": 98.42,
+   "ganancia": -1.58,
+   "apostado": 4.95,
+   "apuestas": 5,
+   "ganadas": 2,
+   "roi": -0.3186,
+   "caidaMaxima": 0.0199,
+   "quebro": null,
+   "exposicionMaxima": 1.0,
+   "montoMaximo": 1.0,
+   "lineas": null,
+   "tramos": [
+    {
+     "tramo": "<40",
+     "n": 1,
+     "aciertos": 0,
+     "tasa": 0.0,
+     "pide": 0.3846,
+     "z": -0.79,
+     "pausado": false
+    },
+    {
+     "tramo": "40-49",
+     "n": 3,
+     "aciertos": 3,
+     "tasa": 1.0,
+     "pide": 0.4728,
+     "z": 1.83,
+     "pausado": false
+    },
+    {
+     "tramo": "50-59",
+     "n": 4,
+     "aciertos": 2,
+     "tasa": 0.5,
+     "pide": 0.5449,
+     "z": -0.18,
+     "pausado": false
+    },
+    {
+     "tramo": "60+",
+     "n": 3,
+     "aciertos": 1,
+     "tasa": 0.3333,
+     "pide": 0.6155,
+     "z": -1.0,
+     "pausado": false
+    }
+   ],
+   "serie": [
+    {
+     "fixtureId": null,
+     "pitazo": null,
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900001,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 100.0
+    },
+    {
+     "fixtureId": 900002,
+     "pitazo": "2026-10-28 15:00:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900003,
+     "pitazo": "2026-10-28 19:45:00",
+     "banca": 99.0
+    },
+    {
+     "fixtureId": 900004,
+     "pitazo": "2026-10-28 20:00:00",
+     "banca": 98.01
+    },
+    {
+     "fixtureId": 900005,
+     "pitazo": "2026-10-29 19:30:00",
+     "banca": 98.75
+    },
+    {
+     "fixtureId": 900006,
+     "pitazo": "2026-10-29 20:00:00",
+     "banca": 98.75
+    },
+    {
+     "fixtureId": 900007,
+     "pitazo": "2026-11-11 19:00:00",
+     "banca": 99.42
+    },
+    {
+     "fixtureId": 900008,
+     "pitazo": "2026-11-11 21:00:00",
+     "banca": 98.42
+    },
+    {
+     "fixtureId": 900009,
+     "pitazo": "2026-11-12 01:00:00",
+     "banca": 98.42
+    },
+    {
+     "fixtureId": 900012,
+     "pitazo": "2026-11-13 19:45:00",
+     "banca": 98.42
+    },
+    {
+     "fixtureId": 900013,
+     "pitazo": "2026-11-13 21:00:00",
+     "banca": 98.42
+    }
+   ]
+  },
+  {
    "clave": "metodoFueraMedio",
    "nombre": "Método fuera del medio",
    "descripcion": "el método (1 % de la banca y el mismo freno por tramo) sin apostar cuando la casa le da al elegido entre 45 % y 60 % (sin margen): ahí no le sacamos nada a la cuota",
@@ -1841,6 +2073,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 1,
      "roi": 1.05
     },
+    "metodo55": {
+     "apostado": 1.0,
+     "ganancia": -1.0,
+     "apuestas": 1,
+     "roi": -1.0
+    },
+    "metodo55SinAlertas": {
+     "apostado": 1.0,
+     "ganancia": -1.0,
+     "apuestas": 1,
+     "roi": -1.0
+    },
     "metodoFueraMedio": {
      "apostado": 0.0,
      "ganancia": 0.0,
@@ -1962,6 +2206,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "apuestas": 2,
      "roi": 0.8744
     },
+    "metodo55": {
+     "apostado": 1.9701,
+     "ganancia": -0.2549,
+     "apuestas": 2,
+     "roi": -0.1294
+    },
+    "metodo55SinAlertas": {
+     "apostado": 1.9701,
+     "ganancia": -0.2549,
+     "apuestas": 2,
+     "roi": -0.1294
+    },
     "metodoFueraMedio": {
      "apostado": 1.0,
      "ganancia": 1.2,
@@ -2082,6 +2338,18 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "ganancia": 0.7913,
      "apuestas": 3,
      "roi": 0.2562
+    },
+    "metodo55": {
+     "apostado": 1.9817,
+     "ganancia": -0.3227,
+     "apuestas": 2,
+     "roi": -0.1628
+    },
+    "metodo55SinAlertas": {
+     "apostado": 1.9817,
+     "ganancia": -0.3227,
+     "apuestas": 2,
+     "roi": -0.1628
     },
     "metodoFueraMedio": {
      "apostado": 2.0139,
@@ -2736,6 +3004,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "semáforo en rojo: no apostar"
     },
+    "metodo55": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": "le damos 50 % al elegido: bajo 55 %"
+    },
+    "metodo55SinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": "le damos 50 % al elegido: bajo 55 %"
+    },
     "metodoFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
@@ -2951,6 +3235,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "metodo55": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": "le damos 46 % al elegido: bajo 55 %"
+    },
+    "metodo55SinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": "le damos 46 % al elegido: bajo 55 %"
+    },
     "metodoFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
@@ -3165,6 +3465,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": null,
      "linea": null,
      "motivo": ""
+    },
+    "metodo55": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "le damos 47 % al elegido: bajo 55 %"
+    },
+    "metodo55SinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": null,
+     "banca": null,
+     "linea": null,
+     "motivo": "le damos 47 % al elegido: bajo 55 %"
     },
     "metodoFueraMedio": {
      "seleccion": null,
@@ -3390,6 +3706,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "semáforo en rojo: no apostar"
     },
+    "metodo55": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": "le damos 38 % al elegido: bajo 55 %"
+    },
+    "metodo55SinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": "le damos 38 % al elegido: bajo 55 %"
+    },
     "metodoFueraMedio": {
      "seleccion": "local",
      "monto": 1.0019,
@@ -3605,6 +3937,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": ""
     },
+    "metodo55": {
+     "seleccion": "local",
+     "monto": 0.9942,
+     "ganancia": -0.9942,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodo55SinAlertas": {
+     "seleccion": "local",
+     "monto": 0.9942,
+     "ganancia": -0.9942,
+     "banca": 98.42,
+     "linea": null,
+     "motivo": ""
+    },
     "metodoFueraMedio": {
      "seleccion": "local",
      "monto": 1.012,
@@ -3817,6 +4165,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 1.0283,
      "ganancia": 0.6992,
      "banca": 103.53,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodo55": {
+     "seleccion": "local",
+     "monto": 0.9875,
+     "ganancia": 0.6715,
+     "banca": 99.42,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodo55SinAlertas": {
+     "seleccion": "local",
+     "monto": 0.9875,
+     "ganancia": 0.6715,
+     "banca": 99.42,
      "linea": null,
      "motivo": ""
     },
@@ -4044,6 +4408,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "semáforo en amarillo"
     },
+    "metodo55": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.75,
+     "linea": null,
+     "motivo": "le damos 40 % al elegido: bajo 55 %"
+    },
+    "metodo55SinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 98.75,
+     "linea": null,
+     "motivo": "le damos 40 % al elegido: bajo 55 %"
+    },
     "metodoFueraMedio": {
      "seleccion": "local",
      "monto": 1.0,
@@ -4256,6 +4636,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "monto": 1.0206,
      "ganancia": 0.7654,
      "banca": 102.83,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodo55": {
+     "seleccion": "local",
+     "monto": 0.9801,
+     "ganancia": 0.7351,
+     "banca": 98.75,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodo55SinAlertas": {
+     "seleccion": "local",
+     "monto": 0.9801,
+     "ganancia": 0.7351,
+     "banca": 98.75,
      "linea": null,
      "motivo": ""
     },
@@ -4479,6 +4875,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "semáforo en amarillo"
     },
+    "metodo55": {
+     "seleccion": "local",
+     "monto": 0.99,
+     "ganancia": -0.99,
+     "banca": 98.01,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodo55SinAlertas": {
+     "seleccion": "local",
+     "monto": 0.99,
+     "ganancia": -0.99,
+     "banca": 98.01,
+     "linea": null,
+     "motivo": ""
+    },
     "metodoFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
@@ -4693,6 +5105,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 102.06,
      "linea": null,
      "motivo": ""
+    },
+    "metodo55": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "le damos 52 % al elegido: bajo 55 %"
+    },
+    "metodo55SinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": "le damos 52 % al elegido: bajo 55 %"
     },
     "metodoFueraMedio": {
      "seleccion": null,
@@ -4914,6 +5342,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "linea": null,
      "motivo": "semáforo en amarillo"
     },
+    "metodo55": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": ""
+    },
+    "metodo55SinAlertas": {
+     "seleccion": "local",
+     "monto": 1.0,
+     "ganancia": -1.0,
+     "banca": 99.0,
+     "linea": null,
+     "motivo": ""
+    },
     "metodoFueraMedio": {
      "seleccion": null,
      "monto": 0.0,
@@ -5128,6 +5572,22 @@ export const SIMULACION_DEMO: SimulacionApuesta = {
      "banca": 101.05,
      "linea": null,
      "motivo": ""
+    },
+    "metodo55": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "le damos 48 % al elegido: bajo 55 %"
+    },
+    "metodo55SinAlertas": {
+     "seleccion": null,
+     "monto": 0.0,
+     "ganancia": 0.0,
+     "banca": 100.0,
+     "linea": null,
+     "motivo": "le damos 48 % al elegido: bajo 55 %"
     },
     "metodoFueraMedio": {
      "seleccion": null,

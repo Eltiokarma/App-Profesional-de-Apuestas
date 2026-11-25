@@ -79,6 +79,22 @@ BANCA_INICIAL = 100.0
 UNIDAD = 1.0
 # el tramo alto de confianza del 1X2 (el «60+» de lecciones.TRAMOS_CONFIANZA)
 CONFIANZA_ALTA = 60.0
+# EL MÉTODO POR EL NÚMERO, NO POR EL COLOR (25/11/2026, usuario: «no usemos semáforo,
+# usemos algo más continuo… el problema de esa tabla es que impactaría en las
+# simulaciones, donde nos guiamos por color»). Medido hacia atrás sobre 1.018 partes
+# (14/09-25/11, sin copas): con lo que decimos del elegido en 55 %+, el elegido ganó
+# 74,6 % hasta el 04/11 y 75,1 % después (n 350, el 34 % de los partidos), contra el
+# mejor verde por razones (61 %). Lo que decimos ya trae la casa (regla 6-B): mientras
+# el número siga al mercado, esta serie mide el número de la casa. Las series por
+# color no se tocan (docs/METODO_APUESTA.md, «El número, no el color»).
+UMBRAL_METODO = 55.0
+# …y SIN ALERTAS (25/11/2026, usuario: «agrega la serie 55 %+ sin alertas»): el mismo
+# umbral sin DESCONFIAR sobre el elegido ni su burbuja en riesgo alto (las dos alertas
+# del «verde sin alertas», sin el color). Hacia atrás, 1.018 partes: con 55 %+ el
+# elegido ganó 74,9 %; sin las dos alertas, 80,5 % hasta el 04/11 y 78,0 % después
+# (245 partidos). Dentro del 55 %+, con DESCONFIAR ganó 62 % (sin, 77 %) y con riesgo
+# alto 67 % (sin, 77 %). Exigir además el verde no suma (78,4 %). Las alertas se
+# eligieron el 24/11 con esos partidos: el resultado hacia atrás sale favorecido.
 # cuánto después del pitazo se cobra: no tenemos la hora de fin de cada
 # partido, y 90 minutos con el descanso y el añadido son unas dos horas
 DURACION = timedelta(minutes=120)
@@ -249,6 +265,12 @@ ESTRATEGIAS = (
     ("metodoVerde", "Método solo en verde",
      f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando el "
      "semáforo del elegido está en verde: la espina del elegido lo acompaña y la del rival no dice que siga"),
+    ("metodo55", f"Método {UMBRAL_METODO:g} %+",
+     f"el método ({100 * PROPORCION:g} % de la banca y el mismo freno por tramo) apostando solo cuando le damos "
+     f"al elegido {UMBRAL_METODO:g} % o más: guiado por el número, no por el color"),
+    ("metodo55SinAlertas", f"Método {UMBRAL_METODO:g} %+ sin alertas",
+     f"el método {UMBRAL_METODO:g} %+ y además sin la alerta DESCONFIAR sobre el elegido ni su burbuja en riesgo "
+     "alto: las alertas del verde sin alertas, sin mirar el color"),
     # EL MÉTODO FUERA DEL MEDIO (13/11/2026, usuario: «siento que hay una forma
     # correcta de apostar… por un lado un gran win rate, por otro buena ganancia
     # con bajo win rate»). Medido en 748 partes (14/09-13/11): la ventaja sobre
@@ -344,7 +366,7 @@ _FUERA_MEDIO = ("metodoFueraMedio", "martingalaFueraMedio", "martingalaCuidada",
 _RECUPERA_PARTE = {"martingalaFueraMedio": RECUPERA_FUERA_MEDIO}
 # las series con el freno por tramo (anotan todo partido cerrado del tramo)
 _CON_FRENO = ("proporcional", "metodoVerde", "metodoFueraMedio", "metodoVerdeSinAlertas",
-              "metodoVerdeSinAlertasFueraMedio")
+              "metodoVerdeSinAlertasFueraMedio", "metodo55", "metodo55SinAlertas")
 _SOLO_ALTA = ("plana60", "martingala60", "martingala60Ajustada")
 _FRACCION_KELLY = {"kelly": 1.0, "kellyMedio": 0.5, "kellyCuarto": 0.25}
 
@@ -814,6 +836,15 @@ def _franja(fila: dict) -> str:
     return "sorpresa" if fila["mercado"][fila["elegido"]] < MEDIO[0] else "favorito"
 
 
+def bloqueo_alertas(fila: dict) -> str:
+    """Las dos alertas, sin el color: DESCONFIAR sobre el elegido o su burbuja en riesgo alto."""
+    if fila.get("desconfiar"):
+        return "alerta DESCONFIAR sobre el elegido"
+    if fila.get("riesgoElegido") in SIN_ALERTAS_RIESGOS:
+        return f"la burbuja del elegido está en riesgo {fila['riesgoElegido']}"
+    return ""
+
+
 def bloqueo_sin_alertas(fila: dict) -> str:
     """Por qué el verde sin alertas no apuesta este partido ("" si apuesta):
     semáforo fuera de verde, DESCONFIAR sobre el elegido o su burbuja en riesgo alto."""
@@ -845,6 +876,14 @@ def _apostar(e: dict, clave: str, fila: dict, t: datetime) -> None:
             "motivo": {"duda": "semáforo en amarillo", "noApostar": "semáforo en rojo: no apostar"}.get(
                 estado, "semáforo sin dato")}
         return
+    if clave in ("metodo55", "metodo55SinAlertas"):
+        motivo = (f"le damos {fila['probabilidades'][fila['elegido']]:.0f} % al elegido: bajo {UMBRAL_METODO:g} %"
+                  if fila["probabilidades"][fila["elegido"]] < UMBRAL_METODO else
+                  bloqueo_alertas(fila) if clave == "metodo55SinAlertas" else "")
+        if motivo:
+            fila["porEstrategia"][clave] = {"seleccion": None, "monto": 0.0, "ganancia": None, "banca": None,
+                                            "linea": None, "motivo": motivo}
+            return
     if clave in _FUERA_MEDIO and fila.get("enElMedio"):
         fila["porEstrategia"][clave] = {
             "seleccion": None, "monto": 0.0, "ganancia": None, "banca": None, "linea": None,

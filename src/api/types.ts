@@ -2803,6 +2803,7 @@ export interface HistorialValorDTO extends GananciaValor {
 export type EstrategiaClave = 'proporcional' | 'metodoVerde' | 'metodoFueraMedio' | 'plana' | 'plana60' | 'kelly' | 'kellyMedio' | 'kellyCuarto' | 'martingala' | 'martingala60' | 'martingala60Ajustada' | 'martingalaFueraMedio' | 'martingalaCuidada' | 'mixtaFueraMedio' | 'ganarFijo'
   /** verde sin alertas (24/11/2026): sin amarillo/rojo, sin DESCONFIAR y sin la burbuja del elegido en riesgo alto */
   | 'metodoVerdeSinAlertas' | 'metodoVerdeSinAlertasFueraMedio' | 'martingalaCuidadaSinAlertas' | 'ganarFijoSinAlertas'
+  | 'metodo55' | 'metodo55SinAlertas'
 export type Resultado1x2 = 'local' | 'empate' | 'visita'
 
 /** El freno de un tramo de confianza del método, sobre sus últimos 50 partidos cerrados */
@@ -2950,6 +2951,32 @@ export interface SemaforoElegido {
   distancia: number | null
   /** solo información (no decide) */
   marcadorSigno: Resultado1x2 | null
+  /** el color por las espinas solas (25/11/2026); `estado` es el calibrado por las razones cuando hay parte enriquecido */
+  estadoBase?: SemaforoElegido['estado']
+  /** EL SEMÁFORO CALIBRADO POR RAZONES: null desde el 25/11/2026 (se retiró del chip; el número separa mejor) */
+  calibrado?: SemaforoCalibrado | null
+}
+
+/** Una razón previa del parte con su peso: > 0 pesa contra el elegido; < 0, a favor */
+export interface RazonSemaforo {
+  codigo: string
+  texto: string
+  peso: number
+}
+
+export interface SemaforoCalibrado {
+  puntaje: number
+  /** desde acá un verde baja a amarillo y un amarillo sube a rojo */
+  corte: number
+  /** desde acá un verde baja directo a rojo */
+  corteRojo: number
+  /** el color calibrado es distinto del de las espinas */
+  cambio: boolean
+  /** las razones sostienen el color de las espinas */
+  confirmado: boolean | null
+  contra: RazonSemaforo[]
+  aFavor: RazonSemaforo[]
+  fuente: { fecha: string; partes: number; verdes: number; desde: string; hasta: string }
 }
 
 /** la lectura de una espina que el semáforo juzga (la neutra no se juzga) */
