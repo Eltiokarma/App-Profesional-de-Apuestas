@@ -2192,6 +2192,48 @@ components:
             b: { type: string, nullable: true, enum: [positiva, cero, negativa, null] }
         distancia: { type: number, nullable: true, description: 'información: la mayor diferencia |nuestro − casa| de los tres, en pts' }
         marcadorSigno: { type: string, nullable: true, enum: [local, empate, visita, null], description: 'información' }
+        estadoBase:
+          type: string
+          enum: [confirma, duda, noApostar, sinDato]
+          description: >
+            El color por las espinas solas (25/11/2026). `estado` es el calibrado por las RAZONES cuando el backend
+            tiene el parte enriquecido (`/analisis/semaforo`); si no, son iguales. La serie fija de la simulación
+            sigue midiendo el de las espinas.
+        calibrado:
+          type: object
+          nullable: true
+          description: >
+            EL SEMÁFORO CALIBRADO POR RAZONES (25/11/2026, backend/backtest_semaforo_razones.py, docs/METODO_APUESTA.md):
+            cada razón previa del parte pesa log(frecuencia en los verdes perdidos / en los ganados); verde con
+            `puntaje` ≥ `corte` → amarillo; amarillo con puntaje < corte → verde; rojo se queda (`confirmado` dice si
+            las razones lo acompañan). null sin el parte enriquecido.
+          properties:
+            puntaje: { type: number }
+            corte: { type: number }
+            cambio: { type: boolean, description: 'el color calibrado es distinto del de las espinas' }
+            confirmado: { type: boolean, nullable: true, description: 'las razones sostienen el color de las espinas' }
+            contra:
+              type: array
+              description: 'las razones que más pesan contra el elegido (hasta 5)'
+              items: { $ref: '#/components/schemas/RazonSemaforo' }
+            aFavor:
+              type: array
+              description: 'las que más pesan a favor (hasta 3)'
+              items: { $ref: '#/components/schemas/RazonSemaforo' }
+            fuente:
+              type: object
+              properties:
+                fecha: { type: string }
+                partes: { type: integer }
+                verdes: { type: integer }
+                desde: { type: string }
+                hasta: { type: string }
+    RazonSemaforo:
+      type: object
+      properties:
+        codigo: { type: string }
+        texto: { type: string, description: 'la razón en palabras' }
+        peso: { type: number, description: '> 0 pesa contra el elegido; < 0, a favor' }
     GrupoSemaforo:
       type: object
       properties:

@@ -1457,6 +1457,11 @@ conversación se pierde en la siguiente.
    Antes: correrlo con `--padron` en el servidor (707 equipos, todas las
    ligas) y medir qué cambia en μ, el gap y el reventón, que también leen el
    nivel.
+   **HECHO el 25/11 (usuario, «calibremos solo el semáforo, hacia atrás»)**:
+   el semáforo calibrado por razones (METODO_APUESTA, «El semáforo calibrado
+   por razones»; `backtest_semaforo_razones`). Pendiente: recalibrar la tabla
+   de `semaforo.PESOS` cuando haya partes nuevos cerrados, y que la
+   simulación mida también el color calibrado (hoy mide el de las espinas).
 
 ## Siguientes pasos (en orden)
 

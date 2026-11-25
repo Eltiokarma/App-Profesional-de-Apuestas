@@ -2950,6 +2950,29 @@ export interface SemaforoElegido {
   distancia: number | null
   /** solo información (no decide) */
   marcadorSigno: Resultado1x2 | null
+  /** el color por las espinas solas (25/11/2026); `estado` es el calibrado por las razones cuando hay parte enriquecido */
+  estadoBase?: SemaforoElegido['estado']
+  /** EL SEMÁFORO CALIBRADO POR RAZONES (25/11/2026): null sin el parte enriquecido */
+  calibrado?: SemaforoCalibrado | null
+}
+
+/** Una razón previa del parte con su peso: > 0 pesa contra el elegido; < 0, a favor */
+export interface RazonSemaforo {
+  codigo: string
+  texto: string
+  peso: number
+}
+
+export interface SemaforoCalibrado {
+  puntaje: number
+  corte: number
+  /** el color calibrado es distinto del de las espinas */
+  cambio: boolean
+  /** las razones sostienen el color de las espinas */
+  confirmado: boolean | null
+  contra: RazonSemaforo[]
+  aFavor: RazonSemaforo[]
+  fuente: { fecha: string; partes: number; verdes: number; desde: string; hasta: string }
 }
 
 /** la lectura de una espina que el semáforo juzga (la neutra no se juzga) */

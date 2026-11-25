@@ -957,6 +957,69 @@ el elegido gana más. Ninguna mueve el semáforo ni la alerta; FUERA-EN-LA-HOJA
 queda como candidata para medir hacia adelante con 300 partes más. El
 análisis se corrió suelto (scratchpad), no hay script en el repo.
 
+## El semáforo calibrado por razones (25/11/2026)
+
+El usuario, tras Manchester City (seis partidos seguidos en verde, uno
+ganado): «el analista dice semáforo en amarillo por tal razón, en rojo por tal
+razón, en verde por tal razón… viendo cuál razón se repite más y dándole más
+peso, a eso me refiero con calibrar. Eso incluye hacer que el verde no diga
+verde cuando perdimos». Y: «nada se mide hacia adelante esta vez, solo hacia
+atrás». Después: «usa los otros dos semáforos, la razón de amarillo y las
+razones de rojo que confirmen o no».
+
+**Cómo se calibró** (`backend/backtest_semaforo_razones.py`, test
+`backend/test_backtest_semaforo_razones.py`). Sobre 1.018 partes cerrados
+(14/09 → 25/11/2026, sin copas nacionales, elegido local o visita) se juntaron
+las RAZONES previas de cada parte (`semaforo.razones`): alertas por lado,
+burbujas y tarjetas calculadas, EFE, TDE, DTP, motor, ciego, DESCONFIAR, el
+empate y el marcador declarados, y lo que el analista escribió al justificar
+cada espina. El `veredicto` no se lee. El peso de una razón es log(su
+frecuencia en los verdes que perdimos / en los que ganamos); el puntaje de un
+partido es la suma; el corte deja en amarillo el cuarto de los verdes con más
+peso en contra.
+
+**Las razones que más se repiten en los verdes perdidos**: le dimos al empate
+27 % o más (60 % de los verdes perdidos contra 36 % de los ganados), el DTP no
+ve ventaja (41 contra 25), DESCONFIAR (25 contra 15), 1X2-CARGA-CONTRA-RIESGO
+(19 contra 12), el elegido viene de no ganar con riesgo alto (22 contra 14), la
+espina del elegido se apoya en «una racha de un partido» (23 contra 15). A
+favor: el motor 20+ puntos bajo lo publicado (los favoritos claros),
+DIV-MOTOR-MERCADO y G-SORPRESA sobre el elegido.
+
+**La regla** (`semaforo.calibrar`): verde con puntaje ≥ corte → amarillo;
+amarillo con puntaje < corte → verde (las razones no lo confirman); rojo se
+queda rojo y `confirmado` dice si las razones lo acompañan.
+
+**Comprobación** (pesos y corte aprendidos con los verdes hasta el 04/11,
+medido en los 425 partes posteriores, que no se usaron):
+
+| Color | Hoy (espinas) | Calibrado |
+|---|---|---|
+| 🟢 verde | 218/377 = 57,8 % | 197/323 = **61,0 %** |
+| 🟡 amarillo | 11/23 = 47,8 % · marca 5 % · 6 % de las derrotas | 32/77 = **41,6 %** · marca 18 % · **24 %** de las derrotas |
+| 🔴 rojo | 9/25 = 36,0 % | 9/25 = 36,0 % |
+
+Los amarillos de las espinas, que los pesos no vieron: con razones ganó el
+40,6 % (13 de 32) y sin ellas el 55,0 % (22 de 40), y en los dos grupos
+decíamos lo mismo (41-42 %). Los rojos no se confirman con las razones (40
+contra 35 %, 33 partidos): el rojo se sostiene por su espina sola.
+
+**Reserva**: descontado lo que decíamos, la ventaja del amarillo calibrado es
+de unos 8 puntos y su intervalo cruza el cero en los verdes; la del amarillo
+sobre los amarillos no vistos es la más firme. El City no se caza: sus verdes
+perdidos suman entre −2,9 y +1,5 contra un corte de 2,26, y el calibrado
+habría pasado a amarillo el 5-1 al AEK.
+
+**Dónde vive**: `/analisis/semaforo` (el chip de la web) calibra con el parte
+enriquecido (`parte.dto`) y trae `estadoBase` (el de las espinas) y
+`calibrado` {puntaje, corte, cambio, confirmado, contra, aFavor}; el parte
+muestra las razones escritas bajo el chip. La serie fija de la simulación
+(`metodoVerde`, el criterio por escalones desde el 13/11) sigue con el color
+de las espinas. Recalibrar = bajar los partes y correr
+`python -m backend.backtest_semaforo_razones --desde-json … --tabla`, y pegar
+la salida en `semaforo.py`. La regla anti-Goodhart no cambia: el analista no
+ve ni el color ni las razones.
+
 ## Qué falta
 
 - Volver a medirlo con un mes de datos y sin huecos (se perdieron los datos
