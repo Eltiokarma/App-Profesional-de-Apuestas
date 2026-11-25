@@ -277,3 +277,14 @@
   la prensa y lo dice en `notas`; no se reporta. Se reporta si la app CALCULA
   algo mal con esa ficha (un `avanza`, una ventana del TDE, una sanción) o si
   la misma ficha sigue incompleta 48 h después del partido.
+  Y desde la pasada del 25/11 (mediodía): **el aplazado que la API todavía
+  da en la fecha vieja** (1505, Clausura de Paraguay: 1632068, 1632069 y
+  1632071 «NS» el 25/11 21:00Z, y la programación oficial los da el 29/11).
+  Es la misma causa que la #1429 (la API publica tarde la postergación; el
+  extractor re-pide por fecha hoy−3d..+10d y la base la sigue), que espera la
+  decisión del usuario en «Decisiones pendientes»: mientras esa siga en
+  `usuario`, un partido YA reportado no se reporta otra vez. Sin ciego ni
+  parte, una línea en el resumen con la fuente; el escaneo ya lo marca
+  `sin-cuotas`. Se reporta, con la fuente, un partido NUEVO aplazado sin
+  marcar (entra a la misma familia), o el ya reportado si la API lo movió y la
+  base sigue con la fecha vieja después de una corrida del extractor.
