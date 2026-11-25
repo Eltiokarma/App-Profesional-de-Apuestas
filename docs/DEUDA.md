@@ -1472,6 +1472,16 @@ conversación se pierde en la siguiente.
    suman menos de 5,18. El motor sigue sin tocarse. Se revisa con lo que la
    serie haga desde el 25/11, porque el corte salió de los partidos de atrás.
 
+45. **La doble oportunidad: acertamos más y ganamos menos** (25/11/2026,
+   usuario: «podemos encontrar una forma, pero no ahora»). En 1.000 partes
+   cerrados, el elegido más el empate acierta el 77 % (el simple, el 56 %),
+   pero pierde −4,6 % en plano (el simple gana +2,6 %): cubre el empate, que
+   la casa daba al 24,5 % y salió en el 21 %. En el 55 %+ sin alertas casi
+   empata (−1,0 %) con rachas de derrota más cortas. Estudio en
+   `docs/revisiones/ESTUDIO_DOBLE_OPORTUNIDAD_2026-11.md`. **Pendiente**:
+   buscar dónde el empate sale más de lo que la casa cobra; si se encuentra,
+   recién ahí una serie en papel.
+
 ## Siguientes pasos (en orden)
 
 1. **Desplegar**: Railway (backend + volumen + ingesta programada) y Vercel
