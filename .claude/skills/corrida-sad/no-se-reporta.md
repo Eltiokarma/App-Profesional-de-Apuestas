@@ -288,3 +288,19 @@
   `sin-cuotas`. Se reporta, con la fuente, un partido NUEVO aplazado sin
   marcar (entra a la misma familia), o el ya reportado si la API lo movió y la
   base sigue con la fecha vieja después de una corrida del extractor.
+  Y desde la pasada del 26/11 (mediodía): **EFE-RECOMPUTO-PENDIENTE que no
+  suena** con un once rotado (1503 Como–AEK, 1511 Brujas–Liverpool y
+  Atlético–Viking; las dos por diseño en 48 h). La regla es la de
+  `parte.alerta_recomputo_efe` (1068 paso 2, aprobada con la EFE v1.10): cuenta
+  SOLO los titulares fijos (🔴 TF de la tabla F1) que el parte no declaró, y
+  suena con `RECOMPUTO_MIN_TITULARES` = 3 o con el arquero TF en el banco; un
+  TH o un ROT (el arquero que alterna incluido) no cuenta, y la nota del bloque
+  B «recomputado con el once» con los puntajes A–E movidos la calla (1467).
+  Antes de reportar, contá en `GET $B/analisis/cowork/f1/{fixtureId}` cuántos TF sin declarar
+  arrancaron afuera; se reporta solo si son 3+ (o el arquero TF) y la alerta no
+  está en el parte. Y la **cuarentena por DT equivocado que no aparece en el
+  campo `cuarentena` del parte** (1497): ese campo es el de la llave maestra;
+  la automática la calcula Aprendizaje al leer (`lecciones.py`, desde
+  `dt_original_json`, 712), así que corregir el DT con `POST …/dt` basta. Se
+  reporta si el caso con `dtEquivocado` sin `disputado` sigue contando en las
+  métricas de Aprendizaje.
