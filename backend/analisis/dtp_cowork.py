@@ -1569,6 +1569,11 @@ _EN_BANCO = re.compile(r"(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-�
                        # titulares los dos en la hoja)
                        r"(?:en el banco|en la banca|al banco|desde el banco|del banco|de suplentes?|como suplentes?|"
                        r"fuera del once|fuera del xi)"
+                       # «relevo del rol: Nyoni, del banco probable» (26/11/2026, incidencia 1508,
+                       # Brujas–Liverpool 1635642: Nyoni titular en la hoja y la rama del TDE lo
+                       # daba de banco; con la coma no casaba y FUERA-EN-LA-HOJA no sonó). Solo
+                       # «del» y «desde el»: «Rosario, en el banco Varela» nombra a dos
+                       r"|\s*,\s*(?:del banco|desde el banco|desde la banca)"
                        r"|\s*\((?:en el )?banco\)|\s*,\s*suplente\b)", re.I)
 
 

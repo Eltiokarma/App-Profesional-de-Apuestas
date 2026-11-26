@@ -3030,6 +3030,19 @@ def main():
           and sorted(x["nombre"] for x in _a1434[0]["titulares"]) == ["B. Islamkhan", "G. Kenzhebek"]
           and all(x["donde"] == "tde.reasignacion" for x in _a1434[0]["titulares"])
           and "TDE nombra" in _a1434[0]["detalle"], _a1434)
+    # 1508 (26/11/2026, Brujas–Liverpool 1635642): «relevo del rol: Nyoni, del banco
+    # probable» con Nyoni titular en la hoja; con la coma no casaba. El condicional
+    # («Javi López y Kraaijeveld si no arrancan», Feyenoord) sigue sin afirmarse
+    _h1508 = {"b": _hj([(1, "T. Nyoni"), (2, "D. Szoboszlai"), (3, "Javi López")], [(4, "J. Gomez"), (5, "Koumas")]),
+              "a": _hj([(6, "H. Vanaken")], [(7, "R. Vermant")])}
+    _p1508 = {"tde": {"bloques": [{"equipo": "b", "reasignacion": {
+        "siMarcaPrimero": {"nota": "Seguro: Nyoni (2 amarillas) y Szoboszlai; relevo del rol: Nyoni, del banco probable."},
+        "siLeEmpatan": {"nota": "Javi López (lateral) si no arranca; Rosario, en el banco Koumas"}}}]}}
+    _a1508 = [a for a in _feh(_p1508, _h1508, {"a": "Club Brugge", "b": "Liverpool"}) if a.get("caso") == "dtpBanco"]
+    check("1508: «X, del banco» en una rama del TDE con X titular de la hoja → dtpBanco; el condicional y «Y, en el "
+          "banco Z» no",
+          len(_a1508) == 1 and _a1508[0]["equipo"] == "b"
+          and [x["nombre"] for x in _a1508[0]["titulares"]] == ["T. Nyoni"], _a1508)
     # LA VENTANA RELATIVA AL GOL Y LA VENTANA DE LA RAMA (veredictos del 17/10/2026)
     from backend.analisis.veredicto import _ventana as _vv, ventana_relativa as _vr
     check("1218: la cláusula «ventana del reloj 60-75'» manda aunque no vaya primera; «desde el minuto 0» no es relativa",
