@@ -248,6 +248,7 @@ Tres lugares donde vive una guardia:
 - **Guardia:**
   - **Test de arquitectura (regla 5):** cada ruta que citan el skill de la corrida, `docs/COWORK.md` y el NÚCLEO de cada skill del pipeline (TDE, DTP, EFE, efe-dashboard y sad-analysis, sin su `HISTORIAL.md`; desde el 17/11/2026, cuando el TDE, el DTP y el EFE empezaron a mandar leer `tde/{id}`, `dtp/{id}` y `f1/{id}`) existe.
   - **Motores suspendidos:** sad v4.0 suspende lo que no tiene motor.
+  - **El reemplazo de nombres que pisa al que ya estaba** (26/11/2026, incidencia 1507, rehaceres de Atlético–Viking e Inter–Stuttgart: «Moi de pivote en lugar de Moi», «Carlos Augusto por Carlos Augusto», «Belko (o Belko)»): el rehacer cambia cada saliente por el entrante y, donde la frase ya nombraba al entrante, queda el mismo jugador dos veces. El recibo lo dice con NOMBRE-REPETIDO (`parte.avisos_nombre_repetido`: el mismo nombre propio a los dos lados de «por», «en lugar de», «o», «y», «(o …)» o de una coma que cierra la lista; sin el `cierre` del DTP, el veredicto ni la entrada). Medido sobre 59 partes del 21-25/11: sin falsos. Test en `backend/test_cowork.py`.
 - **Si vuelve:** un insumo que el skill necesita y no existe se construye o se suspende. No se deja al analista adivinarlo.
 
 ### 11. Los datos sucios de la API
