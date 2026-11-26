@@ -105,6 +105,9 @@ check("1397: DT «Aykhan Abbasov» = «Ayxan Abbasov» (Azerbaiyán: x ↔ kh)",
       idn.mismo_dt("Aykhan Abbasov", "Ayxan Abbasov") and idn.mismo_nombre_dt("Aykhan Abbasov", "Ayxan Abbasov"))
 check("1397: la x ↔ kh es solo de la pila y no junta a dos personas («Aykhan» no es «Ayman»)",
       not idn.misma_pila("aykhan", "ayman") and not idn.mismo_nombre_dt("Aykhan Abbasov", "Ayman Abbasov"))
+check("1510: DT «Guila Bossle» (banco de la hoja) = «Guilherme Bossle» (Coritiba: apodo); «Guila» solo no",
+      idn.mismo_dt("Guila Bossle", "Guilherme Bossle") and idn.mismo_nombre_dt("Guilherme Bossle", "Guila Bossle")
+      and not idn.mismo_dt("Guila Bossle", "Rafael Guanaes"))
 check("DT: «Gustavo Alfaro» no es «Ricardo Gareca»", not idn.mismo_dt("Gustavo Alfaro", "Ricardo Gareca")
       and not idn.mismo_nombre_dt("Gustavo Alfaro", "Ricardo Gareca"))
 check("1096: «Héctor Ignacio Rodríguez Peña» no es «Andrés Rodríguez» (dos pilas enteras distintas)",

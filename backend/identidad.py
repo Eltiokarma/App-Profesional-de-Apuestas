@@ -552,7 +552,11 @@ def solo_pila(tokens_plantel: list[str], tokens_hoja: list[str]) -> bool:
 # persona). Lista CERRADA, con el caso que la pidió: apodo → nombre civil.
 # «Koldo» (13/11/2026, incidencia 1397, Andorra en la Nations League: la hoja
 # trae el apodo y la base el nombre civil; DT-DISCREPANCIA sonaba en falso).
-APODOS_DT = {"pacheta": "jose rojo martin", "koldo": "jesus luis alvarez de eulate guergue"}
+# «Guila Bossle» (26/11/2026, incidencia 1510, Bahia–Coritiba 1492462: el banco de la
+# hoja trae el apodo de Guilherme Bossle y DT-VS-BANCO sonaba en falso: «guila» no
+# está contenida en «guilherme» y `pilas_distintas_dt` los separaba).
+APODOS_DT = {"pacheta": "jose rojo martin", "koldo": "jesus luis alvarez de eulate guergue",
+             "guila bossle": "guilherme bossle"}
 
 
 def tokens_dt(nombre: str) -> list[str]:
