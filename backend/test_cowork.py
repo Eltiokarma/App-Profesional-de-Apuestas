@@ -7839,6 +7839,31 @@ def main():
           and all(t["noPierde"] >= t["gana"] for t in _v66["tramos"])
           and sum(t["n"] for t in _v66["tramos"]) == _v66["partidos"], (_v66, _v66v))
 
+    # 1507 (rehaceres del 25/11, Atlético–Viking 1635625 e Inter–Stuttgart
+    # 1635673): el reemplazo de nombres dejó al mismo jugador a los dos lados
+    from backend.analisis.parte import avisos_nombre_repetido as _anr
+    _p1507 = {"fixtureId": 1635625, "dtp": {"bloques": [{"equipo": "b", "apertura": {
+        "m1": {"rolesReasignados": ["Moi de pivote en lugar de Moi", "Belko en el arco en lugar de Belko"]},
+        "m2": {"viasGol": {"foco": ["rechace de Belko (o Belko), con Julián, Lee y Lee"]}},
+        "m3Fases": [{"plan": "Koke o Koke de pivote", "palancas": ["Carlos Augusto por Carlos Augusto"]}]},
+        "cierre": {"nota": "Moi por Moi"}}]},
+        "equipos": {"a": {"sensibilidad": [{"supuesto": "recambio Javi López, Kraaijeveld, Kraaijeveld · p5"}]}}}
+    _a1507 = _anr(_p1507, limite=20)
+    _f1507 = [h["frase"] for h in (_a1507[0]["frases"] if _a1507 else [])]
+    # lo que NO es un reemplazo roto (muestra de 59 partes del 21-25/11): frases
+    # separadas por coma, «por» con prosa en medio, un medio con dos palabras, el veredicto
+    _b1507 = _anr({"equipos": {"a": {"perfil": {
+        "fortaleza": "la zaga (Lisandro, Dalot o Yoro, Yoro de central o de lateral); retiene Roef, Roef ataja",
+        "debilidad": "penal a nombre de Yamal y errado por Yamal; según El Diario y Diario Correo; Lee Kang-In y Lee"}}},
+        "veredicto": {"notas": "Moi por Moi"}})
+    check("1507: NOMBRE-REPETIDO con el mismo jugador a los dos lados del cambio (en lugar de, o, y, por, «(o …)», "
+          "coma que cierra la lista); el cierre del DTP, el veredicto y la prosa buena, nada",
+          bool(_a1507) and _a1507[0]["codigo"] == "NOMBRE-REPETIDO"
+          and _f1507 == ["Moi de pivote en lugar de Moi", "Belko en el arco en lugar de Belko", "Belko (o Belko",
+                         "Lee y Lee", "Koke o Koke", "Carlos Augusto por Carlos Augusto", "Kraaijeveld, Kraaijeveld"]
+          and "dtp.bloques[0].apertura.m1.rolesReasignados[0]" in _a1507[0]["costara"] and _b1507 == [],
+          (_f1507, _b1507))
+
     print()
     print(f"{'TODO OK' if not fallos else f'{fallos} FALLAS'}")
     return 1 if fallos else 0

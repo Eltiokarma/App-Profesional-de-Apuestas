@@ -3931,6 +3931,8 @@ def guardar(payload: dict) -> dict:
     faltan.extend(_dtp.avisos_vacios(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
     # el veredicto único que contradice a sus dos ramas (1504, DTP v1.8 punto 2)
     faltan.extend(_dtp.avisos_veredicto_ramas(parte.get("dtp") or {}, {"a": fx["home_name"], "b": fx["away_name"]}))
+    # el mismo jugador a los dos lados del cambio tras un reemplazo de nombres (1507)
+    faltan.extend(avisos_nombre_repetido(parte))
     # una pieza del M2 que el mismo parte tiene en `fuera` (1170)
     faltan.extend(_dtp.avisos_piezas_fuera(parte.get("dtp") or {}, parte.get("equipos") or {},
                                            {"a": fx["home_name"], "b": fx["away_name"]}))
@@ -4410,6 +4412,65 @@ def cierres_modificados(antes: dict, ahora: dict, originales: dict | None = None
         if campos:
             out.append({"equipo": lado, "campos": campos})
     return out
+
+
+# EL MISMO NOMBRE A LOS DOS LADOS DEL CAMBIO (26/11/2026, incidencia 1507,
+# rehaceres del 25/11: Atlético–Viking 1635625 «Moi de pivote en lugar de Moi»,
+# «rechace de Belko (o Belko)», «Koke o Koke de pivote», «Lee y Lee»;
+# Inter–Stuttgart 1635673 «Carlos Augusto por Carlos Augusto», «El Khannouss,
+# El Khannouss»). El rehacer reemplazó cada saliente por el entrante y, donde el
+# texto ya nombraba al entrante, la frase quedó con el mismo jugador dos veces:
+# ilegible para el veredicto. El recibo lo dice con la frase y dónde está.
+_NOMBRE_TXT = r"(?:[A-ZÁÉÍÓÚÑÜ]\.\s*)?[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+(?:\s+[A-ZÁÉÍÓÚÑÜ][\wÀ-ÿ'’-]+){0,2}"
+_NOMBRE_REPETIDO = re.compile(
+    rf"(?<![\wÀ-ÿ.])({_NOMBRE_TXT})"
+    r"(?:\s+(?:o|y|e|por|en lugar de|en vez de)\s+\1|\s*\(\s*o\s+\1"
+    # «Moi de pivote en lugar de Moi»: el rol en minúsculas entre los dos (con
+    # «por» no: «a nombre de Yamal y errado por Yamal» es prosa buena)
+    r"|(?:\s+[a-záéíóúñü]+){1,4}\s+(?:en lugar de|en vez de)\s+\1"
+    # la coma solo en una lista que cierra ahí («recambio Javi López,
+    # Kraaijeveld, Kraaijeveld ·»): «Yoro, Yoro de central» y «retiene Roef,
+    # Roef ataja» separan frases
+    r"|\s*,\s*\1(?=\s*(?:$|[,.;:)·]|\s(?:y|o|e)\s)))"
+    # el segundo no sigue con otra palabra en mayúscula: «El Diario y Diario Correo»
+    r"(?![\wÀ-ÿ'’-])(?!\s+[A-ZÁÉÍÓÚÑÜ])")
+# no se miran: la entrada del timeline (eventos, no prosa del analista), las
+# alertas y el recibo (los escribe la app), el `cierre` del DTP (la autopsia
+# del partido anterior, con los nombres de ese día: 1258) y el veredicto (se
+# escribe después del partido, sin reemplazo de nombres)
+_SIN_PROSA = {"entrada", "alertas", "recibo", "cierre", "faltan", "veredicto"}
+
+
+def avisos_nombre_repetido(parte: dict, limite: int = 8) -> list[dict]:
+    """NOMBRE-REPETIDO (1507): la prosa del parte con el mismo nombre propio a
+    los dos lados de «por», «en lugar de», «o», «y», una coma o «(o …)». Aviso
+    del recibo, sin rechazo: nombra cada frase y su lugar para re-escribirla."""
+    hallados = []
+
+    def recorrer(x, ruta: str):
+        if len(hallados) >= limite:
+            return
+        if isinstance(x, dict):
+            for k, v in x.items():
+                if k not in _SIN_PROSA:
+                    recorrer(v, f"{ruta}.{k}" if ruta else k)
+        elif isinstance(x, list):
+            for i, v in enumerate(x):
+                recorrer(v, f"{ruta}[{i}]")
+        elif isinstance(x, str) and len(x) > 4:
+            for m in _NOMBRE_REPETIDO.finditer(x):
+                if len(hallados) < limite:
+                    hallados.append({"donde": ruta, "frase": m.group(0)})
+
+    recorrer({k: v for k, v in (parte or {}).items() if k not in _SIN_PROSA}, "")
+    if not hallados:
+        return []
+    return [{"bloque": hallados[0]["donde"].split(".")[0].split("[")[0], "codigo": "NOMBRE-REPETIDO",
+             "costara": "el mismo jugador a los dos lados del cambio (un reemplazo de nombres que pisó al que "
+                        "ya estaba): " + "; ".join(f"«{h['frase']}» ({h['donde']})" for h in hallados),
+             "comoSeArregla": "re-escribir cada frase con el once oficial (quién entra, por quién y en qué rol) "
+                              "y re-depositar el parte entero",
+             "frases": hallados}]
 
 
 def nombres_vs_id(parte: dict, nombres: dict) -> list[dict]:

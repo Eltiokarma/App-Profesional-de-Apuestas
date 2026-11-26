@@ -100,6 +100,10 @@ casi siempre no hay nada que hacer.
 >    movelo con su porqué en la lectura del 1X2 (disciplina 33); si no, no.
 >    Antes de depositar, listá en tu respuesta los nombres que salieron y
 >    confirmá que ninguno queda en el texto como titular.
+>    **Reemplazar no es pegar un nombre encima** (26/11/2026, incidencia 1507,
+>    Atlético–Viking: «Moi de pivote en lugar de Moi», «Belko (o Belko)»):
+>    donde la frase ya nombraba al que entra, re-escribila entera. Si el
+>    recibo trae NOMBRE-REPETIDO, corregí cada frase que nombra y re-depositá.
 >    **El TDE hereda del DTP, y al rehacer el que se mueve es el TDE**
 >    (31/10/2026, incidencia 634, decisión del usuario): si el once cambia el
 >    nivel del rest defense o la clase del bloque, el SOB2 y el C1 del
