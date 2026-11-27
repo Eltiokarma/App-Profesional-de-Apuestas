@@ -252,6 +252,34 @@ def _publicado_tarde(fixture_id: int, fecha_utc) -> bool:
         return False
 
 
+def _intento_xi(fixture_id: int, fecha_utc) -> "tuple[str, str]":
+    """¿Qué hizo el ciclo en vivo con el once de este partido? Lee el ÚLTIMO
+    intento de `xi_intentos` (en_vivo.capturar_xi lo pisa en cada pedido).
+
+    27/11/2026, incidencia 1515: León–Cruz Azul y Pachuca–Chivas (Liga MX)
+    salieron once-tarde sin plan agotado, y el hallazgo no decía si el ciclo
+    los había pedido: «la API lo publicó tarde» (causa decidida, 1072, 1081,
+    1145) y «nadie lo pidió» (código) no se distinguían sin la base.
+    Devuelve (estado, detalle):
+    - ("api", …): el ciclo lo pidió hasta el pitazo o después y la API no lo
+      dio: la causa decidida, no es hallazgo.
+    - ("ciclo", …): no hay intento, o el último fue antes del pitazo: el ciclo
+      dejó de pedirlo (o nunca lo pidió). Eso sí es hallazgo, y lo dice.
+    - ("", ""): base sin la tabla: se marca como siempre, sin causa."""
+    try:
+        fila = saddb.query_one("sad", "SELECT intentada_en, con_datos FROM xi_intentos WHERE fixture_id=?",
+                               (fixture_id,))
+    except Exception:  # noqa: BLE001 — base sin la tabla del ciclo en vivo: sin causa que sumar
+        return "", ""
+    pitazo = str(fecha_utc)[:19].replace("T", " ")
+    if not fila or not fila["intentada_en"]:
+        return "ciclo", " · el ciclo en vivo no lo pidió nunca (sin intento en xi_intentos)"
+    ultimo = str(fila["intentada_en"])[:19].replace("T", " ")
+    if ultimo >= pitazo and not fila["con_datos"]:
+        return "api", ""
+    return "ciclo", f" · el último pedido del ciclo en vivo fue a las {ultimo[11:16]} UTC, antes del pitazo"
+
+
 def _ultima_sin_hoja(team_id: int, fecha: str, fixture_id: int) -> str:
     """La regla vive en `banco.ultima_sin_hoja` (el banco probable la dice en su nota)."""
     from backend.analisis.banco import ultima_sin_hoja
@@ -454,9 +482,13 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
                 # y regionales cada pasada, con la ficha post-partido sellada sin
                 # alineaciones). Eso es cobertura (deuda 5, `nuncaVaALlegar`):
                 # el chequeo es para el once que existió y llegó tarde.
-                if (not previa and _ficha_sellada(f["id"]) and not _nunca_publicado(f["id"])
-                        and not _publicado_tarde(f["id"], f["date"])):
-                    causa = ""
+                # y el que el ciclo PIDIÓ hasta el pitazo sin que la API lo diera
+                # tampoco (1515): es la misma causa decidida; el que no pidió, sí
+                intento = (_intento_xi(f["id"], f["date"])
+                           if (not previa and _ficha_sellada(f["id"]) and not _nunca_publicado(f["id"])
+                               and not _publicado_tarde(f["id"], f["date"])) else None)
+                if intento and intento[0] != "api":
+                    causa = intento[1]
                     tope = agotado.get(item["fecha"])
                     if tope and str(f["date"])[:19].replace("T", " ") >= tope[0]:
                         causa = (f" · el plan de API-Football estaba agotado desde las {tope[1]} de Lima "
