@@ -57,7 +57,9 @@ compara.
    Por CADA otro chequeo con hallazgos depositá UNA incidencia
    (`POST …/incidencias`, `origen: "escaneo"`, el `area` y la `severidad` del
    chequeo, `titulo` = el del chequeo, `detalle` = los partidos y hallazgos,
-   `fixtureId` = el primero): la misma abierta suma `veces`, no se duplica. Desde
+   `fixtureId` = el primero, `fixtures` = TODOS los `partidos` del chequeo: con
+   solo el primero, la misma causa ya cerrada volvía como abierta cada vez que la
+   ventana cambiaba el primer partido, 1513): la misma abierta suma `veces`, no se duplica. Desde
    ahí entran al paso 1 como las demás. Un dato que un parte o un veredicto
    reporta y que el escaneo NO vio es un chequeo que falta: sumalo a
    `backend/analisis/escaneo.py` (`CHEQUEOS`, con la regla que cuida y su

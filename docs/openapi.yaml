@@ -901,7 +901,7 @@ paths:
     post:
       summary: La corrida deposita sus incidencias
       description: >
-        `{origen, corrida?, items: [{titulo, area, severidad?, detalle?, fixtureId?}]}`. Una
+        `{origen, corrida?, items: [{titulo, area, severidad?, detalle?, fixtureId?, fixtures?}]}`. Una
         abierta con el mismo título normalizado (y el mismo partido) no se duplica: suma
         `veces`. Si una ya resuelta vuelve a aparecer, entra NUEVA: el parche no alcanzó. Abierto
         al token acotado (solo escribe la tabla `incidencia`).
@@ -926,6 +926,10 @@ paths:
                       severidad: { type: string, enum: [bloquea, error, aviso], default: error }
                       detalle: { type: string }
                       fixtureId: { type: integer, nullable: true }
+                      fixtures:
+                        type: array
+                        items: { type: integer }
+                        description: 'todos los partidos del hallazgo (el escaneo: los `partidos` del chequeo), fixtureId primero. Se guardan y el hallazgo queda en yaClasificadas solo si TODOS ya están en una cerrada de la misma causa (1513, 26/11/2026: con solo el primero, la misma causa volvía cada vez que la ventana cambiaba el primer partido)'
       responses:
         '200':
           description: qué entró nuevo, qué se sumó y qué se rechazó
