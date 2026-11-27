@@ -342,6 +342,30 @@ _h5 = [h for h in _post5 if h["chequeo"] == "once-tarde" and h["fixtureId"] == 9
 check("1492: once-tarde con el plan agotado antes del pitazo dice la causa; sin plan agotado, no",
       _h5 and "plan de API-Football estaba agotado" in _h5[0]["detalle"]
       and all("agotado" not in h["detalle"] for h in _post4 if h["chequeo"] == "once-tarde"), (_h5, _post4))
+# 27/11/2026 (#1515, León–Cruz Azul y Pachuca–Chivas): el once-tarde dice qué
+# hizo el ciclo en vivo con el once (último intento de xi_intentos). Pedido hasta
+# el pitazo o después sin que la API lo diera: causa decidida (1072, 1081, 1145),
+# no hallazgo. Último pedido antes del pitazo o ninguno: hallazgo, con la causa.
+con.execute("CREATE TABLE IF NOT EXISTS xi_intentos (fixture_id INTEGER PRIMARY KEY, intentada_en TEXT NOT NULL, "
+            "con_datos INTEGER NOT NULL DEFAULT 0)")
+con.execute("INSERT OR REPLACE INTO xi_intentos VALUES (9032, ?, 0)",
+            ((_pit + _td(minutes=_VT - 5)).strftime("%Y-%m-%d %H:%M:%S.%f"),))
+con.commit()
+_post6, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
+check("1515: el once que el ciclo pidió hasta después del pitazo sin datos de la API no es once-tarde",
+      ("once-tarde", 9032) not in {(h["chequeo"], h["fixtureId"]) for h in _post6}, _post6)
+con.execute("INSERT OR REPLACE INTO xi_intentos VALUES (9032, ?, 0)",
+            ((_pit - _td(minutes=60)).strftime("%Y-%m-%d %H:%M:%S.%f"),))
+con.commit()
+_post7, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
+_h7 = [h for h in _post7 if h["chequeo"] == "once-tarde" and h["fixtureId"] == 9032]
+con.execute("DELETE FROM xi_intentos WHERE fixture_id=9032")
+con.commit()
+_post8, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
+_h8 = [h for h in _post8 if h["chequeo"] == "once-tarde" and h["fixtureId"] == 9032]
+check("1515: el último pedido antes del pitazo es once-tarde y lo dice; sin ningún pedido, también",
+      _h7 and "antes del pitazo" in _h7[0]["detalle"] and _h8 and "no lo pidió nunca" in _h8[0]["detalle"],
+      (_h7, _h8))
 check("1230: el hallazgo del escaneo trae la hora de Lima al lado de la UTC",
       bool(_post) and all(h.get("horaLima") for h in _post), _post[:1])
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
