@@ -205,6 +205,19 @@ def clave_de(titulo: str, area: str = "") -> str:
     return " ".join(t.split())[:160]
 
 
+def _partidos_del_item(fid, lista) -> list[int]:
+    """`fixtureId` primero y después los de `fixtures`, sin repetir ni basura."""
+    out = [fid] if fid else []
+    for x in (lista if isinstance(lista, list) else [])[:200]:
+        try:
+            f = int(x)
+        except (TypeError, ValueError):
+            continue
+        if f > 0 and f not in out:
+            out.append(f)
+    return out
+
+
 def _jugado_antes(fixture_id: int, cuando: str) -> bool:
     """¿El saque del partido fue antes de `cuando` (UTC, «YYYY-MM-DD HH:MM:SS»)?"""
     try:
@@ -249,6 +262,14 @@ def depositar(payload: dict) -> dict:
                 fid = int(it["fixtureId"]) if it.get("fixtureId") not in (None, "") else None
             except (TypeError, ValueError):
                 fid = None
+            # TODOS LOS PARTIDOS DEL HALLAZGO, no solo el primero (26/11/2026,
+            # 1513: el chequeo `jev-caido` volvió tres veces —1500, 1512, 1513—
+            # con la causa ya agrupada en la #1468, porque el escaneo manda UNA
+            # incidencia por chequeo con `fixtureId` = el primero de la lista, y
+            # cuando la ventana soltó los del 22/11 el primero cambió). `fixtures`
+            # (opcional) trae la lista entera: se guarda y se compara entera.
+            todos = _partidos_del_item(fid, it.get("fixtures"))
+            fid = todos[0] if todos else None
             clave = clave_de(titulo, area)
             # EL MISMO HALLAZGO DEL MISMO PARTIDO YA CLASIFICADO NO SE REABRE
             # (03/11/2026: el escaneo mira 48 h de jugados y corre en tres
@@ -257,29 +278,34 @@ def depositar(payload: dict) -> dict:
             # parche (dato_api · por_diseno · descartada): lo que vuelve después
             # de un PR (`resuelta`) sí entra nuevo, porque el parche no alcanzó.
             if fid:
-                previa = next((r for r in con.execute(
+                sin_parche = con.execute(
                     "SELECT id, fixture_id, fixtures FROM incidencia WHERE clave=? AND estado IN "
-                    "('dato_api','por_diseno','descartada')", (clave,)) if fid in _fixtures(r)), None)
+                    "('dato_api','por_diseno','descartada') ORDER BY id DESC", (clave,)).fetchall()
                 # EL PARTIDO JUGADO ANTES DEL PARCHE NO DICE QUE EL PARCHE NO ALCANZÓ
                 # (22/11/2026: los 18 once-tarde del 21/11 volvieron como 1494 con
                 # la 1492 ya `resuelta` por el PR #627: el escaneo mira 48 h de
                 # jugados y los redeposita en cada pasada). Solo el escaneo, y solo
                 # si el saque fue antes del cierre: lo que pasa después sí entra.
-                if not previa and origen == "escaneo":
-                    previa = next((r for r in con.execute(
-                        "SELECT id, fixture_id, fixtures, cerrado_en FROM incidencia WHERE clave=? "
-                        "AND estado='resuelta' AND cerrado_en IS NOT NULL", (clave,))
-                        if fid in _fixtures(r) and _jugado_antes(fid, r["cerrado_en"])), None)
-                if previa:
-                    ya_clasificadas.append({"id": previa["id"], "fixtureId": fid})
+                resueltas = con.execute(
+                    "SELECT id, fixture_id, fixtures, cerrado_en FROM incidencia WHERE clave=? "
+                    "AND estado='resuelta' AND cerrado_en IS NOT NULL ORDER BY id DESC",
+                    (clave,)).fetchall() if origen == "escaneo" else []
+
+                def _quien_cubre(f):
+                    r = next((r for r in sin_parche if f in _fixtures(r)), None)
+                    return r or next((r for r in resueltas
+                                      if f in _fixtures(r) and _jugado_antes(f, r["cerrado_en"])), None)
+                # ya clasificado solo si TODOS sus partidos lo están: con uno nuevo entra
+                cubren = [_quien_cubre(f) for f in todos]
+                if all(cubren):
+                    ya_clasificadas.append({"id": cubren[0]["id"], "fixtureId": fid})
                     continue
             fila = con.execute(
                 f"SELECT * FROM incidencia WHERE clave=? AND estado NOT IN ({','.join('?' * len(CERRADOS))})",
                 (clave, *CERRADOS)).fetchone()
             if fila:
                 fx = _fixtures(fila)
-                if fid and fid not in fx:
-                    fx.append(fid)
+                fx += [f for f in todos if f not in fx]
                 con.execute("UPDATE incidencia SET veces=veces+1, ultima_vez=?, detalle=COALESCE(NULLIF(?, ''), detalle), "
                             "fixtures=? WHERE id=?",
                             (ahora, _txt(it.get("detalle")), json.dumps(fx[-50:]), fila["id"]))
@@ -287,8 +313,9 @@ def depositar(payload: dict) -> dict:
                 continue
             cur = con.execute(
                 "INSERT INTO incidencia (clave, origen, corrida, fixture_id, area, severidad, titulo, detalle, "
-                "creado_en, ultima_vez) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                (clave, origen, corrida, fid, area, sev, titulo, _txt(it.get("detalle")), ahora, ahora))
+                "creado_en, ultima_vez, fixtures) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (clave, origen, corrida, fid, area, sev, titulo, _txt(it.get("detalle")), ahora, ahora,
+                 json.dumps(todos[:50]) if len(todos) > 1 else None))
             nuevas.append(cur.lastrowid)
     return {"nuevas": nuevas, "repetidas": repetidas, "rechazos": rechazos, "yaClasificadas": ya_clasificadas}
 

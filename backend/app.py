@@ -3226,7 +3226,7 @@ def cowork_reventon_estudio(fixture_id: int, equipo_id: int, body: dict = Body(.
 @app.post(API + "/analisis/cowork/incidencias")
 def cowork_incidencias_depositar(body: dict = Body(...)):
     """La corrida deposita su «Roto o a mirar»: `{origen, corrida?, items:
-    [{titulo, area, severidad?, detalle?, fixtureId?}]}`. Una abierta con el
+    [{titulo, area, severidad?, detalle?, fixtureId?, fixtures?}]}`. Una abierta con el
     mismo título (y partido) no se duplica: suma `veces`."""
     from backend.analisis import incidencias
     try:

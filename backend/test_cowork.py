@@ -7530,6 +7530,22 @@ def main():
          "fixtureId": 1558999}]}).json()
     check("el mismo partido ya clasificado dato_api no se reabre (yaClasificadas); otro partido sí entra",
           _ya2["yaClasificadas"] == [{"id": _ya, "fixtureId": 1558667}] and len(_ya2["nuevas"]) == 1, _ya2)
+    # TODOS LOS PARTIDOS DEL CHEQUEO, no solo el primero (1513, 26/11/2026: `jev-caido`
+    # volvió como 1500, 1512 y 1513 con la causa ya agrupada en la #1468, porque el
+    # escaneo deposita con fixtureId = el primero y la ventana soltó los del 22/11)
+    _tj = "Jev respondió con error al sellar un parte o un veredicto (prueba 1513)"
+    _j1 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": _tj, "area": "api", "fixtureId": 7001, "fixtures": [7001, 7002, 7003]}]}).json()["nuevas"][0]
+    c.post(f"{A}/analisis/cowork/incidencias/{_j1}/estado",
+           json={"estado": "descartada", "resolucion": "agrupada en la del usuario (prueba 1513)"})
+    _j2 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": _tj, "area": "api", "fixtureId": 7002, "fixtures": [7002, 7003]}]}).json()
+    check("1513: el chequeo con la lista ya cerrada no reabre aunque cambie el primer partido",
+          _j2["yaClasificadas"] == [{"id": _j1, "fixtureId": 7002}] and not _j2["nuevas"], _j2)
+    _j3 = c.post(f"{A}/analisis/cowork/incidencias", json={"origen": "escaneo", "items": [
+        {"titulo": _tj, "area": "api", "fixtureId": 7002, "fixtures": [7002, 7999]}]}).json()
+    check("1513: con un partido nuevo en la lista sí entra (hay algo que la cerrada no vio)",
+          len(_j3["nuevas"]) == 1 and not _j3["yaClasificadas"], _j3)
     # EL PARTIDO JUGADO ANTES DEL PARCHE NO REABRE (1494, 22/11/2026: los 18
     # once-tarde del 21/11 volvieron con la 1492 ya resuelta por el PR #627)
     import sqlite3 as _sq
