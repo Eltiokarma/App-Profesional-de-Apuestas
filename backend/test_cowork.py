@@ -1269,6 +1269,16 @@ def main():
     check("lista los veredictos vencidos y los onces sin cerrar",
           isinstance(lat["veredictosVencidos"], list) and isinstance(lat["sinOnceCerrado"], list),
           sorted(lat))
+    # 27/11/2026: el latido contaba como «más de 12 h terminado» lo que había
+    # terminado hacía una hora (Nottingham Forest–Chelsea): vence a las 12 h del saque
+    from datetime import datetime as _dtv, timezone as _tzv
+    from backend.analisis.parte import veredictos_vencidos as _vv
+    _ah = _dtv(2026, 11, 27, 22, 40, tzinfo=_tzv.utc)
+    _pv = [{"fixtureId": 1557485, "jugadoEn": "2026-11-27T20:00:00+00:00"},
+           {"fixtureId": 1651502, "jugadoEn": "2026-11-27 03:10:00"},
+           {"fixtureId": 9, "jugadoEn": None}]
+    check("el latido: vencido es el saque de hace más de 12 h, no lo recién terminado (sin fecha, cuenta)",
+          [p["fixtureId"] for p in _vv(_pv, _ah)] == [1651502, 9], _vv(_pv, _ah))
     cp = lat.get("cuotasPrepartido") or {}
     check("vigila las cuotas prepartido de los próximos NS (deuda 8)",
           {"proximos", "conCuota", "ultimaCaptura", "alarma"} <= set(cp), cp)

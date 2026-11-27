@@ -6467,6 +6467,9 @@ _NO_SE_JUGO = {"PST": "aplazado", "CANC": "cancelado", "ABD": "abandonado",
                "AWD": "ganado en mesa", "WO": "walkover", "SUSP": "suspendido"}
 
 
+HORAS_VEREDICTO_VENCIDO = 12  # el latido: un veredicto vence 12 h después del saque
+
+
 def pendientes_veredicto(horas: int = 12, limite: int = 50) -> dict:
     """Partes sin cerrar cuyo partido ya arrancó hace más de `horas`.
 
@@ -7229,6 +7232,25 @@ def presupuesto_api() -> dict:
     return out
 
 
+def veredictos_vencidos(pendientes: list, ahora: datetime, horas: int = HORAS_VEREDICTO_VENCIDO) -> list:
+    """De los pendientes de veredicto, los que arrancaron hace más de `horas`.
+
+    27/11/2026: el latido decía «9 caso(s) llevan más de 12 h terminados y sin
+    veredicto» y se ponía en ámbar a las 17:40 de Lima con Nottingham Forest–
+    Chelsea y Venezia–Bologna terminados hacía una hora: `pendientes_veredicto`
+    lista TODO lo terminado con marcador (es la cola de la rutina, que no tiene
+    por qué esperar), y el latido lo contaba entero. Vencido es lo que ya
+    debería estar cerrado: el saque (`jugadoEn`) más viejo que `horas`. Sin
+    fecha legible, cuenta (mejor un ámbar de más que un vencido escondido)."""
+    marca = (ahora - timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+    out = []
+    for p in pendientes:
+        saque = str(p.get("jugadoEn") or "")[:19].replace("T", " ")
+        if len(saque) < 16 or saque <= marca:
+            out.append(p)
+    return out
+
+
 def latido(horas: int = 36) -> dict:
     """¿Está corriendo esto, o lleva dos días muerto y nadie se enteró?
 
@@ -7271,7 +7293,7 @@ def latido(horas: int = 36) -> dict:
 
     # los veredictos que ya deberían estar cerrados y no lo están
     pend = pendientes_veredicto(horas=12, limite=50)
-    vencidos = pend.get("pendientes") or []
+    vencidos = veredictos_vencidos(pend.get("pendientes") or [], ahora)
 
     cuotas = cuotas_prepartido(ahora)
     presupuesto = presupuesto_api()
