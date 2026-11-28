@@ -354,6 +354,20 @@ def main():
     check("1419: la casilla con el rol delante en el paréntesis se lee (Tsitaishvili 4:1 contra el grid 4:3) "
           "y la de Kvernadze sigue",
           set(_r1419) == {"G. Tsitaishvili", "G. Kvernadze"} and "4:1" in _r1419["G. Tsitaishvili"], _r1419)
+    # 1519 (28/11/2026, Luqueño–Olimpia 1632072): «S. Quintana y R. Lezcano, centrales del alternativo»,
+    # el rol en aposición y en plural; el grid oficial (4-1-4-1) los dio en el medio, 4:2 y 4:3
+    _cas1519 = [("S. Lentinelly", "1:1"), ("R. Sánchez", "2:1"), ("M. Gamarra", "2:2"), ("G. Vargas", "2:3"),
+                ("T. Payne", "2:4"), ("R. Benitez", "3:1"), ("E. Matus", "4:1"), ("S. Quintana", "4:2"),
+                ("R. Lezcano", "4:3"), ("R. Redes", "4:4"), ("S. Ferreira", "5:1")]
+    _por1519 = {1: 1, 2: 4, 3: 1, 4: 4, 5: 1}
+    _of1519 = {"formacion": "4-1-4-1", "titulares": [n for n, _ in _cas1519], "defensores": 4,
+               "casillas": [{"nombre": n, "grid": g, "carril": _car1391(g, _por1519)} for n, g in _cas1519]}
+    _b1519 = {"equipo": "b", "apertura": {"m1": {"sistema": "4-1-3-2", "xiReferencia": "", "rolesReasignados": [
+        "R. Benitez, de pivote único del 4-1-3-2", "S. Quintana y R. Lezcano, centrales del alternativo"]}}}
+    _r1519 = {r["jugador"]: r["motivo"] for r in _dc646.roles_vs_grid(_b1519, _of1519)}
+    check("1519: el rol en aposición y en plural («X y Y, centrales») se lee contra el grid (4:2 y 4:3, el medio); "
+          "el pivote que cuadra, no",
+          set(_r1519) == {"S. Quintana", "R. Lezcano"} and "el medio" in _r1519["S. Quintana"], _r1519)
     # 1438 (17/11/2026, Croacia–Chequia 1528985): sin casillas escritas, el duelo del carril
     # izquierdo junta a Perišić (grid 4:3, derecha) con Gvardiol (2:1, izquierda)
     _cas1438 = [("D. Livaković", "1:1"), ("J. Gvardiol", "2:1"), ("L. Vušković", "2:2"), ("D. Ćaleta-Car", "2:3"),

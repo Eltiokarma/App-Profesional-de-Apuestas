@@ -1789,6 +1789,13 @@ def _roles_declarados(linea: str) -> list[tuple[list[str], str, str]]:
     # o «ninguna titularidad en la base», no casaba con ninguna casilla y
     # rolesVsGrid quedaba vacío con cuatro roles contra el grid)
     linea = re.sub(r"^\s*([^,;:()]+?)\s*,[^,;:()]*,\s*(?=de\s)", r"\1 ", linea or "")
+    # EL ROL EN APOSICIÓN, TAMBIÉN EN PLURAL (28/11/2026, incidencia 1519,
+    # Luqueño–Olimpia 1632072: «S. Quintana y R. Lezcano, centrales del
+    # alternativo», y el grid los dio de volantes, 4:2 y 4:3; solo se leía
+    # «X de central» y rolesVsGrid salió vacío). «Nombres, rol(es) …» vale como
+    # «Nombres de rol …»
+    linea = re.sub(rf"^\s*([^,;:()]+?)\s*,\s*(?!de\s)({_ROL})(?:es|s)?\b",
+                   lambda m: f"{m.group(1)} de {m.group(2)}", linea, flags=re.IGNORECASE)
     if re.search(r"\bsi\b|\bsegun\b|\bsegún\b|\bo\b|/", re.split(r"\bsiendo\b|\(", (linea or "").lower())[0]):
         return []
     t = _plano_num(linea)
