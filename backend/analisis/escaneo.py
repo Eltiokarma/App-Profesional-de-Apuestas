@@ -82,6 +82,17 @@ CHEQUEOS: dict[str, dict] = {
                  "país distinto al del equipo es de un homónimo con el id cruzado por la API: no entra a su "
                  "historia ni a su calendario (backend/partido_ajeno.py)",
     },
+    # LA API DIO VUELTA EL FIXTURE DESPUÉS DEL PARTE (28/11/2026, incidencia 1522,
+    # Racing–Liverpool de Montevideo, 1651250): `xi/auto` le pegó al lado a el
+    # once del local de hoy y casaba 0 de 11; el veredicto lee el marcador con
+    # los lados cruzados. La regla vive en parte.lados_invertidos.
+    "local-invertido": {
+        "titulo": "La API invirtió local y visitante de un partido con parte",
+        "area": "agenda", "severidad": "error",
+        "regla": "el parte guarda los nombres del fixture al depositarse (lado a = local); si el fixture "
+                 "después los cruza, todo lo calculado al leer va con el local de hoy y no casa con lo escrito "
+                 "(parte.lados_invertidos, alerta LOCAL-INVERTIDO)",
+    },
     "sin-cuotas": {
         "titulo": "Partido de la agenda sin cuota prepartido a pocas horas",
         "area": "cuotas", "severidad": "aviso",
@@ -413,6 +424,7 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
             with _parte._conectar() as con:
                 fila = con.execute("SELECT parte_json FROM parte_cowork WHERE fixture_id=?", (fid,)).fetchone()
             p = json.loads(fila["parte_json"]) if fila else None
+            _invertido(item, out)
             if p:
                 for a in f1_base.alertas_sancion(p, {"id": fid}, {"a": item.get("equipoA"), "b": item.get("equipoB")},
                                                  sanc=sanc):
@@ -420,6 +432,24 @@ def _pre(item: dict, ahora: datetime) -> list[dict]:
         except Exception:  # noqa: BLE001
             pass
     return out
+
+
+def _invertido(item: dict, out: list) -> None:
+    """Suma `local-invertido` si el parte del partido tiene los nombres del
+    fixture cruzados (1522). La regla es UNA: parte.lados_invertidos."""
+    try:
+        from backend.analisis import parte as _parte
+        with _parte._conectar() as con:
+            fila = con.execute("SELECT equipo_a, equipo_b FROM parte_cowork WHERE fixture_id=?",
+                               (item["fixtureId"],)).fetchone()
+        fx = _parte._fixture(item["fixtureId"]) if fila else None
+        if fx and _parte.lados_invertidos(fila["equipo_a"], fila["equipo_b"], fx["home_name"], fx["away_name"]):
+            out.append(_hallazgo("local-invertido", item,
+                                 f"el parte tiene a {fila['equipo_a']} de local (lado a) y el fixture hoy a "
+                                 f"{fx['home_name']}: el once de la ficha, la F1 de la base y el marcador del "
+                                 "veredicto van con los lados cruzados"))
+    except Exception:  # noqa: BLE001 — sin la tabla de partes: no se afirma una inversión
+        pass
 
 
 def _plan_agotado(_parte) -> dict:
@@ -473,6 +503,7 @@ def _post(horas: int, ahora: datetime) -> tuple[list[dict], int]:
             n += 1
             item = {"fixtureId": f["id"], "partido": f"{f['a']} vs {f['b']}", "fecha": str(f["date"])[:10],
                     "hora": str(f["date"])[11:16], **_parte.hora_lima(f["date"])}
+            _invertido(item, out)
             try:
                 previa = saddb.query_one(
                     "sad", "SELECT 1 AS x FROM alineaciones_versiones WHERE fixture_id=? AND capturada_en <= ? "

@@ -860,6 +860,33 @@ def main():
     c.post(f"{A}/analisis/cowork", json=_parte(con_ficha))
     c.post(f"{A}/analisis/cowork/xi/auto")
 
+    # LA API DA VUELTA EL FIXTURE DESPUÉS DEL PARTE (28/11/2026, incidencia 1522,
+    # Racing–Liverpool de Montevideo, 1651250): xi/auto le pegaba al lado a el
+    # once del local de hoy (0 de 11). Ahora no cierra ni pisa, y dice la causa.
+    _xi_antes = c.get(f"{A}/analisis/cowork/{con_ficha}").json()["xi"]
+    with _sq3fo.connect(os.path.join(tmp, "sad.db")) as _cinv:
+        _cinv.execute("UPDATE fixtures SET home_team_id=away_team_id, away_team_id=home_team_id WHERE id=?",
+                      (con_ficha,))
+    try:
+        _inv = c.post(f"{A}/analisis/cowork/xi/auto").json()
+        _g_inv = c.get(f"{A}/analisis/cowork/{con_ficha}").json()
+    finally:
+        with _sq3fo.connect(os.path.join(tmp, "sad.db")) as _cinv:
+            _cinv.execute("UPDATE fixtures SET home_team_id=away_team_id, away_team_id=home_team_id WHERE id=?",
+                          (con_ficha,))
+    check("1522: con local y visitante cruzados después del parte, xi/auto no cierra y dice la causa",
+          any(x["fixtureId"] == con_ficha and x.get("localInvertido") and "invirtió" in x["porque"]
+              for x in _inv["conConflicto"])
+          and all(x["fixtureId"] != con_ficha for x in _inv["cerrados"] + _inv["reemplazados"]),
+          _inv.get("conConflicto"))
+    check("1522: …no pisa el once guardado, y el parte lleva la alerta LOCAL-INVERTIDO",
+          _g_inv["xi"].get("a", {}).get("once") == _xi_antes.get("a", {}).get("once")
+          and any(a["codigo"] == "LOCAL-INVERTIDO" for a in _g_inv["alertas"]),
+          [a["codigo"] for a in _g_inv["alertas"]])
+    check("1522: con el fixture derecho otra vez, el parte no lleva LOCAL-INVERTIDO",
+          not any(a["codigo"] == "LOCAL-INVERTIDO"
+                  for a in c.get(f"{A}/analisis/cowork/{con_ficha}").json()["alertas"]))
+
     # MEDIO ONCE NO ES «ESTA LIGA NO DA ONCES» (Necaxa–Atlas, ABB–Real Potosí,
     # Atlante–Pumas, 17/10/2026): la API trajo el once de un lado solo
     import sqlite3 as _sq3m

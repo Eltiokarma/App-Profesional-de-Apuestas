@@ -3741,6 +3741,39 @@ def _fixture(fixture_id: int):
     )
 
 
+def lados_invertidos(equipo_a, equipo_b, home_name, away_name) -> bool:
+    """¿La API invirtió local y visitante DESPUÉS de depositarse el parte?
+
+    28/11/2026, incidencia 1522, Racing–Liverpool de Montevideo (1651250, sede
+    neutral en Maldonado): el parte se guardó con Racing de local (lado a) y la
+    API dio vuelta el fixture después, Liverpool (2358) de local. Toda la app
+    lee «lado a = home_team_id» (la ficha, la F1 de la base, el DT, el
+    veredicto), así que `xi/auto` le pegó a Racing el once de Liverpool y
+    casaba 0 de 11. `guardar` sella los nombres del fixture en equipo_a/b, así
+    que un parte cuyos nombres son los del fixture CRUZADOS es un parte
+    invertido. Sin nombres guardados no se afirma nada."""
+    if not (equipo_a and equipo_b and home_name and away_name):
+        return False
+    a, b, h, v = (normalizar(x) for x in (equipo_a, equipo_b, home_name, away_name))
+    return a != b and a == v and b == h
+
+
+def alerta_local_invertido(fila, fx) -> list[dict]:
+    """LOCAL-INVERTIDO: el parte y la base ya no dicen lo mismo de quién es
+    el lado a. Lo calculado al leer (F1 de la base, DT, once de la ficha,
+    marcador del veredicto) sigue al local de HOY; lo escrito en el parte, al
+    de cuando se depositó (1522)."""
+    if not fx or not lados_invertidos(fila["equipo_a"], fila["equipo_b"], fx["home_name"], fx["away_name"]):
+        return []
+    return [{
+        "codigo": "LOCAL-INVERTIDO", "equipo": "global", "tipo": "dato",
+        "detalle": (f"el parte se depositó con {fila['equipo_a']} de local (lado a) y la API dio vuelta el "
+                    f"fixture después: hoy el local es {fx['home_name']}. Lo que se calcula al leer (once de "
+                    "la ficha, F1 de la base, DT, marcador del veredicto) va con el local de hoy y no casa con "
+                    "lo escrito: el bloque F no se cierra solo y el veredicto se lee con los lados cruzados"),
+    }]
+
+
 def _ids_alternos_de_la_base(fixture_id: int) -> dict:
     """{jugadorId: [ids alternos]} de la tabla F1 de la base, los dos lados."""
     try:
@@ -5780,6 +5813,7 @@ def dto(fixture_id: int) -> dict | None:
     # dos equipos de ligas distintas: el nivel no compara entre bases, y el
     # parte lo dice antes de que alguien lea los dos números uno contra otro
     alertas.extend(alerta_escala(fx, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
+    alertas.extend(alerta_local_invertido(fila, fx))
     # la espina que dice «sigue» con la burbuja en su extremo, y la brecha del
     # EFE que es empate técnico (25/10/2026): reglas que se incumplían, calculadas
     alertas.extend(alertas_t54_sin_declarar(parte, alertas, {"a": fila["equipo_a"], "b": fila["equipo_b"]}))
@@ -6659,6 +6693,16 @@ def cerrar_onces_pendientes(limite: int = 120) -> dict:
         fid = f["fixture_id"]
         fx = _fixture(fid)
         if not fx:
+            continue
+        if lados_invertidos(f["equipo_a"], f["equipo_b"], fx["home_name"], fx["away_name"]):
+            # LA API DIO VUELTA EL FIXTURE DESPUÉS DEL PARTE (1522): el once del
+            # local de hoy es el del lado b del parte. No se cierra ni se pisa
+            # nada; el conflicto dice la causa en vez de «casa con 0 de 11».
+            conflictos.append({"fixtureId": fid, "partido": f"{f['equipo_a']} vs {f['equipo_b']}",
+                               "lados": list(LADOS), "localInvertido": True,
+                               "porque": f"la API invirtió local y visitante después del parte: el parte tiene "
+                                         f"a {f['equipo_a']} de local y el fixture hoy a {fx['home_name']}; "
+                                         "el once de la ficha no se cruza con los lados cruzados"})
             continue
         ya = json.loads(f["xi_json"]) if f["xi_json"] else {}
         onces = {}
