@@ -2180,6 +2180,14 @@ def alertas_fuera_en_la_hoja(parte: dict, hoja: dict, nombres: dict) -> list[dic
         espejo += [(b.get("equipo"), "viasGol", t) for t in vias.get("rival") or []]
         textos += [(b.get("equipo"), "veredictoRamas", (r or {}).get("razon") or "")
                    for r in (m2.get("veredictoRamas") or {}).values() if isinstance(r, dict)]
+        # LA SEÑAL DEL XI QUE DICE LEER EL ONCE OFICIAL (28/11/2026, incidencia
+        # 1520, Petrolero 1645551: tras el rehacer, «once oficial de la hoja de
+        # ESTE partido … R. Cardozo arranca en el banco», con Cardozo titular en
+        # 4:2). Solo la que afirma el oficial: la que cuenta el último once de
+        # otro partido habla de otro día
+        senal = _txt(((b.get("apertura") or {}).get("m1") or {}).get("senalXi"))
+        if re.search(r"once oficial", senal, re.IGNORECASE) and not re.search(r"[úu]ltimo once", senal, re.IGNORECASE):
+            textos.append((b.get("equipo"), "senalXi", senal))
     textos += espejo
     # LAS RAMAS DEL TDE TAMBIÉN (17/11/2026, incidencia 1434): en 5 de 12
     # veredictos de la fecha FIFA las ramas siguieron nombrando de banco a
@@ -4428,6 +4436,11 @@ _NOMBRE_REPETIDO = re.compile(
     # «Moi de pivote en lugar de Moi»: el rol en minúsculas entre los dos (con
     # «por» no: «a nombre de Yamal y errado por Yamal» es prosa buena)
     r"|(?:\s+[a-záéíóúñü]+){1,4}\s+(?:en lugar de|en vez de)\s+\1"
+    # …también con «en EL lugar de» y una aposición entre comas con cifras
+    # (28/11/2026, incidencia 1520, Petrolero–Real Oruro 1645551: «R. Cardozo,
+    # volante de 35 años, de enganche en el lugar de R. Cardozo»)
+    r"|,(?:\s+[a-záéíóúñü0-9]+){1,6},(?:\s+[a-záéíóúñü]+){1,4}\s+en (?:el )?(?:lugar|vez) de\s+\1"
+    r"|(?:\s+[a-záéíóúñü]+){1,4}\s+en el lugar de\s+\1"
     # la coma solo en una lista que cierra ahí («recambio Javi López,
     # Kraaijeveld, Kraaijeveld ·»): «Yoro, Yoro de central» y «retiene Roef,
     # Roef ataja» separan frases
