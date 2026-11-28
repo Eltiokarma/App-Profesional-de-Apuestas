@@ -3040,6 +3040,20 @@ def main():
           and sorted(x["nombre"] for x in _a1434[0]["titulares"]) == ["B. Islamkhan", "G. Kenzhebek"]
           and all(x["donde"] == "tde.reasignacion" for x in _a1434[0]["titulares"])
           and "TDE nombra" in _a1434[0]["detalle"], _a1434)
+    # 1520 (28/11/2026, Petrolero–Real Oruro 1645551): tras el rehacer, la señal del XI
+    # que dice leer el oficial afirma «R. Cardozo arranca en el banco» con Cardozo titular;
+    # la que cuenta el último once de otro partido no se mira
+    _h1520 = {"a": _hj([(1, "R. Cardozo"), (2, "Gean"), (3, "A. Mercado")], [(4, "R. Zamora"), (5, "J. Soria")]),
+              "b": _hj([(6, "L. Corulo")], [(7, "F. Gatti")])}
+    _sen = lambda t: {"dtp": {"bloques": [{"equipo": "a", "apertura": {"m1": {"senalXi": t}}}]}}
+    _a1520 = [a for a in _feh(_sen("once oficial de la hoja de ESTE partido (4-2-3-1): R. Cardozo arranca en el "
+                                   "banco; Gean de 9"), _h1520, {}) if a.get("caso") == "dtpBanco"]
+    _a1520v = [a for a in _feh(_sen("último once oficial (23/11 ante Guabirá): R. Cardozo arranca en el banco"),
+                               _h1520, {}) if a.get("caso") == "dtpBanco"]
+    check("1520: la señal del XI que afirma el once oficial y pone de banco a un titular de la hoja → dtpBanco; "
+          "la del último once de otro partido, no",
+          len(_a1520) == 1 and [x["nombre"] for x in _a1520[0]["titulares"]] == ["R. Cardozo"]
+          and _a1520[0]["titulares"][0]["donde"] == "senalXi" and not _a1520v, (_a1520, _a1520v))
     # 1508 (26/11/2026, Brujas–Liverpool 1635642): «relevo del rol: Nyoni, del banco
     # probable» con Nyoni titular en la hoja; con la coma no casaba. El condicional
     # («Javi López y Kraaijeveld si no arrancan», Feyenoord) sigue sin afirmarse
@@ -7893,7 +7907,8 @@ def main():
     # 1635673): el reemplazo de nombres dejó al mismo jugador a los dos lados
     from backend.analisis.parte import avisos_nombre_repetido as _anr
     _p1507 = {"fixtureId": 1635625, "dtp": {"bloques": [{"equipo": "b", "apertura": {
-        "m1": {"rolesReasignados": ["Moi de pivote en lugar de Moi", "Belko en el arco en lugar de Belko"]},
+        "m1": {"rolesReasignados": ["Moi de pivote en lugar de Moi", "Belko en el arco en lugar de Belko",
+                                    "R. Cardozo, volante de 35 años, de enganche en el lugar de R. Cardozo (5 amarillas)"]},
         "m2": {"viasGol": {"foco": ["rechace de Belko (o Belko), con Julián, Lee y Lee"]}},
         "m3Fases": [{"plan": "Koke o Koke de pivote", "palancas": ["Carlos Augusto por Carlos Augusto"]}]},
         "cierre": {"nota": "Moi por Moi"}}]},
@@ -7907,9 +7922,11 @@ def main():
         "debilidad": "penal a nombre de Yamal y errado por Yamal; según El Diario y Diario Correo; Lee Kang-In y Lee"}}},
         "veredicto": {"notas": "Moi por Moi"}})
     check("1507: NOMBRE-REPETIDO con el mismo jugador a los dos lados del cambio (en lugar de, o, y, por, «(o …)», "
-          "coma que cierra la lista); el cierre del DTP, el veredicto y la prosa buena, nada",
+          "coma que cierra la lista; 1520: «X, aposición, de rol en el lugar de X»); el cierre del DTP, el veredicto "
+          "y la prosa buena, nada",
           bool(_a1507) and _a1507[0]["codigo"] == "NOMBRE-REPETIDO"
-          and _f1507 == ["Moi de pivote en lugar de Moi", "Belko en el arco en lugar de Belko", "Belko (o Belko",
+          and _f1507 == ["Moi de pivote en lugar de Moi", "Belko en el arco en lugar de Belko",
+                         "R. Cardozo, volante de 35 años, de enganche en el lugar de R. Cardozo", "Belko (o Belko",
                          "Lee y Lee", "Koke o Koke", "Carlos Augusto por Carlos Augusto", "Kraaijeveld, Kraaijeveld"]
           and "dtp.bloques[0].apertura.m1.rolesReasignados[0]" in _a1507[0]["costara"] and _b1507 == [],
           (_f1507, _b1507))
