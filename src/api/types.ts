@@ -1537,7 +1537,7 @@ export interface EquipoParte {
 
 export interface AlertaParte {
   /** Las del skill (T.54, R-KT.2…) y las que agrega el backend al leer:
-   *  K-EXTREMO, HUECO-DOBLE, ESCALA-LIGAS (ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA y DTP-REHACER. */
+   *  K-EXTREMO, HUECO-DOBLE, ESCALA-LIGAS (ligas distintas: el nivel no compara entre bases), F1-DECISIVO-FUERA, DTP-REHACER y LOCAL-INVERTIDO (la API dio vuelta el fixture después del parte, 1522). */
   codigo: string
   /** `ambos` = toca a los dos equipos (vocabulario del protocolo EFE). */
   equipo: 'a' | 'b' | 'ambos' | 'global'

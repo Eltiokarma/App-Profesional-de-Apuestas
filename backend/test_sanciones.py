@@ -366,6 +366,27 @@ _h8 = [h for h in _post8 if h["chequeo"] == "once-tarde" and h["fixtureId"] == 9
 check("1515: el último pedido antes del pitazo es once-tarde y lo dice; sin ningún pedido, también",
       _h7 and "antes del pitazo" in _h7[0]["detalle"] and _h8 and "no lo pidió nunca" in _h8[0]["detalle"],
       (_h7, _h8))
+# 28/11/2026 (#1522, Racing–Liverpool de Montevideo): la API dio vuelta el
+# fixture después del parte. El parte guarda los nombres del fixture al
+# depositarse; con los nombres cruzados el escaneo lo grita, y sin cruzar, no.
+_hn, _an = con.execute(
+    "SELECT ht.name, at.name FROM fixtures f JOIN teams ht ON ht.id=f.home_team_id "
+    "JOIN teams at ON at.id=f.away_team_id WHERE f.id=11").fetchone()
+for _fx, (_ea, _eb) in ((9034, (_an, _hn)), (9035, (_hn, _an))):
+    con.execute(f"INSERT INTO fixtures ({','.join(_cols)}) VALUES ({','.join('?' * len(_cols))})",
+                [(_fx if c == "id" else _base_fx[i]) for i, c in enumerate(_cols)])
+    with _parte._conectar() as _c:
+        _c.execute("INSERT INTO parte_cowork (fixture_id, fecha, equipo_a, equipo_b, parte_json, creado_en, "
+                   "actualizado_en) VALUES (?, '2026-10-25', ?, ?, '{}', '2026-10-24', '2026-10-24')",
+                   (_fx, _ea, _eb))
+con.commit()
+_post9, _ = escaneo._post(72, datetime(2026, 10, 26, 12, 0, tzinfo=timezone.utc))
+_cp9 = {(h["chequeo"], h["fixtureId"]) for h in _post9}
+check("1522: el parte con local y visitante cruzados contra el fixture sale `local-invertido`; el derecho, no",
+      ("local-invertido", 9034) in _cp9 and ("local-invertido", 9035) not in _cp9, _post9)
+check("1522: lados_invertidos no afirma nada sin nombres, ni con dos nombres iguales",
+      _parte.lados_invertidos(_an, _hn, _hn, _an) and not _parte.lados_invertidos(None, _hn, _hn, _an)
+      and not _parte.lados_invertidos("X", "X", "X", "X") and not _parte.lados_invertidos(_hn, _an, _hn, _an))
 check("1230: el hallazgo del escaneo trae la hora de Lima al lado de la UTC",
       bool(_post) and all(h.get("horaLima") for h in _post), _post[:1])
 check("escaneo: todos los chequeos tienen título, área, severidad y la regla que cuidan",
