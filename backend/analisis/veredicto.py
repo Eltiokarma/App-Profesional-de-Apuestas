@@ -1050,18 +1050,29 @@ def rama_jugada(tde: dict, goles: list[dict], total_goles: int, con_ficha: bool,
     # (incidencias 389 y 391: Toluca recibió al 38', dio vuelta al 61' y 65',
     # y el 2-2 del 75' lo marcaba «concedió persiguiendo»).
     else:
-        siguiente = goles[1] if len(goles) > 1 else None
+        # TDE v0.1.23 (disciplina 61, cuarta salida): un penal o un autogol no
+        # es la vía de la exposición; la pelota parada y el error individual los
+        # dice la autopsia (la API no los marca). Y NO CIERRA EL RÉGIMEN: la
+        # rama se cobra «desde el gol hasta el empate o el final» y el que
+        # recibe un penal sigue persiguiendo (28/11/2026, incidencia 1518:
+        # Chelsea en Nottingham, penal al 51' y otro gol en juego al 72'; la
+        # salida quedaba otra_via con la vía pagada después). Decide el primer
+        # gol posterior que no sea de otra vía; solo esos goles, otra_via.
+        siguiente, otras = None, []
+        for g in goles[1:]:
+            if g["lado"] != foco and (g.get("penal") or g.get("autogol")):
+                otras.append(g["minuto"])
+                continue
+            siguiente = g
+            break
         if siguiente is None:
-            salida = "sinMasGoles"
+            salida = "otra_via" if otras else "sinMasGoles"
         elif siguiente["lado"] != foco:
             salida = "concedio"
         else:
             salida = "marco"
-        # TDE v0.1.23 (disciplina 61, cuarta salida): un penal o un autogol no
-        # es la vía de la exposición; la pelota parada y el error individual los
-        # dice la autopsia (la API no los marca)
-        if salida == "concedio" and (siguiente.get("penal") or siguiente.get("autogol")):
-            salida = "otra_via"
+        if otras and salida != "otra_via":
+            out["otraViaAntes"] = otras
         out["salida"] = salida
         out["notaSalida"] = {"otra_via": "concedió por otra vía (penal o autogol): no es el régimen de "
                                          "exposición el que se pagó (disciplina 61, v0.1.23)",
