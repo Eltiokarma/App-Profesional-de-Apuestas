@@ -6385,6 +6385,17 @@ def main():
                                                     {"minuto": 60, "lado": "b", "penal": True}], 2, True)
     check("v0.1.23 (disciplina 61): el segundo gol de penal sale «otra_via», no «concedio»",
           _rj.get("salida") == "otra_via", _rj)
+    # 1518 (Nottingham Forest–Chelsea, 28/11/2026): el penal no cierra el régimen
+    # del que persigue; el gol en juego de después es la vía que se pagó
+    _rj1518 = _rj23({"equipo": "b", "reasignacion": {}}, [{"minuto": 20, "lado": "a"},
+                                                         {"minuto": 51, "lado": "a", "penal": True},
+                                                         {"minuto": 72, "lado": "a"}], 3, True)
+    _rj1518m = _rj23({"equipo": "b", "reasignacion": {}}, [{"minuto": 20, "lado": "a"},
+                                                          {"minuto": 51, "lado": "a", "penal": True},
+                                                          {"minuto": 80, "lado": "b"}], 3, True)
+    check("1518: tras un penal concedido, el gol en juego posterior cierra la rama «concedio» (y el propio, «marco»)",
+          _rj1518.get("salida") == "concedio" and _rj1518.get("otraViaAntes") == [51]
+          and _rj1518m.get("salida") == "marco", (_rj1518, _rj1518m))
     _ad = _ad23([{"minuto": 94, "lado": "b", "enAnadido": True}], [{"minuto": 92, "lado": "a", "enAnadido": True}], "a")
     check("v0.1.23: la casilla del añadido dice el gol concedido y la roja propia del descuento",
           _ad["concedidos"] == [94] and _ad["rojas"] == [{"minuto": 92, "propia": True}] and _ad["cambioElTramo"], _ad)
