@@ -321,6 +321,15 @@ _sin_ajeno += [r for r in ("backend/analisis/tde.py", "backend/analisis/dtp_cowo
 check("homónimo: el banco, la F1, el arquero, el TDE, el DTP, el calendario y la cronología usan partido_ajeno.sql_fuera",
       not _sin_ajeno, _sin_ajeno)
 
+# 5-nonies · el lado del parte no se cruza con la ficha si la API dio vuelta el
+# fixture (FALLAS.md clase 11; 1522, Racing–Liverpool de Montevideo: xi/auto le
+# pegó al lado a el once del local de hoy). `cerrar_onces_pendientes` pregunta
+# `lados_invertidos` ANTES de pedir el once de la ficha por `home_team_id`.
+_cop = _funciones("backend/analisis/parte.py").get("cerrar_onces_pendientes", "")
+check("lado invertido: xi/auto mira parte.lados_invertidos antes de cruzar el once de la ficha",
+      "lados_invertidos" in _cop and _cop.index("lados_invertidos") < _cop.index("xi_de_ficha"),
+      "lados_invertidos" in _cop)
+
 # ── 5-quater · «EN JUEGO» TIENE FECHA ─────────────────────────────────────
 # 22/11/2026: dos partidos de agosto y septiembre en SUSP eran candidatos
 # perpetuos del ciclo en vivo (cada minuto, feed + /fixtures?ids=) y el 21/11

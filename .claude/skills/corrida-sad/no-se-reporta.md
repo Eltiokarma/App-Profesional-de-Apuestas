@@ -304,3 +304,9 @@
   `dt_original_json`, 712), así que corregir el DT con `POST …/dt` basta. Se
   reporta si el caso con `dtEquivocado` sin `disputado` sigue contando en las
   métricas de Aprendizaje.
+  Y desde la pasada del 28/11 (mediodía): el `conConflicto` de `xi/auto` con
+  `localInvertido: true` (1522, Racing–Liverpool de Montevideo: la API invirtió
+  local y visitante después del parte). Lo grita el chequeo `local-invertido`
+  del escaneo, que el mantenimiento deposita, y el parte lleva la alerta
+  LOCAL-INVERTIDO: no se reporta aparte. Un «casa con 0 de 11» SIN
+  `localInvertido` sí se reporta, con el lado y el fixture.
